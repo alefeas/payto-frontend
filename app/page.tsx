@@ -13,10 +13,10 @@ export default function Home() {
         </div>
         
         <div className="flex gap-4 justify-center">
-          <Link href="/auth">
+          <Link href="/login">
             <Button size="lg">Iniciar Sesión</Button>
           </Link>
-          <Link href="/auth">
+          <Link href="/register">
             <Button variant="outline" size="lg">Registrarse</Button>
           </Link>
         </div>
