@@ -1,22 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { isAuthenticated } from "@/lib/auth"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/login')
-    } else {
-      setIsLoading(false)
     }
-  }, [router])
+  }, [isAuthenticated, isLoading, router])
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="p-6">
         <div className="animate-pulse">

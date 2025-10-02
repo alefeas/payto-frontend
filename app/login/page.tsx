@@ -7,17 +7,21 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { login } from "@/lib/auth"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' })
+  const [isLoading, setIsLoading] = useState(false)
+  const { login } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (login(formData.email, formData.password)) {
+    setIsLoading(true)
+    if (await login(formData.email, formData.password)) {
       router.push('/dashboard')
     }
+    setIsLoading(false)
   }
 
   return (
@@ -53,8 +57,8 @@ export default function LoginPage() {
               />
             </div>
             
-            <Button type="submit" className="w-full">
-              Iniciar Sesión
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Ingresando...' : 'Iniciar Sesión'}
             </Button>
           </form>
           

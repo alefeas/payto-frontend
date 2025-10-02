@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Bell, User, Settings, LogOut, Trash2 } from "lucide-react"
+import { Bell, Settings, LogOut, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getUser, logout } from "@/lib/auth"
+import { useAuth } from "@/contexts/auth-context"
 
 // Mock notifications data
 const mockNotifications = [
@@ -25,8 +25,8 @@ const mockNotifications = [
 export function DashboardHeader() {
   const [notifications, setNotifications] = useState(mockNotifications)
   const [mounted, setMounted] = useState(false)
+  const { user, logout } = useAuth()
   const router = useRouter()
-  const user = getUser()
 
   useEffect(() => {
     setMounted(true)

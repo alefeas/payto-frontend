@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { isAuthenticated, getUser, updateProfile } from "@/lib/auth"
+import { useAuth } from "@/contexts/auth-context"
 
 const countries = [
   { value: "ar", label: "Argentina" },
@@ -36,7 +36,7 @@ const timezones = [
 ]
 
 export default function ProfilePage() {
-  const [isLoading, setIsLoading] = useState(true)
+  const { user, isAuthenticated, isLoading, updateProfile } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,37 +57,31 @@ export default function ProfilePage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/login')
-    } else {
-      const user = getUser()
-      if (user) {
-        setFormData({
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          bio: user.bio,
-          country: user.country,
-          timezone: user.timezone
-        })
-      }
-      setIsLoading(false)
+    } else if (user) {
+      setFormData({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        bio: user.bio,
+        country: user.country,
+        timezone: user.timezone
+      })
     }
-  }, [router])
+  }, [user, isAuthenticated, isLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
     
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    if (updateProfile(formData)) {
+    if (await updateProfile(formData)) {
       alert('Perfil actualizado correctamente')
     }
     setIsSaving(false)
   }
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">

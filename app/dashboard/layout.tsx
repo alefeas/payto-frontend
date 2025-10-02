@@ -1,4 +1,5 @@
 import { DashboardHeader } from "@/components/dashboard/header"
+import { DashboardSidebar } from "@/components/dashboard/sidebar"
 
 export default function DashboardLayout({
   children,
@@ -8,7 +9,10 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
-      <main>{children}</main>
+      <div className="flex">
+        <DashboardSidebar />
+        <main className="flex-1">{children}</main>
+      </div>
     </div>
   )
 }

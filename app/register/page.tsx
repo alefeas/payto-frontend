@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { register } from "@/lib/auth"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ 
@@ -16,17 +16,21 @@ export default function RegisterPage() {
     password: '', 
     confirmPassword: '' 
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const { register } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
       alert('Las contraseñas no coinciden')
       return
     }
-    if (register(formData.name, formData.email, formData.password)) {
+    setIsLoading(true)
+    if (await register(formData.name, formData.email, formData.password)) {
       router.push('/dashboard')
     }
+    setIsLoading(false)
   }
 
   return (
@@ -85,8 +89,8 @@ export default function RegisterPage() {
               />
             </div>
             
-            <Button type="submit" className="w-full">
-              Registrarse
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Registrando...' : 'Registrarse'}
             </Button>
           </form>
           
