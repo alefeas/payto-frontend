@@ -1,11 +1,62 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Building2, Plus, UserPlus, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Company } from "@/types"
+import { Company, Activity } from "@/types"
+
+const getActivityColor = (type: Activity['type']) => {
+  switch (type) {
+    case 'invoice_created': return 'bg-green-500'
+    case 'member_joined': return 'bg-blue-500'
+    case 'payment_pending': return 'bg-orange-500'
+    case 'payment_received': return 'bg-emerald-500'
+    case 'company_created': return 'bg-purple-500'
+    default: return 'bg-gray-500'
+  }
+}
+
+// Mock activities data
+const mockActivities: Activity[] = [
+  {
+    id: 1,
+    type: 'invoice_created',
+    message: 'Factura creada',
+    companyName: 'TechCorp SA',
+    timestamp: 'hace 2h'
+  },
+  {
+    id: 2,
+    type: 'member_joined',
+    message: 'Nuevo miembro',
+    companyName: 'StartupXYZ',
+    timestamp: 'hace 1d'
+  },
+  {
+    id: 3,
+    type: 'payment_pending',
+    message: 'Pago pendiente',
+    companyName: 'Consulting LLC',
+    timestamp: 'hace 2d'
+  },
+  {
+    id: 4,
+    type: 'payment_received',
+    message: 'Pago recibido',
+    companyName: 'TechCorp SA',
+    timestamp: 'hace 3d'
+  },
+  {
+    id: 5,
+    type: 'company_created',
+    message: 'Empresa creada',
+    companyName: 'StartupXYZ',
+    timestamp: 'hace 1 semana'
+  }
+]
 
 // Mock companies data
 const mockCompanies: Company[] = [
@@ -46,7 +97,9 @@ const mockCompanies: Company[] = [
 
 export function DashboardSidebar() {
   const [companies] = useState(mockCompanies)
+  const [activities] = useState(mockActivities.slice(0, 3))
   const activeCompanies = companies.filter(c => c.status === 'active')
+  const router = useRouter()
 
   return (
     <aside className="w-80 border-r bg-background p-6">
@@ -63,7 +116,7 @@ export function DashboardSidebar() {
             <Button 
               className="w-full justify-start" 
               size="sm"
-              onClick={() => window.location.href = '/create-company'}
+              onClick={() => router.push('/create-company')}
             >
               <Plus className="h-4 w-4 mr-2" />
               Crear Empresa
@@ -72,7 +125,7 @@ export function DashboardSidebar() {
               variant="outline" 
               className="w-full justify-start" 
               size="sm"
-              onClick={() => window.location.href = '/join-company'}
+              onClick={() => router.push('/join-company')}
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Unirse a Empresa
@@ -101,7 +154,7 @@ export function DashboardSidebar() {
                 </p>
                 <Button 
                   size="sm"
-                  onClick={() => window.location.href = '/create-company'}
+                  onClick={() => router.push('/create-company')}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Primera Empresa
@@ -113,6 +166,7 @@ export function DashboardSidebar() {
                   <div
                     key={company.id}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => router.push(`/company/${company.uniqueId}`)}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -149,27 +203,15 @@ export function DashboardSidebar() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-2">
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Factura creada</p>
-                  <p className="text-xs text-muted-foreground">TechCorp SA • hace 2h</p>
+              {activities.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                  <div className={`h-2 w-2 ${getActivityColor(activity.type)} rounded-full`}></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.message}</p>
+                    <p className="text-xs text-muted-foreground">{activity.companyName} • {activity.timestamp}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Nuevo miembro</p>
-                  <p className="text-xs text-muted-foreground">StartupXYZ • hace 1d</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Pago pendiente</p>
-                  <p className="text-xs text-muted-foreground">Consulting LLC • hace 2d</p>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>

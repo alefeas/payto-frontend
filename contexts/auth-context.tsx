@@ -11,31 +11,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is authenticated on mount
-    const checkAuth = () => {
-      if (typeof window !== 'undefined') {
-        const authenticated = localStorage.getItem('isAuthenticated') === 'true'
-        if (authenticated) {
-          const userData = {
-            email: localStorage.getItem('userEmail') || '',
-            name: localStorage.getItem('userName') || 'Usuario',
-            phone: localStorage.getItem('userPhone') || '',
-            bio: localStorage.getItem('userBio') || '',
-            country: localStorage.getItem('userCountry') || '',
-            timezone: localStorage.getItem('userTimezone') || ''
-          }
-          setUser(userData)
-          setIsAuthenticated(true)
+    if (typeof window !== 'undefined') {
+      const authenticated = localStorage.getItem('isAuthenticated') === 'true'
+      if (authenticated) {
+        const userData = {
+          email: localStorage.getItem('userEmail') || '',
+          name: localStorage.getItem('userName') || 'Usuario',
+          phone: localStorage.getItem('userPhone') || '',
+          bio: localStorage.getItem('userBio') || '',
+          country: localStorage.getItem('userCountry') || '',
+          timezone: localStorage.getItem('userTimezone') || ''
         }
+        setUser(userData)
+        setIsAuthenticated(true)
       }
-      setIsLoading(false)
     }
-
-    checkAuth()
+    setIsLoading(false)
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulación temporal - cualquier email/password funciona
     if (email && password) {
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('userEmail', email)
@@ -57,20 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    // Simulación temporal
     if (name && email && password) {
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('userEmail', email)
       localStorage.setItem('userName', name)
       
-      const userData = {
-        email,
-        name,
-        phone: '',
-        bio: '',
-        country: '',
-        timezone: ''
-      }
+      const userData = { email, name, phone: '', bio: '', country: '', timezone: '' }
       
       setUser(userData)
       setIsAuthenticated(true)
@@ -84,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const updatedUser = { ...user, ...profileData }
     
-    // Update localStorage
     localStorage.setItem('userName', updatedUser.name)
     localStorage.setItem('userEmail', updatedUser.email)
     if (updatedUser.phone) localStorage.setItem('userPhone', updatedUser.phone)

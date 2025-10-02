@@ -29,3 +29,11 @@ export interface InviteCode {
   createdBy: string
   expiresAt?: string
 }
+
+export interface Activity {
+  id: number
+  type: 'invoice_created' | 'member_joined' | 'payment_pending' | 'payment_received' | 'company_created'
+  message: string
+  companyName: string
+  timestamp: string
+}

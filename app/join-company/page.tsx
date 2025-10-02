@@ -32,62 +32,44 @@ export default function JoinCompanyPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!inviteCode.trim()) return
     
     setIsSearching(true)
     
-    // Simular búsqueda de código de invitación en servidor
     const invite = mockInvites.find(i => i.inviteCode.toUpperCase() === inviteCode.toUpperCase())
     
     if (invite) {
       setFoundCompany(invite)
     } else {
       setFoundCompany(null)
-      toast.error('Código de invitación inválido', {
-        description: 'Verifica que el código sea correcto o contacta al administrador'
-      })
+      toast.error('Código de invitación inválido')
     }
     
     setIsSearching(false)
   }
 
-  const handleJoin = async () => {
+  const handleJoin = () => {
     if (!foundCompany) return
     
     setIsJoining(true)
     
-    // Simular solicitud de unión con rol automático
     toast.success(`Te has unido a "${foundCompany.companyName}"`, {
       description: `Rol asignado: ${foundCompany.role}`,
-      duration: 4000,
     })
     
     setIsJoining(false)
     router.push('/dashboard')
   }
 
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-48 mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    )
-  }
+  if (authLoading) return null
+  if (!isAuthenticated) return null
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => router.push('/dashboard')}
-          >
+          <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -95,8 +77,6 @@ export default function JoinCompanyPage() {
             <p className="text-muted-foreground">Ingresa el código de invitación</p>
           </div>
         </div>
-
-        {/* Search Form */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -129,7 +109,7 @@ export default function JoinCompanyPage() {
 
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-800">
-                <strong>💡 Tip:</strong> El código de invitación es diferente al ID de la empresa. Solo el administrador puede generarlo y compartirlo.
+                <strong>💡 Cómo funciona:</strong> Cada código de invitación tiene un rol predefinido. Al usarlo, obtienes ese rol automáticamente en la empresa.
               </p>
             </div>
           </CardContent>

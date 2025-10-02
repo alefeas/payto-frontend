@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { User, Building, MapPin, Clock, Save, ArrowLeft } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -76,7 +77,7 @@ export default function ProfilePage() {
     setIsSaving(true)
     
     if (await updateProfile(formData)) {
-      alert('Perfil actualizado correctamente')
+      toast.success('Perfil actualizado correctamente')
     }
     setIsSaving(false)
   }
