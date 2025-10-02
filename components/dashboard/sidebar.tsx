@@ -5,12 +5,43 @@ import { Building2, Plus, UserPlus, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Company } from "@/types"
 
 // Mock companies data
-const mockCompanies = [
-  { id: 1, name: "TechCorp SA", role: "Administrador", status: "active", unreadNotifications: 3 },
-  { id: 2, name: "StartupXYZ", role: "Contador", status: "active", unreadNotifications: 0 },
-  { id: 3, name: "Consulting LLC", role: "Miembro", status: "pending", unreadNotifications: 1 },
+const mockCompanies: Company[] = [
+  { 
+    id: 1, 
+    name: "TechCorp SA", 
+    uniqueId: "TC8X9K2L",
+    inviteCode: "ADMIN-TECH-2024", // Código para Administrador
+    role: "Administrador", 
+    status: "active", 
+    unreadNotifications: 3,
+    createdAt: "2024-01-15",
+    memberCount: 12
+  },
+  { 
+    id: 2, 
+    name: "StartupXYZ", 
+    uniqueId: "SU4P7M9N",
+    inviteCode: "COUNT-START-2024", // Código para Contador
+    role: "Contador", 
+    status: "active", 
+    unreadNotifications: 0,
+    createdAt: "2024-02-20",
+    memberCount: 5
+  },
+  { 
+    id: 3, 
+    name: "Consulting LLC", 
+    uniqueId: "CL1Q3R8T",
+    inviteCode: "MEMBER-CONSULT-2024", // Código para Miembro
+    role: "Miembro", 
+    status: "active", 
+    unreadNotifications: 1,
+    createdAt: "2024-03-10",
+    memberCount: 8
+  },
 ]
 
 export function DashboardSidebar() {
@@ -29,11 +60,20 @@ export function DashboardSidebar() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button className="w-full justify-start" size="sm">
+            <Button 
+              className="w-full justify-start" 
+              size="sm"
+              onClick={() => window.location.href = '/create-company'}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Crear Empresa
             </Button>
-            <Button variant="outline" className="w-full justify-start" size="sm">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              size="sm"
+              onClick={() => window.location.href = '/join-company'}
+            >
               <UserPlus className="h-4 w-4 mr-2" />
               Unirse a Empresa
             </Button>
@@ -59,7 +99,10 @@ export function DashboardSidebar() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Crea tu primera empresa o solicita unirte a una existente
                 </p>
-                <Button size="sm">
+                <Button 
+                  size="sm"
+                  onClick={() => window.location.href = '/create-company'}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Primera Empresa
                 </Button>
@@ -78,6 +121,7 @@ export function DashboardSidebar() {
                       <div>
                         <p className="font-medium text-sm">{company.name}</p>
                         <p className="text-xs text-muted-foreground">{company.role}</p>
+                        <p className="text-xs font-mono text-muted-foreground">ID: {company.uniqueId}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -95,44 +139,42 @@ export function DashboardSidebar() {
           </CardContent>
         </Card>
 
-        {/* Pending Invitations */}
-        {companies.some(c => c.status === 'pending') && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Invitaciones Pendientes</CardTitle>
-              <CardDescription>
-                Solicitudes para unirte a empresas
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {companies
-                .filter(c => c.status === 'pending')
-                .map((company) => (
-                  <div key={company.id} className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-yellow-50 border-yellow-200">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-8 w-8 rounded-lg bg-yellow-100 flex items-center justify-center">
-                          <Building2 className="h-4 w-4 text-yellow-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{company.name}</p>
-                          <p className="text-xs text-muted-foreground">Como {company.role}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 px-3">
-                      <Button size="sm" variant="outline" className="flex-1 h-8 text-xs">
-                        Rechazar
-                      </Button>
-                      <Button size="sm" className="flex-1 h-8 text-xs">
-                        Aceptar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
-        )}
+        {/* Actividad Reciente */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Actividad Reciente</CardTitle>
+            <CardDescription>
+              Últimas acciones en tus empresas
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Factura creada</p>
+                  <p className="text-xs text-muted-foreground">TechCorp SA • hace 2h</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Nuevo miembro</p>
+                  <p className="text-xs text-muted-foreground">StartupXYZ • hace 1d</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Pago pendiente</p>
+                  <p className="text-xs text-muted-foreground">Consulting LLC • hace 2d</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
       </div>
     </aside>
   )

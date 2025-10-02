@@ -14,9 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
+import { Notification } from "@/types"
 
 // Mock notifications data
-const mockNotifications = [
+const mockNotifications: Notification[] = [
   { id: 1, message: "Nueva factura recibida de Empresa ABC", time: "Hace 5 min" },
   { id: 2, message: "Solicitud de conexión empresarial", time: "Hace 1 hora" },
   { id: 3, message: "Factura #001 ha sido procesada", time: "Hace 2 horas" },
