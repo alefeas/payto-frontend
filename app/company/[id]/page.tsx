@@ -130,10 +130,11 @@ export default function CompanyPage() {
 
   const additionalItems = [
     {
-      title: "Gestión de Clientes",
-      description: "Administrar base de datos de clientes",
+      title: "Red Empresarial",
+      description: "Conectar con otras empresas",
       icon: Users,
-      color: "bg-pink-500"
+      color: "bg-pink-500",
+      action: () => router.push(`/company/${company?.uniqueId}/network`)
     },
     {
       title: "Plantillas de Factura",
@@ -279,7 +280,11 @@ export default function CompanyPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {additionalItems.map((item, index) => (
-                <Card key={index} className="cursor-pointer hover:shadow-sm transition-shadow">
+                <Card 
+                  key={index} 
+                  className="cursor-pointer hover:shadow-sm transition-shadow"
+                  onClick={item.action}
+                >
                   <CardContent className="p-4">
                     <div className="flex flex-col items-center text-center space-y-3">
                       <div className={`p-2 rounded-lg ${item.color}`}>
