@@ -32,6 +32,7 @@ export default function CreateInvoicePage() {
     currency: 'ARS' as Currency,
     notes: ''
   })
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
 
   const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([
     { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }
@@ -113,6 +114,11 @@ export default function CreateInvoicePage() {
     
     if (!formData.receiverCompanyId || !formData.dueDate) {
       toast.error('Complete todos los campos requeridos')
+      return
+    }
+
+    if (!pdfFile) {
+      toast.error('Debe adjuntar el archivo PDF de la factura')
       return
     }
 
@@ -435,19 +441,30 @@ export default function CreateInvoicePage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="pdf">Archivo PDF (Opcional)</Label>
+                <Label htmlFor="pdf">Archivo PDF de la Factura *</Label>
                 <div className="flex items-center gap-2">
-                  <Input id="pdf" type="file" accept=".pdf" />
-                  <Button type="button" variant="outline" size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Subir
-                  </Button>
+                  <Input 
+                    id="pdf" 
+                    type="file" 
+                    accept=".pdf" 
+                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                    className="flex-1"
+                  />
+                  <Upload className="h-4 w-4 text-muted-foreground" />
                 </div>
+                {pdfFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Archivo: {pdfFile.name}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  El PDF es necesario para que el cliente pueda verificar los datos de la factura
+                </p>
               </div>
               
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-blue-800">
-                  <strong>📝 Recordatorio:</strong> Las percepciones se aplican sobre el total (subtotal + IVA) y varían según la jurisdicción del cliente.
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-800">
+                  <strong>⚠️ Importante:</strong> El PDF de la factura es obligatorio para permitir al cliente verificar todos los datos antes del pago.
                 </p>
               </div>
             </CardContent>

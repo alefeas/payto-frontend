@@ -70,5 +70,5 @@ export interface CreateInvoiceData {
   currency: Currency
   items: Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]
   notes?: string
-  pdfFile?: File
+  pdfFile: File
 }

@@ -168,11 +168,19 @@ export default function CompanyPage() {
             <p className="text-muted-foreground">Tu rol: {company.role} • ID: {company.uniqueId}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => router.push(`/company/${company?.uniqueId}/members`)}
+            >
               <Users className="h-4 w-4 mr-2" />
               {company.memberCount} miembros
             </Button>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => router.push(`/company/${company?.uniqueId}/settings`)}
+            >
               <Settings className="h-4 w-4 mr-2" />
               Configurar
             </Button>
