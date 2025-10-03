@@ -365,17 +365,12 @@ export default function ApproveInvoicesPage() {
                       <div className="text-sm text-muted-foreground">
                         {invoice.issuerCompany} • {new Date(invoice.issueDate).toLocaleDateString()}
                       </div>
-                      {invoice.rejectionReason && (
-                        <div className="text-sm text-red-600">
-                          Motivo: {invoice.rejectionReason}
-                        </div>
-                      )}
+
                     </div>
                     <div className="text-right">
                       <p className="font-bold">${invoice.total.toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">
-                        {invoice.approvedAt && new Date(invoice.approvedAt).toLocaleDateString()}
-                        {invoice.processedAt && new Date(invoice.processedAt).toLocaleDateString()}
+                        Enviada: {new Date(invoice.sentAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

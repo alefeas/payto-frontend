@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Plus, Trash2, Upload, Calculator } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -53,11 +53,7 @@ export default function CreateInvoicePage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  useEffect(() => {
-    calculateTotals()
-  }, [items, perceptions])
-
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
     const totalTaxes = items.reduce((sum, item) => {
       const itemSubtotal = item.quantity * item.unitPrice
@@ -77,7 +73,11 @@ export default function CreateInvoicePage() {
       totalPerceptions,
       total: subtotal + totalTaxes + totalPerceptions
     })
-  }
+  }, [items, perceptions])
+
+  useEffect(() => {
+    calculateTotals()
+  }, [items, perceptions, calculateTotals])
 
   const addItem = () => {
     setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }])

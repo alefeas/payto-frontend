@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Download, Calendar, Building2, FileText, Calculator, Mail, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/contexts/auth-context"
@@ -218,7 +218,7 @@ export default function InvoiceDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {invoice.items.map((item, index) => (
+              {invoice.items.map((item) => (
                 <div key={item.id} className="border rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                     <div className="md:col-span-2">

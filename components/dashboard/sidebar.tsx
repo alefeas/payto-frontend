@@ -6,13 +6,23 @@ import { Building2, Plus, UserPlus, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Company } from "@/types"
+interface SidebarCompany {
+  id: number
+  nombre: string
+  uniqueId: string
+  inviteCode: string
+  role: string
+  status: string
+  unreadNotifications: number
+  createdAt: string
+  memberCount: number
+}
 
 // Mock companies data
-const mockCompanies: Company[] = [
+const mockCompanies: SidebarCompany[] = [
   { 
     id: 1, 
-    name: "TechCorp SA", 
+    nombre: "TechCorp SA", 
     uniqueId: "TC8X9K2L",
     inviteCode: "ADMIN-TECH-2024", // Código para Administrador
     role: "Administrador", 
@@ -23,7 +33,7 @@ const mockCompanies: Company[] = [
   },
   { 
     id: 2, 
-    name: "StartupXYZ", 
+    nombre: "StartupXYZ", 
     uniqueId: "SU4P7M9N",
     inviteCode: "COUNT-START-2024", // Código para Contador
     role: "Contador", 
@@ -34,7 +44,7 @@ const mockCompanies: Company[] = [
   },
   { 
     id: 3, 
-    name: "Consulting LLC", 
+    nombre: "Consulting LLC", 
     uniqueId: "CL1Q3R8T",
     inviteCode: "MEMBER-CONSULT-2024", // Código para Miembro
     role: "Miembro", 
@@ -122,7 +132,7 @@ export function DashboardSidebar() {
                         <Building2 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{company.name}</p>
+                        <p className="font-medium text-sm">{company.nombre}</p>
                         <p className="text-xs text-muted-foreground">{company.role}</p>
                         <p className="text-xs font-mono text-muted-foreground">ID: {company.uniqueId}</p>
                       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Plus, Trash2, CreditCard, FileText, Calculator } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -85,12 +85,6 @@ export default function PaymentsPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  useEffect(() => {
-    if (selectedInvoices.length > 0) {
-      calculateTotals()
-    }
-  }, [selectedInvoices, retentions])
-
   // Función para calcular la base correcta según tipo de retención
   const getRetentionBase = (type: RetentionType, invoices: typeof mockPendingInvoices) => {
     const totalSubtotal = invoices.reduce((sum, inv) => sum + inv.subtotal, 0)
@@ -108,7 +102,7 @@ export default function PaymentsPage() {
     }
   }
 
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     if (selectedInvoices.length === 0) return
 
     const selectedInvoiceData = mockPendingInvoices.filter(inv => selectedInvoices.includes(inv.id))
@@ -125,7 +119,13 @@ export default function PaymentsPage() {
       totalRetentions,
       netAmount: originalAmount - totalRetentions
     })
-  }
+  }, [selectedInvoices, retentions])
+
+  useEffect(() => {
+    if (selectedInvoices.length > 0) {
+      calculateTotals()
+    }
+  }, [selectedInvoices, retentions, calculateTotals])
 
   const addRetention = () => {
     setRetentions([...retentions, { 
@@ -242,7 +242,7 @@ export default function PaymentsPage() {
     // Validar certificados de retención obligatorios
     const invalidRetentions = retentions.filter(ret => 
       ['retencion_ganancias', 'retencion_iibb', 'retencion_suss'].includes(ret.type) && 
-      !ret.certificateNumber.trim()
+      !ret.certificateNumber?.trim()
     )
     
     if (invalidRetentions.length > 0) {
@@ -300,7 +300,7 @@ export default function PaymentsPage() {
     }
 
     // Notificar al proveedor
-    const notificationResult = mockNotifyProvider()
+    mockNotifyProvider()
     
     // Éxito
     const invoiceCount = selectedInvoices.length
@@ -726,7 +726,7 @@ export default function PaymentsPage() {
                             }
                             value={retention.certificateNumber}
                             onChange={(e) => updateRetention(index, 'certificateNumber', e.target.value)}
-                            className={['retencion_ganancias', 'retencion_iibb', 'retencion_suss'].includes(retention.type) && !retention.certificateNumber.trim()
+                            className={['retencion_ganancias', 'retencion_iibb', 'retencion_suss'].includes(retention.type) && !retention.certificateNumber?.trim()
                               ? "border-red-300 focus:border-red-500"
                               : ""
                             }

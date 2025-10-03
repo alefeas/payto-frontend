@@ -24,6 +24,12 @@ export default function CreateCompanyPage() {
     codigoEliminador: ''
   })
   const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [bankData, setBankData] = useState({
+    bankName: '',
+    accountType: '',
+    cbu: '',
+    alias: ''
+  })
   const [isLoading, setIsLoading] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -179,6 +185,62 @@ export default function CreateCompanyPage() {
                 <p className="text-xs text-muted-foreground">
                   Este código será requerido para eliminar la empresa permanentemente. Guárdalo en un lugar seguro.
                 </p>
+              </div>
+
+              {/* Datos Bancarios Opcionales */}
+              <div className="border-t pt-6 mt-6">
+                <h3 className="text-lg font-medium mb-2">Datos Bancarios (Opcional)</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Configura una cuenta bancaria para recibir pagos. Puedes agregar más cuentas después.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Banco</Label>
+                    <Input
+                      id="bankName"
+                      placeholder="Ej: Banco Santander"
+                      value={bankData.bankName}
+                      onChange={(e) => setBankData({...bankData, bankName: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountType">Tipo de Cuenta</Label>
+                    <select
+                      id="accountType"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={bankData.accountType}
+                      onChange={(e) => setBankData({...bankData, accountType: e.target.value})}
+                    >
+                      <option value="">Seleccionar tipo</option>
+                      <option value="corriente">Cuenta Corriente</option>
+                      <option value="caja_ahorro">Caja de Ahorro</option>
+                      <option value="cuenta_sueldo">Cuenta Sueldo</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="cbu">CBU</Label>
+                    <Input
+                      id="cbu"
+                      placeholder="0170001540000001234567"
+                      maxLength={22}
+                      value={bankData.cbu}
+                      onChange={(e) => setBankData({...bankData, cbu: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="alias">Alias (Opcional)</Label>
+                    <Input
+                      id="alias"
+                      placeholder="MI.EMPRESA.MP"
+                      value={bankData.alias}
+                      onChange={(e) => setBankData({...bankData, alias: e.target.value})}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">

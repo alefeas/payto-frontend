@@ -258,7 +258,7 @@ export default function NetworkPage() {
                             </p>
                             {request.message && (
                               <p className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-700">
-                                "{request.message}"
+                                &ldquo;{request.message}&rdquo;
                               </p>
                             )}
                           </div>

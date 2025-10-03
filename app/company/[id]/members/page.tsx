@@ -62,7 +62,7 @@ const mockMembers: CompanyMember[] = [
 ]
 
 export default function MembersPage() {
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
   const companyId = params.id as string

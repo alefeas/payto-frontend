@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, FileText, Clock, Users, Calendar, BarChart3, PieChart, Activity } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, FileText, Clock, Users, BarChart3, PieChart, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/auth-context"
 import type { Invoice } from "@/types/invoice"
 import type { Payment } from "@/types/payment"
@@ -16,59 +16,68 @@ const mockInvoices: Invoice[] = [
   {
     id: "1",
     number: "FC-001-00000123",
+    type: "A",
     issuerCompanyId: "comp-1",
-    issuerCompanyName: "Mi Empresa",
-    clientCompanyId: "comp-2", 
-    clientCompanyName: "TechCorp SA",
+    receiverCompanyId: "comp-2",
     issueDate: "2024-01-15",
     dueDate: "2024-02-15",
+    currency: "ARS",
     subtotal: 100000,
-    totalTax: 21000,
+    totalTaxes: 21000,
     totalPerceptions: 0,
     total: 121000,
-    status: "paid",
+    status: "pagada",
     items: [],
     taxes: [],
     perceptions: [],
-    createdAt: "2024-01-15T10:00:00Z"
+    approvalsRequired: 2,
+    approvalsReceived: 2,
+    createdAt: "2024-01-15T10:00:00Z",
+    updatedAt: "2024-01-15T10:00:00Z"
   },
   {
     id: "2", 
     number: "FC-001-00000124",
+    type: "B",
     issuerCompanyId: "comp-1",
-    issuerCompanyName: "Mi Empresa",
-    clientCompanyId: "comp-3",
-    clientCompanyName: "Consulting LLC", 
+    receiverCompanyId: "comp-3",
     issueDate: "2024-01-20",
     dueDate: "2024-02-20",
+    currency: "ARS",
     subtotal: 85000,
-    totalTax: 17850,
+    totalTaxes: 17850,
     totalPerceptions: 0,
     total: 102850,
-    status: "pending",
+    status: "pendiente_aprobacion",
     items: [],
     taxes: [],
     perceptions: [],
-    createdAt: "2024-01-20T14:30:00Z"
+    approvalsRequired: 2,
+    approvalsReceived: 0,
+    createdAt: "2024-01-20T14:30:00Z",
+    updatedAt: "2024-01-20T14:30:00Z"
   },
   {
     id: "3",
     number: "FC-001-00000125", 
+    type: "C",
     issuerCompanyId: "comp-2",
-    issuerCompanyName: "TechCorp SA",
-    clientCompanyId: "comp-1",
-    clientCompanyName: "Mi Empresa",
+    receiverCompanyId: "comp-1",
     issueDate: "2024-01-10",
     dueDate: "2024-02-10",
+    currency: "ARS",
     subtotal: 50000,
-    totalTax: 10500,
+    totalTaxes: 10500,
     totalPerceptions: 0,
     total: 60500,
-    status: "approved",
+    status: "aprobada",
     items: [],
     taxes: [],
     perceptions: [],
-    createdAt: "2024-01-10T09:15:00Z"
+    approvalsRequired: 2,
+    approvalsReceived: 2,
+    createdAt: "2024-01-10T09:15:00Z",
+    updatedAt: "2024-01-10T09:15:00Z"
   }
 ]
 
@@ -130,7 +139,7 @@ export default function AnalyticsPage() {
     const periodIssuedInvoices = issuedInvoices.filter(inv => filterByPeriod(inv.issueDate))
     
     // Facturas recibidas (gastos)
-    const receivedInvoices = invoices.filter(inv => inv.clientCompanyId === companyId)
+    const receivedInvoices = invoices.filter(inv => inv.receiverCompanyId === companyId)
     const periodReceivedInvoices = receivedInvoices.filter(inv => filterByPeriod(inv.issueDate))
 
     // Pagos realizados y recibidos
@@ -147,27 +156,27 @@ export default function AnalyticsPage() {
       totalRevenue: periodIssuedInvoices.reduce((sum, inv) => sum + inv.total, 0),
       paidRevenue: receivedPayments.reduce((sum, pay) => sum + pay.netAmount, 0),
       pendingRevenue: periodIssuedInvoices
-        .filter(inv => inv.status === "pending" || inv.status === "approved")
+        .filter(inv => inv.status === "pendiente_aprobacion" || inv.status === "aprobada")
         .reduce((sum, inv) => sum + inv.total, 0),
       
       // Gastos
       totalExpenses: periodReceivedInvoices.reduce((sum, inv) => sum + inv.total, 0),
       paidExpenses: madePayments.reduce((sum, pay) => sum + pay.originalAmount, 0),
       pendingExpenses: periodReceivedInvoices
-        .filter(inv => inv.status === "pending" || inv.status === "approved")
+        .filter(inv => inv.status === "pendiente_aprobacion" || inv.status === "aprobada")
         .reduce((sum, inv) => sum + inv.total, 0),
 
       // Contadores
       issuedCount: periodIssuedInvoices.length,
       receivedCount: periodReceivedInvoices.length,
       paidInvoicesCount: receivedPayments.length,
-      pendingInvoicesCount: periodIssuedInvoices.filter(inv => inv.status === "pending").length,
+      pendingInvoicesCount: periodIssuedInvoices.filter(inv => inv.status === "pendiente_aprobacion").length,
       
       // Retenciones
       totalRetentions: receivedPayments.reduce((sum, pay) => sum + pay.totalRetentions, 0),
       
       // Clientes únicos
-      uniqueClients: new Set(periodIssuedInvoices.map(inv => inv.clientCompanyId)).size,
+      uniqueClients: new Set(periodIssuedInvoices.map(inv => inv.receiverCompanyId)).size,
       uniqueProviders: new Set(periodReceivedInvoices.map(inv => inv.issuerCompanyId)).size,
 
       // Promedio de días de pago
