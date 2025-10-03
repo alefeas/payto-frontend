@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation"
 import { 
   ArrowLeft, 
   FileText, 
-  Send, 
   Eye, 
   CreditCard, 
   BarChart3, 
@@ -91,13 +90,6 @@ export default function CompanyPage() {
       icon: FileText,
       color: "bg-blue-500",
       action: () => router.push(`/company/${company?.uniqueId}/create-invoice`)
-    },
-    {
-      title: "Enviar Factura",
-      description: "Facilitar carga a clientes (proveedores)",
-      icon: Send,
-      color: "bg-green-500",
-      action: () => router.push(`/company/${company?.uniqueId}/send-invoice`)
     },
     {
       title: "Ver Facturas",

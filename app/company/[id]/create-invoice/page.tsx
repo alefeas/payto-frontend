@@ -121,9 +121,16 @@ export default function CreateInvoicePage() {
       return
     }
 
-    toast.success('Factura creada exitosamente', {
+    toast.success('Factura creada y enviada exitosamente', {
       description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
     })
+    
+    // Notificación adicional sobre el envío
+    setTimeout(() => {
+      toast.info('Cliente notificado por email', {
+        description: 'Se envió la factura automáticamente'
+      })
+    }, 1500)
     
     router.push(`/company/${companyId}`)
   }
@@ -446,10 +453,29 @@ export default function CreateInvoicePage() {
             </CardContent>
           </Card>
 
+          {/* Notificación de Envío */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="p-1 bg-blue-100 rounded-full mt-0.5">
+                <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800">
+                  📧 Envío Automático
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Al crear la factura, se enviará automáticamente por email al cliente y se generará una notificación en el sistema.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Acciones */}
           <div className="flex gap-4">
             <Button type="submit" className="flex-1">
-              Crear Factura
+              Crear y Enviar Factura
             </Button>
             <Button 
               type="button" 
