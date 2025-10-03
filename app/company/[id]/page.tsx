@@ -9,7 +9,6 @@ import {
   Eye, 
   CreditCard, 
   BarChart3, 
-  Search,
   Plus,
   Users,
   Settings,
@@ -103,7 +102,7 @@ export default function CompanyPage() {
     {
       title: "Ver Facturas",
       description: "Gestionar todas las facturas",
-      icon: Eye,
+      icon: FileText,
       color: "bg-purple-500",
       action: () => router.push(`/company/${company?.uniqueId}/invoices`)
     },
@@ -115,18 +114,18 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company?.uniqueId}/payments`)
     },
     {
+      title: "Confirmar Pagos",
+      description: "Revisar pagos recibidos",
+      icon: Eye,
+      color: "bg-yellow-500",
+      action: () => router.push(`/company/${company?.uniqueId}/confirm-payments`)
+    },
+    {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
       icon: BarChart3,
       color: "bg-indigo-500",
       action: () => router.push(`/company/${company?.uniqueId}/analytics`)
-    },
-    {
-      title: "Buscar & Filtrar",
-      description: "Encontrar facturas específicas",
-      icon: Search,
-      color: "bg-teal-500",
-      action: () => router.push(`/company/${company?.uniqueId}/search`)
     }
   ]
 

@@ -6,6 +6,12 @@ export type RetentionType =
   | 'retencion_iibb' 
   | 'retencion_suss'
 
+export type PaymentStatus = 
+  | 'declared'     // Cliente declara que pagó
+  | 'confirmed'    // Proveedor confirmó recepción  
+  | 'rejected'     // Proveedor rechazó el pago
+  | 'partial'      // Pago parcial o con diferencias
+
 export interface PaymentRetention {
   id: string
   type: RetentionType
@@ -18,7 +24,9 @@ export interface PaymentRetention {
 
 export interface Payment {
   id: string
-  invoiceId: string
+  invoiceIds: string[]
+  payerCompanyId: string
+  payerCompanyName: string
   paymentDate: string
   method: PaymentMethod
   originalAmount: number
@@ -27,6 +35,10 @@ export interface Payment {
   netAmount: number
   reference?: string
   notes?: string
+  status: PaymentStatus
+  rejectionReason?: string
+  confirmedAt?: string
+  confirmedBy?: string
   createdAt: string
 }
 
