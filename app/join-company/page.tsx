@@ -19,7 +19,7 @@ const mockInvites = [
 
 export default function JoinCompanyPage() {
   const [inviteCode, setInviteCode] = useState('')
-  const [foundCompany, setFoundCompany] = useState<any>(null)
+  const [foundCompany, setFoundCompany] = useState<typeof mockInvites[0] | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()

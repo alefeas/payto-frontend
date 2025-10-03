@@ -49,7 +49,7 @@ const mockCompanies = [
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const [companies] = useState(mockCompanies)
-  const [tasks, setTasks] = useState([])
+  const [tasks, setTasks] = useState<Array<{id: number, text: string, completed: boolean}>>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -216,22 +216,24 @@ export default function DashboardPage() {
                     placeholder="Nueva tarea..."
                     className="flex-1 px-3 py-2 text-sm border rounded-md"
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter' && e.target.value.trim()) {
+                      const target = e.target as HTMLInputElement
+                      if (e.key === 'Enter' && target.value.trim()) {
                         const newTask = {
                           id: Date.now(),
-                          text: e.target.value.trim(),
+                          text: target.value.trim(),
                           completed: false
                         }
                         setTasks([...tasks, newTask])
-                        e.target.value = ''
+                        target.value = ''
                       }
                     }}
                   />
                   <button 
                     className="px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
                     onClick={(e) => {
-                      const input = e.target.parentElement.querySelector('input')
-                      if (input.value.trim()) {
+                      const button = e.target as HTMLButtonElement
+                      const input = button.parentElement?.querySelector('input') as HTMLInputElement
+                      if (input?.value.trim()) {
                         const newTask = {
                           id: Date.now(),
                           text: input.value.trim(),
