@@ -96,12 +96,18 @@ export default function ConfirmPaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  const openConfirmModal = (payment: Payment) => {
+    setSelectedPayment(payment)
+    setShowConfirmModal(true)
+  }
 
   const confirmPayment = (paymentId: string) => {
     setPayments(prev => prev.map(payment => 
@@ -119,6 +125,9 @@ export default function ConfirmPaymentsPage() {
     toast.success('Pago confirmado exitosamente', {
       description: `${payment?.payerCompanyName} - $${payment?.netAmount.toLocaleString()}`
     })
+    
+    setShowConfirmModal(false)
+    setSelectedPayment(null)
   }
 
   const rejectPayment = (paymentId: string, reason: string) => {
@@ -274,7 +283,7 @@ export default function ConfirmPaymentsPage() {
                     {/* Acciones */}
                     <div className="flex gap-3 pt-2">
                       <Button 
-                        onClick={() => confirmPayment(payment.id)}
+                        onClick={() => openConfirmModal(payment)}
                         className="flex-1"
                       >
                         <Check className="h-4 w-4 mr-2" />
@@ -335,6 +344,54 @@ export default function ConfirmPaymentsPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Modal de Confirmación */}
+        {showConfirmModal && selectedPayment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="text-green-700">Confirmar Pago Recibido</CardTitle>
+                <CardDescription>
+                  {selectedPayment.payerCompanyName} - ${selectedPayment.netAmount.toLocaleString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>✓ Confirmar:</strong> El dinero fue recibido en su cuenta bancaria. 
+                    Esta acción marcará el pago como confirmado.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Facturas: {selectedPayment.invoiceIds.join(", ")}</p>
+                  <p className="text-sm text-muted-foreground">Fecha: {new Date(selectedPayment.paymentDate).toLocaleDateString()}</p>
+                  <p className="text-sm text-muted-foreground">Método: {selectedPayment.method}</p>
+                  {selectedPayment.reference && (
+                    <p className="text-sm text-muted-foreground">Referencia: {selectedPayment.reference}</p>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowConfirmModal(false)
+                      setSelectedPayment(null)
+                    }}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={() => confirmPayment(selectedPayment.id)}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    Confirmar Pago
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Modal de Rechazo */}
