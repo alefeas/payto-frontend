@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import type { PaymentMethod, PaymentRetention, RetentionType } from "@/types/payment"
 
-// Mock facturas pendientes con datos bancarios y desglose fiscal
+// Mock facturas aprobadas listas para pago
 const mockPendingInvoices = [
   {
     id: "1",

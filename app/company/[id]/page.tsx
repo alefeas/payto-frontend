@@ -113,6 +113,13 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company?.uniqueId}/confirm-payments`)
     },
     {
+      title: "Aprobar Facturas",
+      description: "Revisar facturas de proveedores",
+      icon: FileText,
+      color: "bg-purple-500",
+      action: () => router.push(`/company/${company?.uniqueId}/approve-invoices`)
+    },
+    {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
       icon: BarChart3,
