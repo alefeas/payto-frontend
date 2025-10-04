@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Download, Calendar, Building2, FileText, Calculator, Mail, CheckCircle } from "lucide-react"
+import { ArrowLeft, Download, Calendar, Building2, FileText, Calculator, Mail, CheckCircle, FileDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ const mockInvoiceDetails = {
     issueDate: "2024-01-15",
     dueDate: "2024-02-15",
     currency: "ARS",
-    status: "enviada",
+    status: "emitida",
     paymentStatus: "pendiente",
     items: [
       {
@@ -52,7 +52,7 @@ const mockInvoiceDetails = {
     issueDate: "2024-01-20",
     dueDate: "2024-02-20",
     currency: "ARS",
-    status: "enviada",
+    status: "emitida",
     paymentStatus: "pendiente",
     items: [
       {
@@ -76,7 +76,7 @@ const mockInvoiceDetails = {
   }
 }
 
-type InvoiceStatus = "enviada" | "aprobada"
+type InvoiceStatus = "emitida" | "aprobada"
 type PaymentStatus = "pendiente" | "pagada" | "vencida" | "parcial"
 
 export default function InvoiceDetailsPage() {
@@ -96,8 +96,8 @@ export default function InvoiceDetailsPage() {
 
   const getStatusBadge = (status: InvoiceStatus) => {
     switch (status) {
-      case 'enviada':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Enviada</Badge>
+      case 'emitida':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Emitida</Badge>
       case 'aprobada':
         return <Badge variant="secondary" className="bg-green-100 text-green-800">Aprobada</Badge>
     }
@@ -150,10 +150,20 @@ export default function InvoiceDetailsPage() {
             <h1 className="text-3xl font-bold">{invoice.number}</h1>
             <p className="text-muted-foreground">Detalles de la factura</p>
           </div>
-          <Button onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Descargar PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Descargar PDF
+            </Button>
+            <Button variant="outline" onClick={() => {
+              toast.success('Descarga iniciada', {
+                description: `TXT para AFIP/ARCA de ${invoice?.number}`
+              })
+            }}>
+              <FileDown className="h-4 w-4 mr-2" />
+              TXT AFIP
+            </Button>
+          </div>
         </div>
 
         {/* Invoice Header Info */}
@@ -295,6 +305,57 @@ export default function InvoiceDetailsPage() {
           </CardContent>
         </Card>
 
+        {/* Archivos Generados */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Archivos Generados Automáticamente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileText className="h-5 w-5 text-red-600" />
+                  <div>
+                    <p className="font-medium">PDF de Factura</p>
+                    <p className="text-xs text-muted-foreground">Formato oficial para cliente</p>
+                  </div>
+                </div>
+                <Button size="sm" onClick={handleDownload} className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar PDF
+                </Button>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileDown className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium">Archivo TXT AFIP</p>
+                    <p className="text-xs text-muted-foreground">Para subir a ARCA/AFIP</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => {
+                  toast.success('Descarga iniciada', {
+                    description: `TXT para AFIP/ARCA de ${invoice?.number}`
+                  })
+                }} className="w-full">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Descargar TXT
+                </Button>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                🤖 <strong>Generación Automática:</strong> Ambos archivos se generaron automáticamente al crear la factura. El PDF se envió por email al cliente y el TXT está listo para subir a AFIP/ARCA.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Sending Info */}
         <Card>
           <CardHeader>
@@ -317,7 +378,7 @@ export default function InvoiceDetailsPage() {
               </div>
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  ✅ La factura fue enviada automáticamente por email al cliente
+                  ✅ La factura fue enviada automáticamente por email al cliente con PDF adjunto
                 </p>
               </div>
             </div>

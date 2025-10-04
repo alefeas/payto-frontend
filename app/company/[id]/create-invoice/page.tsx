@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Upload, Calculator } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Calculator, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,7 +32,7 @@ export default function CreateInvoicePage() {
     currency: 'ARS' as Currency,
     notes: ''
   })
-  const [pdfFile, setPdfFile] = useState<File | null>(null)
+
 
   const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([
     { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }
@@ -57,7 +57,9 @@ export default function CreateInvoicePage() {
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
     const totalTaxes = items.reduce((sum, item) => {
       const itemSubtotal = item.quantity * item.unitPrice
-      const taxAmount = itemSubtotal * (item.taxRate || 0) / 100
+      // Exento (-1) y No Gravado (-2) no pagan IVA
+      const taxRate = (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
+      const taxAmount = itemSubtotal * taxRate / 100
       return sum + taxAmount
     }, 0)
     
@@ -117,26 +119,37 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (!pdfFile) {
-      toast.error('Debe adjuntar el archivo PDF de la factura')
-      return
-    }
+
 
     if (items.some(item => !item.description || item.quantity <= 0 || item.unitPrice <= 0)) {
       toast.error('Complete todos los ítems correctamente')
       return
     }
 
-    toast.success('Factura creada y enviada exitosamente', {
+    toast.success('Factura creada exitosamente', {
       description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
     })
     
-    // Notificación adicional sobre el envío
+    // Notificación sobre generación automática
     setTimeout(() => {
-      toast.info('Cliente notificado por email', {
-        description: 'Se envió la factura automáticamente'
+      toast.success('PDF y TXT generados automáticamente', {
+        description: 'Archivos listos para descarga y envío a AFIP/ARCA'
       })
-    }, 1500)
+    }, 1000)
+    
+    // Notificación sobre envío
+    setTimeout(() => {
+      toast.info('Cliente notificado automáticamente', {
+        description: 'Factura enviada por email con PDF adjunto'
+      })
+    }, 2000)
+    
+    // Notificación sobre AFIP
+    setTimeout(() => {
+      toast.info('Archivo TXT listo para ARCA', {
+        description: 'Descarga el TXT desde la sección de facturas'
+      })
+    }, 3000)
     
     router.push(`/company/${companyId}`)
   }
@@ -152,7 +165,7 @@ export default function CreateInvoicePage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Cargar Factura</h1>
+            <h1 className="text-3xl font-bold">Emitir Factura</h1>
             <p className="text-muted-foreground">Crear nueva factura para la empresa</p>
           </div>
         </div>
@@ -285,7 +298,11 @@ export default function CreateInvoicePage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="-1">Exento</SelectItem>
+                        <SelectItem value="-2">No Gravado</SelectItem>
                         <SelectItem value="0">0%</SelectItem>
+                        <SelectItem value="2.5">2.5%</SelectItem>
+                        <SelectItem value="5">5%</SelectItem>
                         <SelectItem value="10.5">10.5%</SelectItem>
                         <SelectItem value="21">21%</SelectItem>
                         <SelectItem value="27">27%</SelectItem>
@@ -440,51 +457,59 @@ export default function CreateInvoicePage() {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="pdf">Archivo PDF de la Factura *</Label>
-                <div className="flex items-center gap-2">
-                  <Input 
-                    id="pdf" 
-                    type="file" 
-                    accept=".pdf" 
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                    className="flex-1"
-                  />
-                  <Upload className="h-4 w-4 text-muted-foreground" />
-                </div>
-                {pdfFile && (
-                  <p className="text-sm text-muted-foreground">
-                    Archivo: {pdfFile.name}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  El PDF es necesario para que el cliente pueda verificar los datos de la factura
-                </p>
-              </div>
+
               
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-800">
-                  <strong>⚠️ Importante:</strong> El PDF de la factura es obligatorio para permitir al cliente verificar todos los datos antes del pago.
-                </p>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">
+                      🤖 Generación Automática de Archivos
+                    </p>
+                    <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                      <li>• PDF de la factura (formato oficial)</li>
+                      <li>• TXT para AFIP/ARCA (listo para subir)</li>
+                      <li>• Envío automático por email al cliente</li>
+                      <li>• Numeración automática correlativa</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Notificación de Envío */}
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          {/* Proceso Automático */}
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <div className="p-1 bg-blue-100 rounded-full mt-0.5">
-                <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+              <div className="p-1 bg-green-100 rounded-full mt-0.5">
+                <Download className="h-4 w-4 text-green-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-800">
-                  📧 Envío Automático
+                <p className="text-sm font-medium text-green-800">
+                  ✅ Proceso Completamente Automatizado
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Al crear la factura, se enviará automáticamente por email al cliente y se generará una notificación en el sistema.
-                </p>
+                <div className="text-xs text-green-700 mt-2 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span>Generación automática de PDF con formato oficial</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span>Creación de archivo TXT para AFIP/ARCA</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span>Envío automático por email al cliente</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span>Numeración correlativa automática</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span>Archivos disponibles para descarga inmediata</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -492,7 +517,8 @@ export default function CreateInvoicePage() {
           {/* Acciones */}
           <div className="flex gap-4">
             <Button type="submit" className="flex-1">
-              Crear y Enviar Factura
+              <FileText className="h-4 w-4 mr-2" />
+              Emitir Factura
             </Button>
             <Button 
               type="button" 

@@ -2,6 +2,7 @@ export type InvoiceType = 'A' | 'B' | 'C' | 'E' | 'otro'
 
 export type InvoiceStatus = 
   | 'pendiente_aprobacion' 
+  | 'emitida'
   | 'aprobada' 
   | 'rechazada' 
   | 'pagada' 
@@ -16,7 +17,7 @@ export interface InvoiceItem {
   quantity: number
   unitPrice: number
   subtotal: number
-  taxRate?: number
+  taxRate?: number // -1: Exento, -2: No Gravado, 0+: Alícuota normal
   taxAmount?: number
 }
 
@@ -54,11 +55,18 @@ export interface Invoice {
   totalPerceptions: number
   total: number
   status: InvoiceStatus
-  pdfUrl?: string
+  pdfUrl?: string // Generated automatically
+  afipTxtUrl?: string // TXT for AFIP/ARCA
   notes?: string
   approvalsRequired: number
   approvalsReceived: number
   approvalDate?: string
+  // AFIP integration
+  afipCae?: string
+  afipCaeDueDate?: string
+  afipStatus?: 'pending' | 'processing' | 'approved' | 'rejected' | 'error'
+  afipErrorMessage?: string
+  afipSentAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -70,5 +78,5 @@ export interface CreateInvoiceData {
   currency: Currency
   items: Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]
   notes?: string
-  pdfFile: File
+  // PDF and TXT files are generated automatically by the system
 }

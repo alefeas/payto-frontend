@@ -15,7 +15,10 @@ import {
   Filter,
   Bell,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle,
+  CheckSquare,
+  Activity
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -85,7 +88,7 @@ export default function CompanyPage() {
 
   const menuItems = [
     {
-      title: "Cargar Factura",
+      title: "Emitir Factura",
       description: "Crear nueva factura para clientes",
       icon: FileText,
       color: "bg-blue-500",
@@ -120,6 +123,20 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company?.uniqueId}/approve-invoices`)
     },
     {
+      title: "Facturas Rechazadas",
+      description: "Gestionar facturas que requieren atención",
+      icon: AlertTriangle,
+      color: "bg-red-500",
+      action: () => router.push(`/company/${company?.uniqueId}/rejected-invoices`)
+    },
+    {
+      title: "Registro de Auditoría",
+      description: "Historial de actividades del sistema",
+      icon: Activity,
+      color: "bg-gray-600",
+      action: () => router.push(`/company/${company?.uniqueId}/audit-log`)
+    },
+    {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
       icon: BarChart3,
@@ -152,7 +169,7 @@ export default function CompanyPage() {
       title: "Backup & Exportar",
       description: "Respaldar datos y exportar reportes",
       icon: Download,
-      color: "bg-gray-600"
+      color: "bg-gray-500"
     }
   ]
 
@@ -245,7 +262,7 @@ export default function CompanyPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {menuItems.map((item, index) => (
                 <Card 
                   key={index} 

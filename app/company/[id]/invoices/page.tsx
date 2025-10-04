@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Filter, Download, Eye, MoreHorizontal, Calendar, Building2, DollarSign } from "lucide-react"
+import { ArrowLeft, Search, Filter, Download, Eye, MoreHorizontal, Calendar, Building2, DollarSign, FileDown, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -26,7 +26,8 @@ const mockInvoices = [
     total: 121000,
     currency: "ARS",
     status: "aprobada",
-    paymentStatus: "pendiente"
+    paymentStatus: "pendiente",
+    invoiceType: "venta" // Factura emitida por nosotros
   },
   {
     id: "2",
@@ -40,7 +41,8 @@ const mockInvoices = [
     total: 102850,
     currency: "ARS",
     status: "pendiente_aprobacion",
-    paymentStatus: "pendiente"
+    paymentStatus: "pendiente",
+    invoiceType: "venta"
   },
   {
     id: "3",
@@ -53,8 +55,9 @@ const mockInvoices = [
     taxes: 31500,
     total: 181500,
     currency: "ARS",
-    status: "enviada",
-    paymentStatus: "pagada"
+    status: "emitida",
+    paymentStatus: "pagada",
+    invoiceType: "venta"
   },
   {
     id: "4",
@@ -67,8 +70,9 @@ const mockInvoices = [
     taxes: 0,
     total: 45000,
     currency: "ARS",
-    status: "enviada",
-    paymentStatus: "vencida"
+    status: "emitida",
+    paymentStatus: "vencida",
+    invoiceType: "compra" // Factura recibida de proveedor
   },
   {
     id: "5",
@@ -81,12 +85,13 @@ const mockInvoices = [
     taxes: 42000,
     total: 242000,
     currency: "USD",
-    status: "enviada",
-    paymentStatus: "pendiente"
+    status: "emitida",
+    paymentStatus: "pendiente",
+    invoiceType: "venta"
   }
 ]
 
-type InvoiceStatus = "enviada" | "pendiente_aprobacion" | "aprobada" | "rechazada"
+type InvoiceStatus = "emitida" | "pendiente_aprobacion" | "aprobada" | "rechazada"
 type PaymentStatus = "pendiente" | "pagada" | "vencida" | "parcial"
 
 export default function InvoicesPage() {
@@ -99,7 +104,11 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [paymentFilter, setPaymentFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
-  const [dateFilter, setDateFilter] = useState<string>("all")
+  const [invoiceTypeFilter, setInvoiceTypeFilter] = useState<string>("all")
+  const [dateFromFilter, setDateFromFilter] = useState<string>("")
+  const [dateToFilter, setDateToFilter] = useState<string>("")
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -116,33 +125,27 @@ export default function InvoicesPage() {
       const matchesStatus = statusFilter === "all" || invoice.status === statusFilter
       const matchesPayment = paymentFilter === "all" || invoice.paymentStatus === paymentFilter
       const matchesType = typeFilter === "all" || invoice.type === typeFilter
+      const matchesInvoiceType = invoiceTypeFilter === "all" || invoice.invoiceType === invoiceTypeFilter
       
-      let matchesDate = true
-      if (dateFilter !== "all") {
+      let matchesDateRange = true
+      if (dateFromFilter || dateToFilter) {
         const issueDate = new Date(invoice.issueDate)
-        const now = new Date()
-        
-        switch (dateFilter) {
-          case "week":
-            matchesDate = (now.getTime() - issueDate.getTime()) <= 7 * 24 * 60 * 60 * 1000
-            break
-          case "month":
-            matchesDate = (now.getTime() - issueDate.getTime()) <= 30 * 24 * 60 * 60 * 1000
-            break
-          case "quarter":
-            matchesDate = (now.getTime() - issueDate.getTime()) <= 90 * 24 * 60 * 60 * 1000
-            break
+        if (dateFromFilter) {
+          matchesDateRange = matchesDateRange && issueDate >= new Date(dateFromFilter)
+        }
+        if (dateToFilter) {
+          matchesDateRange = matchesDateRange && issueDate <= new Date(dateToFilter)
         }
       }
       
-      return matchesSearch && matchesStatus && matchesPayment && matchesType && matchesDate
+      return matchesSearch && matchesStatus && matchesPayment && matchesType && matchesInvoiceType && matchesDateRange
     })
-  }, [searchTerm, statusFilter, paymentFilter, typeFilter, dateFilter])
+  }, [searchTerm, statusFilter, paymentFilter, typeFilter, invoiceTypeFilter, dateFromFilter, dateToFilter])
 
   const getStatusBadge = (status: InvoiceStatus) => {
     switch (status) {
-      case 'enviada':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Enviada</Badge>
+      case 'emitida':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Emitida</Badge>
       case 'pendiente_aprobacion':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendiente Aprobación</Badge>
       case 'aprobada':
@@ -172,6 +175,13 @@ export default function InvoicesPage() {
     })
   }
 
+  const handleDownloadTxt = (invoiceId: string) => {
+    const invoice = mockInvoices.find(inv => inv.id === invoiceId)
+    toast.success('Descarga iniciada', {
+      description: `TXT para AFIP/ARCA de ${invoice?.number}`
+    })
+  }
+
   const handleViewDetails = (invoiceId: string) => {
     router.push(`/company/${companyId}/invoices/${invoiceId}`)
   }
@@ -181,8 +191,57 @@ export default function InvoicesPage() {
     setStatusFilter("all")
     setPaymentFilter("all")
     setTypeFilter("all")
-    setDateFilter("all")
+    setInvoiceTypeFilter("all")
+    setDateFromFilter("")
+    setDateToFilter("")
   }
+
+  const toggleInvoiceSelection = (invoiceId: string) => {
+    setSelectedInvoices(prev => 
+      prev.includes(invoiceId) 
+        ? prev.filter(id => id !== invoiceId)
+        : [...prev, invoiceId]
+    )
+  }
+
+  const selectAllInvoices = () => {
+    setSelectedInvoices(filteredInvoices.map(inv => inv.id))
+  }
+
+  const clearSelection = () => {
+    setSelectedInvoices([])
+    setIsSelectionMode(false)
+  }
+
+  const handleBulkTxtDownload = () => {
+    if (selectedInvoices.length === 0) {
+      toast.error('Selecciona al menos una factura')
+      return
+    }
+    
+    toast.success('Generando TXT masivo', {
+      description: `Procesando ${selectedInvoices.length} facturas para AFIP/ARCA`
+    })
+    
+    setTimeout(() => {
+      toast.success('TXT masivo generado', {
+        description: `Archivo con ${selectedInvoices.length} facturas listo para descarga`
+      })
+    }, 2000)
+  }
+
+  const handleBulkPdfDownload = () => {
+    if (selectedInvoices.length === 0) {
+      toast.error('Selecciona al menos una factura')
+      return
+    }
+    
+    toast.success('Generando ZIP con PDFs', {
+      description: `Comprimiendo ${selectedInvoices.length} facturas en PDF`
+    })
+  }
+
+
 
   const stats = {
     total: mockInvoices.length,
@@ -206,9 +265,57 @@ export default function InvoicesPage() {
             <h1 className="text-3xl font-bold">Ver Facturas</h1>
             <p className="text-muted-foreground">Gestionar todas las facturas de la empresa</p>
           </div>
-          <Button onClick={() => router.push(`/company/${companyId}/create-invoice`)}>
-            Crear Nueva Factura
-          </Button>
+          <div className="flex gap-2">
+            {!isSelectionMode ? (
+              <>
+                <Button 
+                  variant="default" 
+                  size="lg"
+                  onClick={() => setIsSelectionMode(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <CheckSquare className="h-5 w-5 mr-2" />
+                  Seleccionar Facturas
+                </Button>
+                <Button onClick={() => router.push(`/company/${companyId}/create-invoice`)}>
+                  Emitir Nueva Factura
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={selectAllInvoices}
+                  disabled={filteredInvoices.length === 0}
+                >
+                  Seleccionar Todas
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleBulkTxtDownload}
+                  disabled={selectedInvoices.length === 0}
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  TXT AFIP ({selectedInvoices.length})
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleBulkPdfDownload}
+                  disabled={selectedInvoices.length === 0}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  ZIP PDFs
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  onClick={clearSelection}
+                >
+                  Cancelar
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Stats */}
@@ -268,86 +375,146 @@ export default function InvoicesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              {/* Search */}
-              <div className="md:col-span-2 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por número o cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="space-y-4">
+              {/* Primera fila de filtros */}
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                {/* Search */}
+                <div className="md:col-span-2 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por número o cliente..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Invoice Type Filter */}
+                <Select value={invoiceTypeFilter} onValueChange={setInvoiceTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Venta/Compra" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Ventas y Compras</SelectItem>
+                    <SelectItem value="venta">Ventas (Emitidas)</SelectItem>
+                    <SelectItem value="compra">Compras (Recibidas)</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="emitida">Emitida</SelectItem>
+                    <SelectItem value="pendiente_aprobacion">Pendiente Aprobación</SelectItem>
+                    <SelectItem value="aprobada">Aprobada</SelectItem>
+                    <SelectItem value="rechazada">Rechazada</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Payment Filter */}
+                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pago" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los pagos</SelectItem>
+                    <SelectItem value="pendiente">Pendiente</SelectItem>
+                    <SelectItem value="pagada">Pagada</SelectItem>
+                    <SelectItem value="vencida">Vencida</SelectItem>
+                    <SelectItem value="parcial">Parcial</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Type Filter */}
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
+                    <SelectItem value="A">Factura A</SelectItem>
+                    <SelectItem value="B">Factura B</SelectItem>
+                    <SelectItem value="C">Factura C</SelectItem>
+                    <SelectItem value="E">Factura E</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="enviada">Enviada</SelectItem>
-                  <SelectItem value="pendiente_aprobacion">Pendiente Aprobación</SelectItem>
-                  <SelectItem value="aprobada">Aprobada</SelectItem>
-                  <SelectItem value="rechazada">Rechazada</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Payment Filter */}
-              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pago" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los pagos</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="pagada">Pagada</SelectItem>
-                  <SelectItem value="vencida">Vencida</SelectItem>
-                  <SelectItem value="parcial">Parcial</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Type Filter */}
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los tipos</SelectItem>
-                  <SelectItem value="A">Factura A</SelectItem>
-                  <SelectItem value="B">Factura B</SelectItem>
-                  <SelectItem value="C">Factura C</SelectItem>
-                  <SelectItem value="E">Factura E</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Date Filter */}
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todo el tiempo</SelectItem>
-                  <SelectItem value="week">Última semana</SelectItem>
-                  <SelectItem value="month">Último mes</SelectItem>
-                  <SelectItem value="quarter">Último trimestre</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Segunda fila - Rango de fechas */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Fecha desde:</label>
+                  <Input
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Fecha hasta:</label>
+                  <Input
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={clearFilters}
+                    className="w-full"
+                  >
+                    Limpiar Filtros
+                  </Button>
+                </div>
+              </div>
             </div>
             
-            {(searchTerm || statusFilter !== "all" || paymentFilter !== "all" || typeFilter !== "all" || dateFilter !== "all") && (
+            {(searchTerm || statusFilter !== "all" || paymentFilter !== "all" || typeFilter !== "all" || invoiceTypeFilter !== "all" || dateFromFilter || dateToFilter || isSelectionMode) && (
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <p className="text-sm text-muted-foreground">
                   Mostrando {filteredInvoices.length} de {mockInvoices.length} facturas
+                  {isSelectionMode && selectedInvoices.length > 0 && (
+                    <span className="ml-2 text-blue-600 font-medium">
+                      • {selectedInvoices.length} seleccionadas
+                    </span>
+                  )}
                 </p>
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  Limpiar Filtros
-                </Button>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Selection Mode Banner */}
+        {isSelectionMode && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-900">
+                    Modo Selección Activo
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Haz clic en las facturas para seleccionarlas y usar las acciones masivas
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-blue-900">
+                  {selectedInvoices.length} seleccionadas
+                </p>
+                <p className="text-sm text-blue-700">
+                  de {filteredInvoices.length} facturas
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Invoices List */}
         <Card>
@@ -365,15 +532,33 @@ export default function InvoicesPage() {
             ) : (
               <div className="space-y-4">
                 {filteredInvoices.map((invoice) => (
-                  <div key={invoice.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                  <div 
+                    key={invoice.id} 
+                    className={`border rounded-lg p-4 transition-colors ${
+                      isSelectionMode ? 'cursor-pointer' : 'hover:bg-muted/50'
+                    } ${
+                      selectedInvoices.includes(invoice.id) ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    onClick={isSelectionMode ? () => toggleInvoiceSelection(invoice.id) : undefined}
+                  >
                     <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium text-lg">{invoice.number}</span>
-                          <Badge variant="outline">Tipo {invoice.type}</Badge>
-                          {getStatusBadge(invoice.status as InvoiceStatus)}
-                          {getPaymentBadge(invoice.paymentStatus as PaymentStatus)}
-                        </div>
+                      <div className="flex items-start gap-2 flex-1">
+                        {isSelectionMode && (
+                          <div className="mt-0.5">
+                            {selectedInvoices.includes(invoice.id) ? (
+                              <CheckSquare className="h-5 w-5 text-blue-600" />
+                            ) : (
+                              <Square className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                        )}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-lg">{invoice.number}</span>
+                            <Badge variant="outline">Tipo {invoice.type}</Badge>
+                            {getStatusBadge(invoice.status as InvoiceStatus)}
+                            {getPaymentBadge(invoice.paymentStatus as PaymentStatus)}
+                          </div>
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
@@ -388,6 +573,7 @@ export default function InvoicesPage() {
                             <Calendar className="h-3 w-3" />
                             Vence: {new Date(invoice.dueDate).toLocaleDateString()}
                           </div>
+                          </div>
                         </div>
                       </div>
                       
@@ -401,23 +587,33 @@ export default function InvoicesPage() {
                           </p>
                         </div>
                         
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(invoice.id)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Detalles
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownloadInvoice(invoice.id)}>
-                              <Download className="h-4 w-4 mr-2" />
-                              Descargar PDF
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {!isSelectionMode && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewDetails(invoice.id)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver Detalles
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDownloadInvoice(invoice.id)}>
+                                <Download className="h-4 w-4 mr-2" />
+                                Descargar PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDownloadTxt(invoice.id)}>
+                                <FileDown className="h-4 w-4 mr-2" />
+                                Descargar TXT AFIP
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </div>
                   </div>
