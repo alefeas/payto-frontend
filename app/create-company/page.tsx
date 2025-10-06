@@ -190,9 +190,9 @@ export default function CreateCompanyPage() {
                 <h3 className="text-lg font-medium">Configuración Fiscal y AFIP</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="condicionIva">Tipo de Cuenta *</Label>
+                    <Label htmlFor="taxConditionAfip">Tipo de Cuenta *</Label>
                     <select
-                      id="condicionIva"
+                      id="taxConditionAfip"
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       value={formData.taxConditionAfip}
                       onChange={(e) => setFormData({...formData, taxConditionAfip: e.target.value as 'RI' | 'Monotributo' | 'Exento' | 'CF'})}
@@ -216,9 +216,9 @@ export default function CreateCompanyPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="puntoVentaDefault">Punto de Venta AFIP *</Label>
+                    <Label htmlFor="defaultSalesPoint">Punto de Venta AFIP *</Label>
                     <Input
-                      id="puntoVentaDefault"
+                      id="defaultSalesPoint"
                       type="number"
                       min="1"
                       max="9999"
@@ -234,9 +234,9 @@ export default function CreateCompanyPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="ingresosBrutos">Ingresos Brutos (IIBB)</Label>
+                    <Label htmlFor="grossIncomeTax">Ingresos Brutos (IIBB)</Label>
                     <Input
-                      id="ingresosBrutos"
+                      id="grossIncomeTax"
                       placeholder="Ej: 901-123456-7"
                       value={formData.grossIncomeTax}
                       onChange={(e) => setFormData({...formData, grossIncomeTax: e.target.value})}
@@ -246,9 +246,9 @@ export default function CreateCompanyPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="inicioActividades">Inicio de Actividades</Label>
+                    <Label htmlFor="activityStartDate">Inicio de Actividades</Label>
                     <Input
-                      id="inicioActividades"
+                      id="activityStartDate"
                       type="date"
                       value={formData.activityStartDate}
                       onChange={(e) => setFormData({...formData, activityStartDate: e.target.value})}
@@ -264,9 +264,9 @@ export default function CreateCompanyPage() {
                 <h3 className="text-lg font-medium">Dirección</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="provincia">Provincia *</Label>
+                    <Label htmlFor="province">Provincia *</Label>
                     <select
-                      id="provincia"
+                      id="province"
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       value={formData.province}
                       onChange={(e) => setFormData({...formData, province: e.target.value})}
@@ -300,9 +300,9 @@ export default function CreateCompanyPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="codigoPostal">Código Postal *</Label>
+                    <Label htmlFor="postalCode">Código Postal *</Label>
                     <Input
-                      id="codigoPostal"
+                      id="postalCode"
                       placeholder="Ej: 1414"
                       value={formData.postalCode}
                       onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
@@ -313,9 +313,9 @@ export default function CreateCompanyPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="calle">Calle *</Label>
+                    <Label htmlFor="street">Calle *</Label>
                     <Input
-                      id="calle"
+                      id="street"
                       placeholder="Ej: Av. Corrientes"
                       value={formData.street}
                       onChange={(e) => setFormData({...formData, street: e.target.value})}
@@ -323,9 +323,9 @@ export default function CreateCompanyPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="numeroCalle">Número *</Label>
+                    <Label htmlFor="streetNumber">Número *</Label>
                     <Input
-                      id="numeroCalle"
+                      id="streetNumber"
                       placeholder="Ej: 1234"
                       value={formData.streetNumber}
                       onChange={(e) => setFormData({...formData, streetNumber: e.target.value})}
@@ -335,18 +335,18 @@ export default function CreateCompanyPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="piso">Piso</Label>
+                    <Label htmlFor="floor">Piso</Label>
                     <Input
-                      id="piso"
+                      id="floor"
                       placeholder="Opcional"
                       value={formData.floor}
                       onChange={(e) => setFormData({...formData, floor: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="departamento">Departamento</Label>
+                    <Label htmlFor="apartment">Departamento</Label>
                     <Input
-                      id="departamento"
+                      id="apartment"
                       placeholder="Opcional"
                       value={formData.apartment}
                       onChange={(e) => setFormData({...formData, apartment: e.target.value})}
@@ -417,9 +417,9 @@ export default function CreateCompanyPage() {
               <div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-medium">Seguridad</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="codigoEliminador">Código de Eliminación *</Label>
+                  <Label htmlFor="deletionCode">Código de Eliminación *</Label>
                   <Input
-                    id="codigoEliminador"
+                    id="deletionCode"
                     type="password"
                     placeholder="Código secreto para eliminar la empresa"
                     value={formData.deletionCode}

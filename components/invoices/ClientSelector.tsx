@@ -136,7 +136,7 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
             </SelectTrigger>
             <SelectContent>
               {savedClients.map(client => {
-                const displayName = client.razonSocial || `${client.nombre} ${client.apellido}` || client.documentNumber
+                const displayName = client.businessName || `${client.firstName} ${client.lastname}` || client.documentNumber
                 return (
                   <SelectItem key={client.id} value={client.id}>
                     <div className="flex items-center gap-2">

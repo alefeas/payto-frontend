@@ -14,13 +14,13 @@ import type { Client } from "@/types/client"
 const mockClient: Client = {
   id: "1",
   companyId: "TC8X9K2L",
-  tipoDocumento: "CUIT",
-  numeroDocumento: "20-12345678-9",
-  razonSocial: "Distribuidora El Sol SRL",
+  documentType: "CUIT",
+  documentNumber: "20-12345678-9",
+  businessName: "Distribuidora El Sol SRL",
   email: "contacto@elsol.com.ar",
-  telefono: "+54 11 4567-8901",
-  domicilio: "Av. Corrientes 1234, CABA",
-  condicionIva: "RI",
+  phone: "+54 11 4567-8901",
+  address: "Av. Corrientes 1234, CABA",
+  taxCondition: "RI",
   isCompanyConnection: false,
   createdAt: "2024-01-15T10:00:00Z",
   updatedAt: "2024-01-15T10:00:00Z"
@@ -100,8 +100,8 @@ export default function ClientDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{client.razonSocial || `${client.nombre} ${client.apellido}`}</h1>
-            <p className="text-muted-foreground">{client.tipoDocumento}: {client.numeroDocumento}</p>
+            <h1 className="text-3xl font-bold">{client.businessName || `${client.firstName} ${client.lastName}`}</h1>
+            <p className="text-muted-foreground">{client.documentType}: {client.documentNumber}</p>
           </div>
           <Button onClick={() => router.push(`/company/${companyId}/emit-invoice?clientId=${clientId}`)}>
             <FileText className="h-4 w-4 mr-2" />
@@ -118,7 +118,7 @@ export default function ClientDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Condición IVA</p>
-                <p className="font-medium">{client.condicionIva}</p>
+                <p className="font-medium">{client.taxCondition}</p>
               </div>
               {client.email && (
                 <div>
@@ -126,16 +126,16 @@ export default function ClientDetailPage() {
                   <p className="font-medium">{client.email}</p>
                 </div>
               )}
-              {client.telefono && (
+              {client.phone && (
                 <div>
                   <p className="text-sm text-muted-foreground">Teléfono</p>
-                  <p className="font-medium">{client.telefono}</p>
+                  <p className="font-medium">{client.phone}</p>
                 </div>
               )}
-              {client.domicilio && (
+              {client.address && (
                 <div>
                   <p className="text-sm text-muted-foreground">Domicilio</p>
-                  <p className="font-medium">{client.domicilio}</p>
+                  <p className="font-medium">{client.address}</p>
                 </div>
               )}
             </div>

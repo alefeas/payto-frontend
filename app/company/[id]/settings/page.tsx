@@ -176,17 +176,17 @@ export default function SettingsPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="nombre">Nombre de la Empresa</Label>
+                    <Label htmlFor="name">Nombre de la Empresa</Label>
                     <Input
-                      id="nombre"
+                      id="name"
                       value={settings.name}
                       onChange={(e) => updateSetting('name', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="razonSocial">Razón Social</Label>
+                    <Label htmlFor="businessName">Razón Social</Label>
                     <Input
-                      id="razonSocial"
+                      id="businessName"
                       value={settings.businessName}
                       onChange={(e) => updateSetting('businessName', e.target.value)}
                     />
@@ -237,9 +237,9 @@ export default function SettingsPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Label htmlFor="phone">Teléfono</Label>
                     <Input
-                      id="telefono"
+                      id="phone"
                       value={settings.phone}
                       onChange={(e) => updateSetting('phone', e.target.value)}
                     />
@@ -263,7 +263,7 @@ export default function SettingsPage() {
                   <h4 className="font-medium mb-4">Dirección</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="provincia">Provincia *</Label>
+                      <Label htmlFor="province">Provincia *</Label>
                       <Select 
                         value={settings.province} 
                         onValueChange={(value) => updateSetting('province', value)}
@@ -300,9 +300,9 @@ export default function SettingsPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="codigoPostal">Código Postal *</Label>
+                      <Label htmlFor="postalCode">Código Postal *</Label>
                       <Input
-                        id="codigoPostal"
+                        id="postalCode"
                         value={settings.postalCode}
                         onChange={(e) => updateSetting('postalCode', e.target.value)}
                         maxLength={8}
@@ -311,17 +311,17 @@ export default function SettingsPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="calle">Calle *</Label>
+                      <Label htmlFor="street">Calle *</Label>
                       <Input
-                        id="calle"
+                        id="street"
                         value={settings.street}
                         onChange={(e) => updateSetting('street', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="numero">Número *</Label>
+                      <Label htmlFor="streetNumber">Número *</Label>
                       <Input
-                        id="numero"
+                        id="streetNumber"
                         value={settings.streetNumber}
                         onChange={(e) => updateSetting('streetNumber', e.target.value)}
                       />
@@ -329,18 +329,18 @@ export default function SettingsPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="piso">Piso</Label>
+                      <Label htmlFor="floor">Piso</Label>
                       <Input
-                        id="piso"
+                        id="floor"
                         value={settings.floor}
                         onChange={(e) => updateSetting('floor', e.target.value)}
                         placeholder="Opcional"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="departamento">Departamento</Label>
+                      <Label htmlFor="apartment">Departamento</Label>
                       <Input
-                        id="departamento"
+                        id="apartment"
                         value={settings.apartment}
                         onChange={(e) => updateSetting('apartment', e.target.value)}
                         placeholder="Opcional"
@@ -522,9 +522,9 @@ export default function SettingsPage() {
                   <h4 className="font-medium mb-4">Configuración AFIP</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="puntoVenta">Punto de Venta</Label>
+                      <Label htmlFor="salesPoint">Punto de Venta</Label>
                       <Input
-                        id="puntoVenta"
+                        id="salesPoint"
                         type="number"
                         min="1"
                         max="9999"
@@ -536,7 +536,7 @@ export default function SettingsPage() {
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="condicionIva">Condición IVA</Label>
+                      <Label htmlFor="taxCondition">Condición IVA</Label>
                       <Select defaultValue="RI">
                         <SelectTrigger>
                           <SelectValue />
@@ -552,16 +552,16 @@ export default function SettingsPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="ingresosBrutos">Ingresos Brutos (IIBB)</Label>
+                      <Label htmlFor="grossIncome">Ingresos Brutos (IIBB)</Label>
                       <Input
-                        id="ingresosBrutos"
+                        id="grossIncome"
                         placeholder="Número de IIBB"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="inicioActividades">Inicio de Actividades</Label>
+                      <Label htmlFor="activityStartDate">Inicio de Actividades</Label>
                       <Input
-                        id="inicioActividades"
+                        id="activityStartDate"
                         type="date"
                       />
                     </div>

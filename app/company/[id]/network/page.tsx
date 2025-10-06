@@ -214,7 +214,7 @@ export default function NetworkPage() {
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-medium text-green-600">
-                              ${(connection.totalAmountSent + connection.totalAmountReceived).toLocaleString()}
+                              ${((connection.totalAmountSent || 0) + (connection.totalAmountReceived || 0)).toLocaleString()}
                             </p>
                             <p className="text-xs text-muted-foreground">Total</p>
                           </div>

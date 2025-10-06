@@ -17,9 +17,9 @@ export interface ClientSelectorProps {
   connectedCompanies: Array<{ id: string; name: string; uniqueId: string }>
   savedClients?: Array<{ 
     id: string
-    razonSocial?: string
-    nombre?: string
-    apellido?: string
+    businessName?: string
+    firstName?: string
+    lastname?: string
     documentNumber: string
     taxCondition: string 
   }>

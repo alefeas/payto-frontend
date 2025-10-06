@@ -61,7 +61,7 @@ export default function LoadInvoicePage() {
     
     const totalPerceptions = perceptions.reduce((sum, perception) => {
       let baseAmount
-      if (perception.type === 'percepcion_iva') {
+      if (perception.type === 'vat_perception') {
         baseAmount = totalTaxes // Percepción IVA solo sobre el IVA
       } else {
         baseAmount = subtotal + totalTaxes // Otras percepciones sobre subtotal + IVA
@@ -99,7 +99,7 @@ export default function LoadInvoicePage() {
   }
 
   const addPerception = () => {
-    setPerceptions([...perceptions, { type: 'percepcion_iibb', name: 'Percepción IIBB', rate: 3 }])
+    setPerceptions([...perceptions, { type: 'gross_income_perception', name: 'Percepción IIBB', rate: 3 }])
   }
 
   const removePerception = (index: number) => {
@@ -360,9 +360,9 @@ export default function LoadInvoicePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="percepcion_iva">Percepción IVA</SelectItem>
-                          <SelectItem value="percepcion_iibb">Percepción IIBB</SelectItem>
-                          <SelectItem value="percepcion_suss">Percepción SUSS</SelectItem>
+                          <SelectItem value="vat_perception">Percepción IVA</SelectItem>
+                          <SelectItem value="gross_income_perception">Percepción IIBB</SelectItem>
+                          <SelectItem value="suss_perception">Percepción SUSS</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -39,7 +39,7 @@ export default function RegisterPage() {
       return
     }
     setIsLoading(true)
-    if (await register(formData, formData.email, formData.password)) {
+    if (await register(`${formData.firstName} ${formData.lastName}`, formData.email, formData.password)) {
       router.push('/dashboard')
     }
     setIsLoading(false)
