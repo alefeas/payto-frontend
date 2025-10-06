@@ -166,6 +166,13 @@ export default function CompanyPage() {
       icon: BarChart3,
       color: "bg-indigo-500",
       action: () => router.push(`/company/${company?.uniqueId}/analytics`)
+    },
+    {
+      title: "Vencimientos",
+      description: "Control de fechas y cobros pendientes",
+      icon: Calendar,
+      color: "bg-pink-500",
+      action: () => router.push(`/company/${company?.uniqueId}/due-invoices`)
     }
   ]
 
@@ -355,63 +362,7 @@ export default function CompanyPage() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Acciones Rápidas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button size="sm" className="w-full justify-start">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Factura
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar Datos
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros Avanzados
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Próximos Vencimientos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium">Factura #1234</p>
-                    <p className="text-xs text-muted-foreground">Cliente ABC</p>
-                  </div>
-                  <Badge variant="destructive" className="text-xs">Vence hoy</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium">Factura #1235</p>
-                    <p className="text-xs text-muted-foreground">Cliente XYZ</p>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">3 días</Badge>
-                </div>
-                <Button variant="outline" size="sm" className="w-full">
-                  Ver todos los vencimientos
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   )

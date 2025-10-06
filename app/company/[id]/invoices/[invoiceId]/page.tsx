@@ -49,6 +49,14 @@ export default function InvoiceDetailPage() {
 
   const [invoice] = useState(mockInvoice)
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(`/company/${companyId}/invoices`)
+    }
+  }
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
@@ -92,7 +100,7 @@ export default function InvoiceDetailPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}/invoices`)} className="mt-1">
+            <Button variant="outline" size="icon" onClick={handleBack} className="mt-1">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>

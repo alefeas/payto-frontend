@@ -1,0 +1,118 @@
+[33mcommit 247687d52438fa6c74afc86841f91533f98dcd98[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Mon Oct 6 01:36:08 2025 -0300
+
+    Standardize design and apply gradient background globally
+
+[33mcommit 51fcc05db33e655eb24f3b90d0caa715354f1f78[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Sun Oct 5 21:23:01 2025 -0300
+
+    feat: invoice loading, database updates, and form improvements
+    
+    - Add external invoice loading functionality
+    - Update database schema and user registration
+    - Fix perception calculations and improve UI
+    - Reorganize forms and rename invoice creation
+
+[33mcommit e852646cb61121a8d1646268756ea535b43aed90[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Sat Oct 4 01:02:13 2025 -0300
+
+    Move audit log to main menu and standardize grid layouts
+
+[33mcommit e9d6e27aef3d6477ce5cf6b9e7a45232cd827aec[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 12:03:49 2025 -0300
+
+    fix: Build errors and add bank account management
+
+[33mcommit 4cfb92da4f9f04d61b27c808fce52c4fbbf5791d[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 11:26:15 2025 -0300
+
+    feat: Add company network system for connection management
+
+[33mcommit d6c1266e117d2fba160a4f5582053b2d3f23d42c[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 11:11:33 2025 -0300
+
+    feat: Add member management, company settings and improve company creation
+
+[33mcommit 45c98acf5737be6ee084d944ba08aee02843b822[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 10:34:34 2025 -0300
+
+    feat: Add analytics dashboard with real-time financial metrics
+
+[33mcommit 613bbb3efb16d227f44b130af145d63ab618f563[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 10:33:31 2025 -0300
+
+    feat: Add invoice approval system and confirmation modals
+
+[33mcommit 7135458b08e57a1df699693d85ec0b6b48031463[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 10:14:03 2025 -0300
+
+    feat: Complete invoice management system
+
+[33mcommit e5d08b415b6d56228703a39a185c646a451819a2[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 09:56:04 2025 -0300
+
+    feat: added payment confirmation functionality to the company dashboard
+
+[33mcommit 58871cbbf97caa365fdce54f6629d1d9e5c46bd3[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 09:50:13 2025 -0300
+
+    feat: Payment form with validations and provider notifications
+
+[33mcommit 0165369bcdb4a6346f6783a5986d8b7540ae2df2[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Fri Oct 3 09:03:46 2025 -0300
+
+    feat: add invoice creation system with perceptions support
+
+[33mcommit 37ce40e5054a297f28d573c05b6bf21fa8fae5fa[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Thu Oct 2 01:41:33 2025 -0300
+
+    feat: basic user dashboard with todo list (base implementation)
+
+[33mcommit cb8fc480d49fccc122e3ef475b273590cb29deeb[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Thu Oct 2 01:22:10 2025 -0300
+
+    feat: add comprehensive company menu with invoice management
+
+[33mcommit 36e2ea30c21134e0fd305dbaf9a7af58982bac34[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Thu Oct 2 01:01:13 2025 -0300
+
+    feat: implement create company and join company pages
+
+[33mcommit d35e582f2a593e096115ecdc3db99be08441f5f7[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Thu Oct 2 00:34:49 2025 -0300
+
+    feat: implement company-centric sidebar with workspace management, refactor auth to use Context API, and clean up unused code
+
+[33mcommit 9537e4aa10b8187369af94be8eb1efcb6ee3c836[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Thu Oct 2 00:22:05 2025 -0300
+
+    feat: implement dashboard with header, notifications, user menu and comprehensive profile management with workspace concept
+
+[33mcommit 2556c188182a84deeb8d90a8a5cac7edeede3560[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Thu Oct 2 00:01:53 2025 -0300
+
+    feat: implement base authentication system with Shadcn/ui
+
+[33mcommit c880894179ec9116cf123362151e02b9d6663255[m
+Author: Alejo Feas Matej <alefeas99@gmail.com>
+Date:   Wed Oct 1 23:15:18 2025 -0300
+
+    Initial commit from Create Next App
