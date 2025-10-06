@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +24,14 @@ interface CompanySettings {
   telefono: string
   direccion: string
   logoUrl: string
+  
+  // Dirección estructurada
+  provincia: string
+  codigoPostal: string
+  calle: string
+  numeroCalle: string
+  piso: string
+  departamento: string
   
   // Configuración fiscal
   taxRegime: string
@@ -69,6 +76,12 @@ const mockSettings: CompanySettings = {
   telefono: "+54 11 1234-5678",
   direccion: "Av. Corrientes 1234, CABA, Argentina",
   logoUrl: "https://techcorp.com/logo.png",
+  provincia: "caba",
+  codigoPostal: "1414",
+  calle: "Av. Corrientes",
+  numeroCalle: "1234",
+  piso: "5",
+  departamento: "A",
   taxRegime: "Responsable Inscripto",
   currency: "ARS",
   invoicePrefix: "FC-001",
@@ -298,14 +311,94 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="direccion">Dirección</Label>
-                  <Textarea
-                    id="direccion"
-                    value={settings.direccion}
-                    onChange={(e) => updateSetting('direccion', e.target.value)}
-                    rows={2}
-                  />
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-medium mb-4">Dirección</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="provincia">Provincia *</Label>
+                      <Select 
+                        value={settings.provincia} 
+                        onValueChange={(value) => updateSetting('provincia', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar provincia" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="buenos_aires">Buenos Aires</SelectItem>
+                          <SelectItem value="caba">Ciudad Autónoma de Buenos Aires</SelectItem>
+                          <SelectItem value="catamarca">Catamarca</SelectItem>
+                          <SelectItem value="chaco">Chaco</SelectItem>
+                          <SelectItem value="chubut">Chubut</SelectItem>
+                          <SelectItem value="cordoba">Córdoba</SelectItem>
+                          <SelectItem value="corrientes">Corrientes</SelectItem>
+                          <SelectItem value="entre_rios">Entre Ríos</SelectItem>
+                          <SelectItem value="formosa">Formosa</SelectItem>
+                          <SelectItem value="jujuy">Jujuy</SelectItem>
+                          <SelectItem value="la_pampa">La Pampa</SelectItem>
+                          <SelectItem value="la_rioja">La Rioja</SelectItem>
+                          <SelectItem value="mendoza">Mendoza</SelectItem>
+                          <SelectItem value="misiones">Misiones</SelectItem>
+                          <SelectItem value="neuquen">Neuquén</SelectItem>
+                          <SelectItem value="rio_negro">Río Negro</SelectItem>
+                          <SelectItem value="salta">Salta</SelectItem>
+                          <SelectItem value="san_juan">San Juan</SelectItem>
+                          <SelectItem value="san_luis">San Luis</SelectItem>
+                          <SelectItem value="santa_cruz">Santa Cruz</SelectItem>
+                          <SelectItem value="santa_fe">Santa Fe</SelectItem>
+                          <SelectItem value="santiago_del_estero">Santiago del Estero</SelectItem>
+                          <SelectItem value="tierra_del_fuego">Tierra del Fuego</SelectItem>
+                          <SelectItem value="tucuman">Tucumán</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="codigoPostal">Código Postal *</Label>
+                      <Input
+                        id="codigoPostal"
+                        value={settings.codigoPostal}
+                        onChange={(e) => updateSetting('codigoPostal', e.target.value)}
+                        maxLength={8}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="calle">Calle *</Label>
+                      <Input
+                        id="calle"
+                        value={settings.calle}
+                        onChange={(e) => updateSetting('calle', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="numero">Número *</Label>
+                      <Input
+                        id="numero"
+                        value={settings.numeroCalle}
+                        onChange={(e) => updateSetting('numeroCalle', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="piso">Piso</Label>
+                      <Input
+                        id="piso"
+                        value={settings.piso}
+                        onChange={(e) => updateSetting('piso', e.target.value)}
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="departamento">Departamento</Label>
+                      <Input
+                        id="departamento"
+                        value={settings.departamento}
+                        onChange={(e) => updateSetting('departamento', e.target.value)}
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -411,13 +504,17 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nextInvoiceNumber">Próximo Número</Label>
+                    <Label htmlFor="nextInvoiceNumber">Último Número de Factura</Label>
                     <Input
                       id="nextInvoiceNumber"
                       type="number"
+                      min="0"
                       value={settings.nextInvoiceNumber}
                       onChange={(e) => updateSetting('nextInvoiceNumber', parseInt(e.target.value))}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Número de la última factura emitida para continuar secuencia AFIP/ARCA
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="currency">Moneda</Label>

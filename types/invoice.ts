@@ -1,4 +1,4 @@
-export type InvoiceType = 'A' | 'B' | 'C' | 'E' | 'otro'
+export type InvoiceType = 'A' | 'B' | 'C' | 'E'
 
 export type InvoiceStatus = 
   | 'pendiente_aprobacion' 

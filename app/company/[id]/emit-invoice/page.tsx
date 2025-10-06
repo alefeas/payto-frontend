@@ -28,9 +28,23 @@ export default function CreateInvoicePage() {
   const [formData, setFormData] = useState({
     type: 'A' as InvoiceType,
     receiverCompanyId: '',
+    emissionDate: '',
     dueDate: '',
     currency: 'ARS' as Currency,
-    notes: ''
+    exchangeRate: '',
+    notes: '',
+    // Consumer data for invoice B and C
+    consumerData: {
+      firstName: '',
+      lastName: '',
+      dni: '',
+      isConsumerFinal: true
+    },
+    // Company data for invoice C
+    companyData: {
+      businessName: '',
+      cuit: ''
+    }
   })
 
 
@@ -64,7 +78,12 @@ export default function CreateInvoicePage() {
     }, 0)
     
     const totalPerceptions = perceptions.reduce((sum, perception) => {
-      const baseAmount = subtotal + totalTaxes
+      let baseAmount
+      if (perception.type === 'percepcion_iva') {
+        baseAmount = totalTaxes // Percepción IVA solo sobre el IVA
+      } else {
+        baseAmount = subtotal + totalTaxes // Otras percepciones sobre subtotal + IVA
+      }
       const perceptionAmount = baseAmount * perception.rate / 100
       return sum + perceptionAmount
     }, 0)
@@ -111,12 +130,94 @@ export default function CreateInvoicePage() {
     setPerceptions(newPerceptions)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.receiverCompanyId || !formData.dueDate) {
-      toast.error('Complete todos los campos requeridos')
+    if (!formData.dueDate || !formData.emissionDate) {
+      toast.error('Complete las fechas requeridas')
       return
+    }
+
+    // Validación de campos según tipo de factura
+    if (formData.type === 'A' || formData.type === 'E') {
+      if (!formData.receiverCompanyId) {
+        toast.error('Seleccione la empresa receptora')
+        return
+      }
+    } else if (formData.type === 'B') {
+      if (!formData.consumerData.firstName || !formData.consumerData.lastName || !formData.consumerData.dni) {
+        toast.error('Complete todos los datos del consumidor final')
+        return
+      }
+    } else if (formData.type === 'C') {
+      if (formData.consumerData.isConsumerFinal) {
+        if (!formData.consumerData.firstName || !formData.consumerData.lastName || !formData.consumerData.dni) {
+          toast.error('Complete todos los datos del consumidor final')
+          return
+        }
+      } else {
+        if (!formData.receiverCompanyId) {
+          toast.error('Seleccione una empresa')
+          return
+        }
+      }
+    }
+
+    // Validación de cotización para monedas extranjeras
+    if (formData.currency !== 'ARS' && !formData.exchangeRate) {
+      toast.error('Ingrese la cotización de la moneda')
+      return
+    }
+    
+    try {
+      // La validación de si el tipo de factura es válido para la condición fiscal
+      // se realiza en el backend. Si no es válido, el backend devolverá un error
+      // que mostraremos al usuario.
+      const response = await fetch(`/api/companies/${companyId}/invoices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      
+      toast.success('Factura creada exitosamente', {
+        description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
+      });
+      
+      // Notificación sobre generación automática
+      setTimeout(() => {
+        toast.success('PDF y TXT generados automáticamente', {
+          description: 'Archivos listos para descarga y envío a AFIP/ARCA'
+        });
+      }, 1000);
+      
+      // Notificación sobre envío
+      setTimeout(() => {
+        toast.info('Cliente notificado automáticamente', {
+          description: 'Factura enviada por email con PDF adjunto'
+        });
+      }, 2000);
+      
+      // Notificación sobre AFIP
+      setTimeout(() => {
+        toast.info('Archivo TXT listo para ARCA', {
+          description: 'Descarga el TXT desde la sección de facturas'
+        });
+      }, 3000);
+      
+      router.push(`/company/${companyId}`);
+    } catch (error) {
+      toast.error('Error al crear la factura', {
+        description: error instanceof Error ? error.message : 'Error desconocido'
+      });
     }
 
 
@@ -178,24 +279,29 @@ export default function CreateInvoicePage() {
               <CardDescription>Datos básicos de la factura</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo de Factura *</Label>
-                  <Select value={formData.type} onValueChange={(value: InvoiceType) => 
-                    setFormData({...formData, type: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A">Factura A</SelectItem>
-                      <SelectItem value="B">Factura B</SelectItem>
-                      <SelectItem value="C">Factura C</SelectItem>
-                      <SelectItem value="E">Factura E</SelectItem>
-                      <SelectItem value="otro">Otro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Tipo de Factura */}
+              <div className="space-y-2">
+                <Label htmlFor="type">Tipo de Factura *</Label>
+                <Select value={formData.type} onValueChange={(value: InvoiceType) => 
+                  setFormData({...formData, type: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">Factura A</SelectItem>
+                    <SelectItem value="B">Factura B</SelectItem>
+                    <SelectItem value="C">Factura C</SelectItem>
+                    <SelectItem value="E">Factura E</SelectItem>
+                  </SelectContent>
+                  {/* La validación del tipo de factura según la condición fiscal
+                      se debe manejar en el backend para garantizar la seguridad.
+                      El frontend puede mostrar advertencias pero no debe ser la única
+                      capa de validación. */}
+                </Select>
+              </div>
 
+              {/* Datos del receptor según tipo de factura */}
+              {(formData.type === 'A' || formData.type === 'E') && (
                 <div className="space-y-2">
                   <Label htmlFor="receiver">Empresa Receptora *</Label>
                   <Select value={formData.receiverCompanyId} onValueChange={(value) => 
@@ -212,32 +318,178 @@ export default function CreateInvoicePage() {
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+
+              {formData.type === 'B' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Nombre *</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.consumerData.firstName}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        consumerData: {...formData.consumerData, firstName: e.target.value}
+                      })}
+                      placeholder="Nombre del consumidor"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Apellido *</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.consumerData.lastName}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        consumerData: {...formData.consumerData, lastName: e.target.value}
+                      })}
+                      placeholder="Apellido del consumidor"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dni">DNI *</Label>
+                    <Input
+                      id="dni"
+                      value={formData.consumerData.dni}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        consumerData: {...formData.consumerData, dni: e.target.value}
+                      })}
+                      placeholder="DNI del consumidor"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {formData.type === 'C' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="clientType">Tipo de Cliente *</Label>
+                    <Select 
+                      value={formData.consumerData.isConsumerFinal ? "consumer" : "company"}
+                      onValueChange={(value) => setFormData({
+                        ...formData,
+                        consumerData: {...formData.consumerData, isConsumerFinal: value === "consumer"}
+                      })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo de cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="consumer">Consumidor Final</SelectItem>
+                        <SelectItem value="company">Empresa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.consumerData.isConsumerFinal ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">Nombre *</Label>
+                        <Input
+                          id="firstName"
+                          value={formData.consumerData.firstName}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            consumerData: {...formData.consumerData, firstName: e.target.value}
+                          })}
+                          placeholder="Nombre del consumidor"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Apellido *</Label>
+                        <Input
+                          id="lastName"
+                          value={formData.consumerData.lastName}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            consumerData: {...formData.consumerData, lastName: e.target.value}
+                          })}
+                          placeholder="Apellido del consumidor"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dni">DNI *</Label>
+                        <Input
+                          id="dni"
+                          value={formData.consumerData.dni}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            consumerData: {...formData.consumerData, dni: e.target.value}
+                          })}
+                          placeholder="DNI del consumidor"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="receiver">Empresa *</Label>
+                      <Select value={formData.receiverCompanyId} onValueChange={(value) => 
+                        setFormData({...formData, receiverCompanyId: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar empresa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mockCompanies.map(company => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Fechas y Moneda */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emissionDate">Fecha de Emisión *</Label>
+                  <Input
+                    id="emissionDate"
+                    type="date"
+                    value={formData.emissionDate}
+                    onChange={(e) => setFormData({...formData, emissionDate: e.target.value})}
+                  />
+                </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="currency">Moneda *</Label>
-                  <Select value={formData.currency} onValueChange={(value: Currency) => 
-                    setFormData({...formData, currency: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ARS">Pesos Argentinos (ARS)</SelectItem>
-                      <SelectItem value="USD">Dólares (USD)</SelectItem>
-                      <SelectItem value="EUR">Euros (EUR)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                    min={formData.emissionDate || new Date().toISOString().split('T')[0]}
+                  />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                <div className="space-y-2">
+                  <Label>Moneda y Cotización *</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Select value={formData.currency} onValueChange={(value: Currency) => 
+                      setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '' : formData.exchangeRate})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ARS">Pesos Argentinos (ARS)</SelectItem>
+                        <SelectItem value="USD">Dólares (USD)</SelectItem>
+                        <SelectItem value="EUR">Euros (EUR)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Cotización"
+                      value={formData.exchangeRate}
+                      onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
+                      disabled={formData.currency === 'ARS'}
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -464,13 +716,12 @@ export default function CreateInvoicePage() {
                   <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-blue-800">
-                      🤖 Generación Automática de Archivos
+                      🤖 Generación Automática
                     </p>
                     <ul className="text-xs text-blue-700 mt-1 space-y-1">
-                      <li>• PDF de la factura (formato oficial)</li>
-                      <li>• TXT para AFIP/ARCA (listo para subir)</li>
-                      <li>• Envío automático por email al cliente</li>
-                      <li>• Numeración automática correlativa</li>
+                      <li>• PDF oficial y TXT para AFIP/ARCA</li>
+                      <li>• Envío automático por email</li>
+                      <li>• Numeración correlativa</li>
                     </ul>
                   </div>
                 </div>
@@ -486,30 +737,11 @@ export default function CreateInvoicePage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-green-800">
-                  ✅ Proceso Completamente Automatizado
+                  ✅ Descarga de Archivos
                 </p>
-                <div className="text-xs text-green-700 mt-2 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    <span>Generación automática de PDF con formato oficial</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    <span>Creación de archivo TXT para AFIP/ARCA</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    <span>Envío automático por email al cliente</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    <span>Numeración correlativa automática</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    <span>Archivos disponibles para descarga inmediata</span>
-                  </div>
-                </div>
+                <p className="text-xs text-green-700 mt-1">
+                  Los archivos TXT se pueden descargar individual o masivamente desde "Ver Facturas"
+                </p>
               </div>
             </div>
           </div>

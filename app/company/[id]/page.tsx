@@ -18,14 +18,15 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckSquare,
-  Activity
+  Activity,
+  Upload
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 
-// Mock company data
+// Mock company data with notification counts
 const mockCompanies = [
   { 
     id: 1, 
@@ -35,7 +36,11 @@ const mockCompanies = [
     memberCount: 12,
     totalInvoices: 156,
     pendingPayments: 8,
-    monthlyRevenue: 45000
+    monthlyRevenue: 45000,
+    pendingApprovals: 3,
+    pendingConfirmations: 2,
+    rejectedInvoices: 1,
+    invoicesToPay: 5
   },
   { 
     id: 2, 
@@ -45,7 +50,11 @@ const mockCompanies = [
     memberCount: 5,
     totalInvoices: 89,
     pendingPayments: 3,
-    monthlyRevenue: 12000
+    monthlyRevenue: 12000,
+    pendingApprovals: 0,
+    pendingConfirmations: 0,
+    rejectedInvoices: 0,
+    invoicesToPay: 2
   },
   { 
     id: 3, 
@@ -55,7 +64,11 @@ const mockCompanies = [
     memberCount: 8,
     totalInvoices: 234,
     pendingPayments: 12,
-    monthlyRevenue: 28000
+    monthlyRevenue: 28000,
+    pendingApprovals: 0,
+    pendingConfirmations: 1,
+    rejectedInvoices: 0,
+    invoicesToPay: 8
   },
 ]
 
@@ -92,7 +105,14 @@ export default function CompanyPage() {
       description: "Crear nueva factura para clientes",
       icon: FileText,
       color: "bg-blue-500",
-      action: () => router.push(`/company/${company?.uniqueId}/create-invoice`)
+      action: () => router.push(`/company/${company?.uniqueId}/emit-invoice`)
+    },
+    {
+      title: "Cargar Factura Recibida",
+      description: "Registrar factura de empresa externa",
+      icon: Plus,
+      color: "bg-teal-500",
+      action: () => router.push(`/company/${company?.uniqueId}/load-invoice`)
     },
     {
       title: "Ver Facturas",
@@ -106,6 +126,7 @@ export default function CompanyPage() {
       description: "Procesar pagos pendientes",
       icon: CreditCard,
       color: "bg-orange-500",
+      badge: company.invoicesToPay,
       action: () => router.push(`/company/${company?.uniqueId}/payments`)
     },
     {
@@ -113,13 +134,15 @@ export default function CompanyPage() {
       description: "Revisar pagos recibidos",
       icon: Eye,
       color: "bg-yellow-500",
+      badge: company.pendingConfirmations,
       action: () => router.push(`/company/${company?.uniqueId}/confirm-payments`)
     },
     {
       title: "Aprobar Facturas",
       description: "Revisar facturas de proveedores",
-      icon: FileText,
-      color: "bg-purple-500",
+      icon: CheckSquare,
+      color: "bg-green-500",
+      badge: company.pendingApprovals,
       action: () => router.push(`/company/${company?.uniqueId}/approve-invoices`)
     },
     {
@@ -127,6 +150,7 @@ export default function CompanyPage() {
       description: "Gestionar facturas que requieren atención",
       icon: AlertTriangle,
       color: "bg-red-500",
+      badge: company.rejectedInvoices,
       action: () => router.push(`/company/${company?.uniqueId}/rejected-invoices`)
     },
     {
@@ -275,8 +299,20 @@ export default function CompanyPage() {
                         <item.icon className="h-6 w-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold">{item.title}</h3>
+                          {item.badge !== undefined && item.badge > 0 && (
+                            <div className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                              {item.badge}
+                            </div>
+                          )}
+                        </div>
+                        {item.badge !== undefined && item.badge === 0 && (
+                          <div className="text-xs text-green-600 font-medium mb-1">
+                            ✓ Todo al día
+                          </div>
+                        )}
+                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                       </div>
                     </div>
                   </CardContent>

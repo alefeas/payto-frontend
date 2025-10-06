@@ -1,32 +1,46 @@
 export interface Company {
   id: number
-  nombre: string
-  razonSocial?: string
-  cuitCuil: string
+  name: string
+  businessName?: string
+  taxId: string
   email: string
-  telefono?: string
-  direccion?: string
+  phone?: string
+  taxCondition: 'Registered' | 'Simplified'
+  province: string
+  postalCode: string
+  street: string
+  streetNumber: string
+  floor?: string
+  apartment?: string
   logoUrl?: string
-  uniqueId: string // ID único para identificar la empresa (público)
-  inviteCode: string // Código de invitación (privado, controlado por admin)
-  role: 'Administrador' | 'Director Financiero' | 'Contador' | 'Aprobador' | 'Operador'
+  uniqueId: string // Public unique identifier for the company
+  inviteCode: string // Private invitation code (admin controlled)
+  role: 'Administrator' | 'Financial Director' | 'Accountant' | 'Approver' | 'Operator'
   status: 'active'
   unreadNotifications: number
   createdAt: string
   memberCount: number
-  activa: boolean
-  codigoEliminador: string
+  active: boolean
+  deletionCode: string
 }
 
 export interface CreateCompanyData {
-  nombre: string
-  razonSocial?: string
-  cuitCuil: string
+  name: string
+  businessName?: string
+  taxId: string
   email: string
-  telefono?: string
-  direccion?: string
+  phone?: string
   logoUrl?: string
-  codigoEliminador: string
+  deletionCode: string
+  taxCondition: 'Registered' | 'Simplified'
+  lastInvoiceNumber: number
+  // Structured address fields
+  province: string
+  postalCode: string
+  street: string
+  streetNumber: string
+  floor?: string
+  apartment?: string
 }
 
 export interface Notification {
@@ -38,7 +52,7 @@ export interface Notification {
 export interface InviteCode {
   code: string
   companyId: number
-  role: 'Administrador' | 'Contador' | 'Miembro'
+  role: 'Administrator' | 'Accountant' | 'Member'
   createdBy: string
   expiresAt?: string
 }
