@@ -11,21 +11,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConcepto } from "@/types/invoice"
+import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
 import { ClientSelector } from "@/components/invoices/ClientSelector"
 
 const mockCompanies = [
-  { id: "1", name: "TechCorp SA", uniqueId: "TC8X9K2L", condicionIva: "RI" as const },
-  { id: "2", name: "Emprendimientos Juan Pérez", uniqueId: "SU4P7M9N", condicionIva: "Monotributo" as const },
-  { id: "3", name: "Cooperativa de Trabajo Unidos", uniqueId: "CL1Q3R8T", condicionIva: "Exento" as const },
-  { id: "4", name: "María López", uniqueId: "ML5K2P8W", condicionIva: "CF" as const },
+  { id: "1", name: "TechCorp SA", uniqueId: "TC8X9K2L", taxConditionAfip: "RI" as const },
+  { id: "2", name: "Emprendimientos Juan Pérez", uniqueId: "SU4P7M9N", taxConditionAfip: "Monotributo" as const },
+  { id: "3", name: "Cooperativa de Trabajo Unidos", uniqueId: "CL1Q3R8T", taxConditionAfip: "Exento" as const },
+  { id: "4", name: "María López", uniqueId: "ML5K2P8W", taxConditionAfip: "CF" as const },
 ]
 
 const mockSavedClients = [
-  { id: "1", razonSocial: "Distribuidora El Sol SRL", numeroDocumento: "20-12345678-9", condicionIva: "RI" },
-  { id: "2", razonSocial: "Servicios Técnicos Martínez", numeroDocumento: "27-98765432-1", condicionIva: "Monotributo" },
-  { id: "3", nombre: "Laura", apellido: "González", numeroDocumento: "35.123.456", condicionIva: "CF" },
-  { id: "4", razonSocial: "Comercial Norte SA", numeroDocumento: "30-55667788-9", condicionIva: "RI" },
+  { id: "1", businessName: "Distribuidora El Sol SRL", documentNumber: "20-12345678-9", taxCondition: "RI" },
+  { id: "2", businessName: "Servicios Técnicos Martínez", documentNumber: "27-98765432-1", taxCondition: "Monotributo" },
+  { id: "3", firstName: "Laura", lastName: "González", documentNumber: "35.123.456", taxCondition: "CF" },
+  { id: "4", businessName: "Comercial Norte SA", documentNumber: "30-55667788-9", taxCondition: "RI" },
 ]
 
 export default function CreateInvoicePage() {
@@ -41,7 +41,7 @@ export default function CreateInvoicePage() {
   const getAllowedInvoiceTypes = () => {
     if (!currentCompany) return []
     
-    switch (currentCompany.condicionIva) {
+    switch (currentCompany.taxConditionAfip) {
       case 'RI':
         return ['A', 'B', 'C', 'E'] // RI puede emitir todas
       case 'Monotributo':
@@ -59,7 +59,7 @@ export default function CreateInvoicePage() {
 
   const [formData, setFormData] = useState({
     type: 'A' as InvoiceType,
-    concepto: 'productos' as InvoiceConcepto,
+    concept: 'products' as InvoiceConcept,
     receiverCompanyId: '',
     clientData: null as any,
     saveClient: false,
@@ -102,7 +102,7 @@ export default function CreateInvoicePage() {
     
     const totalPerceptions = perceptions.reduce((sum, perception) => {
       let baseAmount
-      if (perception.type === 'percepcion_iva') {
+      if (perception.type === 'vat_perception') {
         baseAmount = totalTaxes // Percepción IVA solo sobre el IVA
       } else {
         baseAmount = subtotal + totalTaxes // Otras percepciones sobre subtotal + IVA
@@ -140,7 +140,7 @@ export default function CreateInvoicePage() {
   }
 
   const addPerception = () => {
-    setPerceptions([...perceptions, { type: 'percepcion_iibb', name: 'Percepción IIBB', rate: 3 }])
+    setPerceptions([...perceptions, { type: 'gross_income_perception', name: 'Percepción IIBB', rate: 3 }])
   }
 
   const removePerception = (index: number) => {
@@ -178,7 +178,7 @@ export default function CreateInvoicePage() {
 
     const payload = {
       type: formData.type,
-      concepto: formData.concepto,
+      concept: formData.concept,
       receiver_company_id: formData.receiverCompanyId || undefined,
       client_data: formData.clientData || undefined,
       save_client: formData.saveClient,
@@ -262,10 +262,10 @@ export default function CreateInvoicePage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {currentCompany?.condicionIva === 'RI' && 'Responsable Inscripto: Puede emitir A, B, C, E'}
-                  {currentCompany?.condicionIva === 'Monotributo' && 'Monotributo: Solo puede emitir facturas tipo C'}
-                  {currentCompany?.condicionIva === 'Exento' && 'Exento: Puede emitir C (local) y E (exportación)'}
-                  {currentCompany?.condicionIva === 'CF' && '⚠️ Consumidor Final no puede emitir facturas'}
+                  {currentCompany?.taxConditionAfip === 'RI' && 'Responsable Inscripto: Puede emitir A, B, C, E'}
+                  {currentCompany?.taxConditionAfip === 'Monotributo' && 'Monotributo: Solo puede emitir facturas tipo C'}
+                  {currentCompany?.taxConditionAfip === 'Exento' && 'Exento: Puede emitir C (local) y E (exportación)'}
+                  {currentCompany?.taxConditionAfip === 'CF' && '⚠️ Consumidor Final no puede emitir facturas'}
                 </p>
               </div>
 
@@ -273,15 +273,15 @@ export default function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Concepto *</Label>
                 <Select 
-                  value={formData.concepto} 
-                  onValueChange={(value: InvoiceConcepto) => 
-                    setFormData({...formData, concepto: value})}
+                  value={formData.concept} 
+                  onValueChange={(value: InvoiceConcept) => 
+                    setFormData({...formData, concept: value})}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="productos">Productos</SelectItem>
-                    <SelectItem value="servicios">Servicios</SelectItem>
-                    <SelectItem value="productos_servicios">Productos y Servicios</SelectItem>
+                    <SelectItem value="products">Productos</SelectItem>
+                    <SelectItem value="services">Servicios</SelectItem>
+                    <SelectItem value="products_services">Productos y Servicios</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -489,9 +489,9 @@ export default function CreateInvoicePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="percepcion_iva">Percepción IVA</SelectItem>
-                          <SelectItem value="percepcion_iibb">Percepción IIBB</SelectItem>
-                          <SelectItem value="percepcion_suss">Percepción SUSS</SelectItem>
+                          <SelectItem value="vat_perception">Percepción IVA</SelectItem>
+                          <SelectItem value="gross_income_perception">Percepción IIBB</SelectItem>
+                          <SelectItem value="suss_perception">Percepción SUSS</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

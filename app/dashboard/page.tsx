@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -23,7 +23,7 @@ const mockCompanies = [
     unreadNotifications: 3,
     lastActivity: "hace 2h",
     status: "active",
-    condicionIva: "RI" // Responsable Inscripto
+    taxCondition: "RI" // Responsable Inscripto
   },
   { 
     id: 2, 
@@ -34,7 +34,7 @@ const mockCompanies = [
     unreadNotifications: 0,
     lastActivity: "hace 1d",
     status: "active",
-    condicionIva: "Monotributo" // Monotributista
+    taxCondition: "Monotributo" // Monotributista
   },
   { 
     id: 3, 
@@ -45,7 +45,7 @@ const mockCompanies = [
     unreadNotifications: 1,
     lastActivity: "hace 3d",
     status: "active",
-    condicionIva: "Exento" // Exento
+    taxCondition: "Exento" // Exento
   },
   { 
     id: 4, 
@@ -56,7 +56,7 @@ const mockCompanies = [
     unreadNotifications: 0,
     lastActivity: "hace 5d",
     status: "active",
-    condicionIva: "CF" // Consumidor Final
+    taxCondition: "CF" // Consumidor Final
   },
 ]
 

@@ -14,7 +14,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const authenticated = localStorage.getItem('isAuthenticated') === 'true'
       if (authenticated) {
-        const userData = {
+        const userData: User = {
+          firstName: localStorage.getItem('userFirstName') || '',
+          lastName: localStorage.getItem('userLastName') || '',
+          dateOfBirth: localStorage.getItem('userDateOfBirth') || '',
+          gender: localStorage.getItem('userGender') || '',
+          province: localStorage.getItem('userProvince') || '',
+          city: localStorage.getItem('userCity') || '',
+          postalCode: localStorage.getItem('userPostalCode') || '',
+          street: localStorage.getItem('userStreet') || '',
+          streetNumber: localStorage.getItem('userStreetNumber') || '',
+          floor: localStorage.getItem('userFloor') || '',
+          apartment: localStorage.getItem('userApartment') || '',
           email: localStorage.getItem('userEmail') || '',
           name: localStorage.getItem('userName') || 'Usuario',
           phone: localStorage.getItem('userPhone') || '',
@@ -34,7 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('userEmail', email)
       
-      const userData = {
+      const userData: User = {
+        firstName: localStorage.getItem('userFirstName') || '',
+        lastName: localStorage.getItem('userLastName') || '',
+        dateOfBirth: localStorage.getItem('userDateOfBirth') || '',
+        gender: localStorage.getItem('userGender') || '',
+        province: localStorage.getItem('userProvince') || '',
+        city: localStorage.getItem('userCity') || '',
+        postalCode: localStorage.getItem('userPostalCode') || '',
+        street: localStorage.getItem('userStreet') || '',
+        streetNumber: localStorage.getItem('userStreetNumber') || '',
+        floor: localStorage.getItem('userFloor') || '',
+        apartment: localStorage.getItem('userApartment') || '',
         email,
         name: localStorage.getItem('userName') || 'Usuario',
         phone: localStorage.getItem('userPhone') || '',
@@ -56,7 +78,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('userEmail', email)
       localStorage.setItem('userName', name)
       
-      const userData = { email, name, phone: '', bio: '', country: '', timezone: '' }
+      const userData: User = {
+        firstName: '',
+        lastName: '',
+        dateOfBirth: '',
+        gender: '',
+        province: '',
+        city: '',
+        postalCode: '',
+        street: '',
+        streetNumber: '',
+        floor: '',
+        apartment: '',
+        email,
+        name,
+        phone: '',
+        bio: '',
+        country: '',
+        timezone: ''
+      }
       
       setUser(userData)
       setIsAuthenticated(true)

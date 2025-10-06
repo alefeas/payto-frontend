@@ -1,32 +1,32 @@
-// Cliente externo NO registrado en PayTo
+// External client NOT registered in PayTo
 export interface Client {
   id: string
-  companyId: string // Empresa que guardó este cliente
-  tipoDocumento: 'CUIT' | 'CUIL' | 'DNI' | 'Pasaporte' | 'CDI'
-  numeroDocumento: string
-  razonSocial?: string
-  nombre?: string
-  apellido?: string
+  companyId: string // Company that saved this client
+  documentType: 'CUIT' | 'CUIL' | 'DNI' | 'Pasaporte' | 'CDI'
+  documentNumber: string
+  businessName?: string
+  firstName?: string
+  lastName?: string
   email?: string
-  telefono?: string
-  domicilio?: string
-  condicionIva: 'RI' | 'Monotributo' | 'Exento' | 'CF' | 'Consumidor_Final'
-  isCompanyConnection: boolean // Si el cliente se registró después
-  connectedCompanyId?: string // ID de la empresa si se registró
+  phone?: string
+  address?: string
+  taxCondition: 'RI' | 'Monotributo' | 'Exento' | 'CF' | 'Consumidor_Final'
+  isCompanyConnection: boolean // If the client registered later
+  connectedCompanyId?: string // Company ID if registered
   deletedAt?: string
   createdAt: string
   updatedAt: string
 }
 
-// Datos para crear/actualizar cliente externo
+// Data to create/update external client
 export interface ClientData {
-  tipoDocumento: 'CUIT' | 'CUIL' | 'DNI' | 'Pasaporte' | 'CDI'
-  numeroDocumento: string
-  razonSocial?: string
-  nombre?: string
-  apellido?: string
+  documentType: 'CUIT' | 'CUIL' | 'DNI' | 'Pasaporte' | 'CDI'
+  documentNumber: string
+  businessName?: string
+  firstName?: string
+  lastName?: string
   email?: string
-  telefono?: string
-  domicilio?: string
-  condicionIva: 'RI' | 'Monotributo' | 'Exento' | 'CF' | 'Consumidor_Final'
+  phone?: string
+  address?: string
+  taxCondition: 'RI' | 'Monotributo' | 'Exento' | 'CF' | 'Consumidor_Final'
 }

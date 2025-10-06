@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -6,24 +6,13 @@ import { Building2, Plus, UserPlus, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-interface SidebarCompany {
-  id: number
-  nombre: string
-  uniqueId: string
-  inviteCode: string
-  role: string
-  status: string
-  unreadNotifications: number
-  createdAt: string
-  memberCount: number
-  condicionIva: 'RI' | 'Monotributo' | 'Exento' | 'CF'
-}
+import { SidebarCompany } from "@/types"
 
 // Mock companies data - Una de cada condición fiscal
 const mockCompanies: SidebarCompany[] = [
   { 
     id: 1, 
-    nombre: "TechCorp SA", 
+    firstName: "TechCorp SA", 
     uniqueId: "TC8X9K2L",
     inviteCode: "ADMIN-TECH-2024",
     role: "Administrador", 
@@ -31,11 +20,11 @@ const mockCompanies: SidebarCompany[] = [
     unreadNotifications: 3,
     createdAt: "2024-01-15",
     memberCount: 12,
-    condicionIva: "RI" // Responsable Inscripto
+    taxCondition: "RI" // Responsable Inscripto
   },
   { 
     id: 2, 
-    nombre: "Emprendimientos Juan Pérez", 
+    firstName: "Emprendimientos Juan Pérez", 
     uniqueId: "SU4P7M9N",
     inviteCode: "COUNT-START-2024",
     role: "Administrador", 
@@ -43,11 +32,11 @@ const mockCompanies: SidebarCompany[] = [
     unreadNotifications: 0,
     createdAt: "2024-02-20",
     memberCount: 1,
-    condicionIva: "Monotributo" // Monotributista
+    taxCondition: "Monotributo" // Monotributista
   },
   { 
     id: 3, 
-    nombre: "Cooperativa de Trabajo Unidos", 
+    firstName: "Cooperativa de Trabajo Unidos", 
     uniqueId: "CL1Q3R8T",
     inviteCode: "MEMBER-CONSULT-2024",
     role: "Contador", 
@@ -55,11 +44,11 @@ const mockCompanies: SidebarCompany[] = [
     unreadNotifications: 1,
     createdAt: "2024-03-10",
     memberCount: 8,
-    condicionIva: "Exento" // Exento
+    taxCondition: "Exento" // Exento
   },
   { 
     id: 4, 
-    nombre: "María López", 
+    firstName: "María López", 
     uniqueId: "ML5K2P8W",
     inviteCode: "CONSUMER-MARIA-2024",
     role: "Administrador", 
@@ -67,7 +56,7 @@ const mockCompanies: SidebarCompany[] = [
     unreadNotifications: 0,
     createdAt: "2024-04-05",
     memberCount: 1,
-    condicionIva: "CF" // Consumidor Final
+    taxCondition: "CF" // Consumidor Final
   },
 ]
 
@@ -156,7 +145,7 @@ export function DashboardSidebar() {
                         <Building2 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{company.nombre}</p>
+                        <p className="font-medium text-sm">{company.firstName}</p>
                         <p className="text-xs text-muted-foreground">{company.role}</p>
                         <p className="text-xs font-mono text-muted-foreground">ID: {company.uniqueId}</p>
                       </div>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Label } from "@/components/ui/label"
@@ -7,19 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Building2, UserPlus } from "lucide-react"
+import { ClientSelectorProps } from "@/types"
 
 type ClientType = 'registered' | 'saved' | 'new'
-
-interface ClientSelectorProps {
-  connectedCompanies: Array<{ id: string; name: string; uniqueId: string }>
-  savedClients?: Array<{ id: string; razonSocial?: string; nombre?: string; apellido?: string; numeroDocumento: string; condicionIva: string }>
-  onSelect: (data: {
-    receiver_company_id?: string
-    client_id?: string
-    client_data?: any
-    save_client?: boolean
-  }) => void
-}
 
 export function ClientSelector({ connectedCompanies, savedClients = [], onSelect }: ClientSelectorProps) {
   const [clientType, setClientType] = useState<ClientType>('registered')
@@ -27,11 +17,11 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
   const [selectedCompany, setSelectedCompany] = useState('')
   const [selectedClient, setSelectedClient] = useState('')
   const [newClientData, setNewClientData] = useState({
-    tipo_documento: 'CUIT',
-    numero_documento: '',
-    razon_social: '',
+    documentType: 'CUIT',
+    documentNumber: '',
+    businessName: '',
     email: '',
-    condicion_iva: 'Consumidor_Final'
+    taxCondition: 'Consumidor_Final'
   })
 
   const handleCompanySelect = (companyId: string) => {
@@ -146,12 +136,12 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
             </SelectTrigger>
             <SelectContent>
               {savedClients.map(client => {
-                const displayName = client.razonSocial || `${client.nombre} ${client.apellido}` || client.numeroDocumento
+                const displayName = client.razonSocial || `${client.nombre} ${client.apellido}` || client.documentNumber
                 return (
                   <SelectItem key={client.id} value={client.id}>
                     <div className="flex items-center gap-2">
                       <span>{displayName}</span>
-                      <span className="text-xs text-muted-foreground">({client.numeroDocumento})</span>
+                      <span className="text-xs text-muted-foreground">({client.documentNumber})</span>
                     </div>
                   </SelectItem>
                 )
@@ -167,8 +157,8 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
             <div className="space-y-2">
               <Label>Tipo Documento *</Label>
               <Select 
-                value={newClientData.tipo_documento}
-                onValueChange={(v) => handleClientDataChange('tipo_documento', v)}
+                value={newClientData.documentType}
+                onValueChange={(v) => handleClientDataChange('documentType', v)}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -183,8 +173,8 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
               <Label>Número *</Label>
               <Input 
                 placeholder="20-12345678-9"
-                value={newClientData.numero_documento}
-                onChange={(e) => handleClientDataChange('numero_documento', e.target.value)}
+                value={newClientData.documentNumber}
+                onChange={(e) => handleClientDataChange('documentNumber', e.target.value)}
               />
             </div>
           </div>
@@ -193,8 +183,8 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
             <Label>Nombre / Razón Social *</Label>
             <Input 
               placeholder="Juan Pérez o Empresa SA"
-              value={newClientData.razon_social}
-              onChange={(e) => handleClientDataChange('razon_social', e.target.value)}
+              value={newClientData.businessName}
+              onChange={(e) => handleClientDataChange('businessName', e.target.value)}
             />
           </div>
 
@@ -211,8 +201,8 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
           <div className="space-y-2">
             <Label>Condición IVA *</Label>
             <Select 
-              value={newClientData.condicion_iva}
-              onValueChange={(v) => handleClientDataChange('condicion_iva', v)}
+              value={newClientData.taxCondition}
+              onValueChange={(v) => handleClientDataChange('taxCondition', v)}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -21,8 +21,8 @@ export default function CreateCompanyPage() {
     phone: '',
     logoUrl: '',
     deletionCode: '',
-    taxCondition: 'Registered',
     lastInvoiceNumber: 0,
+    taxCondition: 'Registered',
     // Structured address fields
     province: '',
     postalCode: '',
@@ -31,10 +31,10 @@ export default function CreateCompanyPage() {
     floor: '',
     apartment: '',
     // AFIP fields
-    puntoVentaDefault: 1,
-    condicionIva: 'RI',
-    ingresosBrutos: '',
-    inicioActividades: ''
+    defaultSalesPoint: 1,
+    taxConditionAfip: 'RI',
+    grossIncomeTax: '',
+    activityStartDate: ''
   })
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [bankData, setBankData] = useState({
@@ -194,8 +194,8 @@ export default function CreateCompanyPage() {
                     <select
                       id="condicionIva"
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={formData.condicionIva}
-                      onChange={(e) => setFormData({...formData, condicionIva: e.target.value})}
+                      value={formData.taxConditionAfip}
+                      onChange={(e) => setFormData({...formData, taxConditionAfip: e.target.value as 'RI' | 'Monotributo' | 'Exento' | 'CF'})}
                       required
                     >
                       <option value="RI">Responsable Inscripto - Puede emitir facturas A/B/E</option>
@@ -204,13 +204,13 @@ export default function CreateCompanyPage() {
                       <option value="Exento">Exento - Consulte con su contador</option>
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      {formData.condicionIva === 'CF' 
+                      {formData.taxConditionAfip === 'CF' 
                         ? '⚠️ Como consumidor final, podrás recibir y organizar facturas, pero no emitirlas. Podrás actualizar a Monotributo/RI más adelante.'
-                        : formData.condicionIva === 'RI'
+                        : formData.taxConditionAfip === 'RI'
                         ? '✅ Cuenta completa: Emitir y recibir facturas tipo A, B y E'
-                        : formData.condicionIva === 'Monotributo'
+                        : formData.taxConditionAfip === 'Monotributo'
                         ? '✅ Cuenta completa: Emitir y recibir facturas tipo C'
-                        : formData.condicionIva === 'Exento'
+                        : formData.taxConditionAfip === 'Exento'
                         ? '⚠️ Exento de IVA: Emitirás facturas tipo E sin IVA. Requiere autorización de AFIP. Consulta con tu contador.'
                         : 'Consulte con su contador sobre las implicancias fiscales'}
                     </p>
@@ -223,8 +223,8 @@ export default function CreateCompanyPage() {
                       min="1"
                       max="9999"
                       placeholder="1"
-                      value={formData.puntoVentaDefault}
-                      onChange={(e) => setFormData({...formData, puntoVentaDefault: parseInt(e.target.value) || 1})}
+                      value={formData.defaultSalesPoint}
+                      onChange={(e) => setFormData({...formData, defaultSalesPoint: parseInt(e.target.value) || 1})}
                       required
                     />
                     <p className="text-xs text-muted-foreground">
@@ -238,8 +238,8 @@ export default function CreateCompanyPage() {
                     <Input
                       id="ingresosBrutos"
                       placeholder="Ej: 901-123456-7"
-                      value={formData.ingresosBrutos}
-                      onChange={(e) => setFormData({...formData, ingresosBrutos: e.target.value})}
+                      value={formData.grossIncomeTax}
+                      onChange={(e) => setFormData({...formData, grossIncomeTax: e.target.value})}
                     />
                     <p className="text-xs text-muted-foreground">
                       Número de inscripción en Ingresos Brutos (opcional)
@@ -250,8 +250,8 @@ export default function CreateCompanyPage() {
                     <Input
                       id="inicioActividades"
                       type="date"
-                      value={formData.inicioActividades}
-                      onChange={(e) => setFormData({...formData, inicioActividades: e.target.value})}
+                      value={formData.activityStartDate}
+                      onChange={(e) => setFormData({...formData, activityStartDate: e.target.value})}
                     />
                     <p className="text-xs text-muted-foreground">
                       Fecha de inicio de actividades ante AFIP (opcional)

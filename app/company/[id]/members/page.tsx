@@ -12,18 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-
-type CompanyRole = "Administrador" | "Director Financiero" | "Contador" | "Aprobador" | "Operador"
-
-interface CompanyMember {
-  id: string
-  name: string
-  email: string
-  role: CompanyRole
-  joinedAt: string
-  lastActive: string
-  avatar?: string
-}
+import { CompanyRole, CompanyMember } from "@/types"
 
 // Mock members data
 const mockMembers: CompanyMember[] = [

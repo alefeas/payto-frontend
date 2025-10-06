@@ -1,17 +1,17 @@
 export type InvoiceType = 'A' | 'B' | 'C' | 'E'
 
 export type InvoiceStatus = 
-  | 'pendiente_aprobacion' 
-  | 'emitida'
-  | 'aprobada' 
-  | 'rechazada' 
-  | 'pagada' 
-  | 'vencida' 
-  | 'cancelada'
+  | 'pending_approval' 
+  | 'issued'
+  | 'approved' 
+  | 'rejected' 
+  | 'paid' 
+  | 'overdue' 
+  | 'cancelled'
 
 export type Currency = 'ARS' | 'USD' | 'EUR'
 
-export type InvoiceConcepto = 'productos' | 'servicios' | 'productos_servicios'
+export type InvoiceConcept = 'products' | 'services' | 'products_services'
 
 export interface InvoiceItem {
   id: string
@@ -33,7 +33,7 @@ export interface InvoiceTax {
 
 export interface InvoicePerception {
   id: string
-  type: 'percepcion_iva' | 'percepcion_iibb' | 'percepcion_suss'
+  type: 'vat_perception' | 'gross_income_perception' | 'suss_perception'
   name: string
   rate: number
   baseAmount: number
@@ -44,17 +44,17 @@ export interface Invoice {
   id: string
   number: string
   type: InvoiceType
-  puntoVenta: number
-  numeroComprobante: number
-  afipTipoComprobante: string
-  concepto: InvoiceConcepto
+  salesPoint: number
+  voucherNumber: number
+  afipVoucherType: string
+  concept: InvoiceConcept
   issuerCompanyId: string
   receiverCompanyId?: string
   clientId?: string
   issueDate: string
   dueDate: string
   currency: Currency
-  monedaCotizacion: number
+  exchangeRate: number
   items: InvoiceItem[]
   taxes: InvoiceTax[]
   perceptions: InvoicePerception[]
@@ -81,17 +81,17 @@ export interface Invoice {
 
 export interface CreateInvoiceData {
   type: InvoiceType
-  concepto: InvoiceConcepto
+  concept: InvoiceConcept
   receiverCompanyId?: string
   clientId?: string
   clientData?: {
-    tipoDocumento: string
-    numeroDocumento: string
-    razonSocial?: string
-    nombre?: string
-    apellido?: string
+    documentType: string
+    documentNumber: string
+    businessName?: string
+    firstName?: string
+    lastName?: string
     email?: string
-    condicionIva: string
+    taxCondition: string
   }
   saveClient?: boolean
   dueDate: string

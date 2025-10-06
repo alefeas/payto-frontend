@@ -17,13 +17,13 @@ const mockClients: Client[] = [
   {
     id: "1",
     companyId: "TC8X9K2L",
-    tipoDocumento: "CUIT",
-    numeroDocumento: "20-12345678-9",
-    razonSocial: "Distribuidora El Sol SRL",
+    documentType: "CUIT",
+    documentNumber: "20-12345678-9",
+    businessName: "Distribuidora El Sol SRL",
     email: "contacto@elsol.com.ar",
-    telefono: "+54 11 4567-8901",
-    domicilio: "Av. Corrientes 1234, CABA",
-    condicionIva: "RI",
+    phone: "+54 11 4567-8901",
+    address: "Av. Corrientes 1234, CABA",
+    taxCondition: "RI",
     isCompanyConnection: false,
     createdAt: "2024-01-15T10:00:00Z",
     updatedAt: "2024-01-15T10:00:00Z"
@@ -31,13 +31,13 @@ const mockClients: Client[] = [
   {
     id: "2",
     companyId: "TC8X9K2L",
-    tipoDocumento: "CUIT",
-    numeroDocumento: "27-98765432-1",
-    razonSocial: "Servicios Técnicos Martínez",
+    documentType: "CUIT",
+    documentNumber: "27-98765432-1",
+    businessName: "Servicios Técnicos Martínez",
     email: "info@tecnicosmartinez.com",
-    telefono: "+54 11 5678-9012",
-    domicilio: "Calle Falsa 123, Buenos Aires",
-    condicionIva: "Monotributo",
+    phone: "+54 11 5678-9012",
+    address: "Calle Falsa 123, Buenos Aires",
+    taxCondition: "Monotributo",
     isCompanyConnection: false,
     createdAt: "2024-02-10T14:30:00Z",
     updatedAt: "2024-02-10T14:30:00Z"
@@ -45,13 +45,13 @@ const mockClients: Client[] = [
   {
     id: "3",
     companyId: "TC8X9K2L",
-    tipoDocumento: "DNI",
-    numeroDocumento: "35.123.456",
-    nombre: "Laura",
-    apellido: "González",
+    documentType: "DNI",
+    documentNumber: "35.123.456",
+    firstName: "Laura",
+    lastName: "González",
     email: "laura.gonzalez@email.com",
-    telefono: "+54 9 11 6789-0123",
-    condicionIva: "CF",
+    phone: "+54 9 11 6789-0123",
+    taxCondition: "CF",
     isCompanyConnection: false,
     createdAt: "2024-03-05T09:15:00Z",
     updatedAt: "2024-03-05T09:15:00Z"
@@ -59,13 +59,13 @@ const mockClients: Client[] = [
   {
     id: "4",
     companyId: "TC8X9K2L",
-    tipoDocumento: "CUIT",
-    numeroDocumento: "30-55667788-9",
-    razonSocial: "Comercial Norte SA",
+    documentType: "CUIT",
+    documentNumber: "30-55667788-9",
+    businessName: "Comercial Norte SA",
     email: "ventas@comercialnorte.com",
-    telefono: "+54 11 7890-1234",
-    domicilio: "Av. Santa Fe 5678, CABA",
-    condicionIva: "RI",
+    phone: "+54 11 7890-1234",
+    address: "Av. Santa Fe 5678, CABA",
+    taxCondition: "RI",
     isCompanyConnection: false,
     createdAt: "2024-01-20T11:45:00Z",
     updatedAt: "2024-01-20T11:45:00Z"
@@ -73,13 +73,13 @@ const mockClients: Client[] = [
   {
     id: "5",
     companyId: "TC8X9K2L",
-    tipoDocumento: "CUIL",
-    numeroDocumento: "20-44556677-8",
-    nombre: "Roberto",
-    apellido: "Fernández",
+    documentType: "CUIL",
+    documentNumber: "20-44556677-8",
+    firstName: "Roberto",
+    lastName: "Fernández",
     email: "roberto.f@email.com",
-    telefono: "+54 9 11 8901-2345",
-    condicionIva: "Monotributo",
+    phone: "+54 9 11 8901-2345",
+    taxCondition: "Monotributo",
     isCompanyConnection: false,
     createdAt: "2024-02-28T16:20:00Z",
     updatedAt: "2024-02-28T16:20:00Z"
@@ -119,20 +119,20 @@ export default function ClientsPage() {
   // Filtrar clientes
   const filteredClients = clients.filter(client => {
     const matchesSearch = 
-      client.numeroDocumento.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.razonSocial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${client.nombre} ${client.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesFilter = filterCondicion === "all" || client.condicionIva === filterCondicion
+    const matchesFilter = filterCondicion === "all" || client.taxCondition === filterCondicion
 
     return matchesSearch && matchesFilter
   })
 
   const getClientDisplayName = (client: Client) => {
-    if (client.razonSocial) return client.razonSocial
-    if (client.nombre && client.apellido) return `${client.nombre} ${client.apellido}`
-    return client.numeroDocumento
+    if (client.businessName) return client.businessName
+    if (client.firstName && client.lastName) return `${client.firstName} ${client.lastName}`
+    return client.documentNumber
   }
 
   return (
@@ -233,15 +233,15 @@ export default function ClientsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-semibold text-base truncate">{getClientDisplayName(client)}</h3>
-                            <Badge className={condicionIvaColors[client.condicionIva]}>
-                              {condicionIvaLabels[client.condicionIva]}
+                            <Badge className={condicionIvaColors[client.taxCondition]}>
+                              {condicionIvaLabels[client.taxCondition]}
                             </Badge>
                           </div>
                           
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <FileText className="h-3 w-3" />
-                              {client.tipoDocumento}: {client.numeroDocumento}
+                              {client.documentType}: {client.documentNumber}
                             </span>
                             {client.email && (
                               <span className="flex items-center gap-1">
@@ -249,10 +249,10 @@ export default function ClientsPage() {
                                 {client.email}
                               </span>
                             )}
-                            {client.telefono && (
+                            {client.phone && (
                               <span className="flex items-center gap-1">
                                 <Phone className="h-3 w-3" />
-                                {client.telefono}
+                                {client.phone}
                               </span>
                             )}
                           </div>
@@ -362,15 +362,15 @@ export default function ClientsPage() {
 // Formulario de cliente
 function ClientForm({ client, onClose }: { client?: Client | null, onClose: () => void }) {
   const [formData, setFormData] = useState({
-    tipoDocumento: client?.tipoDocumento || "CUIT",
-    numeroDocumento: client?.numeroDocumento || "",
-    razonSocial: client?.razonSocial || "",
-    nombre: client?.nombre || "",
-    apellido: client?.apellido || "",
+    documentType: client?.documentType || "CUIT",
+    documentNumber: client?.documentNumber || "",
+    businessName: client?.businessName || "",
+    firstName: client?.firstName || "",
+    lastName: client?.lastName || "",
     email: client?.email || "",
-    telefono: client?.telefono || "",
-    domicilio: client?.domicilio || "",
-    condicionIva: client?.condicionIva || "CF"
+    phone: client?.phone || "",
+    address: client?.address || "",
+    taxCondition: client?.taxCondition || "CF"
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -384,8 +384,8 @@ function ClientForm({ client, onClose }: { client?: Client | null, onClose: () =
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="tipoDocumento">Tipo de Documento</Label>
-          <Select value={formData.tipoDocumento} onValueChange={(value: any) => setFormData({...formData, tipoDocumento: value})}>
+          <Label htmlFor="documentType">Tipo de Documento</Label>
+          <Select value={formData.documentType} onValueChange={(value: any) => setFormData({...formData, documentType: value})}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -399,19 +399,19 @@ function ClientForm({ client, onClose }: { client?: Client | null, onClose: () =
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="numeroDocumento">Número de Documento</Label>
+          <Label htmlFor="documentNumber">Número de Documento</Label>
           <Input
-            id="numeroDocumento"
-            value={formData.numeroDocumento}
-            onChange={(e) => setFormData({...formData, numeroDocumento: e.target.value})}
+            id="documentNumber"
+            value={formData.documentNumber}
+            onChange={(e) => setFormData({...formData, documentNumber: e.target.value})}
             required
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="condicionIva">Condición IVA</Label>
-        <Select value={formData.condicionIva} onValueChange={(value: any) => setFormData({...formData, condicionIva: value})}>
+        <Label htmlFor="taxCondition">Condición IVA</Label>
+        <Select value={formData.taxCondition} onValueChange={(value: any) => setFormData({...formData, taxCondition: value})}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -425,29 +425,29 @@ function ClientForm({ client, onClose }: { client?: Client | null, onClose: () =
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="razonSocial">Razón Social (opcional para personas físicas)</Label>
+        <Label htmlFor="businessName">Razón Social (opcional para personas físicas)</Label>
         <Input
-          id="razonSocial"
-          value={formData.razonSocial}
-          onChange={(e) => setFormData({...formData, razonSocial: e.target.value})}
+          id="businessName"
+          value={formData.businessName}
+          onChange={(e) => setFormData({...formData, businessName: e.target.value})}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="nombre">Nombre</Label>
+          <Label htmlFor="firstName">Nombre</Label>
           <Input
-            id="nombre"
-            value={formData.nombre}
-            onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+            id="firstName"
+            value={formData.firstName}
+            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="apellido">Apellido</Label>
+          <Label htmlFor="lastName">Apellido</Label>
           <Input
-            id="apellido"
-            value={formData.apellido}
-            onChange={(e) => setFormData({...formData, apellido: e.target.value})}
+            id="lastName"
+            value={formData.lastName}
+            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
           />
         </div>
       </div>
@@ -463,20 +463,20 @@ function ClientForm({ client, onClose }: { client?: Client | null, onClose: () =
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="telefono">Teléfono</Label>
+        <Label htmlFor="phone">Teléfono</Label>
         <Input
-          id="telefono"
-          value={formData.telefono}
-          onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+          id="phone"
+          value={formData.phone}
+          onChange={(e) => setFormData({...formData, phone: e.target.value})}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="domicilio">Domicilio</Label>
+        <Label htmlFor="address">Domicilio</Label>
         <Input
-          id="domicilio"
-          value={formData.domicilio}
-          onChange={(e) => setFormData({...formData, domicilio: e.target.value})}
+          id="address"
+          value={formData.address}
+          onChange={(e) => setFormData({...formData, address: e.target.value})}
         />
       </div>
 

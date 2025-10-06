@@ -14,74 +14,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-
-interface CompanySettings {
-  // Información básica (campos de BD)
-  nombre: string
-  razonSocial: string
-  cuitCuil: string
-  email: string
-  telefono: string
-  direccion: string
-  logoUrl: string
-  
-  // Dirección estructurada
-  provincia: string
-  codigoPostal: string
-  calle: string
-  numeroCalle: string
-  piso: string
-  departamento: string
-  
-  // Configuración fiscal
-  taxRegime: string
-  currency: string
-  
-  // Configuración de facturación
-  invoicePrefix: string
-  nextInvoiceNumber: number
-  paymentTerms: number
-  
-  // Impuestos predeterminados
-  defaultIVA: number
-  defaultIIBB: number
-  
-  // Retenciones predeterminadas
-  defaultGanancias: number
-  defaultIIBBRet: number
-  defaultSUSS: number
-  
-  // Notificaciones
-  emailNotifications: boolean
-  paymentReminders: boolean
-  invoiceApprovals: boolean
-  
-  // Seguridad
-  requireTwoFactor: boolean
-  sessionTimeout: number
-  
-  // Códigos de invitación
-  inviteCode: string
-  autoGenerateInvites: boolean
-  
-  // Estado
-  activa: boolean
-}
+import { CompanySettings } from "@/types"
 
 const mockSettings: CompanySettings = {
-  nombre: "TechCorp",
-  razonSocial: "TechCorp Sociedad Anónima",
-  cuitCuil: "30-12345678-9",
+  name: "TechCorp",
+  businessName: "TechCorp Sociedad Anónima",
+  taxId: "30-12345678-9",
   email: "contacto@techcorp.com",
-  telefono: "+54 11 1234-5678",
-  direccion: "Av. Corrientes 1234, CABA, Argentina",
+  phone: "+54 11 1234-5678",
+  address: "Av. Corrientes 1234, CABA, Argentina",
   logoUrl: "https://techcorp.com/logo.png",
-  provincia: "caba",
-  codigoPostal: "1414",
-  calle: "Av. Corrientes",
-  numeroCalle: "1234",
-  piso: "5",
-  departamento: "A",
+  province: "caba",
+  postalCode: "1414",
+  street: "Av. Corrientes",
+  streetNumber: "1234",
+  floor: "5",
+  apartment: "A",
   taxRegime: "Responsable Inscripto",
   currency: "ARS",
   invoicePrefix: "FC-001",
@@ -99,7 +47,7 @@ const mockSettings: CompanySettings = {
   sessionTimeout: 60,
   inviteCode: "TC8X9K2L",
   autoGenerateInvites: true,
-  activa: true
+  active: true
 }
 
 export default function SettingsPage() {
@@ -231,16 +179,16 @@ export default function SettingsPage() {
                     <Label htmlFor="nombre">Nombre de la Empresa</Label>
                     <Input
                       id="nombre"
-                      value={settings.nombre}
-                      onChange={(e) => updateSetting('nombre', e.target.value)}
+                      value={settings.name}
+                      onChange={(e) => updateSetting('name', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="razonSocial">Razón Social</Label>
                     <Input
                       id="razonSocial"
-                      value={settings.razonSocial}
-                      onChange={(e) => updateSetting('razonSocial', e.target.value)}
+                      value={settings.businessName}
+                      onChange={(e) => updateSetting('businessName', e.target.value)}
                     />
                   </div>
                 </div>
@@ -249,8 +197,8 @@ export default function SettingsPage() {
                   <Label htmlFor="cuitCuil">CUIT/CUIL</Label>
                   <Input
                     id="cuitCuil"
-                    value={settings.cuitCuil}
-                    onChange={(e) => updateSetting('cuitCuil', e.target.value)}
+                    value={settings.taxId}
+                    onChange={(e) => updateSetting('taxId', e.target.value)}
                   />
                 </div>
                 
@@ -292,8 +240,8 @@ export default function SettingsPage() {
                     <Label htmlFor="telefono">Teléfono</Label>
                     <Input
                       id="telefono"
-                      value={settings.telefono}
-                      onChange={(e) => updateSetting('telefono', e.target.value)}
+                      value={settings.phone}
+                      onChange={(e) => updateSetting('phone', e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -317,8 +265,8 @@ export default function SettingsPage() {
                     <div className="space-y-2">
                       <Label htmlFor="provincia">Provincia *</Label>
                       <Select 
-                        value={settings.provincia} 
-                        onValueChange={(value) => updateSetting('provincia', value)}
+                        value={settings.province} 
+                        onValueChange={(value) => updateSetting('province', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar provincia" />
@@ -355,8 +303,8 @@ export default function SettingsPage() {
                       <Label htmlFor="codigoPostal">Código Postal *</Label>
                       <Input
                         id="codigoPostal"
-                        value={settings.codigoPostal}
-                        onChange={(e) => updateSetting('codigoPostal', e.target.value)}
+                        value={settings.postalCode}
+                        onChange={(e) => updateSetting('postalCode', e.target.value)}
                         maxLength={8}
                       />
                     </div>
@@ -366,16 +314,16 @@ export default function SettingsPage() {
                       <Label htmlFor="calle">Calle *</Label>
                       <Input
                         id="calle"
-                        value={settings.calle}
-                        onChange={(e) => updateSetting('calle', e.target.value)}
+                        value={settings.street}
+                        onChange={(e) => updateSetting('street', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="numero">Número *</Label>
                       <Input
                         id="numero"
-                        value={settings.numeroCalle}
-                        onChange={(e) => updateSetting('numeroCalle', e.target.value)}
+                        value={settings.streetNumber}
+                        onChange={(e) => updateSetting('streetNumber', e.target.value)}
                       />
                     </div>
                   </div>
@@ -384,8 +332,8 @@ export default function SettingsPage() {
                       <Label htmlFor="piso">Piso</Label>
                       <Input
                         id="piso"
-                        value={settings.piso}
-                        onChange={(e) => updateSetting('piso', e.target.value)}
+                        value={settings.floor}
+                        onChange={(e) => updateSetting('floor', e.target.value)}
                         placeholder="Opcional"
                       />
                     </div>
@@ -393,8 +341,8 @@ export default function SettingsPage() {
                       <Label htmlFor="departamento">Departamento</Label>
                       <Input
                         id="departamento"
-                        value={settings.departamento}
-                        onChange={(e) => updateSetting('departamento', e.target.value)}
+                        value={settings.apartment}
+                        onChange={(e) => updateSetting('apartment', e.target.value)}
                         placeholder="Opcional"
                       />
                     </div>
