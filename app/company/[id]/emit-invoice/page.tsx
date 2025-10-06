@@ -28,6 +28,11 @@ export default function CreateInvoicePage() {
   const [formData, setFormData] = useState({
     type: 'A' as InvoiceType,
     receiverCompanyId: '',
+    manualReceiver: false,
+    manualReceiverData: {
+      businessName: '',
+      cuit: ''
+    },
     emissionDate: '',
     dueDate: '',
     currency: 'ARS' as Currency,
@@ -140,8 +145,12 @@ export default function CreateInvoicePage() {
 
     // Validación de campos según tipo de factura
     if (formData.type === 'A' || formData.type === 'E') {
-      if (!formData.receiverCompanyId) {
+      if (!formData.manualReceiver && !formData.receiverCompanyId) {
         toast.error('Seleccione la empresa receptora')
+        return
+      }
+      if (formData.manualReceiver && (!formData.manualReceiverData?.businessName || !formData.manualReceiverData?.cuit)) {
+        toast.error('Complete los datos de la empresa receptora')
         return
       }
     } else if (formData.type === 'B') {
@@ -156,8 +165,12 @@ export default function CreateInvoicePage() {
           return
         }
       } else {
-        if (!formData.receiverCompanyId) {
+        if (!formData.manualReceiver && !formData.receiverCompanyId) {
           toast.error('Seleccione una empresa')
+          return
+        }
+        if (formData.manualReceiver && (!formData.manualReceiverData?.businessName || !formData.manualReceiverData?.cuit)) {
+          toast.error('Complete los datos de la empresa')
           return
         }
       }
@@ -259,10 +272,10 @@ export default function CreateInvoicePage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
+          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -302,21 +315,71 @@ export default function CreateInvoicePage() {
 
               {/* Datos del receptor según tipo de factura */}
               {(formData.type === 'A' || formData.type === 'E') && (
-                <div className="space-y-2">
-                  <Label htmlFor="receiver">Empresa Receptora *</Label>
-                  <Select value={formData.receiverCompanyId} onValueChange={(value) => 
-                    setFormData({...formData, receiverCompanyId: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockCompanies.map(company => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Empresa Receptora *</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={!formData.manualReceiver ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFormData({...formData, manualReceiver: false, receiverCompanyId: '', manualReceiverData: {businessName: '', cuit: ''}})}
+                      >
+                        Seleccionar Empresa
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={formData.manualReceiver ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFormData({...formData, manualReceiver: true, receiverCompanyId: ''})}
+                      >
+                        Datos Manuales
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {!formData.manualReceiver ? (
+                    <Select value={formData.receiverCompanyId} onValueChange={(value) => 
+                      setFormData({...formData, receiverCompanyId: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar empresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockCompanies.map(company => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="manualBusinessName">Razón Social *</Label>
+                        <Input
+                          id="manualBusinessName"
+                          placeholder="Nombre de la empresa"
+                          value={formData.manualReceiverData?.businessName || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            manualReceiverData: {...formData.manualReceiverData, businessName: e.target.value}
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="manualCuit">CUIT *</Label>
+                        <Input
+                          id="manualCuit"
+                          placeholder="30-12345678-9"
+                          value={formData.manualReceiverData?.cuit || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            manualReceiverData: {...formData.manualReceiverData, cuit: e.target.value}
+                          })}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -422,21 +485,71 @@ export default function CreateInvoicePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="receiver">Empresa *</Label>
-                      <Select value={formData.receiverCompanyId} onValueChange={(value) => 
-                        setFormData({...formData, receiverCompanyId: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {mockCompanies.map(company => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Empresa *</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={!formData.manualReceiver ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setFormData({...formData, manualReceiver: false, receiverCompanyId: '', manualReceiverData: {businessName: '', cuit: ''}})}
+                          >
+                            Seleccionar Empresa
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={formData.manualReceiver ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setFormData({...formData, manualReceiver: true, receiverCompanyId: ''})}
+                          >
+                            Datos Manuales
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {!formData.manualReceiver ? (
+                        <Select value={formData.receiverCompanyId} onValueChange={(value) => 
+                          setFormData({...formData, receiverCompanyId: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar empresa" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {mockCompanies.map(company => (
+                              <SelectItem key={company.id} value={company.id}>
+                                {company.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="manualBusinessName">Razón Social *</Label>
+                            <Input
+                              id="manualBusinessName"
+                              placeholder="Nombre de la empresa"
+                              value={formData.manualReceiverData?.businessName || ''}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                manualReceiverData: {...formData.manualReceiverData, businessName: e.target.value}
+                              })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="manualCuit">CUIT *</Label>
+                            <Input
+                              id="manualCuit"
+                              placeholder="30-12345678-9"
+                              value={formData.manualReceiverData?.cuit || ''}
+                              onChange={(e) => setFormData({
+                                ...formData,
+                                manualReceiverData: {...formData.manualReceiverData, cuit: e.target.value}
+                              })}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

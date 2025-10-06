@@ -198,11 +198,11 @@ export default function CompanyPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')}>
+          <Button variant="outline" size="icon" onClick={() => router.push('/dashboard')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">

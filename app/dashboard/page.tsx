@@ -73,7 +73,7 @@ export default function DashboardPage() {
   const greeting = currentHour < 12 ? 'Buenos días' : currentHour < 18 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 space-y-8">
       {/* Personal Welcome */}
       <div className="text-center space-y-4">
         <div>

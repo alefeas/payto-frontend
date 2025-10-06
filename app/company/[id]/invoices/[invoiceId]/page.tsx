@@ -2,91 +2,52 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Download, Calendar, Building2, FileText, Calculator, Mail, CheckCircle, FileDown } from "lucide-react"
+import { ArrowLeft, Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
-// Mock invoice data with detailed information
-const mockInvoiceDetails = {
-  "1": {
-    id: "1",
-    number: "FC-001-00000123",
-    type: "A",
-    clientCompany: "TechCorp SA",
-    clientEmail: "facturacion@techcorp.com",
-    issueDate: "2024-01-15",
-    dueDate: "2024-02-15",
-    currency: "ARS",
-    status: "emitida",
-    paymentStatus: "pendiente",
-    items: [
-      {
-        id: "1",
-        description: "Desarrollo de aplicación web",
-        quantity: 1,
-        unitPrice: 100000,
-        taxRate: 21,
-        subtotal: 100000,
-        taxAmount: 21000
-      }
-    ],
-    perceptions: [],
-    subtotal: 100000,
-    totalTaxes: 21000,
-    totalPerceptions: 0,
-    total: 121000,
-    notes: "Desarrollo completo de sistema de gestión empresarial",
-    sentAt: "2024-01-15T10:30:00Z",
-    sentTo: "facturacion@techcorp.com"
-  },
-  "2": {
-    id: "2",
-    number: "FC-001-00000124",
-    type: "B",
-    clientCompany: "StartupXYZ",
-    clientEmail: "admin@startupxyz.com",
-    issueDate: "2024-01-20",
-    dueDate: "2024-02-20",
-    currency: "ARS",
-    status: "emitida",
-    paymentStatus: "pendiente",
-    items: [
-      {
-        id: "1",
-        description: "Consultoría técnica",
-        quantity: 10,
-        unitPrice: 8500,
-        taxRate: 21,
-        subtotal: 85000,
-        taxAmount: 17850
-      }
-    ],
-    perceptions: [],
-    subtotal: 85000,
-    totalTaxes: 17850,
-    totalPerceptions: 0,
-    total: 102850,
-    notes: "Servicios de consultoría para optimización de procesos",
-    sentAt: "2024-01-20T14:15:00Z",
-    sentTo: "admin@startupxyz.com"
-  }
+const mockInvoice = {
+  id: "1",
+  number: "FC-001-00000123",
+  type: "A",
+  issuerCompany: "Mi Empresa",
+  receiverCompany: "TechCorp SA",
+  receiverCuit: "30-12345678-9",
+  issueDate: "2024-01-15",
+  dueDate: "2024-02-15",
+  currency: "ARS",
+  status: "pagada",
+  items: [
+    {
+      id: "1",
+      description: "Desarrollo de aplicación web",
+      quantity: 1,
+      unitPrice: 100000,
+      taxRate: 21,
+      subtotal: 100000,
+      taxAmount: 21000
+    }
+  ],
+  subtotal: 100000,
+  totalTaxes: 21000,
+  totalPerceptions: 3500,
+  totalRetentions: 2420,
+  total: 121000,
+  notes: "Desarrollo completo de sistema de gestión"
 }
 
-type InvoiceStatus = "emitida" | "aprobada"
-type PaymentStatus = "pendiente" | "pagada" | "vencida" | "parcial"
-
-export default function InvoiceDetailsPage() {
+export default function InvoiceDetailPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
   const companyId = params.id as string
   const invoiceId = params.invoiceId as string
 
-  const [invoice] = useState(mockInvoiceDetails[invoiceId as keyof typeof mockInvoiceDetails])
+  const [invoice] = useState(mockInvoice)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -94,302 +55,242 @@ export default function InvoiceDetailsPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  const getStatusBadge = (status: InvoiceStatus) => {
-    switch (status) {
-      case 'emitida':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Emitida</Badge>
-      case 'aprobada':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Aprobada</Badge>
-    }
-  }
-
-  const getPaymentBadge = (status: PaymentStatus) => {
-    switch (status) {
-      case 'pendiente':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pendiente</Badge>
-      case 'pagada':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Pagada</Badge>
-      case 'vencida':
-        return <Badge variant="secondary" className="bg-red-100 text-red-800">Vencida</Badge>
-      case 'parcial':
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Parcial</Badge>
-    }
-  }
-
-  const handleDownload = () => {
-    toast.success('Descarga iniciada', {
-      description: `PDF de ${invoice?.number}`
+  const downloadPDF = () => {
+    toast.success(`Descargando PDF de ${invoice.number}`, {
+      description: 'El archivo PDF se está descargando'
     })
+  }
+
+  const downloadTXT = () => {
+    toast.success(`Descargando TXT de ${invoice.number}`, {
+      description: 'Archivo TXT para AFIP/ARCA'
+    })
+  }
+
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      emitida: "bg-blue-500 text-white hover:bg-blue-600",
+      pagada: "bg-green-500 text-white hover:bg-green-600", 
+      vencida: "bg-red-500 text-white hover:bg-red-600",
+      pendiente: "bg-yellow-500 text-white hover:bg-yellow-600"
+    }
+    const labels = {
+      emitida: "Emitida",
+      pagada: "Pagada",
+      vencida: "Vencida",
+      pendiente: "Pendiente"
+    }
+    return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
   }
 
   if (authLoading) return null
   if (!isAuthenticated) return null
 
-  if (!invoice) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4">Factura no encontrada</h1>
-          <Button onClick={() => router.push(`/company/${companyId}/invoices`)}>
-            Volver a Facturas
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}/invoices`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">{invoice.number}</h1>
-            <p className="text-muted-foreground">Detalles de la factura</p>
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}/invoices`)} className="mt-1">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">{invoice.number}</h1>
+                {getStatusBadge(invoice.status)}
+              </div>
+              <p className="text-muted-foreground">Factura Tipo {invoice.type} • {invoice.issuerCompany}</p>
+            </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleDownload}>
+            <Button onClick={downloadPDF} className="shadow-sm">
               <Download className="h-4 w-4 mr-2" />
-              Descargar PDF
+              PDF
             </Button>
-            <Button variant="outline" onClick={() => {
-              toast.success('Descarga iniciada', {
-                description: `TXT para AFIP/ARCA de ${invoice?.number}`
-              })
-            }}>
-              <FileDown className="h-4 w-4 mr-2" />
-              TXT AFIP
+            <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
+              <FileText className="h-4 w-4 mr-2" />
+              TXT
             </Button>
           </div>
         </div>
 
-        {/* Invoice Header Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="h-6 w-6" />
-                Factura {invoice.type} - {invoice.number}
+        {/* Información General */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cliente */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Información del Cliente
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Razón Social</p>
+                <p className="font-semibold">{invoice.receiverCompany}</p>
               </div>
-              <div className="flex gap-2">
-                {getStatusBadge(invoice.status as InvoiceStatus)}
-                {getPaymentBadge(invoice.paymentStatus as PaymentStatus)}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">CUIT</p>
+                <p>{invoice.receiverCuit}</p>
               </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cliente</p>
-                    <p className="font-medium">{invoice.clientCompany}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{invoice.clientEmail}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Fecha de Emisión</p>
-                    <p className="font-medium">{new Date(invoice.issueDate).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Fecha de Vencimiento</p>
-                    <p className="font-medium">{new Date(invoice.dueDate).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Items */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ítems de la Factura</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {invoice.items.map((item) => (
-                <div key={item.id} className="border rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                    <div className="md:col-span-2">
-                      <p className="font-medium">{item.description}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Cantidad</p>
-                      <p className="font-medium">{item.quantity}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Precio Unit.</p>
-                      <p className="font-medium">${item.unitPrice.toLocaleString()}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Subtotal</p>
-                      <p className="font-bold">${item.subtotal.toLocaleString()}</p>
-                      {item.taxRate > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          IVA {item.taxRate}%: ${item.taxAmount.toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+          {/* Fechas y Moneda */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Fechas y Moneda
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Emisión</p>
+                  <p className="font-medium">{new Date(invoice.issueDate).toLocaleDateString('es-AR')}</p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Vencimiento</p>
+                  <p className="font-medium">{new Date(invoice.dueDate).toLocaleDateString('es-AR')}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Moneda</p>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  <p className="font-medium">{invoice.currency}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Totals */}
-        <Card>
+        {/* Ítems */}
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              Resumen de Totales
+              <FileText className="h-5 w-5 text-primary" />
+              Detalle de Ítems
             </CardTitle>
+            <CardDescription>Productos y servicios facturados</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span className="font-medium">
-                  ${invoice.subtotal.toLocaleString()} {invoice.currency}
-                </span>
-              </div>
-              
-              {invoice.totalTaxes > 0 && (
-                <div className="flex justify-between">
-                  <span>Total Impuestos:</span>
-                  <span className="font-medium">
-                    ${invoice.totalTaxes.toLocaleString()} {invoice.currency}
-                  </span>
-                </div>
-              )}
-              
-              {invoice.totalPerceptions > 0 && (
-                <div className="flex justify-between">
-                  <span>Total Percepciones:</span>
-                  <span className="font-medium text-orange-600">
-                    ${invoice.totalPerceptions.toLocaleString()} {invoice.currency}
-                  </span>
-                </div>
-              )}
-              
-              <Separator />
-              
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span className="text-green-600">
-                  ${invoice.total.toLocaleString()} {invoice.currency}
-                </span>
+            <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b">
+                      <th className="text-left p-4 font-semibold text-sm">Descripción</th>
+                      <th className="text-center p-4 font-semibold text-sm w-24">Cant.</th>
+                      <th className="text-right p-4 font-semibold text-sm w-32">Precio Unit.</th>
+                      <th className="text-center p-4 font-semibold text-sm w-20">IVA</th>
+                      <th className="text-right p-4 font-semibold text-sm w-32">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.items.map((item, index) => (
+                      <tr key={item.id} className={index !== invoice.items.length - 1 ? "border-b" : ""}>
+                        <td className="p-4">
+                          <p className="font-medium">{item.description}</p>
+                        </td>
+                        <td className="p-4 text-center">{item.quantity}</td>
+                        <td className="p-4 text-right text-sm">
+                          {item.unitPrice.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                        </td>
+                        <td className="p-4 text-center">
+                          <Badge variant="outline" className="text-xs">{item.taxRate}%</Badge>
+                        </td>
+                        <td className="p-4 text-right font-medium">
+                          {item.subtotal.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Archivos Generados */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              Archivos Generados Automáticamente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <FileText className="h-5 w-5 text-red-600" />
-                  <div>
-                    <p className="font-medium">PDF de Factura</p>
-                    <p className="text-xs text-muted-foreground">Formato oficial para cliente</p>
-                  </div>
-                </div>
-                <Button size="sm" onClick={handleDownload} className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar PDF
-                </Button>
-              </div>
-              
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <FileDown className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="font-medium">Archivo TXT AFIP</p>
-                    <p className="text-xs text-muted-foreground">Para subir a ARCA/AFIP</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => {
-                  toast.success('Descarga iniciada', {
-                    description: `TXT para AFIP/ARCA de ${invoice?.number}`
-                  })
-                }} className="w-full">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Descargar TXT
-                </Button>
-              </div>
-            </div>
-            
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                🤖 <strong>Generación Automática:</strong> Ambos archivos se generaron automáticamente al crear la factura. El PDF se envió por email al cliente y el TXT está listo para subir a AFIP/ARCA.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sending Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Información de Envío
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Enviada el:</span>
-                <span className="font-medium">
-                  {new Date(invoice.sentAt).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Enviada a:</span>
-                <span className="font-medium">{invoice.sentTo}</span>
-              </div>
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">
-                  ✅ La factura fue enviada automáticamente por email al cliente con PDF adjunto
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notes */}
-        {invoice.notes && (
-          <Card>
+        {/* Totales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Notas</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Resumen de Totales
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">
+                    {invoice.subtotal.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-t">
+                  <span className="text-muted-foreground">Impuestos (IVA)</span>
+                  <span className="font-medium">
+                    {invoice.totalTaxes.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                  </span>
+                </div>
+                {invoice.totalPerceptions > 0 && (
+                  <div className="flex justify-between items-center py-2 border-t">
+                    <span className="text-orange-600">Percepciones</span>
+                    <span className="font-medium text-orange-600">
+                      {invoice.totalPerceptions.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center py-3 border-t-2 text-lg font-bold">
+                  <span>Total Factura</span>
+                  <span className="text-primary">
+                    {invoice.total.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {invoice.status === 'pagada' && invoice.totalRetentions && invoice.totalRetentions > 0 && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle>Pago Recibido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground">Total Factura</span>
+                    <span className="font-medium">
+                      {invoice.total.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-t">
+                    <span className="text-red-600">Retenciones</span>
+                    <span className="font-medium text-red-600">
+                      -{invoice.totalRetentions.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 text-xl font-bold">
+                    <span className="text-green-700">Total Cobrado</span>
+                    <span className="text-green-700">
+                      {(invoice.total - invoice.totalRetentions).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Notas */}
+        {invoice.notes && (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Observaciones</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">{invoice.notes}</p>
