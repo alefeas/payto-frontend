@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import type { InvoiceType, Currency, InvoiceItem, InvoicePerception } from "@/types/invoice"
+import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConcepto } from "@/types/invoice"
+import { ClientSelector } from "@/components/invoices/ClientSelector"
 
 const mockCompanies = [
-  { id: "1", name: "TechCorp SA", uniqueId: "TC8X9K2L" },
-  { id: "2", name: "StartupXYZ", uniqueId: "SU4P7M9N" },
-  { id: "3", name: "Consulting LLC", uniqueId: "CL1Q3R8T" },
+  { id: "1", name: "TechCorp SA", uniqueId: "TC8X9K2L", condicionIva: "RI" as const },
+  { id: "2", name: "Emprendimientos Juan Pérez", uniqueId: "SU4P7M9N", condicionIva: "Monotributo" as const },
+  { id: "3", name: "Cooperativa de Trabajo Unidos", uniqueId: "CL1Q3R8T", condicionIva: "Exento" as const },
+  { id: "4", name: "María López", uniqueId: "ML5K2P8W", condicionIva: "CF" as const },
 ]
 
 export default function CreateInvoicePage() {
@@ -25,31 +27,40 @@ export default function CreateInvoicePage() {
   const params = useParams()
   const companyId = params.id as string
 
+  // Obtener empresa actual
+  const currentCompany = mockCompanies.find(c => c.uniqueId === companyId)
+
+  // Determinar tipos de factura permitidos según condición IVA
+  const getAllowedInvoiceTypes = () => {
+    if (!currentCompany) return []
+    
+    switch (currentCompany.condicionIva) {
+      case 'RI':
+        return ['A', 'B', 'C', 'E'] // RI puede emitir todas
+      case 'Monotributo':
+        return ['C'] // Monotributo solo C
+      case 'Exento':
+        return ['C', 'E'] // Exento: C local, E exportación
+      case 'CF':
+        return [] // Consumidor Final no puede emitir
+      default:
+        return []
+    }
+  }
+
+  const allowedTypes = getAllowedInvoiceTypes()
+
   const [formData, setFormData] = useState({
     type: 'A' as InvoiceType,
+    concepto: 'productos' as InvoiceConcepto,
     receiverCompanyId: '',
-    manualReceiver: false,
-    manualReceiverData: {
-      businessName: '',
-      cuit: ''
-    },
+    clientData: null as any,
+    saveClient: false,
     emissionDate: '',
     dueDate: '',
     currency: 'ARS' as Currency,
     exchangeRate: '',
-    notes: '',
-    // Consumer data for invoice B and C
-    consumerData: {
-      firstName: '',
-      lastName: '',
-      dni: '',
-      isConsumerFinal: true
-    },
-    // Company data for invoice C
-    companyData: {
-      businessName: '',
-      cuit: ''
-    }
+    notes: ''
   })
 
 
@@ -138,134 +149,67 @@ export default function CreateInvoicePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.dueDate || !formData.emissionDate) {
+    if (!formData.emissionDate || !formData.dueDate) {
       toast.error('Complete las fechas requeridas')
       return
     }
 
-    // Validación de campos según tipo de factura
-    if (formData.type === 'A' || formData.type === 'E') {
-      if (!formData.manualReceiver && !formData.receiverCompanyId) {
-        toast.error('Seleccione la empresa receptora')
-        return
-      }
-      if (formData.manualReceiver && (!formData.manualReceiverData?.businessName || !formData.manualReceiverData?.cuit)) {
-        toast.error('Complete los datos de la empresa receptora')
-        return
-      }
-    } else if (formData.type === 'B') {
-      if (!formData.consumerData.firstName || !formData.consumerData.lastName || !formData.consumerData.dni) {
-        toast.error('Complete todos los datos del consumidor final')
-        return
-      }
-    } else if (formData.type === 'C') {
-      if (formData.consumerData.isConsumerFinal) {
-        if (!formData.consumerData.firstName || !formData.consumerData.lastName || !formData.consumerData.dni) {
-          toast.error('Complete todos los datos del consumidor final')
-          return
-        }
-      } else {
-        if (!formData.manualReceiver && !formData.receiverCompanyId) {
-          toast.error('Seleccione una empresa')
-          return
-        }
-        if (formData.manualReceiver && (!formData.manualReceiverData?.businessName || !formData.manualReceiverData?.cuit)) {
-          toast.error('Complete los datos de la empresa')
-          return
-        }
-      }
+    if (!formData.receiverCompanyId && !formData.clientData) {
+      toast.error('Debe seleccionar un cliente')
+      return
     }
 
-    // Validación de cotización para monedas extranjeras
     if (formData.currency !== 'ARS' && !formData.exchangeRate) {
       toast.error('Ingrese la cotización de la moneda')
       return
     }
-    
-    try {
-      // La validación de si el tipo de factura es válido para la condición fiscal
-      // se realiza en el backend. Si no es válido, el backend devolverá un error
-      // que mostraremos al usuario.
-      const response = await fetch(`/api/companies/${companyId}/invoices`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      const result = await response.json();
-      
-      toast.success('Factura creada exitosamente', {
-        description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
-      });
-      
-      // Notificación sobre generación automática
-      setTimeout(() => {
-        toast.success('PDF y TXT generados automáticamente', {
-          description: 'Archivos listos para descarga y envío a AFIP/ARCA'
-        });
-      }, 1000);
-      
-      // Notificación sobre envío
-      setTimeout(() => {
-        toast.info('Cliente notificado automáticamente', {
-          description: 'Factura enviada por email con PDF adjunto'
-        });
-      }, 2000);
-      
-      // Notificación sobre AFIP
-      setTimeout(() => {
-        toast.info('Archivo TXT listo para ARCA', {
-          description: 'Descarga el TXT desde la sección de facturas'
-        });
-      }, 3000);
-      
-      router.push(`/company/${companyId}`);
-    } catch (error) {
-      toast.error('Error al crear la factura', {
-        description: error instanceof Error ? error.message : 'Error desconocido'
-      });
-    }
-
-
 
     if (items.some(item => !item.description || item.quantity <= 0 || item.unitPrice <= 0)) {
       toast.error('Complete todos los ítems correctamente')
       return
     }
 
-    toast.success('Factura creada exitosamente', {
-      description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
-    })
-    
-    // Notificación sobre generación automática
-    setTimeout(() => {
-      toast.success('PDF y TXT generados automáticamente', {
-        description: 'Archivos listos para descarga y envío a AFIP/ARCA'
+    const payload = {
+      type: formData.type,
+      concepto: formData.concepto,
+      receiver_company_id: formData.receiverCompanyId || undefined,
+      client_data: formData.clientData || undefined,
+      save_client: formData.saveClient,
+      issue_date: formData.emissionDate,
+      due_date: formData.dueDate,
+      currency: formData.currency,
+      exchange_rate: formData.exchangeRate || undefined,
+      items: items,
+      perceptions: perceptions,
+      notes: formData.notes
+    }
+
+    try {
+      const response = await fetch(`/api/companies/${companyId}/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
-    }, 1000)
-    
-    // Notificación sobre envío
-    setTimeout(() => {
-      toast.info('Cliente notificado automáticamente', {
-        description: 'Factura enviada por email con PDF adjunto'
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message)
+      }
+
+      toast.success('Factura creada exitosamente', {
+        description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
       })
-    }, 2000)
-    
-    // Notificación sobre AFIP
-    setTimeout(() => {
-      toast.info('Archivo TXT listo para ARCA', {
-        description: 'Descarga el TXT desde la sección de facturas'
+      
+      setTimeout(() => {
+        toast.success('PDF y TXT generados automáticamente')
+      }, 1000)
+      
+      router.push(`/company/${companyId}`)
+    } catch (error) {
+      toast.error('Error al crear la factura', {
+        description: error instanceof Error ? error.message : 'Error desconocido'
       })
-    }, 3000)
-    
-    router.push(`/company/${companyId}`)
+    }
   }
 
   if (authLoading) return null
@@ -295,265 +239,72 @@ export default function CreateInvoicePage() {
               {/* Tipo de Factura */}
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo de Factura *</Label>
-                <Select value={formData.type} onValueChange={(value: InvoiceType) => 
-                  setFormData({...formData, type: value})}>
+                <Select 
+                  value={formData.type} 
+                  onValueChange={(value: InvoiceType) => setFormData({...formData, type: value})}
+                  disabled={allowedTypes.length === 0}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A">Factura A</SelectItem>
-                    <SelectItem value="B">Factura B</SelectItem>
-                    <SelectItem value="C">Factura C</SelectItem>
-                    <SelectItem value="E">Factura E</SelectItem>
+                    {allowedTypes.includes('A') && <SelectItem value="A">Factura A - IVA discriminado (RI a RI)</SelectItem>}
+                    {allowedTypes.includes('B') && <SelectItem value="B">Factura B - IVA incluido (RI a no-RI)</SelectItem>}
+                    {allowedTypes.includes('C') && <SelectItem value="C">Factura C - Sin IVA</SelectItem>}
+                    {allowedTypes.includes('E') && <SelectItem value="E">Factura E - Exportación</SelectItem>}
                   </SelectContent>
-                  {/* La validación del tipo de factura según la condición fiscal
-                      se debe manejar en el backend para garantizar la seguridad.
-                      El frontend puede mostrar advertencias pero no debe ser la única
-                      capa de validación. */}
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {currentCompany?.condicionIva === 'RI' && 'Responsable Inscripto: Puede emitir A, B, C, E'}
+                  {currentCompany?.condicionIva === 'Monotributo' && 'Monotributo: Solo puede emitir facturas tipo C'}
+                  {currentCompany?.condicionIva === 'Exento' && 'Exento: Puede emitir C (local) y E (exportación)'}
+                  {currentCompany?.condicionIva === 'CF' && '⚠️ Consumidor Final no puede emitir facturas'}
+                </p>
+              </div>
+
+              {/* Concepto */}
+              <div className="space-y-2">
+                <Label>Concepto *</Label>
+                <Select 
+                  value={formData.concepto} 
+                  onValueChange={(value: InvoiceConcepto) => 
+                    setFormData({...formData, concepto: value})}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="productos">Productos</SelectItem>
+                    <SelectItem value="servicios">Servicios</SelectItem>
+                    <SelectItem value="productos_servicios">Productos y Servicios</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 
-              {/* Datos del receptor según tipo de factura */}
-              {(formData.type === 'A' || formData.type === 'E') && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Empresa Receptora *</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant={!formData.manualReceiver ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setFormData({...formData, manualReceiver: false, receiverCompanyId: '', manualReceiverData: {businessName: '', cuit: ''}})}
-                      >
-                        Seleccionar Empresa
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={formData.manualReceiver ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setFormData({...formData, manualReceiver: true, receiverCompanyId: ''})}
-                      >
-                        Datos Manuales
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {!formData.manualReceiver ? (
-                    <Select value={formData.receiverCompanyId} onValueChange={(value) => 
-                      setFormData({...formData, receiverCompanyId: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockCompanies.map(company => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="manualBusinessName">Razón Social *</Label>
-                        <Input
-                          id="manualBusinessName"
-                          placeholder="Nombre de la empresa"
-                          value={formData.manualReceiverData?.businessName || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            manualReceiverData: {...formData.manualReceiverData, businessName: e.target.value}
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="manualCuit">CUIT *</Label>
-                        <Input
-                          id="manualCuit"
-                          placeholder="30-12345678-9"
-                          value={formData.manualReceiverData?.cuit || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            manualReceiverData: {...formData.manualReceiverData, cuit: e.target.value}
-                          })}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Cliente */}
+              <div className="space-y-2">
+                <Label>Cliente *</Label>
+                <ClientSelector
+                  connectedCompanies={mockCompanies}
+                  onSelect={(data) => {
+                    if (data.receiver_company_id) {
+                      setFormData({
+                        ...formData,
+                        receiverCompanyId: data.receiver_company_id,
+                        clientData: null,
+                        saveClient: false
+                      })
+                    } else if (data.client_data) {
+                      setFormData({
+                        ...formData,
+                        receiverCompanyId: '',
+                        clientData: data.client_data,
+                        saveClient: data.save_client || false
+                      })
+                    }
+                  }}
+                />
+              </div>
 
-              {formData.type === 'B' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Nombre *</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.consumerData.firstName}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        consumerData: {...formData.consumerData, firstName: e.target.value}
-                      })}
-                      placeholder="Nombre del consumidor"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Apellido *</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.consumerData.lastName}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        consumerData: {...formData.consumerData, lastName: e.target.value}
-                      })}
-                      placeholder="Apellido del consumidor"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dni">DNI *</Label>
-                    <Input
-                      id="dni"
-                      value={formData.consumerData.dni}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        consumerData: {...formData.consumerData, dni: e.target.value}
-                      })}
-                      placeholder="DNI del consumidor"
-                    />
-                  </div>
-                </div>
-              )}
 
-              {formData.type === 'C' && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="clientType">Tipo de Cliente *</Label>
-                    <Select 
-                      value={formData.consumerData.isConsumerFinal ? "consumer" : "company"}
-                      onValueChange={(value) => setFormData({
-                        ...formData,
-                        consumerData: {...formData.consumerData, isConsumerFinal: value === "consumer"}
-                      })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar tipo de cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="consumer">Consumidor Final</SelectItem>
-                        <SelectItem value="company">Empresa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {formData.consumerData.isConsumerFinal ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">Nombre *</Label>
-                        <Input
-                          id="firstName"
-                          value={formData.consumerData.firstName}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            consumerData: {...formData.consumerData, firstName: e.target.value}
-                          })}
-                          placeholder="Nombre del consumidor"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Apellido *</Label>
-                        <Input
-                          id="lastName"
-                          value={formData.consumerData.lastName}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            consumerData: {...formData.consumerData, lastName: e.target.value}
-                          })}
-                          placeholder="Apellido del consumidor"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dni">DNI *</Label>
-                        <Input
-                          id="dni"
-                          value={formData.consumerData.dni}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            consumerData: {...formData.consumerData, dni: e.target.value}
-                          })}
-                          placeholder="DNI del consumidor"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Empresa *</Label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant={!formData.manualReceiver ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFormData({...formData, manualReceiver: false, receiverCompanyId: '', manualReceiverData: {businessName: '', cuit: ''}})}
-                          >
-                            Seleccionar Empresa
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={formData.manualReceiver ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFormData({...formData, manualReceiver: true, receiverCompanyId: ''})}
-                          >
-                            Datos Manuales
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {!formData.manualReceiver ? (
-                        <Select value={formData.receiverCompanyId} onValueChange={(value) => 
-                          setFormData({...formData, receiverCompanyId: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar empresa" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {mockCompanies.map(company => (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="manualBusinessName">Razón Social *</Label>
-                            <Input
-                              id="manualBusinessName"
-                              placeholder="Nombre de la empresa"
-                              value={formData.manualReceiverData?.businessName || ''}
-                              onChange={(e) => setFormData({
-                                ...formData,
-                                manualReceiverData: {...formData.manualReceiverData, businessName: e.target.value}
-                              })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="manualCuit">CUIT *</Label>
-                            <Input
-                              id="manualCuit"
-                              placeholder="30-12345678-9"
-                              value={formData.manualReceiverData?.cuit || ''}
-                              onChange={(e) => setFormData({
-                                ...formData,
-                                manualReceiverData: {...formData.manualReceiverData, cuit: e.target.value}
-                              })}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Fechas y Moneda */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">

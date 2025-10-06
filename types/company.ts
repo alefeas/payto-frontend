@@ -6,6 +6,11 @@ export interface Company {
   email: string
   phone?: string
   taxCondition: 'Registered' | 'Simplified'
+  condicionIva: 'RI' | 'Monotributo' | 'Exento' | 'CF'
+  ingresosBrutos?: string
+  inicioActividades?: string
+  puntoVentaDefault: number
+  canIssueInvoices: boolean
   province: string
   postalCode: string
   street: string
@@ -34,6 +39,11 @@ export interface CreateCompanyData {
   deletionCode: string
   taxCondition: 'Registered' | 'Simplified'
   lastInvoiceNumber: number
+  // AFIP fields
+  condicionIva: 'RI' | 'Monotributo' | 'Exento' | 'CF'
+  puntoVentaDefault: number
+  ingresosBrutos?: string
+  inicioActividades?: string
   // Structured address fields
   province: string
   postalCode: string

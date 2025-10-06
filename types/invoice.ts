@@ -11,6 +11,8 @@ export type InvoiceStatus =
 
 export type Currency = 'ARS' | 'USD' | 'EUR'
 
+export type InvoiceConcepto = 'productos' | 'servicios' | 'productos_servicios'
+
 export interface InvoiceItem {
   id: string
   description: string
@@ -42,11 +44,17 @@ export interface Invoice {
   id: string
   number: string
   type: InvoiceType
+  puntoVenta: number
+  numeroComprobante: number
+  afipTipoComprobante: string
+  concepto: InvoiceConcepto
   issuerCompanyId: string
-  receiverCompanyId: string
+  receiverCompanyId?: string
+  clientId?: string
   issueDate: string
   dueDate: string
   currency: Currency
+  monedaCotizacion: number
   items: InvoiceItem[]
   taxes: InvoiceTax[]
   perceptions: InvoicePerception[]
@@ -73,7 +81,19 @@ export interface Invoice {
 
 export interface CreateInvoiceData {
   type: InvoiceType
-  receiverCompanyId: string
+  concepto: InvoiceConcepto
+  receiverCompanyId?: string
+  clientId?: string
+  clientData?: {
+    tipoDocumento: string
+    numeroDocumento: string
+    razonSocial?: string
+    nombre?: string
+    apellido?: string
+    email?: string
+    condicionIva: string
+  }
+  saveClient?: boolean
   dueDate: string
   currency: Currency
   items: Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]

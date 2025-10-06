@@ -1,4 +1,15 @@
 export interface User {
+  firstName: string
+  lastName: string
+  dateOfBirth: string
+  gender: string
+  province: string
+  city: string
+  postalCode: string
+  street: string
+  streetNumber: string
+  floor: string
+  apartment: string
   email: string
   name: string
   phone: string

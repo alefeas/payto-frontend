@@ -26,7 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 
-// Mock company data with notification counts
+// Mock company data with notification counts - Una de cada condición fiscal
 const mockCompanies = [
   { 
     id: 1, 
@@ -40,27 +40,31 @@ const mockCompanies = [
     pendingApprovals: 3,
     pendingConfirmations: 2,
     rejectedInvoices: 1,
-    invoicesToPay: 5
+    invoicesToPay: 5,
+    condicionIva: "RI" as const,
+    canIssueInvoices: true
   },
   { 
     id: 2, 
-    name: "StartupXYZ", 
+    name: "Emprendimientos Juan Pérez", 
     uniqueId: "SU4P7M9N",
-    role: "Contador", 
-    memberCount: 5,
+    role: "Administrador", 
+    memberCount: 1,
     totalInvoices: 89,
     pendingPayments: 3,
     monthlyRevenue: 12000,
     pendingApprovals: 0,
     pendingConfirmations: 0,
     rejectedInvoices: 0,
-    invoicesToPay: 2
+    invoicesToPay: 2,
+    condicionIva: "Monotributo" as const,
+    canIssueInvoices: true
   },
   { 
     id: 3, 
-    name: "Consulting LLC", 
+    name: "Cooperativa de Trabajo Unidos", 
     uniqueId: "CL1Q3R8T",
-    role: "Miembro", 
+    role: "Contador", 
     memberCount: 8,
     totalInvoices: 234,
     pendingPayments: 12,
@@ -68,7 +72,25 @@ const mockCompanies = [
     pendingApprovals: 0,
     pendingConfirmations: 1,
     rejectedInvoices: 0,
-    invoicesToPay: 8
+    invoicesToPay: 8,
+    condicionIva: "Exento" as const,
+    canIssueInvoices: true
+  },
+  { 
+    id: 4, 
+    name: "María López", 
+    uniqueId: "ML5K2P8W",
+    role: "Administrador", 
+    memberCount: 1,
+    totalInvoices: 0,
+    pendingPayments: 0,
+    monthlyRevenue: 0,
+    pendingApprovals: 0,
+    pendingConfirmations: 0,
+    rejectedInvoices: 0,
+    invoicesToPay: 3,
+    condicionIva: "CF" as const,
+    canIssueInvoices: false
   },
 ]
 
@@ -100,13 +122,13 @@ export default function CompanyPage() {
   }
 
   const menuItems = [
-    {
+    ...(company.canIssueInvoices ? [{
       title: "Emitir Factura",
       description: "Crear nueva factura para clientes",
       icon: FileText,
       color: "bg-blue-500",
       action: () => router.push(`/company/${company?.uniqueId}/emit-invoice`)
-    },
+    }] : []),
     {
       title: "Cargar Factura Recibida",
       description: "Registrar factura de empresa externa",
@@ -129,30 +151,30 @@ export default function CompanyPage() {
       badge: company.invoicesToPay,
       action: () => router.push(`/company/${company?.uniqueId}/payments`)
     },
-    {
+    ...(company.canIssueInvoices ? [{
       title: "Confirmar Pagos",
       description: "Revisar pagos recibidos",
       icon: Eye,
       color: "bg-yellow-500",
       badge: company.pendingConfirmations,
       action: () => router.push(`/company/${company?.uniqueId}/confirm-payments`)
-    },
-    {
+    }] : []),
+    ...(company.canIssueInvoices ? [{
       title: "Aprobar Facturas",
       description: "Revisar facturas de proveedores",
       icon: CheckSquare,
       color: "bg-green-500",
       badge: company.pendingApprovals,
       action: () => router.push(`/company/${company?.uniqueId}/approve-invoices`)
-    },
-    {
+    }] : []),
+    ...(company.canIssueInvoices ? [{
       title: "Facturas Rechazadas",
       description: "Gestionar facturas que requieren atención",
       icon: AlertTriangle,
       color: "bg-red-500",
       badge: company.rejectedInvoices,
       action: () => router.push(`/company/${company?.uniqueId}/rejected-invoices`)
-    },
+    }] : []),
     {
       title: "Registro de Auditoría",
       description: "Historial de actividades del sistema",
@@ -283,6 +305,24 @@ export default function CompanyPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Alerta para Consumidor Final */}
+        {!company.canIssueInvoices && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-900">Cuenta de Solo Recepción</p>
+                  <p className="text-sm text-yellow-800 mt-1">
+                    Como Consumidor Final, no podés emitir facturas. Podés recibir facturas, ver historial y declarar pagos. 
+                    Si querés emitir facturas, actualizá tu perfil a Monotributo o Responsable Inscripto en Configuración.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Menu */}
         <Card>

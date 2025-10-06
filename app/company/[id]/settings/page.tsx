@@ -571,6 +571,56 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="border-t pt-6">
+                  <h4 className="font-medium mb-4">Configuración AFIP</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="puntoVenta">Punto de Venta</Label>
+                      <Input
+                        id="puntoVenta"
+                        type="number"
+                        min="1"
+                        max="9999"
+                        defaultValue="1"
+                        placeholder="0001"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Este número se usará automáticamente en todas tus facturas
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="condicionIva">Condición IVA</Label>
+                      <Select defaultValue="RI">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="RI">Responsable Inscripto</SelectItem>
+                          <SelectItem value="Monotributo">Monotributo</SelectItem>
+                          <SelectItem value="Exento">Exento</SelectItem>
+                          <SelectItem value="CF">Consumidor Final</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ingresosBrutos">Ingresos Brutos (IIBB)</Label>
+                      <Input
+                        id="ingresosBrutos"
+                        placeholder="Número de IIBB"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inicioActividades">Inicio de Actividades</Label>
+                      <Input
+                        id="inicioActividades"
+                        type="date"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
                   <h4 className="font-medium mb-4">Retenciones Predeterminadas</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">

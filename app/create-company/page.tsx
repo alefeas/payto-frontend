@@ -29,7 +29,12 @@ export default function CreateCompanyPage() {
     street: '',
     streetNumber: '',
     floor: '',
-    apartment: ''
+    apartment: '',
+    // AFIP fields
+    puntoVentaDefault: 1,
+    condicionIva: 'RI',
+    ingresosBrutos: '',
+    inicioActividades: ''
   })
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [bankData, setBankData] = useState({
@@ -76,8 +81,8 @@ export default function CreateCompanyPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Crear Empresa</h1>
-            <p className="text-muted-foreground">Configura tu nuevo workspace empresarial</p>
+            <h1 className="text-3xl font-bold">Registrar Perfil Fiscal</h1>
+            <p className="text-muted-foreground">Configura tu perfil para gestionar facturas</p>
           </div>
         </div>
 
@@ -85,56 +90,51 @@ export default function CreateCompanyPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Información de la Empresa
+              Información Básica
             </CardTitle>
             <CardDescription>
-              Completa los datos básicos de tu empresa
+              Completa tus datos fiscales. Si sos consumidor final, podrás recibir facturas pero no emitirlas.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Información Básica */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Información Básica</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre de la Empresa *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Ej: TechCorp"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="businessName">Razón Social</Label>
-                    <Input
-                      id="businessName"
-                      placeholder="Ej: TechCorp Sociedad Anónima"
-                      value={formData.businessName}
-                      onChange={(e) => setFormData({...formData, businessName: e.target.value})}
-                    />
-                  </div>
+                <h3 className="text-lg font-medium">Datos Personales/Empresa</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nombre/Razón Social *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Ej: TechCorp SA, Juan Pérez, María López"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Nombre de tu empresa o tu nombre completo si sos persona física
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="taxId">CUIT/CUIL *</Label>
+                    <Label htmlFor="taxId">CUIT/CUIL/DNI *</Label>
                     <Input
                       id="taxId"
-                      placeholder="30-12345678-9"
+                      placeholder="30-12345678-9 o 12345678"
                       value={formData.taxId}
                       onChange={(e) => setFormData({...formData, taxId: e.target.value})}
                       required
                     />
+                    <p className="text-xs text-muted-foreground">
+                      CUIT/CUIL para empresas/monotributo, DNI para consumidor final
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">Email de Contacto *</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="contacto@empresa.com"
+                      placeholder="contacto@empresa.com o tu@email.com"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       required
@@ -144,7 +144,7 @@ export default function CreateCompanyPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
+                    <Label htmlFor="phone">Teléfono (Opcional)</Label>
                     <Input
                       id="phone"
                       placeholder="+54 11 1234-5678"
@@ -153,61 +153,108 @@ export default function CreateCompanyPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="logo">Logo de la Empresa</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="logo"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                        className="flex-1"
-                      />
-                      <Upload className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    {logoFile && (
-                      <p className="text-sm text-muted-foreground">
-                        Archivo: {logoFile.name}
-                      </p>
-                    )}
+                    <Label htmlFor="businessName">Razón Social Completa (Opcional)</Label>
+                    <Input
+                      id="businessName"
+                      placeholder="Ej: TechCorp Sociedad Anónima"
+                      value={formData.businessName}
+                      onChange={(e) => setFormData({...formData, businessName: e.target.value})}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Solo si es diferente al nombre principal
+                    </p>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="logo">Logo/Imagen (Opcional)</Label>
+                  <Input
+                    id="logo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                  />
+                  {logoFile && (
+                    <p className="text-sm text-green-600">
+                      ✓ Archivo seleccionado: {logoFile.name}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Logo de empresa o foto personal. Aparecerá en tus facturas.
+                  </p>
                 </div>
               </div>
 
-              {/* Configuración Fiscal */}
+              {/* Configuración Fiscal y AFIP */}
               <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-medium">Configuración Fiscal</h3>
+                <h3 className="text-lg font-medium">Configuración Fiscal y AFIP</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="taxCondition">Condición Fiscal *</Label>
+                    <Label htmlFor="condicionIva">Tipo de Cuenta *</Label>
                     <select
-                      id="taxCondition"
+                      id="condicionIva"
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={formData.taxCondition}
-                      onChange={(e) => setFormData({...formData, taxCondition: e.target.value as 'Registered' | 'Simplified'})}
+                      value={formData.condicionIva}
+                      onChange={(e) => setFormData({...formData, condicionIva: e.target.value})}
                       required
                     >
-                      <option value="Registered">Responsable Inscripto</option>
-                      <option value="Simplified">Monotributista</option>
+                      <option value="RI">Responsable Inscripto - Puede emitir facturas A/B/E</option>
+                      <option value="Monotributo">Monotributo - Puede emitir facturas C</option>
+                      <option value="CF">Consumidor Final - Solo recibe facturas (no emite)</option>
+                      <option value="Exento">Exento - Consulte con su contador</option>
                     </select>
                     <p className="text-xs text-muted-foreground">
-                      {formData.taxCondition === 'Registered' 
-                        ? 'Podrá emitir facturas tipo A, B y E'
-                        : 'Podrá emitir facturas tipo C'}
+                      {formData.condicionIva === 'CF' 
+                        ? '⚠️ Como consumidor final, podrás recibir y organizar facturas, pero no emitirlas. Podrás actualizar a Monotributo/RI más adelante.'
+                        : formData.condicionIva === 'RI'
+                        ? '✅ Cuenta completa: Emitir y recibir facturas tipo A, B y E'
+                        : formData.condicionIva === 'Monotributo'
+                        ? '✅ Cuenta completa: Emitir y recibir facturas tipo C'
+                        : formData.condicionIva === 'Exento'
+                        ? '⚠️ Exento de IVA: Emitirás facturas tipo E sin IVA. Requiere autorización de AFIP. Consulta con tu contador.'
+                        : 'Consulte con su contador sobre las implicancias fiscales'}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastInvoiceNumber">Último Número de Factura *</Label>
+                    <Label htmlFor="puntoVentaDefault">Punto de Venta AFIP *</Label>
                     <Input
-                      id="lastInvoiceNumber"
+                      id="puntoVentaDefault"
                       type="number"
-                      min="0"
-                      placeholder="0"
-                      value={formData.lastInvoiceNumber}
-                      onChange={(e) => setFormData({...formData, lastInvoiceNumber: parseInt(e.target.value) || 0})}
+                      min="1"
+                      max="9999"
+                      placeholder="1"
+                      value={formData.puntoVentaDefault}
+                      onChange={(e) => setFormData({...formData, puntoVentaDefault: parseInt(e.target.value) || 1})}
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      Número de la última factura emitida para continuar secuencia AFIP/ARCA
+                      Punto de venta asignado por AFIP (1-9999)
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ingresosBrutos">Ingresos Brutos (IIBB)</Label>
+                    <Input
+                      id="ingresosBrutos"
+                      placeholder="Ej: 901-123456-7"
+                      value={formData.ingresosBrutos}
+                      onChange={(e) => setFormData({...formData, ingresosBrutos: e.target.value})}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Número de inscripción en Ingresos Brutos (opcional)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="inicioActividades">Inicio de Actividades</Label>
+                    <Input
+                      id="inicioActividades"
+                      type="date"
+                      value={formData.inicioActividades}
+                      onChange={(e) => setFormData({...formData, inicioActividades: e.target.value})}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Fecha de inicio de actividades ante AFIP (opcional)
                     </p>
                   </div>
                 </div>
@@ -387,7 +434,7 @@ export default function CreateCompanyPage() {
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mt-6">
                 <p className="text-xs text-blue-800">
-                  <strong>💡 Info:</strong> Al crear la empresa obtienes automáticamente el rol de Administrador y se genera un ID único para identificar tu empresa.
+                  <strong>💡 Info:</strong> Al registrarte obtienes automáticamente el rol de Administrador y se genera un ID único para tu perfil. Si sos Consumidor Final, podrás actualizar a Monotributo/RI cuando lo necesites.
                 </p>
               </div>
 

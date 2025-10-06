@@ -16,42 +16,58 @@ interface SidebarCompany {
   unreadNotifications: number
   createdAt: string
   memberCount: number
+  condicionIva: 'RI' | 'Monotributo' | 'Exento' | 'CF'
 }
 
-// Mock companies data
+// Mock companies data - Una de cada condición fiscal
 const mockCompanies: SidebarCompany[] = [
   { 
     id: 1, 
     nombre: "TechCorp SA", 
     uniqueId: "TC8X9K2L",
-    inviteCode: "ADMIN-TECH-2024", // Código para Administrador
+    inviteCode: "ADMIN-TECH-2024",
     role: "Administrador", 
     status: "active", 
     unreadNotifications: 3,
     createdAt: "2024-01-15",
-    memberCount: 12
+    memberCount: 12,
+    condicionIva: "RI" // Responsable Inscripto
   },
   { 
     id: 2, 
-    nombre: "StartupXYZ", 
+    nombre: "Emprendimientos Juan Pérez", 
     uniqueId: "SU4P7M9N",
-    inviteCode: "COUNT-START-2024", // Código para Contador
-    role: "Contador", 
+    inviteCode: "COUNT-START-2024",
+    role: "Administrador", 
     status: "active", 
     unreadNotifications: 0,
     createdAt: "2024-02-20",
-    memberCount: 5
+    memberCount: 1,
+    condicionIva: "Monotributo" // Monotributista
   },
   { 
     id: 3, 
-    nombre: "Consulting LLC", 
+    nombre: "Cooperativa de Trabajo Unidos", 
     uniqueId: "CL1Q3R8T",
-    inviteCode: "MEMBER-CONSULT-2024", // Código para Miembro
-    role: "Miembro", 
+    inviteCode: "MEMBER-CONSULT-2024",
+    role: "Contador", 
     status: "active", 
     unreadNotifications: 1,
     createdAt: "2024-03-10",
-    memberCount: 8
+    memberCount: 8,
+    condicionIva: "Exento" // Exento
+  },
+  { 
+    id: 4, 
+    nombre: "María López", 
+    uniqueId: "ML5K2P8W",
+    inviteCode: "CONSUMER-MARIA-2024",
+    role: "Administrador", 
+    status: "active", 
+    unreadNotifications: 0,
+    createdAt: "2024-04-05",
+    memberCount: 1,
+    condicionIva: "CF" // Consumidor Final
   },
 ]
 
@@ -66,9 +82,9 @@ export function DashboardSidebar() {
         {/* Actions */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Gestión de Empresas</CardTitle>
+            <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
             <CardDescription>
-              Crea o únete a empresas para gestionar facturas
+              Registra tu perfil o únete como miembro
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -78,17 +94,25 @@ export function DashboardSidebar() {
               onClick={() => router.push('/create-company')}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Crear Empresa
+              Registrar Perfil Fiscal
             </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              size="sm"
-              onClick={() => router.push('/join-company')}
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Unirse a Empresa
-            </Button>
+            <p className="text-xs text-muted-foreground px-1">
+              Crea tu perfil como empresa, monotributista o consumidor final
+            </p>
+            <div className="border-t pt-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start" 
+                size="sm"
+                onClick={() => router.push('/join-company')}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Unirse como Miembro
+              </Button>
+              <p className="text-xs text-muted-foreground px-1 mt-2">
+                Únete a una empresa existente con código de invitación
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -96,27 +120,27 @@ export function DashboardSidebar() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center justify-between">
-              Mis Empresas
+              Mis Perfiles
               <Badge variant="secondary">{activeCompanies.length}</Badge>
             </CardTitle>
             <CardDescription>
-              Empresas donde tienes acceso
+              Perfiles fiscales donde tienes acceso
             </CardDescription>
           </CardHeader>
           <CardContent>
             {activeCompanies.length === 0 ? (
               <div className="text-center py-8">
                 <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-medium mb-2">No tienes empresas</h3>
+                <h3 className="font-medium mb-2">No tienes perfiles</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Crea tu primera empresa o solicita unirte a una existente
+                  Registra tu perfil fiscal o únete como miembro a una empresa
                 </p>
                 <Button 
                   size="sm"
                   onClick={() => router.push('/create-company')}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Crear Primera Empresa
+                  Registrar Perfil
                 </Button>
               </div>
             ) : (

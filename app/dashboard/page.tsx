@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 
-// Mock companies data
+// Mock companies data - Una de cada condición fiscal
 const mockCompanies = [
   { 
     id: 1, 
@@ -22,27 +22,41 @@ const mockCompanies = [
     memberCount: 12,
     unreadNotifications: 3,
     lastActivity: "hace 2h",
-    status: "active"
+    status: "active",
+    condicionIva: "RI" // Responsable Inscripto
   },
   { 
     id: 2, 
-    name: "StartupXYZ", 
+    name: "Emprendimientos Juan Pérez", 
     uniqueId: "SU4P7M9N",
-    role: "Contador", 
-    memberCount: 5,
+    role: "Administrador", 
+    memberCount: 1,
     unreadNotifications: 0,
     lastActivity: "hace 1d",
-    status: "active"
+    status: "active",
+    condicionIva: "Monotributo" // Monotributista
   },
   { 
     id: 3, 
-    name: "Consulting LLC", 
+    name: "Cooperativa de Trabajo Unidos", 
     uniqueId: "CL1Q3R8T",
-    role: "Miembro", 
+    role: "Contador", 
     memberCount: 8,
     unreadNotifications: 1,
     lastActivity: "hace 3d",
-    status: "active"
+    status: "active",
+    condicionIva: "Exento" // Exento
+  },
+  { 
+    id: 4, 
+    name: "María López", 
+    uniqueId: "ML5K2P8W",
+    role: "Administrador", 
+    memberCount: 1,
+    unreadNotifications: 0,
+    lastActivity: "hace 5d",
+    status: "active",
+    condicionIva: "CF" // Consumidor Final
   },
 ]
 
@@ -78,12 +92,12 @@ export default function DashboardPage() {
       <div className="text-center space-y-4">
         <div>
           <h1 className="text-4xl font-bold">{greeting}, {user?.name}!</h1>
-          <p className="text-lg text-muted-foreground mt-2">Listo para gestionar tus empresas hoy</p>
+          <p className="text-lg text-muted-foreground mt-2">Listo para gestionar tus perfiles fiscales hoy</p>
         </div>
         <div className="flex justify-center items-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            <span>{companies.length} empresas</span>
+            <span>{companies.length} perfiles</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -146,7 +160,7 @@ export default function DashboardPage() {
                 
                 <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
                   <p className="text-sm text-center">
-                    📈 <strong>¡Buen trabajo!</strong> Has gestionado {companies.length} empresas exitosamente
+                    📈 <strong>¡Buen trabajo!</strong> Has gestionado {companies.length} perfiles exitosamente
                   </p>
                 </div>
               </div>
@@ -170,7 +184,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Empresas</span>
+                  <span className="text-sm font-medium">Perfiles</span>
                 </div>
                 <span className="text-lg font-bold text-blue-600">{companies.length}</span>
               </div>
