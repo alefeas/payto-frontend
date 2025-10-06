@@ -200,29 +200,18 @@ export default function CompanyPage() {
 
   const additionalItems = [
     {
+      title: "Mis Clientes",
+      description: "Gestionar clientes externos",
+      icon: Users,
+      color: "bg-blue-500",
+      action: () => router.push(`/company/${company?.uniqueId}/clients`)
+    },
+    {
       title: "Red Empresarial",
       description: "Conectar con otras empresas",
       icon: Users,
       color: "bg-pink-500",
       action: () => router.push(`/company/${company?.uniqueId}/network`)
-    },
-    {
-      title: "Plantillas de Factura",
-      description: "Crear y gestionar plantillas personalizadas",
-      icon: FileText,
-      color: "bg-cyan-500"
-    },
-    {
-      title: "Recordatorios de Pago",
-      description: "Automatizar seguimiento de pagos",
-      icon: Bell,
-      color: "bg-yellow-500"
-    },
-    {
-      title: "Backup & Exportar",
-      description: "Respaldar datos y exportar reportes",
-      icon: Download,
-      color: "bg-gray-500"
     }
   ]
 

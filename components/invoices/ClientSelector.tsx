@@ -8,21 +8,24 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Building2, UserPlus } from "lucide-react"
 
-type ClientType = 'registered' | 'new'
+type ClientType = 'registered' | 'saved' | 'new'
 
 interface ClientSelectorProps {
   connectedCompanies: Array<{ id: string; name: string; uniqueId: string }>
+  savedClients?: Array<{ id: string; razonSocial?: string; nombre?: string; apellido?: string; numeroDocumento: string; condicionIva: string }>
   onSelect: (data: {
     receiver_company_id?: string
+    client_id?: string
     client_data?: any
     save_client?: boolean
   }) => void
 }
 
-export function ClientSelector({ connectedCompanies, onSelect }: ClientSelectorProps) {
+export function ClientSelector({ connectedCompanies, savedClients = [], onSelect }: ClientSelectorProps) {
   const [clientType, setClientType] = useState<ClientType>('registered')
   const [saveClient, setSaveClient] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState('')
+  const [selectedClient, setSelectedClient] = useState('')
   const [newClientData, setNewClientData] = useState({
     tipo_documento: 'CUIT',
     numero_documento: '',
@@ -34,6 +37,11 @@ export function ClientSelector({ connectedCompanies, onSelect }: ClientSelectorP
   const handleCompanySelect = (companyId: string) => {
     setSelectedCompany(companyId)
     onSelect({ receiver_company_id: companyId })
+  }
+
+  const handleClientSelect = (clientId: string) => {
+    setSelectedClient(clientId)
+    onSelect({ client_id: clientId })
   }
 
   const handleClientDataChange = (field: string, value: string) => {
@@ -56,31 +64,55 @@ export function ClientSelector({ connectedCompanies, onSelect }: ClientSelectorP
   return (
     <div className="space-y-4">
       <RadioGroup value={clientType} onValueChange={(v) => setClientType(v as ClientType)}>
-        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer">
+        <Label 
+          htmlFor="registered" 
+          className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+        >
           <RadioGroupItem value="registered" id="registered" />
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
-            <Label htmlFor="registered" className="cursor-pointer">
+            <div className="font-medium">
               Empresa en mi red PayTo
-            </Label>
+            </div>
             <p className="text-xs text-muted-foreground">
               Notificaciones automáticas y confirmación de pago
             </p>
           </div>
-        </div>
+        </Label>
         
-        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer">
+        {savedClients.length > 0 && (
+          <Label 
+            htmlFor="saved" 
+            className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+          >
+            <RadioGroupItem value="saved" id="saved" />
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="font-medium">
+                Cliente guardado
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Seleccionar de tus clientes externos guardados
+              </p>
+            </div>
+          </Label>
+        )}
+        
+        <Label 
+          htmlFor="new" 
+          className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+        >
           <RadioGroupItem value="new" id="new" />
           <UserPlus className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
-            <Label htmlFor="new" className="cursor-pointer">
-              Cliente externo (no usa PayTo)
-            </Label>
+            <div className="font-medium">
+              Nuevo cliente externo
+            </div>
             <p className="text-xs text-muted-foreground">
               Consumidor final, monotributista o empresa sin registro
             </p>
           </div>
-        </div>
+        </Label>
       </RadioGroup>
 
       {clientType === 'registered' && (
@@ -100,6 +132,30 @@ export function ClientSelector({ connectedCompanies, onSelect }: ClientSelectorP
                   </div>
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {clientType === 'saved' && (
+        <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
+          <Label>Seleccionar Cliente</Label>
+          <Select value={selectedClient} onValueChange={handleClientSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder="Buscar cliente guardado..." />
+            </SelectTrigger>
+            <SelectContent>
+              {savedClients.map(client => {
+                const displayName = client.razonSocial || `${client.nombre} ${client.apellido}` || client.numeroDocumento
+                return (
+                  <SelectItem key={client.id} value={client.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{displayName}</span>
+                      <span className="text-xs text-muted-foreground">({client.numeroDocumento})</span>
+                    </div>
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         </div>

@@ -21,6 +21,13 @@ const mockCompanies = [
   { id: "4", name: "María López", uniqueId: "ML5K2P8W", condicionIva: "CF" as const },
 ]
 
+const mockSavedClients = [
+  { id: "1", razonSocial: "Distribuidora El Sol SRL", numeroDocumento: "20-12345678-9", condicionIva: "RI" },
+  { id: "2", razonSocial: "Servicios Técnicos Martínez", numeroDocumento: "27-98765432-1", condicionIva: "Monotributo" },
+  { id: "3", nombre: "Laura", apellido: "González", numeroDocumento: "35.123.456", condicionIva: "CF" },
+  { id: "4", razonSocial: "Comercial Norte SA", numeroDocumento: "30-55667788-9", condicionIva: "RI" },
+]
+
 export default function CreateInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -284,12 +291,21 @@ export default function CreateInvoicePage() {
                 <Label>Cliente *</Label>
                 <ClientSelector
                   connectedCompanies={mockCompanies}
+                  savedClients={mockSavedClients}
                   onSelect={(data) => {
                     if (data.receiver_company_id) {
                       setFormData({
                         ...formData,
                         receiverCompanyId: data.receiver_company_id,
                         clientData: null,
+                        saveClient: false
+                      })
+                    } else if (data.client_id) {
+                      // Cliente guardado seleccionado
+                      setFormData({
+                        ...formData,
+                        receiverCompanyId: '',
+                        clientData: { client_id: data.client_id },
                         saveClient: false
                       })
                     } else if (data.client_data) {
