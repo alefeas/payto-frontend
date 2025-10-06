@@ -39,12 +39,20 @@ const timezones = [
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, updateProfile } = useAuth()
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    bio: '',
-    country: '',
-    timezone: ''
+    dateOfBirth: '',
+    gender: '',
+    country: 'Argentina',
+    province: '',
+    city: '',
+    postalCode: '',
+    street: '',
+    streetNumber: '',
+    floor: '',
+    apartment: ''
   })
   
   // Mock workspaces data
@@ -62,12 +70,20 @@ export default function ProfilePage() {
       router.push('/login')
     } else if (user) {
       setFormData({
-        name: user.name,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email,
-        phone: user.phone,
-        bio: user.bio,
-        country: user.country,
-        timezone: user.timezone
+        phone: user.phone || '',
+        dateOfBirth: user.dateOfBirth || '',
+        gender: user.gender || '',
+        country: user.country || 'Argentina',
+        province: user.province || '',
+        city: user.city || '',
+        postalCode: user.postalCode || '',
+        street: user.street || '',
+        streetNumber: user.streetNumber || '',
+        floor: user.floor || '',
+        apartment: user.apartment || ''
       })
     }
   }, [user, isAuthenticated, isLoading, router])
@@ -112,29 +128,23 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Summary */}
-          <Card className="lg:col-span-1">
+          <Card>
             <CardHeader className="text-center">
               <Avatar className="h-24 w-24 mx-auto mb-4">
                 <AvatarFallback className="text-2xl">
-                  {formData.name.charAt(0).toUpperCase()}
+                  {formData.firstName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <CardTitle>{formData.name || 'Usuario'}</CardTitle>
+              <CardTitle>{`${formData.firstName} ${formData.lastName}` || 'Usuario'}</CardTitle>
               <CardDescription>{formData.email}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {formData.country && (
+              {(formData.city || formData.province) && (
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{countries.find(c => c.value === formData.country)?.label}</span>
-                </div>
-              )}
-              {formData.timezone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{timezones.find(t => t.value === formData.timezone)?.label}</span>
+                  <span>{[formData.city, formData.province].filter(Boolean).join(', ')}</span>
                 </div>
               )}
               <div className="pt-2">
@@ -156,39 +166,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Workspaces */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Mis Workspaces
-              </CardTitle>
-              <CardDescription>
-                Empresas donde participas
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {userWorkspaces.map((workspace) => (
-                <div key={workspace.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">{workspace.name}</p>
-                    <p className="text-xs text-muted-foreground">{workspace.role}</p>
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-xs ${
-                    workspace.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {workspace.status === 'active' ? 'Activo' : 'Pendiente'}
-                  </div>
-                </div>
-              ))}
-              <Button variant="outline" size="sm" className="w-full">
-                Ver todos los workspaces
-              </Button>
-            </CardContent>
-          </Card>
-
           {/* Profile Form */}
           <Card className="lg:col-span-2">
             <CardHeader>
@@ -202,20 +179,32 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Info */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Información Básica</h3>
+                  <h3 className="font-semibold">Información Personal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nombre completo *</Label>
+                      <Label htmlFor="firstName">Nombre *</Label>
                       <Input 
-                        id="name" 
-                        placeholder="Tu nombre completo" 
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        id="firstName" 
+                        placeholder="Tu nombre" 
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                         required
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Apellido *</Label>
+                      <Input 
+                        id="lastName" 
+                        placeholder="Tu apellido" 
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email *</Label>
                       <Input 
@@ -227,71 +216,127 @@ export default function ProfilePage() {
                         required
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Teléfono</Label>
+                      <Input 
+                        id="phone" 
+                        placeholder="+54 11 1234-5678" 
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input 
-                      id="phone" 
-                      type="tel" 
-                      placeholder="+54 9 11 1234-5678" 
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Personal Info */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Sobre Ti</h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Biografía</Label>
-                    <Textarea 
-                      id="bio" 
-                      placeholder="Contános un poco sobre ti, tu experiencia profesional, intereses..." 
-                      value={formData.bio}
-                      onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Location & Timezone */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Ubicación y Zona Horaria</h3>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="country">País</Label>
-                      <Select value={formData.country} onValueChange={(value) => setFormData({...formData, country: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona tu país" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countries.map((country) => (
-                            <SelectItem key={country.value} value={country.value}>
-                              {country.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="dateOfBirth">Fecha de Nacimiento</Label>
+                      <Input 
+                        id="dateOfBirth" 
+                        type="date" 
+                        value={formData.dateOfBirth}
+                        onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="timezone">Zona Horaria</Label>
-                      <Select value={formData.timezone} onValueChange={(value) => setFormData({...formData, timezone: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona tu zona horaria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timezones.map((timezone) => (
-                            <SelectItem key={timezone.value} value={timezone.value}>
-                              {timezone.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="gender">Género</Label>
+                      <select 
+                        id="gender"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={formData.gender}
+                        onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                      >
+                        <option value="">Seleccionar</option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                        <option value="prefiero_no_decir">Prefiero no decir</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Dirección</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="country">País</Label>
+                      <Input 
+                        id="country" 
+                        value={formData.country}
+                        onChange={(e) => setFormData({...formData, country: e.target.value})}
+                        readOnly
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="province">Provincia</Label>
+                      <Input 
+                        id="province" 
+                        placeholder="Ej: Buenos Aires" 
+                        value={formData.province}
+                        onChange={(e) => setFormData({...formData, province: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">Ciudad</Label>
+                      <Input 
+                        id="city" 
+                        placeholder="Ej: La Plata" 
+                        value={formData.city}
+                        onChange={(e) => setFormData({...formData, city: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="street">Calle</Label>
+                      <Input 
+                        id="street" 
+                        placeholder="Ej: Av. Corrientes" 
+                        value={formData.street}
+                        onChange={(e) => setFormData({...formData, street: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="streetNumber">Número</Label>
+                      <Input 
+                        id="streetNumber" 
+                        placeholder="1234" 
+                        value={formData.streetNumber}
+                        onChange={(e) => setFormData({...formData, streetNumber: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postalCode">Código Postal</Label>
+                      <Input 
+                        id="postalCode" 
+                        placeholder="1414" 
+                        value={formData.postalCode}
+                        onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="floor">Piso</Label>
+                      <Input 
+                        id="floor" 
+                        placeholder="Opcional" 
+                        value={formData.floor}
+                        onChange={(e) => setFormData({...formData, floor: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="apartment">Departamento</Label>
+                      <Input 
+                        id="apartment" 
+                        placeholder="Opcional" 
+                        value={formData.apartment}
+                        onChange={(e) => setFormData({...formData, apartment: e.target.value})}
+                      />
                     </div>
                   </div>
                 </div>
