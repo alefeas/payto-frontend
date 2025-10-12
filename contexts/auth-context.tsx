@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, AuthContextType } from '@/types'
+import { authService } from '@/services/auth.service'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -11,125 +12,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authenticated = localStorage.getItem('isAuthenticated') === 'true'
-      if (authenticated) {
-        const userData: User = {
-          firstName: localStorage.getItem('userFirstName') || '',
-          lastName: localStorage.getItem('userLastName') || '',
-          dateOfBirth: localStorage.getItem('userDateOfBirth') || '',
-          gender: localStorage.getItem('userGender') || '',
-          province: localStorage.getItem('userProvince') || '',
-          city: localStorage.getItem('userCity') || '',
-          postalCode: localStorage.getItem('userPostalCode') || '',
-          street: localStorage.getItem('userStreet') || '',
-          streetNumber: localStorage.getItem('userStreetNumber') || '',
-          floor: localStorage.getItem('userFloor') || '',
-          apartment: localStorage.getItem('userApartment') || '',
-          email: localStorage.getItem('userEmail') || '',
-          name: localStorage.getItem('userName') || 'Usuario',
-          phone: localStorage.getItem('userPhone') || '',
-          bio: localStorage.getItem('userBio') || '',
-          country: localStorage.getItem('userCountry') || '',
-          timezone: localStorage.getItem('userTimezone') || ''
+    const loadUser = async () => {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('auth_token')
+        if (token) {
+          try {
+            const userData = await authService.getCurrentUser()
+            setUser(userData)
+            setIsAuthenticated(true)
+          } catch (error) {
+            localStorage.removeItem('auth_token')
+          }
         }
-        setUser(userData)
-        setIsAuthenticated(true)
       }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+    loadUser()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    if (email && password) {
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('userEmail', email)
-      
-      const userData: User = {
-        firstName: localStorage.getItem('userFirstName') || '',
-        lastName: localStorage.getItem('userLastName') || '',
-        dateOfBirth: localStorage.getItem('userDateOfBirth') || '',
-        gender: localStorage.getItem('userGender') || '',
-        province: localStorage.getItem('userProvince') || '',
-        city: localStorage.getItem('userCity') || '',
-        postalCode: localStorage.getItem('userPostalCode') || '',
-        street: localStorage.getItem('userStreet') || '',
-        streetNumber: localStorage.getItem('userStreetNumber') || '',
-        floor: localStorage.getItem('userFloor') || '',
-        apartment: localStorage.getItem('userApartment') || '',
-        email,
-        name: localStorage.getItem('userName') || 'Usuario',
-        phone: localStorage.getItem('userPhone') || '',
-        bio: localStorage.getItem('userBio') || '',
-        country: localStorage.getItem('userCountry') || '',
-        timezone: localStorage.getItem('userTimezone') || ''
-      }
-      
-      setUser(userData)
+    try {
+      const response = await authService.login(email, password)
+      localStorage.setItem('auth_token', response.data.token)
+      setUser(response.data.user)
       setIsAuthenticated(true)
       return true
+    } catch (error) {
+      throw error
     }
-    return false
   }
 
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    if (name && email && password) {
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('userEmail', email)
-      localStorage.setItem('userName', name)
-      
-      const userData: User = {
-        firstName: '',
-        lastName: '',
-        dateOfBirth: '',
-        gender: '',
-        province: '',
-        city: '',
-        postalCode: '',
-        street: '',
-        streetNumber: '',
-        floor: '',
-        apartment: '',
-        email,
-        name,
-        phone: '',
-        bio: '',
-        country: '',
-        timezone: ''
-      }
-      
-      setUser(userData)
+  const register = async (data: any): Promise<boolean> => {
+    try {
+      const response = await authService.register(data)
+      localStorage.setItem('auth_token', response.data.token)
+      setUser(response.data.user)
       setIsAuthenticated(true)
       return true
+    } catch (error) {
+      throw error
     }
-    return false
   }
 
-  const updateProfile = async (profileData: Partial<User>): Promise<boolean> => {
+  const updateProfile = async (profileData: any): Promise<boolean> => {
     if (!user) return false
-    
-    const updatedUser = { ...user, ...profileData }
-    
-    localStorage.setItem('userName', updatedUser.name)
-    localStorage.setItem('userEmail', updatedUser.email)
-    if (updatedUser.phone) localStorage.setItem('userPhone', updatedUser.phone)
-    if (updatedUser.bio) localStorage.setItem('userBio', updatedUser.bio)
-    if (updatedUser.country) localStorage.setItem('userCountry', updatedUser.country)
-    if (updatedUser.timezone) localStorage.setItem('userTimezone', updatedUser.timezone)
-    
-    setUser(updatedUser)
-    return true
+    try {
+      const genderMap: Record<string, string> = {
+        'masculino': 'male',
+        'femenino': 'female',
+        'otro': 'other',
+        'prefiero_no_decir': 'prefer_not_to_say'
+      }
+      
+      const updateData = {
+        first_name: profileData.firstName,
+        last_name: profileData.lastName,
+        phone: profileData.phone || undefined,
+        date_of_birth: profileData.dateOfBirth || undefined,
+        gender: profileData.gender ? genderMap[profileData.gender] : undefined,
+        country: profileData.country || undefined,
+        province: profileData.province || undefined,
+        city: profileData.city || undefined,
+        postal_code: profileData.postalCode || undefined,
+        street: profileData.street || undefined,
+        street_number: profileData.streetNumber || undefined,
+        floor: profileData.floor || undefined,
+        apartment: profileData.apartment || undefined,
+      }
+      
+      const updatedUser = await authService.updateProfile(updateData)
+      setUser(updatedUser)
+      return true
+    } catch (error) {
+      throw error
+    }
   }
 
-  const logout = () => {
-    localStorage.removeItem('isAuthenticated')
-    localStorage.removeItem('userEmail')
-    localStorage.removeItem('userName')
-    localStorage.removeItem('userPhone')
-    localStorage.removeItem('userBio')
-    localStorage.removeItem('userCountry')
-    localStorage.removeItem('userTimezone')
-    
+  const logout = async () => {
+    try {
+      await authService.logout()
+    } catch (error) {
+      // Ignore error
+    }
+    localStorage.removeItem('auth_token')
     setUser(null)
     setIsAuthenticated(false)
   }

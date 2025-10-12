@@ -92,10 +92,15 @@ export default function ProfilePage() {
     e.preventDefault()
     setIsSaving(true)
     
-    if (await updateProfile(formData)) {
-      toast.success('Perfil actualizado correctamente')
+    try {
+      if (await updateProfile(formData)) {
+        toast.success('Perfil actualizado correctamente')
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al actualizar perfil')
+    } finally {
+      setIsSaving(false)
     }
-    setIsSaving(false)
   }
 
   if (isLoading || !isAuthenticated) {
