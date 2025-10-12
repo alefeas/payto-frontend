@@ -7,9 +7,26 @@ export interface Company {
   businessName?: string;
   nationalId: string;
   phone?: string;
-  address?: string;
+  addressData?: {
+    street: string;
+    streetNumber: string;
+    floor?: string;
+    apartment?: string;
+    postalCode: string;
+    province: string;
+    city?: string;
+  };
   taxCondition: string;
   defaultSalesPoint: number;
+  lastInvoiceNumber: number;
+  defaultVat: number;
+  vatPerception: number;
+  grossIncomePerception: number;
+  socialSecurityPerception: number;
+  vatRetention: number;
+  incomeTaxRetention: number;
+  grossIncomeRetention: number;
+  socialSecurityRetention: number;
   isActive: boolean;
   inviteCode?: string;
   role: string;

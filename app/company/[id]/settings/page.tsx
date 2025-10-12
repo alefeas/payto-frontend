@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import { companyService } from "@/services/company.service"
+import { companyService, Company } from "@/services/company.service"
 import { bankAccountService, BankAccount } from "@/services/bank-account.service"
 
 const PROVINCIAS = [
@@ -50,12 +50,12 @@ export default function SettingsPage() {
   const params = useParams()
   const companyId = params.id as string
 
-  const [company, setCompany] = useState<any>(null)
+  const [company, setCompany] = useState<Company | null>(null)
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
-  const [initialFormData, setInitialFormData] = useState<any>(null)
+  const [initialFormData, setInitialFormData] = useState<typeof formData | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
   const [showAddBankDialog, setShowAddBankDialog] = useState(false)
@@ -77,7 +77,18 @@ export default function SettingsPage() {
     floor: '',
     apartment: '',
     postal_code: '',
-    province: ''
+    province: '',
+    tax_condition: '',
+    default_sales_point: 1,
+    last_invoice_number: 0,
+    default_vat: 21,
+    vat_perception: 0,
+    gross_income_perception: 2.5,
+    social_security_perception: 1,
+    vat_retention: 0,
+    income_tax_retention: 2,
+    gross_income_retention: 0.42,
+    social_security_retention: 0
   })
   const [bankFormData, setBankFormData] = useState({
     bank_name: '',
@@ -126,12 +137,23 @@ export default function SettingsPage() {
         floor: addr.floor || '',
         apartment: addr.apartment || '',
         postal_code: addr.postalCode || '',
-        province: addr.province || ''
+        province: addr.province || '',
+        tax_condition: companyData.taxCondition || '',
+        default_sales_point: companyData.defaultSalesPoint || 1,
+        last_invoice_number: companyData.lastInvoiceNumber || 0,
+        default_vat: companyData.defaultVat || 21,
+        vat_perception: companyData.vatPerception || 0,
+        gross_income_perception: companyData.grossIncomePerception || 2.5,
+        social_security_perception: companyData.socialSecurityPerception || 1,
+        vat_retention: companyData.vatRetention || 0,
+        income_tax_retention: companyData.incomeTaxRetention || 2,
+        gross_income_retention: companyData.grossIncomeRetention || 0.42,
+        social_security_retention: companyData.socialSecurityRetention || 0
       }
       setFormData(initialData)
       setInitialFormData(initialData)
       setHasChanges(false)
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Error al cargar datos')
     } finally {
       setLoading(false)
@@ -155,7 +177,7 @@ export default function SettingsPage() {
       setInitialFormData(formData)
       setHasChanges(false)
       toast.success('Configuración guardada')
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Error al guardar')
     } finally {
       setSaving(false)
@@ -168,7 +190,7 @@ export default function SettingsPage() {
       setCompany({...company, inviteCode: result.inviteCode})
       toast.success(`Nuevo código: ${result.inviteCode}`)
       setShowRegenerateModal(false)
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Error al regenerar código')
     }
   }
@@ -182,8 +204,9 @@ export default function SettingsPage() {
       await companyService.deleteCompany(companyId, deleteCode)
       toast.success('Perfil fiscal eliminado')
       router.push('/dashboard')
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Código incorrecto')
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Código incorrecto')
     }
   }
 
@@ -203,7 +226,7 @@ export default function SettingsPage() {
       setShowAddBankDialog(false)
       resetBankForm()
       setBankAccounts([...bankAccounts, newAccount])
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Error al agregar cuenta')
     } finally {
       setAddingAccount(false)
@@ -228,7 +251,7 @@ export default function SettingsPage() {
       setEditingAccount(null)
       resetBankForm()
       setBankAccounts(bankAccounts.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc))
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Error al actualizar cuenta')
     } finally {
       setEditingAccountLoading(false)
@@ -249,7 +272,7 @@ export default function SettingsPage() {
       setShowDeleteBankDialog(false)
       setBankAccounts(bankAccounts.filter(acc => acc.id !== deletingAccountId))
       setDeletingAccountId(null)
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Error al eliminar cuenta')
     } finally {
       setDeletingAccount(false)
@@ -403,11 +426,164 @@ export default function SettingsPage() {
                   Configuración de Facturación
                 </CardTitle>
                 <CardDescription>
-                  Parámetros para la generación de facturas
+                  Parámetros para la generación de facturas electrónicas
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">Configuración de facturación próximamente</p>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="font-medium mb-4">Datos Fiscales</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Condición Fiscal</Label>
+                        <Select value={formData.tax_condition} onValueChange={(value) => setFormData({...formData, tax_condition: value})}>
+                          <SelectTrigger><SelectValue placeholder="Selecciona condición fiscal" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
+                            <SelectItem value="monotax">Monotributo</SelectItem>
+                            <SelectItem value="final_consumer">Consumidor Final</SelectItem>
+                            <SelectItem value="exempt">Exento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Punto de Venta</Label>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          max="9999" 
+                          value={formData.default_sales_point} 
+                          onChange={(e) => setFormData({...formData, default_sales_point: parseInt(e.target.value) || 1})} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Numeración de Facturas</h3>
+                  <div className="space-y-2">
+                    <Label>Último Número de Factura</Label>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      value={formData.last_invoice_number} 
+                      onChange={(e) => setFormData({...formData, last_invoice_number: parseInt(e.target.value) || 0})} 
+                      className="max-w-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">La próxima factura será este número + 1</p>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Impuesto Predeterminado</h3>
+                  <div className="space-y-2">
+                    <Label>IVA (%)</Label>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      step="0.01"
+                      value={formData.default_vat} 
+                      onChange={(e) => setFormData({...formData, default_vat: parseFloat(e.target.value) || 0})} 
+                      className="max-w-xs"
+                    />
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Percepciones Predeterminadas (%)</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">IVA</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.vat_perception} 
+                        onChange={(e) => setFormData({...formData, vat_perception: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Ingresos Brutos</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.gross_income_perception} 
+                        onChange={(e) => setFormData({...formData, gross_income_perception: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Seguridad Social</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.social_security_perception} 
+                        onChange={(e) => setFormData({...formData, social_security_perception: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Retenciones Predeterminadas (%)</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">IVA</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.vat_retention} 
+                        onChange={(e) => setFormData({...formData, vat_retention: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Ganancias</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.income_tax_retention} 
+                        onChange={(e) => setFormData({...formData, income_tax_retention: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Ingresos Brutos</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.gross_income_retention} 
+                        onChange={(e) => setFormData({...formData, gross_income_retention: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Seguridad Social</Label>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="100" 
+                        step="0.01"
+                        value={formData.social_security_retention} 
+                        onChange={(e) => setFormData({...formData, social_security_retention: parseFloat(e.target.value) || 0})} 
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-4">
+                    <p className="text-xs text-amber-900 dark:text-amber-100">
+                      Estos valores se aplicarán por defecto al crear nuevas facturas y pagos. Podrás modificarlos individualmente.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -424,8 +600,84 @@ export default function SettingsPage() {
                   Gestionar alertas y recordatorios automáticos
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">Configuración de notificaciones próximamente</p>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="font-medium mb-4">Notificaciones por Email</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Nuevas Facturas</p>
+                        <p className="text-sm text-muted-foreground">Recibir notificación cuando se emite una nueva factura</p>
+                      </div>
+                      <Switch defaultChecked disabled />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Pagos Recibidos</p>
+                        <p className="text-sm text-muted-foreground">Notificar cuando se registra un pago</p>
+                      </div>
+                      <Switch defaultChecked disabled />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Facturas Vencidas</p>
+                        <p className="text-sm text-muted-foreground">Alertas sobre facturas que no han sido pagadas</p>
+                      </div>
+                      <Switch defaultChecked disabled />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Nuevos Miembros</p>
+                        <p className="text-sm text-muted-foreground">Notificar cuando alguien se une al perfil fiscal</p>
+                      </div>
+                      <Switch disabled />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Recordatorios Automáticos</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Recordatorio de Vencimiento</p>
+                        <p className="text-sm text-muted-foreground">Enviar recordatorio 3 días antes del vencimiento</p>
+                      </div>
+                      <Switch disabled />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Resumen Semanal</p>
+                        <p className="text-sm text-muted-foreground">Recibir resumen de actividad cada semana</p>
+                      </div>
+                      <Switch disabled />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Resumen Mensual</p>
+                        <p className="text-sm text-muted-foreground">Recibir informe mensual de facturación</p>
+                      </div>
+                      <Switch disabled />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Canales de Notificación</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Email de Notificaciones</Label>
+                      <Input type="email" placeholder="notificaciones@empresa.com" disabled />
+                      <p className="text-xs text-muted-foreground">Email donde se enviarán las notificaciones</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Nota:</strong> Las opciones de notificaciones están deshabilitadas temporalmente. Próximamente podrás configurar todas las alertas y recordatorios.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -558,7 +810,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Cuenta *</Label>
-                <Select value={bankFormData.account_type} onValueChange={(value: any) => setBankFormData({...bankFormData, account_type: value})}>
+                <Select value={bankFormData.account_type} onValueChange={(value) => setBankFormData({...bankFormData, account_type: value as 'corriente' | 'caja_ahorro' | 'cuenta_sueldo'})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="corriente">Cuenta Corriente</SelectItem>
@@ -601,7 +853,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Cuenta *</Label>
-                <Select value={bankFormData.account_type} onValueChange={(value: any) => setBankFormData({...bankFormData, account_type: value})}>
+                <Select value={bankFormData.account_type} onValueChange={(value) => setBankFormData({...bankFormData, account_type: value as 'corriente' | 'caja_ahorro' | 'cuenta_sueldo'})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="corriente">Cuenta Corriente</SelectItem>
