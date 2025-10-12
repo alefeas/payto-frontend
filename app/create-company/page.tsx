@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { companyService, CreateCompanyData } from "@/services/company.service"
@@ -28,6 +30,13 @@ export default function CreateCompanyPage() {
     apartment: '',
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [addBankAccount, setAddBankAccount] = useState(false)
+  const [bankAccount, setBankAccount] = useState({
+    bank_name: '',
+    account_type: 'corriente' as 'corriente' | 'caja_ahorro' | 'cuenta_sueldo',
+    cbu: '',
+    alias: '',
+  })
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -71,10 +80,31 @@ export default function CreateCompanyPage() {
       return
     }
 
+    if (addBankAccount) {
+      if (!bankAccount.bank_name.trim()) {
+        toast.error('El nombre del banco es obligatorio')
+        return
+      }
+      if (bankAccount.cbu.length !== 22) {
+        toast.error('El CBU debe tener 22 dígitos')
+        return
+      }
+    }
+
     setIsLoading(true)
     
     try {
-      await companyService.createCompany(formData)
+      const company = await companyService.createCompany(formData)
+      
+      if (addBankAccount && company.id) {
+        try {
+          const { bankAccountService } = await import('@/services/bank-account.service')
+          await bankAccountService.createBankAccount(company.id, bankAccount)
+        } catch (bankError) {
+          console.error('Error al crear cuenta bancaria:', bankError)
+        }
+      }
+      
       toast.success(`Empresa "${formData.name}" creada exitosamente`)
       router.push('/dashboard')
     } catch (error: any) {
@@ -199,10 +229,30 @@ export default function CreateCompanyPage() {
                       onChange={(e) => setFormData({...formData, province: e.target.value})}
                     >
                       <option value="">Seleccionar provincia</option>
-                      <option value="buenos_aires">Buenos Aires</option>
-                      <option value="caba">CABA</option>
-                      <option value="cordoba">Córdoba</option>
-                      <option value="santa_fe">Santa Fe</option>
+                      <option value="Buenos Aires">Buenos Aires</option>
+                      <option value="CABA">CABA</option>
+                      <option value="Catamarca">Catamarca</option>
+                      <option value="Chaco">Chaco</option>
+                      <option value="Chubut">Chubut</option>
+                      <option value="Córdoba">Córdoba</option>
+                      <option value="Corrientes">Corrientes</option>
+                      <option value="Entre Ríos">Entre Ríos</option>
+                      <option value="Formosa">Formosa</option>
+                      <option value="Jujuy">Jujuy</option>
+                      <option value="La Pampa">La Pampa</option>
+                      <option value="La Rioja">La Rioja</option>
+                      <option value="Mendoza">Mendoza</option>
+                      <option value="Misiones">Misiones</option>
+                      <option value="Neuquén">Neuquén</option>
+                      <option value="Río Negro">Río Negro</option>
+                      <option value="Salta">Salta</option>
+                      <option value="San Juan">San Juan</option>
+                      <option value="San Luis">San Luis</option>
+                      <option value="Santa Cruz">Santa Cruz</option>
+                      <option value="Santa Fe">Santa Fe</option>
+                      <option value="Santiago del Estero">Santiago del Estero</option>
+                      <option value="Tierra del Fuego">Tierra del Fuego</option>
+                      <option value="Tucumán">Tucumán</option>
                     </select>
                   </div>
                   <div className="space-y-2">
@@ -255,6 +305,72 @@ export default function CreateCompanyPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="border-t pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Cuenta Bancaria (Opcional)</h3>
+                    <p className="text-sm text-muted-foreground">Podés agregar una cuenta ahora o más tarde desde configuración</p>
+                  </div>
+                  <Switch
+                    checked={addBankAccount}
+                    onCheckedChange={setAddBankAccount}
+                  />
+                </div>
+                
+                {addBankAccount && (
+                  <div className="space-y-4 pl-4 border-l-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="bankName">Banco *</Label>
+                        <Input
+                          id="bankName"
+                          placeholder="Banco Santander"
+                          value={bankAccount.bank_name}
+                          onChange={(e) => setBankAccount({...bankAccount, bank_name: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="accountType">Tipo de Cuenta *</Label>
+                        <Select
+                          value={bankAccount.account_type}
+                          onValueChange={(value: any) => setBankAccount({...bankAccount, account_type: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="corriente">Cuenta Corriente</SelectItem>
+                            <SelectItem value="caja_ahorro">Caja de Ahorro</SelectItem>
+                            <SelectItem value="cuenta_sueldo">Cuenta Sueldo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cbu">CBU * (22 dígitos)</Label>
+                        <Input
+                          id="cbu"
+                          placeholder="0170001540000001234567"
+                          value={bankAccount.cbu}
+                          onChange={(e) => setBankAccount({...bankAccount, cbu: e.target.value.replace(/\D/g, '').slice(0, 22)})}
+                          maxLength={22}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="alias">Alias</Label>
+                        <Input
+                          id="alias"
+                          placeholder="MI.EMPRESA.MP"
+                          value={bankAccount.alias}
+                          onChange={(e) => setBankAccount({...bankAccount, alias: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="border-t pt-6 space-y-4">

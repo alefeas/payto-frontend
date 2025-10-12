@@ -113,25 +113,32 @@ export function DashboardSidebar() {
               </div>
             ) : (
               <div className="space-y-2">
-                {activeCompanies.map((company) => (
-                  <div
-                    key={company.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/company/${company.id}`)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-primary" />
+                {activeCompanies.map((company) => {
+                  const roleMap: Record<string, string> = {
+                    'administrator': 'Administrador',
+                    'operator': 'Operador',
+                    'viewer': 'Visualizador'
+                  }
+                  return (
+                    <div
+                      key={company.id}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => router.push(`/company/${company.id}`)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{company.name}</p>
+                          <p className="text-xs text-muted-foreground">ID: {company.uniqueId}</p>
+                          <p className="text-xs text-muted-foreground">{roleMap[company.role] || company.role}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{company.name}</p>
-                        <p className="text-xs text-muted-foreground">{company.role}</p>
-                        <p className="text-xs text-muted-foreground">{company.taxCondition}</p>
-                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>

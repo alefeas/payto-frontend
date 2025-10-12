@@ -2,53 +2,47 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Settings, Building2, FileText, Shield, Bell, Trash2, Download, Upload, Key, Plus, CreditCard } from "lucide-react"
+import { ArrowLeft, Settings, Building2, FileText, Shield, Bell, Trash2, Download, Upload, Key, Plus, CreditCard, Edit, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import { CompanySettings } from "@/types"
+import { companyService } from "@/services/company.service"
+import { bankAccountService, BankAccount } from "@/services/bank-account.service"
 
-const mockSettings: CompanySettings = {
-  name: "TechCorp",
-  businessName: "TechCorp Sociedad Anónima",
-  taxId: "30-12345678-9",
-  email: "contacto@techcorp.com",
-  phone: "+54 11 1234-5678",
-  address: "Av. Corrientes 1234, CABA, Argentina",
-  logoUrl: "https://techcorp.com/logo.png",
-  province: "caba",
-  postalCode: "1414",
-  street: "Av. Corrientes",
-  streetNumber: "1234",
-  floor: "5",
-  apartment: "A",
-  taxRegime: "Responsable Inscripto",
-  currency: "ARS",
-  invoicePrefix: "FC-001",
-  nextInvoiceNumber: 126,
-  paymentTerms: 30,
-  defaultIVA: 21.00,
-  defaultIIBB: 2.50,
-  defaultGanancias: 2.00,
-  defaultIIBBRet: 0.42,
-  defaultSUSS: 1.00,
-  emailNotifications: true,
-  paymentReminders: true,
-  invoiceApprovals: false,
-  requireTwoFactor: false,
-  sessionTimeout: 60,
-  inviteCode: "TC8X9K2L",
-  autoGenerateInvites: true,
-  active: true
-}
+const PROVINCIAS = [
+  "Buenos Aires",
+  "CABA",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán"
+]
 
 export default function SettingsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -56,109 +50,265 @@ export default function SettingsPage() {
   const params = useParams()
   const companyId = params.id as string
 
-  const [settings, setSettings] = useState<CompanySettings>(mockSettings)
-  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [company, setCompany] = useState<any>(null)
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [initialFormData, setInitialFormData] = useState<any>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
+  const [showAddBankDialog, setShowAddBankDialog] = useState(false)
+  const [showEditBankDialog, setShowEditBankDialog] = useState(false)
+  const [showDeleteBankDialog, setShowDeleteBankDialog] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null)
   const [deleteCode, setDeleteCode] = useState("")
+  const [addingAccount, setAddingAccount] = useState(false)
+  const [editingAccountLoading, setEditingAccountLoading] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    business_name: '',
+    national_id: '',
+    phone: '',
+    street: '',
+    street_number: '',
+    floor: '',
+    apartment: '',
+    postal_code: '',
+    province: ''
+  })
+  const [bankFormData, setBankFormData] = useState({
+    bank_name: '',
+    account_type: 'corriente' as 'corriente' | 'caja_ahorro' | 'cuenta_sueldo',
+    cbu: '',
+    alias: '',
+    is_primary: false
+  })
   
-  // Mock deletion code - en producción vendría de la base de datos
-  const companyDeletionCode = "DELETE-2024"
 
-  // Simular rol del usuario actual
-  const currentUserRole = "Administrador"
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
+    } else if (isAuthenticated) {
+      loadData()
     }
   }, [isAuthenticated, authLoading, router])
 
   useEffect(() => {
-    if (currentUserRole !== "Administrador") {
+    if (initialFormData) {
+      const changed = JSON.stringify(formData) !== JSON.stringify(initialFormData)
+      setHasChanges(changed)
+    }
+  }, [formData, initialFormData])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [companyData, accounts] = await Promise.all([
+        companyService.getCompanyById(companyId),
+        bankAccountService.getBankAccounts(companyId)
+      ])
+      setCompany(companyData)
+      setBankAccounts(accounts)
+      
+      const addr = companyData.addressData || {}
+      
+      const initialData = {
+        name: companyData.name || '',
+        business_name: companyData.businessName || '',
+        national_id: companyData.nationalId || '',
+        phone: companyData.phone || '',
+        street: addr.street || '',
+        street_number: addr.streetNumber || '',
+        floor: addr.floor || '',
+        apartment: addr.apartment || '',
+        postal_code: addr.postalCode || '',
+        province: addr.province || ''
+      }
+      setFormData(initialData)
+      setInitialFormData(initialData)
+      setHasChanges(false)
+    } catch (error: any) {
+      toast.error('Error al cargar datos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (company && company.role !== 'administrator') {
       router.push(`/company/${companyId}`)
       toast.error('Acceso denegado', {
         description: 'Solo los administradores pueden acceder a la configuración'
       })
     }
-  }, [currentUserRole, router, companyId])
+  }, [company, router, companyId])
 
-  const updateSetting = (key: keyof CompanySettings, value: string | number | boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-    setHasChanges(true)
+  const saveCompany = async () => {
+    try {
+      setSaving(true)
+      const updatedCompany = await companyService.updateCompany(companyId, formData)
+      setCompany(updatedCompany)
+      setInitialFormData(formData)
+      setHasChanges(false)
+      toast.success('Configuración guardada')
+    } catch (error: any) {
+      toast.error('Error al guardar')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const saveSettings = () => {
-    // Aquí iría la llamada a la API
-    toast.success('Configuración guardada', {
-      description: 'Los cambios se aplicaron correctamente'
-    })
-    setHasChanges(false)
+  const regenerateInviteCode = async () => {
+    try {
+      const result = await companyService.regenerateInviteCode(companyId)
+      setCompany({...company, inviteCode: result.inviteCode})
+      toast.success(`Nuevo código: ${result.inviteCode}`)
+      setShowRegenerateModal(false)
+    } catch (error: any) {
+      toast.error('Error al regenerar código')
+    }
   }
 
-  const regenerateInviteCode = () => {
-    const newCode = Math.random().toString(36).substring(2, 10).toUpperCase()
-    updateSetting('inviteCode', newCode)
-    toast.success('Código regenerado', {
-      description: `Nuevo código: ${newCode}`
-    })
-    setShowRegenerateModal(false)
-  }
-
-  const exportData = () => {
-    toast.success('Exportación iniciada', {
-      description: 'Recibirás un email con el archivo de datos'
-    })
-  }
-
-  const deleteCompany = () => {
-    if (deleteCode !== companyDeletionCode) {
-      toast.error('Código incorrecto', {
-        description: 'El código de eliminación no es válido'
-      })
+  const deleteCompany = async () => {
+    if (!deleteCode.trim()) {
+      toast.error('Ingresa el código de eliminación')
       return
     }
-    
-    toast.success('Empresa eliminada', {
-      description: 'Todos los datos han sido eliminados permanentemente'
-    })
-    router.push('/dashboard')
+    try {
+      await companyService.deleteCompany(companyId, deleteCode)
+      toast.success('Perfil fiscal eliminado')
+      router.push('/dashboard')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Código incorrecto')
+    }
   }
 
-  if (authLoading) return null
-  if (!isAuthenticated) return null
-  if (currentUserRole !== "Administrador") return null
+  const handleAddBankAccount = async () => {
+    if (!bankFormData.bank_name.trim()) {
+      toast.error('El nombre del banco es obligatorio')
+      return
+    }
+    if (bankFormData.cbu.length !== 22) {
+      toast.error('El CBU debe tener 22 dígitos')
+      return
+    }
+    try {
+      setAddingAccount(true)
+      const newAccount = await bankAccountService.createBankAccount(companyId, bankFormData)
+      toast.success('Cuenta agregada exitosamente')
+      setShowAddBankDialog(false)
+      resetBankForm()
+      setBankAccounts([...bankAccounts, newAccount])
+    } catch (error: any) {
+      toast.error('Error al agregar cuenta')
+    } finally {
+      setAddingAccount(false)
+    }
+  }
+
+  const handleEditBankAccount = async () => {
+    if (!editingAccount) return
+    if (!bankFormData.bank_name.trim()) {
+      toast.error('El nombre del banco es obligatorio')
+      return
+    }
+    if (bankFormData.cbu.length !== 22) {
+      toast.error('El CBU debe tener 22 dígitos')
+      return
+    }
+    try {
+      setEditingAccountLoading(true)
+      const updatedAccount = await bankAccountService.updateBankAccount(companyId, editingAccount.id, bankFormData)
+      toast.success('Cuenta actualizada exitosamente')
+      setShowEditBankDialog(false)
+      setEditingAccount(null)
+      resetBankForm()
+      setBankAccounts(bankAccounts.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc))
+    } catch (error: any) {
+      toast.error('Error al actualizar cuenta')
+    } finally {
+      setEditingAccountLoading(false)
+    }
+  }
+
+  const confirmDeleteBankAccount = (accountId: string) => {
+    setDeletingAccountId(accountId)
+    setShowDeleteBankDialog(true)
+  }
+
+  const handleDeleteBankAccount = async () => {
+    if (!deletingAccountId) return
+    try {
+      setDeletingAccount(true)
+      await bankAccountService.deleteBankAccount(companyId, deletingAccountId)
+      toast.success('Cuenta eliminada')
+      setShowDeleteBankDialog(false)
+      setBankAccounts(bankAccounts.filter(acc => acc.id !== deletingAccountId))
+      setDeletingAccountId(null)
+    } catch (error: any) {
+      toast.error('Error al eliminar cuenta')
+    } finally {
+      setDeletingAccount(false)
+    }
+  }
+
+  const openEditBankDialog = (account: BankAccount) => {
+    setEditingAccount(account)
+    setBankFormData({
+      bank_name: account.bankName,
+      account_type: account.accountType,
+      cbu: account.cbu,
+      alias: account.alias || '',
+      is_primary: account.isPrimary
+    })
+    setShowEditBankDialog(true)
+  }
+
+  const resetBankForm = () => {
+    setBankFormData({
+      bank_name: '',
+      account_type: 'corriente',
+      cbu: '',
+      alias: '',
+      is_primary: false
+    })
+  }
+
+  if (authLoading || loading) return null
+  if (!isAuthenticated || !company) return null
+  if (company.role !== 'administrator') return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
+            <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Configuración de Empresa</h1>
+              <h1 className="text-3xl font-bold">Configuración de Perfil Fiscal</h1>
               <p className="text-muted-foreground">Gestionar configuración y preferencias</p>
             </div>
           </div>
           
-          {hasChanges && (
-            <Button onClick={saveSettings}>
-              Guardar Cambios
-            </Button>
-          )}
+          <Button onClick={saveCompany} disabled={saving || !hasChanges}>
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? 'Guardando...' : 'Guardar Cambios'}
+          </Button>
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="banking">Cuentas</TabsTrigger>
             <TabsTrigger value="billing">Facturación</TabsTrigger>
+            <TabsTrigger value="bank">Cuentas Bancarias</TabsTrigger>
             <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
             <TabsTrigger value="security">Seguridad</TabsTrigger>
-            <TabsTrigger value="advanced">Avanzado</TabsTrigger>
           </TabsList>
 
           {/* General */}
@@ -173,255 +323,70 @@ export default function SettingsPage() {
                   Datos básicos y de contacto de la empresa
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre de la Empresa</Label>
-                    <Input
-                      id="name"
-                      value={settings.name}
-                      onChange={(e) => updateSetting('name', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="businessName">Razón Social</Label>
-                    <Input
-                      id="businessName"
-                      value={settings.businessName}
-                      onChange={(e) => updateSetting('businessName', e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="cuitCuil">CUIT/CUIL</Label>
-                  <Input
-                    id="cuitCuil"
-                    value={settings.taxId}
-                    onChange={(e) => updateSetting('taxId', e.target.value)}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email de Contacto</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={settings.email}
-                      onChange={(e) => updateSetting('email', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="logo">Logo de la Empresa</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="logo"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          setLogoFile(e.target.files?.[0] || null)
-                          setHasChanges(true)
-                        }}
-                        className="flex-1"
-                      />
-                      <Upload className="h-4 w-4 text-muted-foreground" />
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="font-medium mb-4">Datos Generales</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Nombre de la Empresa</Label>
+                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Razón Social</Label>
+                        <Input value={formData.business_name} onChange={(e) => setFormData({...formData, business_name: e.target.value})} />
+                      </div>
                     </div>
-                    {logoFile && (
-                      <p className="text-sm text-muted-foreground">
-                        Archivo: {logoFile.name}
-                      </p>
-                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>CUIT</Label>
+                        <Input value={formData.national_id} onChange={(e) => setFormData({...formData, national_id: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Teléfono</Label>
+                        <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input
-                      id="phone"
-                      value={settings.phone}
-                      onChange={(e) => updateSetting('phone', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taxRegime">Régimen Fiscal</Label>
-                    <Select value={settings.taxRegime} onValueChange={(value) => updateSetting('taxRegime', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem>
-                        <SelectItem value="Monotributo">Monotributo</SelectItem>
-                        <SelectItem value="Exento">Exento</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="border-t pt-4 mt-4">
-                  <h4 className="font-medium mb-4">Dirección</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Dirección</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Calle</Label>
+                        <Input placeholder="Av. Corrientes" value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Número</Label>
+                        <Input placeholder="1234" value={formData.street_number} onChange={(e) => setFormData({...formData, street_number: e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Piso</Label>
+                        <Input placeholder="5" value={formData.floor} onChange={(e) => setFormData({...formData, floor: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Departamento</Label>
+                        <Input placeholder="A" value={formData.apartment} onChange={(e) => setFormData({...formData, apartment: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Código Postal</Label>
+                        <Input placeholder="1043" value={formData.postal_code} onChange={(e) => setFormData({...formData, postal_code: e.target.value})} />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="province">Provincia *</Label>
-                      <Select 
-                        value={settings.province} 
-                        onValueChange={(value) => updateSetting('province', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar provincia" />
-                        </SelectTrigger>
+                      <Label>Provincia</Label>
+                      <Select value={formData.province} onValueChange={(value) => setFormData({...formData, province: value})}>
+                        <SelectTrigger><SelectValue placeholder="Selecciona una provincia" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="buenos_aires">Buenos Aires</SelectItem>
-                          <SelectItem value="caba">Ciudad Autónoma de Buenos Aires</SelectItem>
-                          <SelectItem value="catamarca">Catamarca</SelectItem>
-                          <SelectItem value="chaco">Chaco</SelectItem>
-                          <SelectItem value="chubut">Chubut</SelectItem>
-                          <SelectItem value="cordoba">Córdoba</SelectItem>
-                          <SelectItem value="corrientes">Corrientes</SelectItem>
-                          <SelectItem value="entre_rios">Entre Ríos</SelectItem>
-                          <SelectItem value="formosa">Formosa</SelectItem>
-                          <SelectItem value="jujuy">Jujuy</SelectItem>
-                          <SelectItem value="la_pampa">La Pampa</SelectItem>
-                          <SelectItem value="la_rioja">La Rioja</SelectItem>
-                          <SelectItem value="mendoza">Mendoza</SelectItem>
-                          <SelectItem value="misiones">Misiones</SelectItem>
-                          <SelectItem value="neuquen">Neuquén</SelectItem>
-                          <SelectItem value="rio_negro">Río Negro</SelectItem>
-                          <SelectItem value="salta">Salta</SelectItem>
-                          <SelectItem value="san_juan">San Juan</SelectItem>
-                          <SelectItem value="san_luis">San Luis</SelectItem>
-                          <SelectItem value="santa_cruz">Santa Cruz</SelectItem>
-                          <SelectItem value="santa_fe">Santa Fe</SelectItem>
-                          <SelectItem value="santiago_del_estero">Santiago del Estero</SelectItem>
-                          <SelectItem value="tierra_del_fuego">Tierra del Fuego</SelectItem>
-                          <SelectItem value="tucuman">Tucumán</SelectItem>
+                          {PROVINCIAS.map(prov => (
+                            <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode">Código Postal *</Label>
-                      <Input
-                        id="postalCode"
-                        value={settings.postalCode}
-                        onChange={(e) => updateSetting('postalCode', e.target.value)}
-                        maxLength={8}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="street">Calle *</Label>
-                      <Input
-                        id="street"
-                        value={settings.street}
-                        onChange={(e) => updateSetting('street', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="streetNumber">Número *</Label>
-                      <Input
-                        id="streetNumber"
-                        value={settings.streetNumber}
-                        onChange={(e) => updateSetting('streetNumber', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="floor">Piso</Label>
-                      <Input
-                        id="floor"
-                        value={settings.floor}
-                        onChange={(e) => updateSetting('floor', e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="apartment">Departamento</Label>
-                      <Input
-                        id="apartment"
-                        value={settings.apartment}
-                        onChange={(e) => updateSetting('apartment', e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Banking */}
-          <TabsContent value="banking" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Cuentas Bancarias
-                </CardTitle>
-                <CardDescription>
-                  Gestionar cuentas bancarias para recibir pagos
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Cuenta Principal</h4>
-                    <Button size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agregar Cuenta
-                    </Button>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="mainBankName">Banco</Label>
-                        <Input
-                          id="mainBankName"
-                          placeholder="Banco Santander"
-                          defaultValue="Banco Santander"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="mainAccountType">Tipo de Cuenta</Label>
-                        <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                          <option value="corriente">Cuenta Corriente</option>
-                          <option value="caja_ahorro">Caja de Ahorro</option>
-                          <option value="cuenta_sueldo">Cuenta Sueldo</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="mainCbu">CBU</Label>
-                        <Input
-                          id="mainCbu"
-                          placeholder="0170001540000001234567"
-                          defaultValue="0170001540000001234567"
-                          maxLength={22}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="mainAlias">Alias</Label>
-                        <Input
-                          id="mainAlias"
-                          placeholder="MI.EMPRESA.MP"
-                          defaultValue="TECHCORP.SA.MP"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">Cuenta Principal</Badge>
-                        <Badge variant="outline">Activa</Badge>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        Editar
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -441,168 +406,8 @@ export default function SettingsPage() {
                   Parámetros para la generación de facturas
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="invoicePrefix">Prefijo de Factura</Label>
-                    <Input
-                      id="invoicePrefix"
-                      value={settings.invoicePrefix}
-                      onChange={(e) => updateSetting('invoicePrefix', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="nextInvoiceNumber">Último Número de Factura</Label>
-                    <Input
-                      id="nextInvoiceNumber"
-                      type="number"
-                      min="0"
-                      value={settings.nextInvoiceNumber}
-                      onChange={(e) => updateSetting('nextInvoiceNumber', parseInt(e.target.value))}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Número de la última factura emitida para continuar secuencia AFIP/ARCA
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Moneda</Label>
-                    <Select value={settings.currency} onValueChange={(value) => updateSetting('currency', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ARS">Peso Argentino (ARS)</SelectItem>
-                        <SelectItem value="USD">Dólar (USD)</SelectItem>
-                        <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="paymentTerms">Términos de Pago (días)</Label>
-                  <Input
-                    id="paymentTerms"
-                    type="number"
-                    value={settings.paymentTerms}
-                    onChange={(e) => updateSetting('paymentTerms', parseInt(e.target.value))}
-                  />
-                </div>
-                
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-4">Impuestos Predeterminados</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultIVA">IVA por Defecto (%)</Label>
-                      <Input
-                        id="defaultIVA"
-                        type="number"
-                        step="0.01"
-                        value={settings.defaultIVA}
-                        onChange={(e) => updateSetting('defaultIVA', parseFloat(e.target.value))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultIIBB">IIBB por Defecto (%)</Label>
-                      <Input
-                        id="defaultIIBB"
-                        type="number"
-                        step="0.01"
-                        value={settings.defaultIIBB}
-                        onChange={(e) => updateSetting('defaultIIBB', parseFloat(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Estos valores se aplicarán automáticamente al crear facturas, pero pueden modificarse manualmente
-                  </p>
-                </div>
-                
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-4">Configuración AFIP</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="salesPoint">Punto de Venta</Label>
-                      <Input
-                        id="salesPoint"
-                        type="number"
-                        min="1"
-                        max="9999"
-                        defaultValue="1"
-                        placeholder="0001"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Este número se usará automáticamente en todas tus facturas
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="taxCondition">Condición IVA</Label>
-                      <Select defaultValue="RI">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="RI">Responsable Inscripto</SelectItem>
-                          <SelectItem value="Monotributo">Monotributo</SelectItem>
-                          <SelectItem value="Exento">Exento</SelectItem>
-                          <SelectItem value="CF">Consumidor Final</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="grossIncome">Ingresos Brutos (IIBB)</Label>
-                      <Input
-                        id="grossIncome"
-                        placeholder="Número de IIBB"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="activityStartDate">Inicio de Actividades</Label>
-                      <Input
-                        id="activityStartDate"
-                        type="date"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-4">Retenciones Predeterminadas</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultGanancias">Retención Ganancias (%)</Label>
-                      <Input
-                        id="defaultGanancias"
-                        type="number"
-                        step="0.01"
-                        value={settings.defaultGanancias}
-                        onChange={(e) => updateSetting('defaultGanancias', parseFloat(e.target.value))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultIIBBRet">Retención IIBB (%)</Label>
-                      <Input
-                        id="defaultIIBBRet"
-                        type="number"
-                        step="0.01"
-                        value={settings.defaultIIBBRet}
-                        onChange={(e) => updateSetting('defaultIIBBRet', parseFloat(e.target.value))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultSUSS">Retención SUSS (%)</Label>
-                      <Input
-                        id="defaultSUSS"
-                        type="number"
-                        step="0.01"
-                        value={settings.defaultSUSS}
-                        onChange={(e) => updateSetting('defaultSUSS', parseFloat(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                </div>
+              <CardContent>
+                <p className="text-muted-foreground text-center py-8">Configuración de facturación próximamente</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -619,39 +424,8 @@ export default function SettingsPage() {
                   Gestionar alertas y recordatorios automáticos
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Notificaciones por Email</Label>
-                    <p className="text-sm text-muted-foreground">Recibir notificaciones importantes por email</p>
-                  </div>
-                  <Switch
-                    checked={settings.emailNotifications}
-                    onCheckedChange={(checked) => updateSetting('emailNotifications', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Recordatorios de Pago</Label>
-                    <p className="text-sm text-muted-foreground">Enviar recordatorios automáticos a clientes</p>
-                  </div>
-                  <Switch
-                    checked={settings.paymentReminders}
-                    onCheckedChange={(checked) => updateSetting('paymentReminders', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Notificaciones de Aprobación</Label>
-                    <p className="text-sm text-muted-foreground">Alertar cuando se requiera aprobación de facturas</p>
-                  </div>
-                  <Switch
-                    checked={settings.invoiceApprovals}
-                    onCheckedChange={(checked) => updateSetting('invoiceApprovals', checked)}
-                  />
-                </div>
+              <CardContent>
+                <p className="text-muted-foreground text-center py-8">Configuración de notificaciones próximamente</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -669,31 +443,10 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Autenticación de Dos Factores</Label>
-                    <p className="text-sm text-muted-foreground">Requerir 2FA para todos los usuarios</p>
-                  </div>
-                  <Switch
-                    checked={settings.requireTwoFactor}
-                    onCheckedChange={(checked) => updateSetting('requireTwoFactor', checked)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="sessionTimeout">Tiempo de Sesión (minutos)</Label>
-                  <Input
-                    id="sessionTimeout"
-                    type="number"
-                    value={settings.sessionTimeout}
-                    onChange={(e) => updateSetting('sessionTimeout', parseInt(e.target.value))}
-                  />
-                </div>
-                
                 <div>
                   <Label>Código de Invitación</Label>
                   <div className="flex items-center gap-2">
-                    <Input value={settings.inviteCode} readOnly />
+                    <Input value={company?.inviteCode || ''} readOnly />
                     <Button variant="outline" onClick={() => setShowRegenerateModal(true)}>
                       <Key className="h-4 w-4 mr-2" />
                       Regenerar
@@ -703,48 +456,195 @@ export default function SettingsPage() {
                     Los nuevos miembros necesitan este código para unirse
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Advanced */}
-          <TabsContent value="advanced" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Configuración Avanzada
-                </CardTitle>
-                <CardDescription>
-                  Opciones avanzadas y gestión de datos
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <Label>Exportar Datos</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Descargar todos los datos de la empresa en formato JSON
-                  </p>
-                  <Button variant="outline" onClick={exportData}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Exportar Datos
-                  </Button>
-                </div>
                 
                 <div className="border-t pt-6">
                   <Label className="text-red-600">Zona de Peligro</Label>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Estas acciones son irreversibles y eliminarán permanentemente todos los datos
+                    Eliminar permanentemente el perfil fiscal y todos sus datos asociados
                   </p>
                   <Button variant="destructive" onClick={() => setShowDeleteModal(true)}>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar Empresa
+                    Eliminar Perfil Fiscal
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Bank Accounts */}
+          <TabsContent value="bank" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Cuentas Bancarias
+                    </CardTitle>
+                    <CardDescription>Gestiona las cuentas para recibir pagos</CardDescription>
+                  </div>
+                  <Button onClick={() => setShowAddBankDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Cuenta
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {bankAccounts.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                    <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="font-medium mb-2">No hay cuentas bancarias</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Agrega una cuenta para recibir pagos</p>
+                    <Button onClick={() => setShowAddBankDialog(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Primera Cuenta
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {bankAccounts.map((account) => (
+                      <div key={account.id} className="border rounded-lg p-4 relative">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-semibold">{account.bankName}</h4>
+                            <p className="text-sm text-muted-foreground capitalize">{account.accountType.replace('_', ' ')}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => openEditBankDialog(account)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => confirmDeleteBankAccount(account.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">CBU</p>
+                            <p className="font-mono">{account.cbu}</p>
+                          </div>
+                          {account.alias && (
+                            <div>
+                              <p className="text-muted-foreground">Alias</p>
+                              <p className="font-mono">{account.alias}</p>
+                            </div>
+                          )}
+                        </div>
+                        {account.isPrimary && (
+                          <div className="absolute bottom-3 right-3">
+                            <span className="text-xs font-medium bg-primary text-primary-foreground px-2.5 py-1 rounded-md shadow-sm">Principal</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Add Bank Account Dialog */}
+        <Dialog open={showAddBankDialog} onOpenChange={setShowAddBankDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Cuenta Bancaria</DialogTitle>
+              <DialogDescription>Completa los datos de la nueva cuenta</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Banco *</Label>
+                <Input placeholder="Banco Santander" value={bankFormData.bank_name} onChange={(e) => setBankFormData({...bankFormData, bank_name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Cuenta *</Label>
+                <Select value={bankFormData.account_type} onValueChange={(value: any) => setBankFormData({...bankFormData, account_type: value})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="corriente">Cuenta Corriente</SelectItem>
+                    <SelectItem value="caja_ahorro">Caja de Ahorro</SelectItem>
+                    <SelectItem value="cuenta_sueldo">Cuenta Sueldo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>CBU * (22 dígitos)</Label>
+                <Input placeholder="0170001540000001234567" value={bankFormData.cbu} onChange={(e) => setBankFormData({...bankFormData, cbu: e.target.value.replace(/\D/g, '').slice(0, 22)})} maxLength={22} />
+              </div>
+              <div className="space-y-2">
+                <Label>Alias</Label>
+                <Input placeholder="MI.EMPRESA.MP" value={bankFormData.alias} onChange={(e) => setBankFormData({...bankFormData, alias: e.target.value})} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch checked={bankFormData.is_primary} onCheckedChange={(checked) => setBankFormData({...bankFormData, is_primary: checked})} />
+                <Label>Establecer como cuenta principal</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowAddBankDialog(false); resetBankForm(); }} disabled={addingAccount}>Cancelar</Button>
+              <Button onClick={handleAddBankAccount} disabled={addingAccount}>{addingAccount ? 'Agregando...' : 'Agregar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Bank Account Dialog */}
+        <Dialog open={showEditBankDialog} onOpenChange={setShowEditBankDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Cuenta Bancaria</DialogTitle>
+              <DialogDescription>Modifica los datos de la cuenta</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Banco *</Label>
+                <Input placeholder="Banco Santander" value={bankFormData.bank_name} onChange={(e) => setBankFormData({...bankFormData, bank_name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Cuenta *</Label>
+                <Select value={bankFormData.account_type} onValueChange={(value: any) => setBankFormData({...bankFormData, account_type: value})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="corriente">Cuenta Corriente</SelectItem>
+                    <SelectItem value="caja_ahorro">Caja de Ahorro</SelectItem>
+                    <SelectItem value="cuenta_sueldo">Cuenta Sueldo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>CBU * (22 dígitos)</Label>
+                <Input placeholder="0170001540000001234567" value={bankFormData.cbu} onChange={(e) => setBankFormData({...bankFormData, cbu: e.target.value.replace(/\D/g, '').slice(0, 22)})} maxLength={22} />
+              </div>
+              <div className="space-y-2">
+                <Label>Alias</Label>
+                <Input placeholder="MI.EMPRESA.MP" value={bankFormData.alias} onChange={(e) => setBankFormData({...bankFormData, alias: e.target.value})} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch checked={bankFormData.is_primary} onCheckedChange={(checked) => setBankFormData({...bankFormData, is_primary: checked})} />
+                <Label>Establecer como cuenta principal</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowEditBankDialog(false); setEditingAccount(null); resetBankForm(); }} disabled={editingAccountLoading}>Cancelar</Button>
+              <Button onClick={handleEditBankAccount} disabled={editingAccountLoading}>{editingAccountLoading ? 'Guardando...' : 'Guardar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Bank Account Dialog */}
+        <Dialog open={showDeleteBankDialog} onOpenChange={setShowDeleteBankDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Eliminar cuenta bancaria?</DialogTitle>
+              <DialogDescription>
+                Esta acción no se puede deshacer. La cuenta será eliminada permanentemente.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowDeleteBankDialog(false); setDeletingAccountId(null); }} disabled={deletingAccount}>Cancelar</Button>
+              <Button variant="destructive" onClick={handleDeleteBankAccount} disabled={deletingAccount}>{deletingAccount ? 'Eliminando...' : 'Eliminar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Regenerate Invite Code Modal */}
         <Dialog open={showRegenerateModal} onOpenChange={setShowRegenerateModal}>
@@ -770,9 +670,9 @@ export default function SettingsPage() {
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Eliminar Empresa</DialogTitle>
+              <DialogTitle>Eliminar Perfil Fiscal</DialogTitle>
               <DialogDescription>
-                Esta acción eliminará permanentemente la empresa y todos sus datos asociados. 
+                Esta acción eliminará permanentemente el perfil fiscal y todos sus datos asociados. 
                 No se puede deshacer.
               </DialogDescription>
             </DialogHeader>
