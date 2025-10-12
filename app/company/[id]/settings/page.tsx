@@ -187,7 +187,9 @@ export default function SettingsPage() {
   const regenerateInviteCode = async () => {
     try {
       const result = await companyService.regenerateInviteCode(companyId)
-      setCompany({...company, inviteCode: result.inviteCode})
+      if (company) {
+        setCompany({...company, inviteCode: result.inviteCode})
+      }
       toast.success(`Nuevo código: ${result.inviteCode}`)
       setShowRegenerateModal(false)
     } catch (error) {

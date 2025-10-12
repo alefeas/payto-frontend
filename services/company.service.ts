@@ -8,12 +8,12 @@ export interface Company {
   nationalId: string;
   phone?: string;
   addressData?: {
-    street: string;
-    streetNumber: string;
+    street?: string;
+    streetNumber?: string;
     floor?: string;
     apartment?: string;
-    postalCode: string;
-    province: string;
+    postalCode?: string;
+    province?: string;
     city?: string;
   };
   taxCondition: string;
