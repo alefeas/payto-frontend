@@ -9,18 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-
-// Mock invite codes con roles específicos
-const mockInvites = [
-  { inviteCode: 'ADMIN-TECH-2024', companyName: 'TechCorp SA', description: 'Empresa de tecnología', memberCount: 12, uniqueId: 'TC8X9K2L', role: 'Administrador' },
-  { inviteCode: 'COUNT-START-2024', companyName: 'StartupXYZ', description: 'Startup innovadora', memberCount: 5, uniqueId: 'SU4P7M9N', role: 'Contador' },
-  { inviteCode: 'MEMBER-CONSULT-2024', companyName: 'Consulting LLC', description: 'Consultoría empresarial', memberCount: 8, uniqueId: 'CL1Q3R8T', role: 'Miembro' },
-]
+import { companyService } from "@/services/company.service"
 
 export default function JoinCompanyPage() {
   const [inviteCode, setInviteCode] = useState('')
-  const [foundCompany, setFoundCompany] = useState<typeof mockInvites[0] | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -32,34 +24,23 @@ export default function JoinCompanyPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  const handleSearch = () => {
-    if (!inviteCode.trim()) return
-    
-    setIsSearching(true)
-    
-    const invite = mockInvites.find(i => i.inviteCode.toUpperCase() === inviteCode.toUpperCase())
-    
-    if (invite) {
-      setFoundCompany(invite)
-    } else {
-      setFoundCompany(null)
-      toast.error('Código de invitación inválido')
+  const handleJoin = async () => {
+    if (!inviteCode.trim()) {
+      toast.error('Ingresa un código de invitación')
+      return
     }
-    
-    setIsSearching(false)
-  }
-
-  const handleJoin = () => {
-    if (!foundCompany) return
     
     setIsJoining(true)
     
-    toast.success(`Te has unido a "${foundCompany.companyName}"`, {
-      description: `Rol asignado: ${foundCompany.role}`,
-    })
-    
-    setIsJoining(false)
-    router.push('/dashboard')
+    try {
+      const company = await companyService.joinCompany(inviteCode)
+      toast.success(`Te has unido a "${company.name}" exitosamente`)
+      router.push('/dashboard')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Código de invitación inválido')
+    } finally {
+      setIsJoining(false)
+    }
   }
 
   if (authLoading) return null
@@ -90,77 +71,27 @@ export default function JoinCompanyPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="code">Código de Invitación</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="code"
-                  placeholder="Ej: JOIN-TECH-2024"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  className="font-mono"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
-                <Button 
-                  onClick={handleSearch}
-                  disabled={isSearching || !inviteCode.trim()}
-                >
-                  {isSearching ? 'Buscando...' : 'Buscar'}
-                </Button>
-              </div>
+              <Input
+                id="code"
+                placeholder="Ej: ABC123XYZ"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                className="font-mono"
+                onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
+              />
             </div>
+
+            <Button onClick={handleJoin} disabled={isJoining || !inviteCode.trim()} className="w-full">
+              {isJoining ? 'Uniéndose...' : 'Unirse a Empresa'}
+            </Button>
 
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-800">
-                <strong>💡 Cómo funciona:</strong> Cada código de invitación tiene un rol predefinido. Al usarlo, obtienes ese rol automáticamente en la empresa.
+                <strong>💡 Info:</strong> El administrador de la empresa debe proporcionarte el código de invitación.
               </p>
             </div>
           </CardContent>
         </Card>
-
-        {/* Company Found */}
-        {foundCompany && (
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-800">
-                <Building2 className="h-5 w-5" />
-                Empresa Encontrada
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-lg">{foundCompany.companyName}</h3>
-                  <p className="text-sm text-muted-foreground">{foundCompany.description}</p>
-                </div>
-                
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>{foundCompany.memberCount} miembros</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>Rol: {foundCompany.role}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <Button onClick={handleJoin} disabled={isJoining}>
-                  {isJoining ? 'Uniéndose...' : 'Unirse Ahora'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setFoundCompany(null)
-                    setInviteCode('')
-                  }}
-                >
-                  Buscar Otra
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )

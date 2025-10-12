@@ -11,58 +11,13 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
-
-// Mock companies data - Una de cada condición fiscal
-const mockCompanies = [
-  { 
-    id: 1, 
-    name: "TechCorp SA", 
-    uniqueId: "TC8X9K2L",
-    role: "Administrador", 
-    memberCount: 12,
-    unreadNotifications: 3,
-    lastActivity: "hace 2h",
-    status: "active",
-    taxCondition: "RI" // Responsable Inscripto
-  },
-  { 
-    id: 2, 
-    name: "Emprendimientos Juan Pérez", 
-    uniqueId: "SU4P7M9N",
-    role: "Administrador", 
-    memberCount: 1,
-    unreadNotifications: 0,
-    lastActivity: "hace 1d",
-    status: "active",
-    taxCondition: "Monotributo" // Monotributista
-  },
-  { 
-    id: 3, 
-    name: "Cooperativa de Trabajo Unidos", 
-    uniqueId: "CL1Q3R8T",
-    role: "Contador", 
-    memberCount: 8,
-    unreadNotifications: 1,
-    lastActivity: "hace 3d",
-    status: "active",
-    taxCondition: "Exento" // Exento
-  },
-  { 
-    id: 4, 
-    name: "María López", 
-    uniqueId: "ML5K2P8W",
-    role: "Administrador", 
-    memberCount: 1,
-    unreadNotifications: 0,
-    lastActivity: "hace 5d",
-    status: "active",
-    taxCondition: "CF" // Consumidor Final
-  },
-]
+import { companyService, Company } from "@/services/company.service"
+import { toast } from "sonner"
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
-  const [companies] = useState(mockCompanies)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [tasks, setTasks] = useState<Array<{id: number, text: string, completed: boolean}>>([])
   const router = useRouter()
 
@@ -72,12 +27,41 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  if (isLoading || !isAuthenticated) {
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCompanies()
+    }
+  }, [isAuthenticated])
+
+  const loadCompanies = async () => {
+    try {
+      setLoadingCompanies(true)
+      const data = await companyService.getCompanies()
+      setCompanies(data)
+    } catch (error: any) {
+      toast.error('Error al cargar perfiles')
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
+
+  if (isLoading || !isAuthenticated || loadingCompanies) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-48 mb-2"></div>
-          <div className="h-4 bg-muted rounded w-64"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-muted rounded w-64"></div>
+            <div className="h-6 bg-muted rounded w-96"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="h-64 bg-muted rounded"></div>
+              </div>
+              <div className="space-y-4">
+                <div className="h-48 bg-muted rounded"></div>
+                <div className="h-48 bg-muted rounded"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -195,17 +179,17 @@ export default function DashboardPage() {
                   <span className="text-sm font-medium">Como Admin</span>
                 </div>
                 <span className="text-lg font-bold text-green-600">
-                  {companies.filter(c => c.role === 'Administrador').length}
+                  {companies.filter(c => c.role === 'administrator').length}
                 </span>
               </div>
               
               <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Bell className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm font-medium">Pendientes</span>
+                  <span className="text-sm font-medium">Activos</span>
                 </div>
                 <span className="text-lg font-bold text-orange-600">
-                  {companies.reduce((sum, c) => sum + c.unreadNotifications, 0)}
+                  {companies.filter(c => c.isActive).length}
                 </span>
               </div>
             </CardContent>

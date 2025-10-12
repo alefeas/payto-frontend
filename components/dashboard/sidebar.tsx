@@ -1,69 +1,40 @@
 ﻿"use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, Plus, UserPlus, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SidebarCompany } from "@/types"
-
-// Mock companies data - Una de cada condición fiscal
-const mockCompanies: SidebarCompany[] = [
-  { 
-    id: 1, 
-    firstName: "TechCorp SA", 
-    uniqueId: "TC8X9K2L",
-    inviteCode: "ADMIN-TECH-2024",
-    role: "Administrador", 
-    status: "active", 
-    unreadNotifications: 3,
-    createdAt: "2024-01-15",
-    memberCount: 12,
-    taxCondition: "RI" // Responsable Inscripto
-  },
-  { 
-    id: 2, 
-    firstName: "Emprendimientos Juan Pérez", 
-    uniqueId: "SU4P7M9N",
-    inviteCode: "COUNT-START-2024",
-    role: "Administrador", 
-    status: "active", 
-    unreadNotifications: 0,
-    createdAt: "2024-02-20",
-    memberCount: 1,
-    taxCondition: "Monotributo" // Monotributista
-  },
-  { 
-    id: 3, 
-    firstName: "Cooperativa de Trabajo Unidos", 
-    uniqueId: "CL1Q3R8T",
-    inviteCode: "MEMBER-CONSULT-2024",
-    role: "Contador", 
-    status: "active", 
-    unreadNotifications: 1,
-    createdAt: "2024-03-10",
-    memberCount: 8,
-    taxCondition: "Exento" // Exento
-  },
-  { 
-    id: 4, 
-    firstName: "María López", 
-    uniqueId: "ML5K2P8W",
-    inviteCode: "CONSUMER-MARIA-2024",
-    role: "Administrador", 
-    status: "active", 
-    unreadNotifications: 0,
-    createdAt: "2024-04-05",
-    memberCount: 1,
-    taxCondition: "CF" // Consumidor Final
-  },
-]
+import { companyService, Company } from "@/services/company.service"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
 export function DashboardSidebar() {
-  const [companies] = useState(mockCompanies)
-  const activeCompanies = companies.filter(c => c.status === 'active')
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loading, setLoading] = useState(true)
+  const { isAuthenticated } = useAuth()
   const router = useRouter()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCompanies()
+    }
+  }, [isAuthenticated])
+
+  const loadCompanies = async () => {
+    try {
+      setLoading(true)
+      const data = await companyService.getCompanies()
+      setCompanies(data)
+    } catch (error: any) {
+      toast.error('Error al cargar perfiles')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const activeCompanies = companies.filter(c => c.isActive)
 
   return (
     <aside className="w-80 border-r bg-background p-6">
@@ -110,14 +81,22 @@ export function DashboardSidebar() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center justify-between">
               Mis Perfiles
-              <Badge variant="secondary">{activeCompanies.length}</Badge>
+              {!loading && <Badge variant="secondary">{activeCompanies.length}</Badge>}
             </CardTitle>
             <CardDescription>
               Perfiles fiscales donde tienes acceso
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {activeCompanies.length === 0 ? (
+            {loading ? (
+              <div className="space-y-2">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-16 bg-muted rounded"></div>
+                  <div className="h-16 bg-muted rounded"></div>
+                  <div className="h-16 bg-muted rounded"></div>
+                </div>
+              </div>
+            ) : activeCompanies.length === 0 ? (
               <div className="text-center py-8">
                 <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="font-medium mb-2">No tienes perfiles</h3>
@@ -138,26 +117,19 @@ export function DashboardSidebar() {
                   <div
                     key={company.id}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/company/${company.uniqueId}`)}
+                    onClick={() => router.push(`/company/${company.id}`)}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Building2 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{company.firstName}</p>
+                        <p className="font-medium text-sm">{company.name}</p>
                         <p className="text-xs text-muted-foreground">{company.role}</p>
-                        <p className="text-xs font-mono text-muted-foreground">ID: {company.uniqueId}</p>
+                        <p className="text-xs text-muted-foreground">{company.taxCondition}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {company.unreadNotifications > 0 && (
-                        <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 text-xs">
-                          {company.unreadNotifications}
-                        </Badge>
-                      )}
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 ))}
               </div>

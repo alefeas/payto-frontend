@@ -11,88 +11,16 @@ import {
   Plus,
   Users,
   Settings,
-  Download,
-  Filter,
-  Bell,
   Calendar,
-  TrendingUp,
   AlertTriangle,
   CheckSquare,
-  Activity,
-  Upload
+  Activity
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
-
-// Mock company data with notification counts - Una de cada condición fiscal
-const mockCompanies = [
-  { 
-    id: 1, 
-    name: "TechCorp SA", 
-    uniqueId: "TC8X9K2L",
-    role: "Administrador", 
-    memberCount: 12,
-    totalInvoices: 156,
-    pendingPayments: 8,
-    monthlyRevenue: 45000,
-    pendingApprovals: 3,
-    pendingConfirmations: 2,
-    rejectedInvoices: 1,
-    invoicesToPay: 5,
-    condicionIva: "RI" as const,
-    canIssueInvoices: true
-  },
-  { 
-    id: 2, 
-    name: "Emprendimientos Juan Pérez", 
-    uniqueId: "SU4P7M9N",
-    role: "Administrador", 
-    memberCount: 1,
-    totalInvoices: 89,
-    pendingPayments: 3,
-    monthlyRevenue: 12000,
-    pendingApprovals: 0,
-    pendingConfirmations: 0,
-    rejectedInvoices: 0,
-    invoicesToPay: 2,
-    condicionIva: "Monotributo" as const,
-    canIssueInvoices: true
-  },
-  { 
-    id: 3, 
-    name: "Cooperativa de Trabajo Unidos", 
-    uniqueId: "CL1Q3R8T",
-    role: "Contador", 
-    memberCount: 8,
-    totalInvoices: 234,
-    pendingPayments: 12,
-    monthlyRevenue: 28000,
-    pendingApprovals: 0,
-    pendingConfirmations: 1,
-    rejectedInvoices: 0,
-    invoicesToPay: 8,
-    condicionIva: "Exento" as const,
-    canIssueInvoices: true
-  },
-  { 
-    id: 4, 
-    name: "María López", 
-    uniqueId: "ML5K2P8W",
-    role: "Administrador", 
-    memberCount: 1,
-    totalInvoices: 0,
-    pendingPayments: 0,
-    monthlyRevenue: 0,
-    pendingApprovals: 0,
-    pendingConfirmations: 0,
-    rejectedInvoices: 0,
-    invoicesToPay: 3,
-    condicionIva: "CF" as const,
-    canIssueInvoices: false
-  },
-]
+import { companyService, Company } from "@/services/company.service"
+import { toast } from "sonner"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -100,7 +28,8 @@ export default function CompanyPage() {
   const params = useParams()
   const companyId = params.id as string
   
-  const [company] = useState(mockCompanies.find(c => c.uniqueId === companyId))
+  const [company, setCompany] = useState<Company | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -108,93 +37,131 @@ export default function CompanyPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  if (authLoading) return null
+  useEffect(() => {
+    if (isAuthenticated && companyId) {
+      loadCompany()
+    }
+  }, [isAuthenticated, companyId])
+
+  const loadCompany = async () => {
+    try {
+      setLoading(true)
+      const companies = await companyService.getCompanies()
+      const found = companies.find(c => c.id === companyId)
+      setCompany(found || null)
+    } catch (error: any) {
+      toast.error('Error al cargar perfil fiscal')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-muted rounded w-64"></div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
   if (!isAuthenticated) return null
   if (!company) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4">Empresa no encontrada</h1>
+          <h1 className="text-2xl font-bold mb-4">Perfil Fiscal no encontrado</h1>
           <Button onClick={() => router.push('/dashboard')}>Volver al Dashboard</Button>
         </div>
       </div>
     )
   }
 
+  const canIssueInvoices = company.taxCondition !== 'final_consumer'
+
   const menuItems = [
-    ...(company.canIssueInvoices ? [{
+    ...(canIssueInvoices ? [{
       title: "Emitir Factura",
       description: "Crear nueva factura para clientes",
       icon: FileText,
       color: "bg-blue-500",
-      action: () => router.push(`/company/${company?.uniqueId}/emit-invoice`)
+      action: () => router.push(`/company/${company?.id}/emit-invoice`)
     }] : []),
     {
       title: "Cargar Factura Recibida",
       description: "Registrar factura de empresa externa",
       icon: Plus,
       color: "bg-teal-500",
-      action: () => router.push(`/company/${company?.uniqueId}/load-invoice`)
+      action: () => router.push(`/company/${company?.id}/load-invoice`)
     },
     {
       title: "Ver Facturas",
       description: "Gestionar todas las facturas",
       icon: FileText,
       color: "bg-purple-500",
-      action: () => router.push(`/company/${company?.uniqueId}/invoices`)
+      action: () => router.push(`/company/${company?.id}/invoices`)
     },
     {
       title: "Pagar Facturas",
       description: "Procesar pagos pendientes",
       icon: CreditCard,
       color: "bg-orange-500",
-      badge: company.invoicesToPay,
-      action: () => router.push(`/company/${company?.uniqueId}/payments`)
+      badge: 0,
+      action: () => router.push(`/company/${company?.id}/payments`)
     },
-    ...(company.canIssueInvoices ? [{
+    ...(canIssueInvoices ? [{
       title: "Confirmar Pagos",
       description: "Revisar pagos recibidos",
       icon: Eye,
       color: "bg-yellow-500",
-      badge: company.pendingConfirmations,
-      action: () => router.push(`/company/${company?.uniqueId}/confirm-payments`)
+      badge: 0,
+      action: () => router.push(`/company/${company?.id}/confirm-payments`)
     }] : []),
-    ...(company.canIssueInvoices ? [{
+    ...(canIssueInvoices ? [{
       title: "Aprobar Facturas",
       description: "Revisar facturas de proveedores",
       icon: CheckSquare,
       color: "bg-green-500",
-      badge: company.pendingApprovals,
-      action: () => router.push(`/company/${company?.uniqueId}/approve-invoices`)
+      badge: 0,
+      action: () => router.push(`/company/${company?.id}/approve-invoices`)
     }] : []),
-    ...(company.canIssueInvoices ? [{
+    ...(canIssueInvoices ? [{
       title: "Facturas Rechazadas",
       description: "Gestionar facturas que requieren atención",
       icon: AlertTriangle,
       color: "bg-red-500",
-      badge: company.rejectedInvoices,
-      action: () => router.push(`/company/${company?.uniqueId}/rejected-invoices`)
+      badge: 0,
+      action: () => router.push(`/company/${company?.id}/rejected-invoices`)
     }] : []),
     {
       title: "Registro de Auditoría",
       description: "Historial de actividades del sistema",
       icon: Activity,
       color: "bg-gray-600",
-      action: () => router.push(`/company/${company?.uniqueId}/audit-log`)
+      action: () => router.push(`/company/${company?.id}/audit-log`)
     },
     {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
       icon: BarChart3,
       color: "bg-indigo-500",
-      action: () => router.push(`/company/${company?.uniqueId}/analytics`)
+      action: () => router.push(`/company/${company?.id}/analytics`)
     },
     {
       title: "Vencimientos",
       description: "Control de fechas y cobros pendientes",
       icon: Calendar,
       color: "bg-pink-500",
-      action: () => router.push(`/company/${company?.uniqueId}/due-invoices`)
+      action: () => router.push(`/company/${company?.id}/due-invoices`)
     }
   ]
 
@@ -204,14 +171,14 @@ export default function CompanyPage() {
       description: "Gestionar clientes externos",
       icon: Users,
       color: "bg-blue-500",
-      action: () => router.push(`/company/${company?.uniqueId}/clients`)
+      action: () => router.push(`/company/${company?.id}/clients`)
     },
     {
       title: "Red Empresarial",
       description: "Conectar con otras empresas",
       icon: Users,
       color: "bg-pink-500",
-      action: () => router.push(`/company/${company?.uniqueId}/network`)
+      action: () => router.push(`/company/${company?.id}/network`)
     }
   ]
 
@@ -225,21 +192,21 @@ export default function CompanyPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">Tu rol: {company.role} • ID: {company.uniqueId}</p>
+            <p className="text-muted-foreground">Tu rol: {company.role} • {company.taxCondition}</p>
           </div>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => router.push(`/company/${company?.uniqueId}/members`)}
+              onClick={() => router.push(`/company/${company?.id}/members`)}
             >
               <Users className="h-4 w-4 mr-2" />
-              {company.memberCount} miembros
+              Miembros
             </Button>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => router.push(`/company/${company?.uniqueId}/settings`)}
+              onClick={() => router.push(`/company/${company?.id}/settings`)}
             >
               <Settings className="h-4 w-4 mr-2" />
               Configurar
@@ -254,7 +221,7 @@ export default function CompanyPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Facturas</p>
-                  <p className="text-2xl font-bold">{company.totalInvoices}</p>
+                  <p className="text-2xl font-bold">0</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500" />
               </div>
@@ -265,7 +232,7 @@ export default function CompanyPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Pagos Pendientes</p>
-                  <p className="text-2xl font-bold text-orange-600">{company.pendingPayments}</p>
+                  <p className="text-2xl font-bold text-orange-600">0</p>
                 </div>
                 <CreditCard className="h-8 w-8 text-orange-500" />
               </div>
@@ -276,7 +243,7 @@ export default function CompanyPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
-                  <p className="text-2xl font-bold text-green-600">${company.monthlyRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-green-600">$0</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-green-500" />
               </div>
@@ -286,8 +253,8 @@ export default function CompanyPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Miembros Activos</p>
-                  <p className="text-2xl font-bold">{company.memberCount}</p>
+                  <p className="text-sm text-muted-foreground">Estado</p>
+                  <p className="text-2xl font-bold">{company.isActive ? 'Activo' : 'Inactivo'}</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-500" />
               </div>
@@ -296,7 +263,7 @@ export default function CompanyPage() {
         </div>
 
         {/* Alerta para Consumidor Final */}
-        {!company.canIssueInvoices && (
+        {!canIssueInvoices && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -390,8 +357,6 @@ export default function CompanyPage() {
             </div>
           </CardContent>
         </Card>
-
-
       </div>
     </div>
   )
