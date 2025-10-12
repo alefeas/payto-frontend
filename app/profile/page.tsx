@@ -90,6 +90,23 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.firstName || !formData.lastName) {
+      toast.error('El nombre y apellido son obligatorios')
+      return
+    }
+    
+    if (!formData.email) {
+      toast.error('El email es obligatorio')
+      return
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Por favor ingresa un email válido')
+      return
+    }
+    
     setIsSaving(true)
     
     try {
@@ -183,7 +200,7 @@ export default function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <div className="space-y-4">
                   <h3 className="font-semibold">Información Personal</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -214,11 +231,11 @@ export default function ProfilePage() {
                       <Label htmlFor="email">Email *</Label>
                       <Input 
                         id="email" 
-                        type="email" 
+                        type="text" 
                         placeholder="tu@email.com" 
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        required
+                        autoComplete="email"
                       />
                     </div>
                     <div className="space-y-2">

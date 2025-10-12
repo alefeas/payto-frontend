@@ -97,6 +97,7 @@ export default function JoinCompanyPage() {
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                   className="font-mono"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
                 <Button 
                   onClick={handleSearch}

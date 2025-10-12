@@ -55,7 +55,37 @@ export default function CreateCompanyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name.trim() || !formData.taxId.trim() || !formData.email.trim()) return
+    
+    if (!formData.name.trim()) {
+      toast.error('El nombre/razón social es obligatorio')
+      return
+    }
+    
+    if (!formData.taxId.trim()) {
+      toast.error('El CUIT/CUIL/DNI es obligatorio')
+      return
+    }
+    
+    if (!formData.email.trim()) {
+      toast.error('El email es obligatorio')
+      return
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Por favor ingresa un email válido')
+      return
+    }
+    
+    if (!formData.deletionCode.trim()) {
+      toast.error('El código de eliminación es obligatorio')
+      return
+    }
+    
+    if (!formData.province || !formData.postalCode || !formData.street || !formData.streetNumber) {
+      toast.error('Por favor completa todos los campos de dirección obligatorios')
+      return
+    }
 
     setIsLoading(true)
     
@@ -97,7 +127,7 @@ export default function CreateCompanyPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
               {/* Información Básica */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Datos Personales/Empresa</h3>
@@ -133,11 +163,11 @@ export default function CreateCompanyPage() {
                     <Label htmlFor="email">Email de Contacto *</Label>
                     <Input
                       id="email"
-                      type="email"
+                      type="text"
                       placeholder="contacto@empresa.com o tu@email.com"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
+                      autoComplete="email"
                     />
                   </div>
                 </div>
