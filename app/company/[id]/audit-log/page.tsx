@@ -36,7 +36,7 @@ export default function AuditLogPage() {
       setLoading(true)
       const response = await auditService.getCompanyAuditLogs(companyId)
       setLogs(response.data)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading audit logs:', error)
       toast.error('Error al cargar registro de auditoría')
     } finally {

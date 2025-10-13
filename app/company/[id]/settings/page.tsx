@@ -16,6 +16,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { companyService, Company } from "@/services/company.service"
 import { bankAccountService, BankAccount } from "@/services/bank-account.service"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 
 const PROVINCIAS = [
   "Buenos Aires",
@@ -308,6 +310,12 @@ export default function SettingsPage() {
   if (!isAuthenticated || !company) return null
   if (company.role !== 'administrator' && company.role !== 'owner') return null
 
+  const userRole = company.role as CompanyRole
+  const canUpdate = hasPermission(userRole, 'company.update')
+  const canManageBankAccounts = hasPermission(userRole, 'bank_accounts.create')
+  const canDelete = hasPermission(userRole, 'company.delete')
+  const canRegenerateInvite = hasPermission(userRole, 'company.regenerate_invite')
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -322,10 +330,12 @@ export default function SettingsPage() {
             </div>
           </div>
           
-          <Button onClick={saveCompany} disabled={saving || !hasChanges}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
+          {canUpdate && (
+            <Button onClick={saveCompany} disabled={saving || !hasChanges}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          )}
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
@@ -702,26 +712,30 @@ export default function SettingsPage() {
                   <Label>Código de Invitación</Label>
                   <div className="flex items-center gap-2">
                     <Input value={company?.inviteCode || ''} readOnly />
-                    <Button variant="outline" onClick={() => setShowRegenerateModal(true)}>
-                      <Key className="h-4 w-4 mr-2" />
-                      Regenerar
-                    </Button>
+                    {canRegenerateInvite && (
+                      <Button variant="outline" onClick={() => setShowRegenerateModal(true)}>
+                        <Key className="h-4 w-4 mr-2" />
+                        Regenerar
+                      </Button>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Los nuevos miembros necesitan este código para unirse
                   </p>
                 </div>
                 
-                <div className="border-t pt-6">
-                  <Label className="text-red-600">Zona de Peligro</Label>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Eliminar permanentemente el perfil fiscal y todos sus datos asociados
-                  </p>
-                  <Button variant="destructive" onClick={() => setShowDeleteModal(true)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar Perfil Fiscal
-                  </Button>
-                </div>
+                {canDelete && (
+                  <div className="border-t pt-6">
+                    <Label className="text-red-600">Zona de Peligro</Label>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Eliminar permanentemente el perfil fiscal y todos sus datos asociados
+                    </p>
+                    <Button variant="destructive" onClick={() => setShowDeleteModal(true)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar Perfil Fiscal
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -738,10 +752,12 @@ export default function SettingsPage() {
                     </CardTitle>
                     <CardDescription>Gestiona las cuentas para recibir pagos</CardDescription>
                   </div>
-                  <Button onClick={() => setShowAddBankDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar Cuenta
-                  </Button>
+                  {canManageBankAccounts && (
+                    <Button onClick={() => setShowAddBankDialog(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Cuenta
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -750,10 +766,12 @@ export default function SettingsPage() {
                     <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="font-medium mb-2">No hay cuentas bancarias</h3>
                     <p className="text-sm text-muted-foreground mb-4">Agrega una cuenta para recibir pagos</p>
-                    <Button onClick={() => setShowAddBankDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agregar Primera Cuenta
-                    </Button>
+                    {canManageBankAccounts && (
+                      <Button onClick={() => setShowAddBankDialog(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar Primera Cuenta
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4">
@@ -764,14 +782,16 @@ export default function SettingsPage() {
                             <h4 className="font-semibold">{account.bankName}</h4>
                             <p className="text-sm text-muted-foreground capitalize">{account.accountType.replace('_', ' ')}</p>
                           </div>
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => openEditBankDialog(account)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => confirmDeleteBankAccount(account.id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
+                          {canManageBankAccounts && (
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="ghost" onClick={() => openEditBankDialog(account)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => confirmDeleteBankAccount(account.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-2 text-sm">
                           <div>

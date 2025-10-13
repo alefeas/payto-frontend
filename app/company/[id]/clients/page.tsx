@@ -385,7 +385,7 @@ function ClientForm({ client, onClose }: { client?: Client | null, onClose: () =
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="documentType">Tipo de Documento</Label>
-          <Select value={formData.documentType} onValueChange={(value: any) => setFormData({...formData, documentType: value})}>
+          <Select value={formData.documentType} onValueChange={(value: "CUIT" | "CUIL" | "DNI" | "Pasaporte" | "CDI") => setFormData({...formData, documentType: value})}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -411,7 +411,7 @@ function ClientForm({ client, onClose }: { client?: Client | null, onClose: () =
 
       <div className="space-y-2">
         <Label htmlFor="taxCondition">Condición IVA</Label>
-        <Select value={formData.taxCondition} onValueChange={(value: any) => setFormData({...formData, taxCondition: value})}>
+        <Select value={formData.taxCondition} onValueChange={(value: "RI" | "Monotributo" | "Exento" | "CF") => setFormData({...formData, taxCondition: value})}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>

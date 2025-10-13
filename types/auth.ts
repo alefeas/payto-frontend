@@ -1,4 +1,5 @@
 export interface User {
+  id: string
   firstName: string
   lastName: string
   dateOfBirth: string
@@ -23,7 +24,7 @@ export interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
-  register: (name: string, email: string, password: string) => Promise<boolean>
+  register: (data: Record<string, unknown>) => Promise<boolean>
   updateProfile: (profileData: Partial<User>) => Promise<boolean>
   logout: () => void
 }

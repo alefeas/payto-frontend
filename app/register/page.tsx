@@ -31,7 +31,7 @@ export default function RegisterPage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const { register } = useAuth()
+  const { register: registerUser } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +95,7 @@ export default function RegisterPage() {
     }
     
     try {
-      await register(registerData)
+      await registerUser(registerData)
       toast.success('¡Cuenta creada exitosamente!')
       router.push('/dashboard')
     } catch (error: any) {

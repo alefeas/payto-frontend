@@ -23,6 +23,7 @@ import { companyService, Company } from "@/services/company.service"
 import { toast } from "sonner"
 import { CompanyRole } from "@/types"
 import { translateRole } from "@/lib/role-utils"
+import { hasPermission } from "@/lib/permissions"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -89,68 +90,77 @@ export default function CompanyPage() {
   }
 
   const canIssueInvoices = company.taxCondition !== 'final_consumer'
+  const userRole = company.role as CompanyRole
 
-  const menuItems = [
-    ...(canIssueInvoices ? [{
+  const allMenuItems = [
+    ...(canIssueInvoices && hasPermission(userRole, 'invoices.create') ? [{
       title: "Emitir Factura",
       description: "Crear nueva factura para clientes",
       icon: FileText,
       color: "bg-blue-500",
+      permission: 'invoices.create' as const,
       action: () => router.push(`/company/${company?.id}/emit-invoice`)
     }] : []),
-    {
+    ...(hasPermission(userRole, 'invoices.create') ? [{
       title: "Cargar Factura Recibida",
       description: "Registrar factura de empresa externa",
       icon: Plus,
       color: "bg-teal-500",
+      permission: 'invoices.create' as const,
       action: () => router.push(`/company/${company?.id}/load-invoice`)
-    },
-    {
+    }] : []),
+    ...(hasPermission(userRole, 'invoices.view') ? [{
       title: "Ver Facturas",
       description: "Gestionar todas las facturas",
       icon: FileText,
       color: "bg-purple-500",
+      permission: 'invoices.view' as const,
       action: () => router.push(`/company/${company?.id}/invoices`)
-    },
-    {
+    }] : []),
+    ...(hasPermission(userRole, 'payments.create') ? [{
       title: "Pagar Facturas",
       description: "Procesar pagos pendientes",
       icon: CreditCard,
       color: "bg-orange-500",
       badge: 0,
+      permission: 'payments.create' as const,
       action: () => router.push(`/company/${company?.id}/payments`)
-    },
-    ...(canIssueInvoices ? [{
+    }] : []),
+    ...(canIssueInvoices && hasPermission(userRole, 'payments.view') ? [{
       title: "Confirmar Pagos",
       description: "Revisar pagos recibidos",
       icon: Eye,
       color: "bg-yellow-500",
       badge: 0,
+      permission: 'payments.view' as const,
       action: () => router.push(`/company/${company?.id}/confirm-payments`)
     }] : []),
-    ...(canIssueInvoices ? [{
+    ...(canIssueInvoices && hasPermission(userRole, 'invoices.approve') ? [{
       title: "Aprobar Facturas",
       description: "Revisar facturas de proveedores",
       icon: CheckSquare,
       color: "bg-green-500",
       badge: 0,
+      permission: 'invoices.approve' as const,
       action: () => router.push(`/company/${company?.id}/approve-invoices`)
     }] : []),
-    ...(canIssueInvoices ? [{
+    ...(canIssueInvoices && hasPermission(userRole, 'invoices.view') ? [{
       title: "Facturas Rechazadas",
       description: "Gestionar facturas que requieren atención",
       icon: AlertTriangle,
       color: "bg-red-500",
       badge: 0,
+      permission: 'invoices.view' as const,
       action: () => router.push(`/company/${company?.id}/rejected-invoices`)
     }] : []),
-    {
+    ...(hasPermission(userRole, 'audit.view') ? [{
       title: "Registro de Auditoría",
       description: "Historial de actividades del sistema",
       icon: Activity,
       color: "bg-gray-600",
+      permission: 'audit.view' as const,
       action: () => router.push(`/company/${company?.id}/audit-log`)
-    },
+    }] : []),
     {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
@@ -166,6 +176,8 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company?.id}/due-invoices`)
     }
   ]
+
+  const menuItems = allMenuItems
 
   const additionalItems = [
     {
@@ -197,22 +209,26 @@ export default function CompanyPage() {
             <p className="text-muted-foreground">Tu rol: {translateRole(company.role as CompanyRole)} • {company.taxCondition}</p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => router.push(`/company/${company?.id}/members`)}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Miembros
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => router.push(`/company/${company?.id}/settings`)}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configurar
-            </Button>
+            {hasPermission(userRole, 'members.view') && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push(`/company/${company?.id}/members`)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Miembros
+              </Button>
+            )}
+            {hasPermission(userRole, 'company.view_settings') && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push(`/company/${company?.id}/settings`)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar
+              </Button>
+            )}
           </div>
         </div>
 

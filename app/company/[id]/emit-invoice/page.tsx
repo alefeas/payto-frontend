@@ -61,7 +61,7 @@ export default function CreateInvoicePage() {
     type: 'A' as InvoiceType,
     concept: 'products' as InvoiceConcept,
     receiverCompanyId: '',
-    clientData: null as any,
+    clientData: null as { client_id?: string; [key: string]: unknown } | null,
     saveClient: false,
     emissionDate: '',
     dueDate: '',
