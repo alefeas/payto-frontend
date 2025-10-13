@@ -14,7 +14,8 @@ import {
   Calendar,
   AlertTriangle,
   CheckSquare,
-  Activity
+  Activity,
+  Shield
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -220,14 +221,25 @@ export default function CompanyPage() {
               </Button>
             )}
             {hasPermission(userRole, 'company.view_settings') && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => router.push(`/company/${company?.id}/settings`)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configurar
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => router.push(`/company/${company?.id}/afip`)}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  AFIP
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => router.push(`/company/${company?.id}/settings`)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurar
+                </Button>
+              </>
             )}
           </div>
         </div>

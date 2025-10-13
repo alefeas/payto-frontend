@@ -390,6 +390,14 @@ export default function CreateCompanyPage() {
                 </div>
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">📋 Próximo paso: Configurar AFIP (Opcional)</h4>
+                <p className="text-sm text-blue-800">
+                  Después de crear tu empresa, podrás configurar tu certificado AFIP para emitir facturas electrónicas oficiales.
+                  Si no lo configuras, podrás usar el sistema pero las facturas no serán válidas legalmente.
+                </p>
+              </div>
+
               <div className="flex gap-4 pt-4">
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? 'Creando...' : 'Crear Empresa'}
