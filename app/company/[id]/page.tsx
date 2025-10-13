@@ -21,6 +21,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { toast } from "sonner"
+import { CompanyRole } from "@/types"
+import { translateRole } from "@/lib/role-utils"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -192,7 +194,7 @@ export default function CompanyPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">Tu rol: {company.role} • {company.taxCondition}</p>
+            <p className="text-muted-foreground">Tu rol: {translateRole(company.role as CompanyRole)} • {company.taxCondition}</p>
           </div>
           <div className="flex gap-2">
             <Button 

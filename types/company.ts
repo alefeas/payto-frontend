@@ -75,13 +75,15 @@ export interface Activity {
   timestamp: string
 }
 
-export type CompanyRole = 'Administrador' | 'Director Financiero' | 'Contador' | 'Aprobador' | 'Operador'
+export type CompanyRole = 'owner' | 'administrator' | 'financial_director' | 'accountant' | 'approver' | 'operator'
 
 export interface CompanyMember {
   id: string
+  userId: string
   name: string
   email: string
   role: CompanyRole
+  isActive: boolean
   joinedAt: string
   lastActive: string
   avatar?: string

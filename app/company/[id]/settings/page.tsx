@@ -161,10 +161,10 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    if (company && company.role !== 'administrator') {
+    if (company && company.role !== 'administrator' && company.role !== 'owner') {
       router.push(`/company/${companyId}`)
       toast.error('Acceso denegado', {
-        description: 'Solo los administradores pueden acceder a la configuración'
+        description: 'Solo los propietarios y administradores pueden acceder a la configuración'
       })
     }
   }, [company, router, companyId])
@@ -177,8 +177,9 @@ export default function SettingsPage() {
       setInitialFormData(formData)
       setHasChanges(false)
       toast.success('Configuración guardada')
-    } catch (error) {
-      toast.error('Error al guardar')
+    } catch (error: any) {
+      console.error('Error saving company:', error)
+      toast.error(error.response?.data?.message || 'Error al guardar')
     } finally {
       setSaving(false)
     }
@@ -305,7 +306,7 @@ export default function SettingsPage() {
 
   if (authLoading || loading) return null
   if (!isAuthenticated || !company) return null
-  if (company.role !== 'administrator') return null
+  if (company.role !== 'administrator' && company.role !== 'owner') return null
 
   return (
     <div className="min-h-screen bg-background p-6">
