@@ -90,7 +90,6 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
   ],
   
   financial_director: [
-    'company.view_settings',
     'members.view',
     'bank_accounts.view',
     'bank_accounts.create',
@@ -107,7 +106,6 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
   ],
   
   accountant: [
-    'company.view_settings',
     'members.view',
     'bank_accounts.view',
     'invoices.view',

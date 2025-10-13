@@ -143,14 +143,14 @@ export default function SettingsPage() {
         tax_condition: companyData.taxCondition || '',
         default_sales_point: companyData.defaultSalesPoint || 1,
         last_invoice_number: companyData.lastInvoiceNumber || 0,
-        default_vat: companyData.defaultVat || 21,
-        vat_perception: companyData.vatPerception || 0,
-        gross_income_perception: companyData.grossIncomePerception || 2.5,
-        social_security_perception: companyData.socialSecurityPerception || 1,
-        vat_retention: companyData.vatRetention || 0,
-        income_tax_retention: companyData.incomeTaxRetention || 2,
-        gross_income_retention: companyData.grossIncomeRetention || 0.42,
-        social_security_retention: companyData.socialSecurityRetention || 0
+        default_vat: Number(companyData.defaultVat) || 21,
+        vat_perception: Number(companyData.vatPerception) || 0,
+        gross_income_perception: Number(companyData.grossIncomePerception) || 2.5,
+        social_security_perception: Number(companyData.socialSecurityPerception) || 1,
+        vat_retention: Number(companyData.vatRetention) || 0,
+        income_tax_retention: Number(companyData.incomeTaxRetention) || 2,
+        gross_income_retention: Number(companyData.grossIncomeRetention) || 0.42,
+        social_security_retention: Number(companyData.socialSecurityRetention) || 0
       }
       setFormData(initialData)
       setInitialFormData(initialData)
@@ -510,15 +510,32 @@ export default function SettingsPage() {
                   <h3 className="font-medium mb-4">Impuesto Predeterminado</h3>
                   <div className="space-y-2">
                     <Label>IVA (%)</Label>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="100" 
-                      step="0.01"
-                      value={formData.default_vat} 
-                      onChange={(e) => setFormData({...formData, default_vat: parseFloat(e.target.value) || 0})} 
-                      className="max-w-xs"
-                    />
+                    <Select 
+                      value={formData.default_vat.toString()} 
+                      onValueChange={(value) => {
+                        console.log('Changing VAT to:', value)
+                        setFormData({...formData, default_vat: parseFloat(value)})
+                      }}
+                    >
+                      <SelectTrigger className="max-w-xs">
+                        <SelectValue>
+                          {formData.default_vat === -1 ? 'Exento' : 
+                           formData.default_vat === -2 ? 'No Gravado' : 
+                           `${formData.default_vat}%`}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">Exento</SelectItem>
+                        <SelectItem value="-2">No Gravado</SelectItem>
+                        <SelectItem value="0">0%</SelectItem>
+                        <SelectItem value="2.5">2.5%</SelectItem>
+                        <SelectItem value="5">5%</SelectItem>
+                        <SelectItem value="10.5">10.5%</SelectItem>
+                        <SelectItem value="21">21%</SelectItem>
+                        <SelectItem value="27">27%</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Este valor se aplicará por defecto al agregar ítems en facturas</p>
                   </div>
                 </div>
                 

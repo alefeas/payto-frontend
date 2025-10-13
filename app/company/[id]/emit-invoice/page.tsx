@@ -13,20 +13,32 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
 import { ClientSelector } from "@/components/invoices/ClientSelector"
+import { companyService } from "@/services/company.service"
+import { invoiceService } from "@/services/invoice.service"
 
-const mockCompanies = [
-  { id: "1", name: "TechCorp SA", uniqueId: "TC8X9K2L", taxConditionAfip: "RI" as const },
-  { id: "2", name: "Emprendimientos Juan Pérez", uniqueId: "SU4P7M9N", taxConditionAfip: "Monotributo" as const },
-  { id: "3", name: "Cooperativa de Trabajo Unidos", uniqueId: "CL1Q3R8T", taxConditionAfip: "Exento" as const },
-  { id: "4", name: "María López", uniqueId: "ML5K2P8W", taxConditionAfip: "CF" as const },
-]
+interface CompanyData {
+  id: string
+  name: string
+  tax_condition: string
+  default_sales_point?: number
+  defaultVat?: number
+  vatPerception?: number
+  grossIncomePerception?: number
+  socialSecurityPerception?: number
+  vatRetention?: number
+  incomeTaxRetention?: number
+  grossIncomeRetention?: number
+  socialSecurityRetention?: number
+}
 
-const mockSavedClients = [
-  { id: "1", businessName: "Distribuidora El Sol SRL", documentNumber: "20-12345678-9", taxCondition: "RI" },
-  { id: "2", businessName: "Servicios Técnicos Martínez", documentNumber: "27-98765432-1", taxCondition: "Monotributo" },
-  { id: "3", firstName: "Laura", lastName: "González", documentNumber: "35.123.456", taxCondition: "CF" },
-  { id: "4", businessName: "Comercial Norte SA", documentNumber: "30-55667788-9", taxCondition: "RI" },
-]
+interface Client {
+  id: string
+  business_name?: string
+  first_name?: string
+  last_name?: string
+  document_number: string
+  tax_condition: string
+}
 
 export default function CreateInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -34,28 +46,64 @@ export default function CreateInvoicePage() {
   const params = useParams()
   const companyId = params.id as string
 
-  // Obtener empresa actual
-  const currentCompany = mockCompanies.find(c => c.uniqueId === companyId)
+  const [currentCompany, setCurrentCompany] = useState<CompanyData | null>(null)
+  const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
+  const [savedClients, setSavedClients] = useState<Client[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
-  // Determinar tipos de factura permitidos según condición IVA
+  // Determinar tipos de factura permitidos según condición IVA del emisor
   const getAllowedInvoiceTypes = () => {
-    if (!currentCompany) return []
-    
-    switch (currentCompany.taxConditionAfip) {
-      case 'RI':
-        return ['A', 'B', 'C', 'E'] // RI puede emitir todas
-      case 'Monotributo':
-        return ['C'] // Monotributo solo C
-      case 'Exento':
-        return ['C', 'E'] // Exento: C local, E exportación
-      case 'CF':
-        return [] // Consumidor Final no puede emitir
-      default:
-        return []
+    if (!currentCompany) {
+      console.log('No currentCompany')
+      return []
     }
+    
+    const taxCondition = currentCompany.tax_condition
+    console.log('getAllowedInvoiceTypes - tax_condition:', taxCondition)
+    
+    // Responsable Inscripto
+    if (taxCondition === 'RI' || taxCondition === 'registered_taxpayer') {
+      return ['A', 'B', 'C', 'E']
+    }
+    
+    // Monotributo
+    if (taxCondition === 'Monotributo' || taxCondition === 'monotax') {
+      return ['C']
+    }
+    
+    // Exento
+    if (taxCondition === 'Exento' || taxCondition === 'exempt') {
+      return ['C', 'E']
+    }
+    
+    // Consumidor Final - no puede emitir
+    if (taxCondition === 'CF' || taxCondition === 'final_consumer' || taxCondition === 'final_consumer_alt') {
+      return []
+    }
+    
+    // Default: asumir RI si no se reconoce
+    console.warn('Unknown tax condition, defaulting to RI:', taxCondition)
+    return ['A', 'B', 'C', 'E']
   }
 
-  const allowedTypes = getAllowedInvoiceTypes()
+  // Determinar tipo de factura recomendado según cliente
+  const getRecommendedInvoiceType = (clientTaxCondition?: string): InvoiceType | null => {
+    if (!currentCompany) return null
+    
+    const isRI = currentCompany.tax_condition === 'RI' || currentCompany.tax_condition === 'registered_taxpayer'
+    if (!isRI) return null
+    
+    if (clientTaxCondition === 'RI' || clientTaxCondition === 'registered_taxpayer') {
+      return 'A' // RI a RI = Factura A
+    } else if (clientTaxCondition === 'Monotributo' || clientTaxCondition === 'monotax' || 
+               clientTaxCondition === 'CF' || clientTaxCondition === 'final_consumer') {
+      return 'B' // RI a no-RI = Factura B
+    } else if (clientTaxCondition === 'Exento' || clientTaxCondition === 'exempt') {
+      return 'C' // A exento = Factura C
+    }
+    
+    return null
+  }
 
   const [formData, setFormData] = useState({
     type: 'A' as InvoiceType,
@@ -71,11 +119,10 @@ export default function CreateInvoicePage() {
   })
 
 
-  const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([
-    { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }
-  ])
+  const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([])
 
   const [perceptions, setPerceptions] = useState<Omit<InvoicePerception, 'id' | 'baseAmount' | 'amount'>[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
 
   const [totals, setTotals] = useState({
     subtotal: 0,
@@ -89,6 +136,74 @@ export default function CreateInvoicePage() {
       router.push('/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  // Load company and clients data
+  useEffect(() => {
+    const loadData = async () => {
+      if (!companyId) return
+      
+      try {
+        setIsLoadingData(true)
+        
+        // Load current company
+        const company = await companyService.getCompany(companyId)
+        console.log('Loaded company:', company)
+        console.log('Tax condition:', company.taxCondition)
+        setCurrentCompany({
+          id: company.id,
+          name: company.name,
+          tax_condition: company.taxCondition || 'registered_taxpayer',
+          default_sales_point: company.defaultSalesPoint || 1,
+          defaultVat: company.defaultVat || 21,
+          vatPerception: company.vatPerception || 0,
+          grossIncomePerception: company.grossIncomePerception || 2.5,
+          socialSecurityPerception: company.socialSecurityPerception || 1,
+          vatRetention: company.vatRetention || 0,
+          incomeTaxRetention: company.incomeTaxRetention || 2,
+          grossIncomeRetention: company.grossIncomeRetention || 0.42,
+          socialSecurityRetention: company.socialSecurityRetention || 0
+        })
+        
+        // TODO: Load connected companies and saved clients when endpoints are ready
+        // const connections = await companyService.getConnections(companyId)
+        // setConnectedCompanies(connections)
+        
+        // const clients = await clientService.getClients(companyId)
+        // setSavedClients(clients)
+        
+      } catch (error) {
+        console.error('Error loading data:', error)
+        toast.error('Error al cargar datos de la empresa')
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+    
+    if (isAuthenticated) {
+      loadData()
+    }
+  }, [companyId, isAuthenticated])
+
+  // Initialize items with company defaults when company loads
+  useEffect(() => {
+    if (currentCompany && !isInitialized) {
+      // Set initial item with company's default VAT
+      setItems([{ 
+        description: '', 
+        quantity: 1, 
+        unitPrice: 0, 
+        taxRate: currentCompany.defaultVat || 21 
+      }])
+      
+      // Update invoice type if needed
+      const allowedTypes = getAllowedInvoiceTypes()
+      if (allowedTypes.length > 0 && !allowedTypes.includes(formData.type)) {
+        setFormData(prev => ({ ...prev, type: allowedTypes[0] as InvoiceType }))
+      }
+      
+      setIsInitialized(true)
+    }
+  }, [currentCompany, isInitialized]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const calculateTotals = useCallback(() => {
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
@@ -124,7 +239,7 @@ export default function CreateInvoicePage() {
   }, [items, perceptions, calculateTotals])
 
   const addItem = () => {
-    setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }])
+    setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: currentCompany?.defaultVat || 21 }])
   }
 
   const removeItem = (index: number) => {
@@ -140,7 +255,25 @@ export default function CreateInvoicePage() {
   }
 
   const addPerception = () => {
-    setPerceptions([...perceptions, { type: 'gross_income_perception', name: 'Percepción IIBB', rate: 3 }])
+    // Default to gross income perception with company's configured rate
+    setPerceptions([...perceptions, { 
+      type: 'gross_income_perception', 
+      name: '', 
+      rate: currentCompany?.grossIncomePerception || 2.5 
+    }])
+  }
+
+  const getDefaultPerceptionRate = (type: string): number => {
+    switch (type) {
+      case 'vat_perception':
+        return currentCompany?.vatPerception || 0
+      case 'gross_income_perception':
+        return currentCompany?.grossIncomePerception || 2.5
+      case 'suss_perception':
+        return currentCompany?.socialSecurityPerception || 1
+      default:
+        return 0
+    }
   }
 
   const removePerception = (index: number) => {
@@ -149,7 +282,19 @@ export default function CreateInvoicePage() {
 
   const updatePerception = (index: number, field: keyof typeof perceptions[0], value: string | number) => {
     const newPerceptions = [...perceptions]
-    newPerceptions[index] = { ...newPerceptions[index], [field]: value }
+    
+    // If changing type, update rate to default for that type
+    if (field === 'type') {
+      const newType = value as string
+      newPerceptions[index] = { 
+        ...newPerceptions[index], 
+        type: newType as any,
+        rate: getDefaultPerceptionRate(newType)
+      }
+    } else {
+      newPerceptions[index] = { ...newPerceptions[index], [field]: value }
+    }
+    
     setPerceptions(newPerceptions)
   }
 
@@ -161,7 +306,7 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (!formData.receiverCompanyId && !formData.clientData) {
+    if (!formData.clientData || !formData.clientData.client_id) {
       toast.error('Debe seleccionar un cliente')
       return
     }
@@ -177,44 +322,41 @@ export default function CreateInvoicePage() {
     }
 
     const payload = {
-      type: formData.type,
-      concept: formData.concept,
-      receiver_company_id: formData.receiverCompanyId || undefined,
-      client_data: formData.clientData || undefined,
-      save_client: formData.saveClient,
+      client_id: formData.clientData.client_id,
+      invoice_type: formData.type,
+      sales_point: currentCompany?.default_sales_point || 1,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
       currency: formData.currency,
-      exchange_rate: formData.exchangeRate || undefined,
-      items: items,
-      perceptions: perceptions,
-      notes: formData.notes
+      exchange_rate: formData.exchangeRate ? parseFloat(formData.exchangeRate) : undefined,
+      notes: formData.notes,
+      items: items.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        tax_rate: item.taxRate || 0
+      }))
     }
 
     try {
-      const response = await fetch(`/api/companies/${companyId}/invoices`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message)
+      const result = await invoiceService.createInvoice(companyId, payload)
+      
+      const invoice = result.invoice
+      
+      if (invoice.afip_status === 'approved') {
+        toast.success('Factura emitida exitosamente', {
+          description: `CAE: ${invoice.afip_cae} - Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
+        })
+      } else if (invoice.afip_status === 'error') {
+        toast.warning('Factura creada pero con error en AFIP', {
+          description: invoice.afip_error_message || 'Error desconocido'
+        })
       }
-
-      toast.success('Factura creada exitosamente', {
-        description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
-      })
       
-      setTimeout(() => {
-        toast.success('PDF y TXT generados automáticamente')
-      }, 1000)
-      
-      router.push(`/company/${companyId}`)
-    } catch (error) {
+      router.push(`/company/${companyId}/invoices`)
+    } catch (error: any) {
       toast.error('Error al crear la factura', {
-        description: error instanceof Error ? error.message : 'Error desconocido'
+        description: error.response?.data?.message || error.message || 'Error desconocido'
       })
     }
   }
@@ -246,27 +388,64 @@ export default function CreateInvoicePage() {
               {/* Tipo de Factura */}
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo de Factura *</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(value: InvoiceType) => setFormData({...formData, type: value})}
-                  disabled={allowedTypes.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allowedTypes.includes('A') && <SelectItem value="A">Factura A - IVA discriminado (RI a RI)</SelectItem>}
-                    {allowedTypes.includes('B') && <SelectItem value="B">Factura B - IVA incluido (RI a no-RI)</SelectItem>}
-                    {allowedTypes.includes('C') && <SelectItem value="C">Factura C - Sin IVA</SelectItem>}
-                    {allowedTypes.includes('E') && <SelectItem value="E">Factura E - Exportación</SelectItem>}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {currentCompany?.taxConditionAfip === 'RI' && 'Responsable Inscripto: Puede emitir A, B, C, E'}
-                  {currentCompany?.taxConditionAfip === 'Monotributo' && 'Monotributo: Solo puede emitir facturas tipo C'}
-                  {currentCompany?.taxConditionAfip === 'Exento' && 'Exento: Puede emitir C (local) y E (exportación)'}
-                  {currentCompany?.taxConditionAfip === 'CF' && '⚠️ Consumidor Final no puede emitir facturas'}
-                </p>
+                {getAllowedInvoiceTypes().length === 0 ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-800 font-medium">⚠️ No puede emitir facturas</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      Los Consumidores Finales no pueden emitir facturas. Debe cambiar su condición fiscal.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <Select 
+                      value={formData.type} 
+                      onValueChange={(value: InvoiceType) => setFormData({...formData, type: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione tipo de factura" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAllowedInvoiceTypes().includes('A') && (
+                          <SelectItem value="A">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Factura A</span>
+                              <span className="text-xs text-muted-foreground">IVA discriminado (RI a RI)</span>
+                            </div>
+                          </SelectItem>
+                        )}
+                        {getAllowedInvoiceTypes().includes('B') && (
+                          <SelectItem value="B">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Factura B</span>
+                              <span className="text-xs text-muted-foreground">IVA incluido (RI a Monotributo/CF)</span>
+                            </div>
+                          </SelectItem>
+                        )}
+                        {getAllowedInvoiceTypes().includes('C') && (
+                          <SelectItem value="C">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Factura C</span>
+                              <span className="text-xs text-muted-foreground">Sin IVA (Monotributo/Exento)</span>
+                            </div>
+                          </SelectItem>
+                        )}
+                        {getAllowedInvoiceTypes().includes('E') && (
+                          <SelectItem value="E">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Factura E</span>
+                              <span className="text-xs text-muted-foreground">Exportación</span>
+                            </div>
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {(currentCompany?.tax_condition === 'RI' || currentCompany?.tax_condition === 'registered_taxpayer') && '✓ Responsable Inscripto: Puede emitir A, B, C, E'}
+                      {(currentCompany?.tax_condition === 'Monotributo' || currentCompany?.tax_condition === 'monotax') && '✓ Monotributo: Solo puede emitir facturas tipo C'}
+                      {(currentCompany?.tax_condition === 'Exento' || currentCompany?.tax_condition === 'exempt') && '✓ Exento: Puede emitir C (local) y E (exportación)'}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Concepto */}
@@ -290,10 +469,15 @@ export default function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Cliente *</Label>
                 <ClientSelector
-                  connectedCompanies={mockCompanies}
-                  savedClients={mockSavedClients}
+                  connectedCompanies={connectedCompanies}
+                  savedClients={savedClients}
                   onSelect={(data) => {
+                    let clientTaxCondition: string | undefined
+                    
                     if (data.receiver_company_id) {
+                      const company = connectedCompanies.find(c => c.id === data.receiver_company_id)
+                      clientTaxCondition = company?.tax_condition
+                      
                       setFormData({
                         ...formData,
                         receiverCompanyId: data.receiver_company_id,
@@ -301,7 +485,9 @@ export default function CreateInvoicePage() {
                         saveClient: false
                       })
                     } else if (data.client_id) {
-                      // Cliente guardado seleccionado
+                      const client = savedClients.find(c => c.id === data.client_id)
+                      clientTaxCondition = client?.tax_condition
+                      
                       setFormData({
                         ...formData,
                         receiverCompanyId: '',
@@ -309,12 +495,21 @@ export default function CreateInvoicePage() {
                         saveClient: false
                       })
                     } else if (data.client_data) {
+                      clientTaxCondition = (data.client_data as any).tax_condition
+                      
                       setFormData({
                         ...formData,
                         receiverCompanyId: '',
                         clientData: data.client_data,
                         saveClient: data.save_client || false
                       })
+                    }
+                    
+                    // Auto-select recommended invoice type
+                    const recommended = getRecommendedInvoiceType(clientTaxCondition)
+                    const allowed = getAllowedInvoiceTypes()
+                    if (recommended && allowed.includes(recommended)) {
+                      setFormData(prev => ({ ...prev, type: recommended }))
                     }
                   }}
                 />
@@ -423,11 +618,15 @@ export default function CreateInvoicePage() {
                   <div className="space-y-2">
                     <Label>IVA (%)</Label>
                     <Select 
-                      value={item.taxRate?.toString() || '21'} 
+                      value={(item.taxRate ?? currentCompany?.defaultVat ?? 21).toString()} 
                       onValueChange={(value) => updateItem(index, 'taxRate', parseFloat(value))}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue>
+                          {(item.taxRate ?? currentCompany?.defaultVat ?? 21) === -1 ? 'Exento' : 
+                           (item.taxRate ?? currentCompany?.defaultVat ?? 21) === -2 ? 'No Gravado' : 
+                           `${item.taxRate ?? currentCompany?.defaultVat ?? 21}%`}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="-1">Exento</SelectItem>
@@ -499,7 +698,7 @@ export default function CreateInvoicePage() {
                     <div className="space-y-2">
                       <Label>Descripción</Label>
                       <Input
-                        placeholder="Nombre de la percepción"
+                        placeholder="Ej: Percepción IIBB Buenos Aires"
                         value={perception.name}
                         onChange={(e) => updatePerception(index, 'name', e.target.value)}
                       />
@@ -515,6 +714,9 @@ export default function CreateInvoicePage() {
                         value={perception.rate}
                         onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Valor por defecto según configuración: {getDefaultPerceptionRate(perception.type)}%
+                      </p>
                     </div>
                     
                     <div className="flex items-end">

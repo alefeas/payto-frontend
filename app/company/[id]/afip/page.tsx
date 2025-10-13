@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { afipCertificateService, AfipCertificate } from "@/services/afip-certificate.service"
+import { companyService } from "@/services/company.service"
+import { hasPermission } from "@/lib/permissions"
+import type { CompanyRole } from "@/types"
 
 export default function AfipConfigPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -24,6 +27,7 @@ export default function AfipConfigPage() {
   const [generating, setGenerating] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [userRole, setUserRole] = useState<CompanyRole | null>(null)
   
   // Generación asistida
   const [generatedCSR, setGeneratedCSR] = useState("")
@@ -41,17 +45,42 @@ export default function AfipConfigPage() {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
     } else if (isAuthenticated) {
-      loadCertificate()
+      checkPermissions()
     }
   }, [isAuthenticated, authLoading, router])
+
+  const checkPermissions = async () => {
+    try {
+      const companies = await companyService.getCompanies()
+      const company = companies.find(c => c.id === companyId)
+      if (!company) {
+        router.push('/dashboard')
+        return
+      }
+      const role = company.role as CompanyRole
+      setUserRole(role)
+      if (!hasPermission(role, 'company.view_settings')) {
+        router.push(`/company/${companyId}`)
+        toast.error('Acceso denegado', {
+          description: 'Solo los propietarios, administradores y directores financieros pueden acceder a la configuración AFIP'
+        })
+        return
+      }
+      loadCertificate()
+    } catch (error) {
+      router.push('/dashboard')
+    }
+  }
 
   const loadCertificate = async () => {
     try {
       setLoading(true)
       const cert = await afipCertificateService.getCertificate(companyId)
       setCertificate(cert)
-    } catch (error) {
-      console.error('Error loading certificate:', error)
+    } catch (error: any) {
+      if (error.response?.status !== 404) {
+        console.error('Error loading certificate:', error)
+      }
     } finally {
       setLoading(false)
     }
@@ -160,6 +189,7 @@ export default function AfipConfigPage() {
 
   if (authLoading || loading) return null
   if (!isAuthenticated) return null
+  if (userRole && !hasPermission(userRole, 'company.view_settings')) return null
 
   return (
     <div className="min-h-screen bg-background p-6">

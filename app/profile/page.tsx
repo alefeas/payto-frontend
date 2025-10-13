@@ -13,6 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
+import { companyService, Company } from "@/services/company.service"
+import { translateRole } from "@/lib/role-utils"
+import { translateTaxCondition } from "@/lib/tax-condition-utils"
+import type { CompanyRole } from "@/types"
 
 const countries = [
   { value: "ar", label: "Argentina" },
@@ -55,12 +59,8 @@ export default function ProfilePage() {
     apartment: ''
   })
   
-  // Mock workspaces data
-  const [userWorkspaces] = useState([
-    { id: 1, name: "TechCorp SA", role: "Administrador", status: "active" },
-    { id: 2, name: "StartupXYZ", role: "Contador", status: "active" },
-    { id: 3, name: "Consulting LLC", role: "Miembro", status: "pending" },
-  ])
+  const [userCompanies, setUserCompanies] = useState<Company[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
   
   const [isSaving, setIsSaving] = useState(false)
   const router = useRouter()
@@ -87,6 +87,24 @@ export default function ProfilePage() {
       })
     }
   }, [user, isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCompanies()
+    }
+  }, [isAuthenticated])
+
+  const loadCompanies = async () => {
+    try {
+      setLoadingCompanies(true)
+      const data = await companyService.getCompanies()
+      setUserCompanies(data)
+    } catch (error) {
+      console.error('Error loading companies:', error)
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -172,18 +190,26 @@ export default function ProfilePage() {
               <div className="pt-2">
                 <div className="flex items-center gap-2 text-sm font-medium mb-2">
                   <Building className="h-4 w-4 text-muted-foreground" />
-                  <span>Workspaces ({userWorkspaces.filter(w => w.status === 'active').length})</span>
+                  <span>Mis Perfiles ({userCompanies.filter(c => c.isActive).length})</span>
                 </div>
-                <div className="space-y-1">
-                  {userWorkspaces.slice(0, 2).map((workspace) => (
-                    <div key={workspace.id} className="text-xs text-muted-foreground">
-                      <span className="font-medium">{workspace.name}</span> - {workspace.role}
-                    </div>
-                  ))}
-                  {userWorkspaces.length > 2 && (
-                    <div className="text-xs text-muted-foreground">+{userWorkspaces.length - 2} más</div>
-                  )}
-                </div>
+                {loadingCompanies ? (
+                  <div className="text-xs text-muted-foreground">Cargando...</div>
+                ) : (
+                  <div className="space-y-1">
+                    {userCompanies.slice(0, 2).map((company) => {
+                      const role = (company.role || 'operator').toLowerCase() as CompanyRole
+                      const translatedRole = translateRole(role)
+                      return (
+                        <div key={company.id} className="text-xs text-muted-foreground">
+                          <span className="font-medium">{company.name}</span> - {translatedRole}
+                        </div>
+                      )
+                    })}
+                    {userCompanies.length > 2 && (
+                      <div className="text-xs text-muted-foreground">+{userCompanies.length - 2} más</div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -13,6 +13,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { toast } from "sonner"
+import { translateRole } from "@/lib/role-utils"
+import { translateTaxCondition } from "@/lib/tax-condition-utils"
+import type { CompanyRole } from "@/types"
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth()

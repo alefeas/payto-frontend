@@ -18,8 +18,9 @@ export const roleDescriptions: Record<CompanyRole, string> = {
   operator: 'Visualización y tareas básicas de carga'
 }
 
-export function translateRole(role: CompanyRole): string {
-  return roleTranslations[role] || role
+export function translateRole(role: CompanyRole | string): string {
+  const normalizedRole = role.toLowerCase() as CompanyRole
+  return roleTranslations[normalizedRole] || role
 }
 
 export function getRoleDescription(role: CompanyRole): string {

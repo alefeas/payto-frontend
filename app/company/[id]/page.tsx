@@ -24,6 +24,7 @@ import { companyService, Company } from "@/services/company.service"
 import { toast } from "sonner"
 import { CompanyRole } from "@/types"
 import { translateRole } from "@/lib/role-utils"
+import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import { hasPermission } from "@/lib/permissions"
 
 export default function CompanyPage() {
@@ -207,7 +208,7 @@ export default function CompanyPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">Tu rol: {translateRole(company.role as CompanyRole)} • {company.taxCondition}</p>
+            <p className="text-muted-foreground">Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition)}</p>
           </div>
           <div className="flex gap-2">
             {hasPermission(userRole, 'members.view') && (

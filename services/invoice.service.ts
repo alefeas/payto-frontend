@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from '@/lib/api-client';
 
 export interface InvoiceItem {
   description: string;
@@ -45,22 +45,27 @@ export interface Invoice {
 
 export const invoiceService = {
   async getInvoices(companyId: string) {
-    const response = await api.get(`/companies/${companyId}/invoices`);
+    const response = await apiClient.get(`/companies/${companyId}/invoices`);
     return response.data;
   },
 
   async getInvoice(companyId: string, invoiceId: string) {
-    const response = await api.get(`/companies/${companyId}/invoices/${invoiceId}`);
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}`);
     return response.data;
   },
 
   async createInvoice(companyId: string, data: CreateInvoiceData) {
-    const response = await api.post(`/companies/${companyId}/invoices`, data);
+    const response = await apiClient.post(`/companies/${companyId}/invoices`, data);
+    return response.data;
+  },
+
+  async cancelInvoice(companyId: string, invoiceId: string) {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/cancel`);
     return response.data;
   },
 
   async deleteInvoice(companyId: string, invoiceId: string) {
-    const response = await api.delete(`/companies/${companyId}/invoices/${invoiceId}`);
+    const response = await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}`);
     return response.data;
   },
 };

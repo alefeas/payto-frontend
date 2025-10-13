@@ -5,7 +5,9 @@ export interface Company {
   uniqueId?: string;
   name: string;
   businessName?: string;
+  business_name?: string;
   nationalId: string;
+  national_id?: string;
   phone?: string;
   addressData?: {
     street?: string;
@@ -16,22 +18,24 @@ export interface Company {
     province?: string;
     city?: string;
   };
-  taxCondition: string;
-  defaultSalesPoint: number;
-  lastInvoiceNumber: number;
-  defaultVat: number;
-  vatPerception: number;
-  grossIncomePerception: number;
-  socialSecurityPerception: number;
-  vatRetention: number;
-  incomeTaxRetention: number;
-  grossIncomeRetention: number;
-  socialSecurityRetention: number;
-  isActive: boolean;
+  taxCondition?: string;
+  tax_condition?: string;
+  defaultSalesPoint?: number;
+  default_sales_point?: number;
+  lastInvoiceNumber?: number;
+  defaultVat?: number;
+  vatPerception?: number;
+  grossIncomePerception?: number;
+  socialSecurityPerception?: number;
+  vatRetention?: number;
+  incomeTaxRetention?: number;
+  grossIncomeRetention?: number;
+  socialSecurityRetention?: number;
+  isActive?: boolean;
   inviteCode?: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
+  role?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateCompanyData {
@@ -87,5 +91,10 @@ export const companyService = {
     await apiClient.delete(`/companies/${id}`, {
       data: { deletion_code: deletionCode }
     });
+  },
+
+  // Alias for getCompanyById
+  async getCompany(id: string): Promise<Company> {
+    return this.getCompanyById(id);
   },
 };
