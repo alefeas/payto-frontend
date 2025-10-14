@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Calculator, FileText, Download } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Calculator, FileText, Download, Shield, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -306,7 +306,7 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (!formData.clientData || !formData.clientData.client_id) {
+    if (!formData.clientData?.client_id && !formData.receiverCompanyId) {
       toast.error('Debe seleccionar un cliente')
       return
     }
@@ -322,7 +322,10 @@ export default function CreateInvoicePage() {
     }
 
     const payload = {
-      client_id: formData.clientData.client_id,
+      client_id: formData.clientData?.client_id || undefined,
+      receiver_company_id: formData.receiverCompanyId || undefined,
+      client_data: formData.clientData && !formData.clientData.client_id ? formData.clientData : undefined,
+      save_client: formData.saveClient,
       invoice_type: formData.type,
       sales_point: currentCompany?.default_sales_point || 1,
       issue_date: formData.emissionDate,
@@ -388,7 +391,12 @@ export default function CreateInvoicePage() {
               {/* Tipo de Factura */}
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo de Factura *</Label>
-                {getAllowedInvoiceTypes().length === 0 ? (
+                {isLoadingData ? (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Cargando información...</p>
+                  </div>
+                ) : getAllowedInvoiceTypes().length === 0 ? (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                     <p className="text-sm text-red-800 font-medium">⚠️ No puede emitir facturas</p>
                     <p className="text-xs text-red-600 mt-1">
@@ -469,6 +477,7 @@ export default function CreateInvoicePage() {
               <div className="space-y-2">
                 <Label>Cliente *</Label>
                 <ClientSelector
+                  companyId={companyId}
                   connectedCompanies={connectedCompanies}
                   savedClients={savedClients}
                   onSelect={(data) => {
@@ -491,7 +500,10 @@ export default function CreateInvoicePage() {
                       setFormData({
                         ...formData,
                         receiverCompanyId: '',
-                        clientData: { client_id: data.client_id },
+                        clientData: { 
+                          client_id: data.client_id,
+                          ...data.client_data 
+                        },
                         saveClient: false
                       })
                     } else if (data.client_data) {
@@ -790,39 +802,24 @@ export default function CreateInvoicePage() {
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                 />
               </div>
-              
-
-              
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-800">
-                      🤖 Generación Automática
-                    </p>
-                    <ul className="text-xs text-blue-700 mt-1 space-y-1">
-                      <li>• PDF oficial y TXT para AFIP/ARCA</li>
-                      <li>• Envío automático por email</li>
-                      <li>• Numeración correlativa</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          {/* Proceso Automático */}
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          {/* Información sobre Autorización AFIP */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <div className="p-1 bg-green-100 rounded-full mt-0.5">
-                <Download className="h-4 w-4 text-green-600" />
-              </div>
+              <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-green-800">
-                  ✅ Descarga de Archivos
+                <p className="text-sm font-medium text-blue-800">
+                  ℹ️ Autorización con AFIP
                 </p>
-                <p className="text-xs text-green-700 mt-1">
-                  Los archivos TXT se pueden descargar individual o masivamente desde "Ver Facturas"
+                <ul className="text-xs text-blue-700 mt-2 space-y-1">
+                  <li>• <strong>Con certificado AFIP:</strong> La factura se autoriza automáticamente y obtiene CAE oficial</li>
+                  <li>• <strong>Sin certificado:</strong> Se genera con CAE simulado (no válida legalmente)</li>
+                  <li>• <strong>Si AFIP rechaza:</strong> La factura NO se creará en el sistema</li>
+                </ul>
+                <p className="text-xs text-blue-600 mt-2">
+                  Configura tu certificado AFIP desde Configuración → AFIP/ARCA
                 </p>
               </div>
             </div>

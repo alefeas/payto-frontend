@@ -2,27 +2,21 @@
 
 import { useState } from "react"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Building2, UserPlus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Building2, UserPlus, Plus } from "lucide-react"
 import { ClientSelectorProps } from "@/types"
+import { ClientForm } from "@/components/clients/ClientForm"
 
 type ClientType = 'registered' | 'saved' | 'new'
 
-export function ClientSelector({ connectedCompanies, savedClients = [], onSelect }: ClientSelectorProps) {
+export function ClientSelector({ connectedCompanies, savedClients = [], onSelect, companyId }: ClientSelectorProps & { companyId: string }) {
   const [clientType, setClientType] = useState<ClientType>('registered')
-  const [saveClient, setSaveClient] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState('')
   const [selectedClient, setSelectedClient] = useState('')
-  const [newClientData, setNewClientData] = useState({
-    documentType: 'CUIT',
-    documentNumber: '',
-    businessName: '',
-    email: '',
-    taxCondition: 'Consumidor_Final'
-  })
+  const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false)
 
   const handleCompanySelect = (companyId: string) => {
     setSelectedCompany(companyId)
@@ -31,24 +25,22 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
 
   const handleClientSelect = (clientId: string) => {
     setSelectedClient(clientId)
-    onSelect({ client_id: clientId })
-  }
-
-  const handleClientDataChange = (field: string, value: string) => {
-    const updated = { ...newClientData, [field]: value }
-    setNewClientData(updated)
+    const client = savedClients.find(c => c.id === clientId)
     onSelect({ 
-      client_data: updated, 
-      save_client: saveClient 
+      client_id: clientId,
+      client_data: client ? {
+        document_type: client.documentType,
+        document_number: client.documentNumber,
+        business_name: client.businessName || `${client.firstName} ${client.lastName}`,
+        email: client.email,
+        tax_condition: client.taxCondition
+      } : undefined
     })
   }
 
-  const handleSaveClientChange = (checked: boolean) => {
-    setSaveClient(checked)
-    onSelect({ 
-      client_data: newClientData, 
-      save_client: checked 
-    })
+  const handleNewClientSuccess = () => {
+    setIsNewClientDialogOpen(false)
+    // Reload clients list if needed
   }
 
   return (
@@ -70,23 +62,23 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
           </div>
         </Label>
         
-        {savedClients.length > 0 && (
-          <Label 
-            htmlFor="saved" 
-            className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-          >
-            <RadioGroupItem value="saved" id="saved" />
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">
-                Cliente guardado
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Seleccionar de tus clientes externos guardados
-              </p>
+        <Label 
+          htmlFor="saved" 
+          className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+        >
+          <RadioGroupItem value="saved" id="saved" />
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <div className="flex-1">
+            <div className="font-medium">
+              Cliente externo guardado
             </div>
-          </Label>
-        )}
+            <p className="text-xs text-muted-foreground">
+              {savedClients.length > 0 
+                ? `${savedClients.length} cliente${savedClients.length > 1 ? 's' : ''} guardado${savedClients.length > 1 ? 's' : ''}`
+                : 'Aún no tienes clientes guardados'}
+            </p>
+          </div>
+        </Label>
         
         <Label 
           htmlFor="new" 
@@ -108,124 +100,100 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
       {clientType === 'registered' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Empresa</Label>
-          <Select value={selectedCompany} onValueChange={handleCompanySelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Buscar empresa en tu red..." />
-            </SelectTrigger>
-            <SelectContent>
-              {connectedCompanies.map(company => (
-                <SelectItem key={company.id} value={company.id}>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    <span>{company.name}</span>
-                    <span className="text-xs text-muted-foreground">({company.uniqueId})</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {connectedCompanies.length === 0 ? (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900 font-medium">No tienes empresas conectadas</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Invita a otras empresas a tu red PayTo para facturarles directamente
+              </p>
+            </div>
+          ) : (
+            <Select value={selectedCompany} onValueChange={handleCompanySelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Buscar empresa en tu red..." />
+              </SelectTrigger>
+              <SelectContent>
+                {connectedCompanies.map(company => (
+                  <SelectItem key={company.id} value={company.id}>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      <span>{company.name}</span>
+                      <span className="text-xs text-muted-foreground">({company.uniqueId})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 
       {clientType === 'saved' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Cliente</Label>
-          <Select value={selectedClient} onValueChange={handleClientSelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Buscar cliente guardado..." />
-            </SelectTrigger>
-            <SelectContent>
-              {savedClients.map(client => {
-                const displayName = client.businessName || `${client.firstName} ${client.lastname}` || client.documentNumber
-                return (
-                  <SelectItem key={client.id} value={client.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{displayName}</span>
-                      <span className="text-xs text-muted-foreground">({client.documentNumber})</span>
-                    </div>
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
+          {savedClients.length === 0 ? (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900 font-medium">No tienes clientes guardados</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Crea una factura con "Nuevo cliente externo" y marca la opción "Guardar cliente" para agregarlo aquí
+              </p>
+            </div>
+          ) : (
+            <Select value={selectedClient} onValueChange={handleClientSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Buscar cliente guardado..." />
+              </SelectTrigger>
+              <SelectContent>
+                {savedClients.map(client => {
+                  const displayName = client.businessName || `${client.firstName} ${client.lastname}` || client.documentNumber
+                  return (
+                    <SelectItem key={client.id} value={client.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{displayName}</span>
+                        <span className="text-xs text-muted-foreground">({client.documentNumber})</span>
+                      </div>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 
       {clientType === 'new' && (
-        <div className="space-y-4 p-4 border rounded-lg bg-accent/50">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Tipo Documento *</Label>
-              <Select 
-                value={newClientData.documentType}
-                onValueChange={(v) => handleClientDataChange('documentType', v)}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CUIT">CUIT</SelectItem>
-                  <SelectItem value="CUIL">CUIL</SelectItem>
-                  <SelectItem value="DNI">DNI</SelectItem>
-                  <SelectItem value="Pasaporte">Pasaporte</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Número *</Label>
-              <Input 
-                placeholder="20-12345678-9"
-                value={newClientData.documentNumber}
-                onChange={(e) => handleClientDataChange('documentNumber', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Nombre / Razón Social *</Label>
-            <Input 
-              placeholder="Juan Pérez o Empresa SA"
-              value={newClientData.businessName}
-              onChange={(e) => handleClientDataChange('businessName', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input 
-              type="email"
-              placeholder="cliente@email.com"
-              value={newClientData.email}
-              onChange={(e) => handleClientDataChange('email', e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Condición IVA *</Label>
-            <Select 
-              value={newClientData.taxCondition}
-              onValueChange={(v) => handleClientDataChange('taxCondition', v)}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Consumidor_Final">Consumidor Final</SelectItem>
-                <SelectItem value="RI">Responsable Inscripto</SelectItem>
-                <SelectItem value="Monotributo">Monotributo</SelectItem>
-                <SelectItem value="Exento">Exento</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center space-x-2 pt-2 border-t">
-            <Checkbox 
-              id="save" 
-              checked={saveClient}
-              onCheckedChange={handleSaveClientChange}
-            />
-            <Label htmlFor="save" className="text-sm cursor-pointer">
-              Guardar cliente para futuras facturas
-            </Label>
-          </div>
+        <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
+          <Label>Agregar Nuevo Cliente</Label>
+          <Button 
+            type="button"
+            variant="outline" 
+            className="w-full"
+            onClick={() => setIsNewClientDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Cliente Externo
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            El cliente se guardará automáticamente para futuras facturas
+          </p>
         </div>
       )}
+
+      <Dialog open={isNewClientDialogOpen} onOpenChange={setIsNewClientDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+            <DialogDescription>
+              Agrega un cliente externo para emitir facturas más rápido
+            </DialogDescription>
+          </DialogHeader>
+          <ClientForm 
+            companyId={companyId}
+            onClose={() => setIsNewClientDialogOpen(false)}
+            onSuccess={handleNewClientSuccess}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
