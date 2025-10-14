@@ -7,21 +7,29 @@ import {
   Clock,
   Users,
   Bell,
-  Target
+  Target,
+  CheckSquare,
+  ArrowRight
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
+import { taskService, type Task } from "@/services/task.service"
 import { toast } from "sonner"
 import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import type { CompanyRole } from "@/types"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(true)
-  const [tasks, setTasks] = useState<Array<{id: number, text: string, completed: boolean}>>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loadingTasks, setLoadingTasks] = useState(true)
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -33,6 +41,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (isAuthenticated) {
       loadCompanies()
+      loadTasks()
     }
   }, [isAuthenticated])
 
@@ -45,6 +54,53 @@ export default function DashboardPage() {
       toast.error('Error al cargar perfiles')
     } finally {
       setLoadingCompanies(false)
+    }
+  }
+
+  const loadTasks = async () => {
+    try {
+      setLoadingTasks(true)
+      const data = await taskService.getTasks()
+      setTasks(data)
+    } catch (error) {
+      console.error('Error loading tasks:', error)
+    } finally {
+      setLoadingTasks(false)
+    }
+  }
+
+  const handleToggleSelection = (taskId: string) => {
+    setSelectedTasks(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId)
+      } else {
+        newSet.add(taskId)
+      }
+      return newSet
+    })
+  }
+
+  const handleBulkComplete = async () => {
+    if (selectedTasks.size === 0 || isBulkUpdating) return
+    
+    try {
+      setIsBulkUpdating(true)
+      await Promise.all(
+        Array.from(selectedTasks).map(taskId => {
+          const task = tasks.find(t => t.id === taskId)
+          if (task) {
+            return taskService.updateTask(taskId, { is_completed: !task.is_completed })
+          }
+        })
+      )
+      setSelectedTasks(new Set())
+      loadTasks()
+      toast.success('Tareas actualizadas')
+    } catch (error) {
+      toast.error('Error al actualizar tareas')
+    } finally {
+      setIsBulkUpdating(false)
     }
   }
 
@@ -200,102 +256,83 @@ export default function DashboardPage() {
 
 
 
-          {/* To Do Funcional */}
+          {/* Mis Tareas */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Mis Tareas
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5" />
+                  Mis Tareas
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/tasks')}>
+                  Ver todas
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {/* Add Task */}
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    placeholder="Nueva tarea..."
-                    className="flex-1 px-3 py-2 text-sm border rounded-md"
-                    onKeyPress={(e) => {
-                      const target = e.target as HTMLInputElement
-                      if (e.key === 'Enter' && target.value.trim()) {
-                        const newTask = {
-                          id: Date.now(),
-                          text: target.value.trim(),
-                          completed: false
-                        }
-                        setTasks([...tasks, newTask])
-                        target.value = ''
-                      }
-                    }}
-                  />
-                  <button 
-                    className="px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
-                    onClick={(e) => {
-                      const button = e.target as HTMLButtonElement
-                      const input = button.parentElement?.querySelector('input') as HTMLInputElement
-                      if (input?.value.trim()) {
-                        const newTask = {
-                          id: Date.now(),
-                          text: input.value.trim(),
-                          completed: false
-                        }
-                        setTasks([...tasks, newTask])
-                        input.value = ''
-                      }
-                    }}
-                  >
-                    +
-                  </button>
+              {loadingTasks ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p className="text-sm">Cargando tareas...</p>
                 </div>
-                
-                {/* Task List */}
-                <div className="space-y-2">
-                  {tasks.length === 0 ? (
+              ) : (
+                <div className="space-y-3">
+                  {tasks.filter(t => !t.is_completed).slice(0, 5).length === 0 ? (
                     <div className="text-center py-6 text-muted-foreground">
-                      <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No tienes tareas pendientes</p>
-                      <p className="text-xs">Agrega una tarea para comenzar</p>
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => router.push('/tasks')}>
+                        Crear tarea
+                      </Button>
                     </div>
                   ) : (
-                    tasks.map((task) => (
-                      <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 group">
-                        <input 
-                          type="checkbox" 
-                          className="rounded" 
-                          checked={task.completed}
-                          onChange={() => {
-                            setTasks(tasks.map(t => 
-                              t.id === task.id ? {...t, completed: !t.completed} : t
-                            ))
-                          }}
-                        />
-                        <span className={`text-sm flex-1 ${
-                          task.completed ? 'line-through text-muted-foreground' : ''
-                        }`}>
-                          {task.text}
-                        </span>
-                        <button 
-                          className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 text-sm"
-                          onClick={() => {
-                            setTasks(tasks.filter(t => t.id !== task.id))
-                          }}
+                    <>
+                      {selectedTasks.size > 0 && (
+                        <div className="flex items-center justify-between p-2 bg-muted border rounded-lg">
+                          <span className="text-xs">{selectedTasks.size} seleccionada(s)</span>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="outline" onClick={() => setSelectedTasks(new Set())} className="h-7 text-xs" disabled={isBulkUpdating}>
+                              Cancelar
+                            </Button>
+                            <Button size="sm" onClick={handleBulkComplete} className="h-7 text-xs" disabled={isBulkUpdating}>
+                              {isBulkUpdating ? 'Actualizando...' : 'Completar'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {tasks.filter(t => !t.is_completed).slice(0, 5).map((task) => (
+                        <div 
+                          key={task.id} 
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
+                          onClick={() => handleToggleSelection(task.id)}
                         >
-                          ×
-                        </button>
-                      </div>
-                    ))
+                          <Checkbox
+                            checked={selectedTasks.has(task.id)}
+                            onCheckedChange={() => handleToggleSelection(task.id)}
+                            className="mt-0.5"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm break-words">{task.title}</p>
+                            {task.due_date && (
+                              <p className="text-xs text-muted-foreground">
+                                Vence: {new Date(task.due_date).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {tasks.filter(t => !t.is_completed).length > 5 && (
+                        <div className="pt-2 text-center">
+                          <Button variant="link" size="sm" onClick={() => router.push('/tasks')}>
+                            Ver {tasks.filter(t => !t.is_completed).length - 5} más
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-                
-                {tasks.length > 0 && (
-                  <div className="pt-3 border-t">
-                    <p className="text-xs text-muted-foreground text-center">
-                      {tasks.filter(t => !t.completed).length} de {tasks.length} tareas pendientes
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
