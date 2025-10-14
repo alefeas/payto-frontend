@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
@@ -309,20 +310,20 @@ export default function InvoicesPage() {
                     
                     <div className="space-y-2">
                       <Label>Fecha Desde</Label>
-                      <Input
-                        type="date"
-                        value={dateFromFilter}
-                        onChange={(e) => setDateFromFilter(e.target.value)}
+                      <DatePicker
+                        date={dateFromFilter ? new Date(dateFromFilter) : undefined}
+                        onSelect={(date) => setDateFromFilter(date ? date.toISOString().split('T')[0] : '')}
+                        placeholder="Seleccionar fecha"
                       />
                     </div>
                     
                     <div className="space-y-2">
                       <Label>Fecha Hasta</Label>
-                      <Input
-                        type="date"
-                        value={dateToFilter}
-                        onChange={(e) => setDateToFilter(e.target.value)}
-                        min={dateFromFilter}
+                      <DatePicker
+                        date={dateToFilter ? new Date(dateToFilter) : undefined}
+                        onSelect={(date) => setDateToFilter(date ? date.toISOString().split('T')[0] : '')}
+                        placeholder="Seleccionar fecha"
+                        minDate={dateFromFilter ? new Date(dateFromFilter) : undefined}
                       />
                     </div>
                   </div>

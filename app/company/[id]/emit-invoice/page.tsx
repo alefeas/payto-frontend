@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
@@ -538,22 +539,20 @@ export default function CreateInvoicePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="emissionDate">Fecha de Emisión *</Label>
-                  <Input
-                    id="emissionDate"
-                    type="date"
-                    value={formData.emissionDate}
-                    onChange={(e) => setFormData({...formData, emissionDate: e.target.value})}
+                  <DatePicker
+                    date={formData.emissionDate ? new Date(formData.emissionDate) : undefined}
+                    onSelect={(date) => setFormData({...formData, emissionDate: date ? date.toISOString().split('T')[0] : ''})}
+                    placeholder="Seleccionar fecha de emisión"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                    min={formData.emissionDate || new Date().toISOString().split('T')[0]}
+                  <DatePicker
+                    date={formData.dueDate ? new Date(formData.dueDate) : undefined}
+                    onSelect={(date) => setFormData({...formData, dueDate: date ? date.toISOString().split('T')[0] : ''})}
+                    placeholder="Seleccionar fecha de vencimiento"
+                    minDate={formData.emissionDate ? new Date(formData.emissionDate) : new Date()}
                   />
                 </div>
 
@@ -606,7 +605,8 @@ export default function CreateInvoicePage() {
                     <Input
                       placeholder="Descripción del ítem"
                       value={item.description}
-                      onChange={(e) => updateItem(index, 'description', e.target.value)}
+                      onChange={(e) => updateItem(index, 'description', e.target.value.slice(0, 200))}
+                      maxLength={200}
                     />
                   </div>
                   
@@ -717,7 +717,8 @@ export default function CreateInvoicePage() {
                       <Input
                         placeholder="Ej: Percepción IIBB Buenos Aires"
                         value={perception.name}
-                        onChange={(e) => updatePerception(index, 'name', e.target.value)}
+                        onChange={(e) => updatePerception(index, 'name', e.target.value.slice(0, 100))}
+                        maxLength={100}
                       />
                     </div>
                     
@@ -804,7 +805,8 @@ export default function CreateInvoicePage() {
                   id="notes"
                   placeholder="Notas adicionales sobre la factura..."
                   value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value.slice(0, 500)})}
+                  maxLength={500}
                 />
               </div>
             </CardContent>

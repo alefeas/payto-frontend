@@ -18,6 +18,7 @@ import { companyService, Company } from "@/services/company.service"
 import { bankAccountService, BankAccount } from "@/services/bank-account.service"
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
+import { formatCUIT, formatPhone, formatCBU } from "@/lib/input-formatters"
 
 const PROVINCIAS = [
   "Buenos Aires",
@@ -376,11 +377,11 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>CUIT</Label>
-                        <Input value={formData.national_id} onChange={(e) => setFormData({...formData, national_id: e.target.value})} />
+                        <Input value={formData.national_id} onChange={(e) => setFormData({...formData, national_id: formatCUIT(e.target.value)})} />
                       </div>
                       <div className="space-y-2">
                         <Label>Teléfono</Label>
-                        <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                        <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})} />
                       </div>
                     </div>
                   </div>
@@ -846,7 +847,7 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Banco *</Label>
-                <Input placeholder="Banco Santander" value={bankFormData.bank_name} onChange={(e) => setBankFormData({...bankFormData, bank_name: e.target.value})} />
+                <Input placeholder="Banco Santander" value={bankFormData.bank_name} onChange={(e) => setBankFormData({...bankFormData, bank_name: e.target.value.slice(0, 50)})} maxLength={50} />
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Cuenta *</Label>
@@ -861,11 +862,11 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>CBU * (22 dígitos)</Label>
-                <Input placeholder="0170001540000001234567" value={bankFormData.cbu} onChange={(e) => setBankFormData({...bankFormData, cbu: e.target.value.replace(/\D/g, '').slice(0, 22)})} maxLength={22} />
+                <Input placeholder="0170001540000001234567" value={bankFormData.cbu} onChange={(e) => setBankFormData({...bankFormData, cbu: formatCBU(e.target.value)})} maxLength={22} />
               </div>
               <div className="space-y-2">
                 <Label>Alias</Label>
-                <Input placeholder="MI.EMPRESA.MP" value={bankFormData.alias} onChange={(e) => setBankFormData({...bankFormData, alias: e.target.value})} />
+                <Input placeholder="MI.EMPRESA.MP" value={bankFormData.alias} onChange={(e) => setBankFormData({...bankFormData, alias: e.target.value.toUpperCase().slice(0, 20)})} maxLength={20} />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch checked={bankFormData.is_primary} onCheckedChange={(checked) => setBankFormData({...bankFormData, is_primary: checked})} />
@@ -889,7 +890,7 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Banco *</Label>
-                <Input placeholder="Banco Santander" value={bankFormData.bank_name} onChange={(e) => setBankFormData({...bankFormData, bank_name: e.target.value})} />
+                <Input placeholder="Banco Santander" value={bankFormData.bank_name} onChange={(e) => setBankFormData({...bankFormData, bank_name: e.target.value.slice(0, 50)})} maxLength={50} />
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Cuenta *</Label>
@@ -904,11 +905,11 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>CBU * (22 dígitos)</Label>
-                <Input placeholder="0170001540000001234567" value={bankFormData.cbu} onChange={(e) => setBankFormData({...bankFormData, cbu: e.target.value.replace(/\D/g, '').slice(0, 22)})} maxLength={22} />
+                <Input placeholder="0170001540000001234567" value={bankFormData.cbu} onChange={(e) => setBankFormData({...bankFormData, cbu: formatCBU(e.target.value)})} maxLength={22} />
               </div>
               <div className="space-y-2">
                 <Label>Alias</Label>
-                <Input placeholder="MI.EMPRESA.MP" value={bankFormData.alias} onChange={(e) => setBankFormData({...bankFormData, alias: e.target.value})} />
+                <Input placeholder="MI.EMPRESA.MP" value={bankFormData.alias} onChange={(e) => setBankFormData({...bankFormData, alias: e.target.value.toUpperCase().slice(0, 20)})} maxLength={20} />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch checked={bankFormData.is_primary} onCheckedChange={(checked) => setBankFormData({...bankFormData, is_primary: checked})} />

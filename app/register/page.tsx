@@ -7,8 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { formatPhone } from "@/lib/input-formatters"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ 
@@ -179,37 +182,37 @@ export default function RegisterPage() {
                   <Label htmlFor="phone">Teléfono</Label>
                   <Input 
                     id="phone" 
-                    placeholder="+54 11 1234-5678" 
+                    placeholder="11 1234-5678" 
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
+                    maxLength={15}
                   />
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Fecha de Nacimiento</Label>
-                  <Input 
-                    id="dateOfBirth" 
-                    type="date" 
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})}
+                  <Label>Fecha de Nacimiento</Label>
+                  <DatePicker
+                    date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
+                    onSelect={(date) => setFormData({...formData, dateOfBirth: date ? date.toISOString().split('T')[0] : ''})}
+                    placeholder="Seleccionar fecha"
+                    maxDate={new Date()}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="gender">Género</Label>
-                  <select 
-                    id="gender"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                  >
-                    <option value="">Seleccionar</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="otro">Otro</option>
-                    <option value="prefiero_no_decir">Prefiero no decir</option>
-                  </select>
+                  <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="femenino">Femenino</SelectItem>
+                      <SelectItem value="otro">Otro</SelectItem>
+                      <SelectItem value="prefiero_no_decir">Prefiero no decir</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

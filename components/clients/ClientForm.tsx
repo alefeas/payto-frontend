@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { clientService, Client } from "@/services/client.service"
+import { formatCUIT, formatPhone, getMaxLengthForDocumentType } from "@/lib/input-formatters"
 
 interface ClientFormProps {
   client?: Client | null
@@ -94,7 +95,19 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           <Input
             id="documentNumber"
             value={formData.documentNumber}
-            onChange={(e) => setFormData({...formData, documentNumber: e.target.value})}
+            onChange={(e) => {
+              const value = e.target.value
+              const maxLength = getMaxLengthForDocumentType(formData.documentType)
+              const numbers = value.replace(/\D/g, '').slice(0, maxLength)
+              
+              let formatted = numbers
+              if (formData.documentType === 'CUIT' || formData.documentType === 'CUIL') {
+                formatted = formatCUIT(numbers)
+              }
+              
+              setFormData({...formData, documentNumber: formatted})
+            }}
+            placeholder={formData.documentType === 'CUIT' || formData.documentType === 'CUIL' ? '20-12345678-9' : '12345678'}
             required
           />
         </div>
@@ -120,7 +133,8 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
         <Input
           id="businessName"
           value={formData.businessName}
-          onChange={(e) => setFormData({...formData, businessName: e.target.value})}
+          onChange={(e) => setFormData({...formData, businessName: e.target.value.slice(0, 100)})}
+          maxLength={100}
         />
       </div>
 
@@ -130,7 +144,8 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           <Input
             id="firstName"
             value={formData.firstName}
-            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+            onChange={(e) => setFormData({...formData, firstName: e.target.value.slice(0, 50)})}
+            maxLength={50}
           />
         </div>
         <div className="space-y-2">
@@ -138,7 +153,8 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           <Input
             id="lastName"
             value={formData.lastName}
-            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+            onChange={(e) => setFormData({...formData, lastName: e.target.value.slice(0, 50)})}
+            maxLength={50}
           />
         </div>
       </div>
@@ -149,7 +165,8 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           id="email"
           type="email"
           value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          onChange={(e) => setFormData({...formData, email: e.target.value.slice(0, 100)})}
+          maxLength={100}
         />
       </div>
 
@@ -158,7 +175,8 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
         <Input
           id="phone"
           value={formData.phone}
-          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+          onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
+          placeholder="11 1234-5678"
         />
       </div>
 
@@ -167,7 +185,8 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
         <Input
           id="address"
           value={formData.address}
-          onChange={(e) => setFormData({...formData, address: e.target.value})}
+          onChange={(e) => setFormData({...formData, address: e.target.value.slice(0, 200)})}
+          maxLength={200}
         />
       </div>
 

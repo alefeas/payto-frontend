@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { companyService, CreateCompanyData } from "@/services/company.service"
+import { formatCUIT, formatPhone, formatCBU } from "@/lib/input-formatters"
 
 export default function CreateCompanyPage() {
   const [formData, setFormData] = useState<CreateCompanyData>({
@@ -150,7 +151,8 @@ export default function CreateCompanyPage() {
                     id="name"
                     placeholder="Ej: TechCorp SA, Juan Pérez, María López"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({...formData, name: e.target.value.slice(0, 100)})}
+                    maxLength={100}
                   />
                 </div>
 
@@ -159,18 +161,18 @@ export default function CreateCompanyPage() {
                     <Label htmlFor="nationalId">CUIT/CUIL/DNI *</Label>
                     <Input
                       id="nationalId"
-                      placeholder="30-12345678-9 o 12345678"
+                      placeholder="20-12345678-9"
                       value={formData.national_id}
-                      onChange={(e) => setFormData({...formData, national_id: e.target.value})}
+                      onChange={(e) => setFormData({...formData, national_id: formatCUIT(e.target.value)})}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Teléfono (Opcional)</Label>
                     <Input
                       id="phone"
-                      placeholder="+54 11 1234-5678"
+                      placeholder="11 1234-5678"
                       value={formData.phone || ''}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
                     />
                   </div>
                 </div>
@@ -181,7 +183,8 @@ export default function CreateCompanyPage() {
                     id="businessName"
                     placeholder="Ej: TechCorp Sociedad Anónima"
                     value={formData.business_name || ''}
-                    onChange={(e) => setFormData({...formData, business_name: e.target.value})}
+                    onChange={(e) => setFormData({...formData, business_name: e.target.value.slice(0, 150)})}
+                    maxLength={150}
                   />
                 </div>
               </div>
@@ -191,17 +194,17 @@ export default function CreateCompanyPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="taxCondition">Condición Fiscal *</Label>
-                    <select
-                      id="taxCondition"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={formData.tax_condition}
-                      onChange={(e) => setFormData({...formData, tax_condition: e.target.value})}
-                    >
-                      <option value="RI">Responsable Inscripto</option>
-                      <option value="Monotributo">Monotributo</option>
-                      <option value="CF">Consumidor Final</option>
-                      <option value="Exento">Exento</option>
-                    </select>
+                    <Select value={formData.tax_condition} onValueChange={(value) => setFormData({...formData, tax_condition: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RI">Responsable Inscripto</SelectItem>
+                        <SelectItem value="Monotributo">Monotributo</SelectItem>
+                        <SelectItem value="CF">Consumidor Final</SelectItem>
+                        <SelectItem value="Exento">Exento</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="defaultSalesPoint">Punto de Venta *</Label>
@@ -222,38 +225,37 @@ export default function CreateCompanyPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="province">Provincia *</Label>
-                    <select
-                      id="province"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={formData.province}
-                      onChange={(e) => setFormData({...formData, province: e.target.value})}
-                    >
-                      <option value="">Seleccionar provincia</option>
-                      <option value="Buenos Aires">Buenos Aires</option>
-                      <option value="CABA">CABA</option>
-                      <option value="Catamarca">Catamarca</option>
-                      <option value="Chaco">Chaco</option>
-                      <option value="Chubut">Chubut</option>
-                      <option value="Córdoba">Córdoba</option>
-                      <option value="Corrientes">Corrientes</option>
-                      <option value="Entre Ríos">Entre Ríos</option>
-                      <option value="Formosa">Formosa</option>
-                      <option value="Jujuy">Jujuy</option>
-                      <option value="La Pampa">La Pampa</option>
-                      <option value="La Rioja">La Rioja</option>
-                      <option value="Mendoza">Mendoza</option>
-                      <option value="Misiones">Misiones</option>
-                      <option value="Neuquén">Neuquén</option>
-                      <option value="Río Negro">Río Negro</option>
-                      <option value="Salta">Salta</option>
-                      <option value="San Juan">San Juan</option>
-                      <option value="San Luis">San Luis</option>
-                      <option value="Santa Cruz">Santa Cruz</option>
-                      <option value="Santa Fe">Santa Fe</option>
-                      <option value="Santiago del Estero">Santiago del Estero</option>
-                      <option value="Tierra del Fuego">Tierra del Fuego</option>
-                      <option value="Tucumán">Tucumán</option>
-                    </select>
+                    <Select value={formData.province} onValueChange={(value) => setFormData({...formData, province: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar provincia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                      <SelectItem value="Buenos Aires">Buenos Aires</SelectItem>
+                      <SelectItem value="CABA">CABA</SelectItem>
+                      <SelectItem value="Catamarca">Catamarca</SelectItem>
+                      <SelectItem value="Chaco">Chaco</SelectItem>
+                      <SelectItem value="Chubut">Chubut</SelectItem>
+                      <SelectItem value="Córdoba">Córdoba</SelectItem>
+                      <SelectItem value="Corrientes">Corrientes</SelectItem>
+                      <SelectItem value="Entre Ríos">Entre Ríos</SelectItem>
+                      <SelectItem value="Formosa">Formosa</SelectItem>
+                      <SelectItem value="Jujuy">Jujuy</SelectItem>
+                      <SelectItem value="La Pampa">La Pampa</SelectItem>
+                      <SelectItem value="La Rioja">La Rioja</SelectItem>
+                      <SelectItem value="Mendoza">Mendoza</SelectItem>
+                      <SelectItem value="Misiones">Misiones</SelectItem>
+                      <SelectItem value="Neuquén">Neuquén</SelectItem>
+                      <SelectItem value="Río Negro">Río Negro</SelectItem>
+                      <SelectItem value="Salta">Salta</SelectItem>
+                      <SelectItem value="San Juan">San Juan</SelectItem>
+                      <SelectItem value="San Luis">San Luis</SelectItem>
+                      <SelectItem value="Santa Cruz">Santa Cruz</SelectItem>
+                      <SelectItem value="Santa Fe">Santa Fe</SelectItem>
+                      <SelectItem value="Santiago del Estero">Santiago del Estero</SelectItem>
+                      <SelectItem value="Tierra del Fuego">Tierra del Fuego</SelectItem>
+                      <SelectItem value="Tucumán">Tucumán</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="postalCode">Código Postal *</Label>
@@ -261,7 +263,8 @@ export default function CreateCompanyPage() {
                       id="postalCode"
                       placeholder="1414"
                       value={formData.postal_code}
-                      onChange={(e) => setFormData({...formData, postal_code: e.target.value})}
+                      onChange={(e) => setFormData({...formData, postal_code: e.target.value.slice(0, 10)})}
+                      maxLength={10}
                     />
                   </div>
                 </div>
@@ -272,7 +275,8 @@ export default function CreateCompanyPage() {
                       id="street"
                       placeholder="Av. Corrientes"
                       value={formData.street}
-                      onChange={(e) => setFormData({...formData, street: e.target.value})}
+                      onChange={(e) => setFormData({...formData, street: e.target.value.slice(0, 100)})}
+                      maxLength={100}
                     />
                   </div>
                   <div className="space-y-2">
@@ -281,7 +285,8 @@ export default function CreateCompanyPage() {
                       id="streetNumber"
                       placeholder="1234"
                       value={formData.street_number}
-                      onChange={(e) => setFormData({...formData, street_number: e.target.value})}
+                      onChange={(e) => setFormData({...formData, street_number: e.target.value.slice(0, 10)})}
+                      maxLength={10}
                     />
                   </div>
                 </div>
@@ -292,7 +297,8 @@ export default function CreateCompanyPage() {
                       id="floor"
                       placeholder="Opcional"
                       value={formData.floor || ''}
-                      onChange={(e) => setFormData({...formData, floor: e.target.value})}
+                      onChange={(e) => setFormData({...formData, floor: e.target.value.slice(0, 5)})}
+                      maxLength={5}
                     />
                   </div>
                   <div className="space-y-2">
@@ -301,7 +307,8 @@ export default function CreateCompanyPage() {
                       id="apartment"
                       placeholder="Opcional"
                       value={formData.apartment || ''}
-                      onChange={(e) => setFormData({...formData, apartment: e.target.value})}
+                      onChange={(e) => setFormData({...formData, apartment: e.target.value.slice(0, 5)})}
+                      maxLength={5}
                     />
                   </div>
                 </div>
@@ -328,7 +335,8 @@ export default function CreateCompanyPage() {
                           id="bankName"
                           placeholder="Banco Santander"
                           value={bankAccount.bank_name}
-                          onChange={(e) => setBankAccount({...bankAccount, bank_name: e.target.value})}
+                          onChange={(e) => setBankAccount({...bankAccount, bank_name: e.target.value.slice(0, 50)})}
+                          maxLength={50}
                         />
                       </div>
                       <div className="space-y-2">
@@ -355,7 +363,7 @@ export default function CreateCompanyPage() {
                           id="cbu"
                           placeholder="0170001540000001234567"
                           value={bankAccount.cbu}
-                          onChange={(e) => setBankAccount({...bankAccount, cbu: e.target.value.replace(/\D/g, '').slice(0, 22)})}
+                          onChange={(e) => setBankAccount({...bankAccount, cbu: formatCBU(e.target.value)})}
                           maxLength={22}
                         />
                       </div>
@@ -365,7 +373,8 @@ export default function CreateCompanyPage() {
                           id="alias"
                           placeholder="MI.EMPRESA.MP"
                           value={bankAccount.alias}
-                          onChange={(e) => setBankAccount({...bankAccount, alias: e.target.value})}
+                          onChange={(e) => setBankAccount({...bankAccount, alias: e.target.value.toUpperCase().slice(0, 20)})}
+                          maxLength={20}
                         />
                       </div>
                     </div>

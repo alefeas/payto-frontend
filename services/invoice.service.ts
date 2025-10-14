@@ -127,4 +127,18 @@ export const invoiceService = {
     const response = await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}/attachment`);
     return response.data;
   },
+
+  async downloadPDF(companyId: string, invoiceId: string) {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/pdf`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  async downloadTXT(companyId: string, invoiceId: string) {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/txt`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
 };

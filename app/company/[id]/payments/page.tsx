@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import type { PaymentMethod, PaymentRetention, RetentionType } from "@/types/payment"
@@ -592,11 +593,11 @@ export default function PaymentsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="paymentDate">Fecha de Pago *</Label>
-                      <Input
-                        id="paymentDate"
-                        type="date"
-                        value={paymentData.paymentDate}
-                        onChange={(e) => setPaymentData({...paymentData, paymentDate: e.target.value})}
+                      <DatePicker
+                        date={paymentData.paymentDate ? new Date(paymentData.paymentDate) : undefined}
+                        onSelect={(date) => setPaymentData({...paymentData, paymentDate: date ? date.toISOString().split('T')[0] : ''})}
+                        placeholder="Seleccionar fecha de pago"
+                        maxDate={new Date()}
                       />
                     </div>
 
