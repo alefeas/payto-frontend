@@ -32,6 +32,23 @@ apiClient.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    
+    // Traducir mensajes de error comunes al español
+    if (error.response?.data?.message) {
+      const message = error.response.data.message;
+      const translations: Record<string, string> = {
+        'This action is unauthorized.': 'No tienes permisos para realizar esta acción',
+        'Unauthenticated.': 'No autenticado',
+        'The given data was invalid.': 'Los datos proporcionados son inválidos',
+        'Server Error': 'Error del servidor',
+        'Not Found': 'No encontrado',
+      };
+      
+      if (translations[message]) {
+        error.response.data.message = translations[message];
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

@@ -6,13 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Building2, UserPlus, Plus } from "lucide-react"
+import { Building2, UserPlus, Plus, Loader2 } from "lucide-react"
 import { ClientSelectorProps } from "@/types"
 import { ClientForm } from "@/components/clients/ClientForm"
 
 type ClientType = 'registered' | 'saved' | 'new'
 
-export function ClientSelector({ connectedCompanies, savedClients = [], onSelect, companyId }: ClientSelectorProps & { companyId: string }) {
+export function ClientSelector({ connectedCompanies, savedClients = [], onSelect, companyId, isLoading }: ClientSelectorProps & { companyId: string; isLoading?: boolean }) {
   const [clientType, setClientType] = useState<ClientType>('registered')
   const [selectedCompany, setSelectedCompany] = useState('')
   const [selectedClient, setSelectedClient] = useState('')
@@ -100,7 +100,12 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
       {clientType === 'registered' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Empresa</Label>
-          {connectedCompanies.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Cargando empresas conectadas...</span>
+            </div>
+          ) : connectedCompanies.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-900 font-medium">No tienes empresas conectadas</p>
               <p className="text-xs text-amber-700 mt-1">
@@ -118,7 +123,6 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
                       <span>{company.name}</span>
-                      <span className="text-xs text-muted-foreground">({company.uniqueId})</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -131,7 +135,12 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
       {clientType === 'saved' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Cliente</Label>
-          {savedClients.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Cargando clientes guardados...</span>
+            </div>
+          ) : savedClients.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-900 font-medium">No tienes clientes guardados</p>
               <p className="text-xs text-amber-700 mt-1">

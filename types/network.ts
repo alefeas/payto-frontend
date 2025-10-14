@@ -40,4 +40,5 @@ export interface ConnectionRequest {
 export interface NetworkStats {
   totalConnections: number
   pendingReceived: number
+  pendingSent: number
 }

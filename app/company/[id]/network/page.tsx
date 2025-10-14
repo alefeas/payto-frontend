@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Plus, Users, Send, Check, X, Building2 } from "lucide-react"
+import { ArrowLeft, Search, Plus, Users, Send, Check, X, Building2, Loader2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,10 +24,12 @@ export default function NetworkPage() {
 
   const [connections, setConnections] = useState<CompanyConnection[]>([])
   const [requests, setRequests] = useState<ConnectionRequest[]>([])
-  const [stats, setStats] = useState<NetworkStats>({ totalConnections: 0, pendingReceived: 0 })
+  const [sentRequests, setSentRequests] = useState<ConnectionRequest[]>([])
+  const [stats, setStats] = useState<NetworkStats>({ totalConnections: 0, pendingReceived: 0, pendingSent: 0 })
   const [searchTerm, setSearchTerm] = useState("")
   const [showRequestModal, setShowRequestModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSending, setIsSending] = useState(false)
   const [newRequest, setNewRequest] = useState({
     companyId: "",
     message: ""
@@ -44,13 +46,15 @@ export default function NetworkPage() {
   const loadData = async () => {
     try {
       setIsLoading(true)
-      const [connectionsData, requestsData, statsData] = await Promise.all([
+      const [connectionsData, requestsData, sentRequestsData, statsData] = await Promise.all([
         networkService.getConnections(companyId),
         networkService.getPendingRequests(companyId),
+        networkService.getSentRequests(companyId),
         networkService.getStats(companyId)
       ])
       setConnections(connectionsData)
       setRequests(requestsData)
+      setSentRequests(sentRequestsData)
       setStats(statsData)
     } catch (error) {
       toast.error('Error al cargar datos de red')
@@ -66,6 +70,7 @@ export default function NetworkPage() {
     }
 
     try {
+      setIsSending(true)
       await networkService.sendConnectionRequest(companyId, {
         company_unique_id: newRequest.companyId,
         message: newRequest.message || undefined
@@ -80,6 +85,8 @@ export default function NetworkPage() {
       loadData()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al enviar solicitud')
+    } finally {
+      setIsSending(false)
     }
   }
 
@@ -137,11 +144,15 @@ export default function NetworkPage() {
             <TabsList>
               <TabsTrigger value="connections" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Empresas Conectadas ({stats.totalConnections})
+                Empresas Conectadas {!isLoading && `(${stats.totalConnections})`}
               </TabsTrigger>
               <TabsTrigger value="requests" className="flex items-center gap-2">
                 <Send className="h-4 w-4" />
-                Solicitudes ({stats.pendingReceived})
+                Solicitudes Recibidas {!isLoading && `(${stats.pendingReceived})`}
+              </TabsTrigger>
+              <TabsTrigger value="sent" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Solicitudes Enviadas {!isLoading && `(${stats.pendingSent})`}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -166,6 +177,11 @@ export default function NetworkPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
                 <div className="space-y-4">
                   {filteredConnections.map((connection) => (
                     <Card key={connection.id} className="p-4">
@@ -211,6 +227,7 @@ export default function NetworkPage() {
                     </div>
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -218,10 +235,15 @@ export default function NetworkPage() {
           <TabsContent value="requests" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Solicitudes de Conexión</CardTitle>
+                <CardTitle>Solicitudes Recibidas</CardTitle>
                 <CardDescription>Solicitudes pendientes de otras empresas</CardDescription>
               </CardHeader>
               <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
                 <div className="space-y-4">
                   {requests.map((request) => (
                     <Card key={request.id} className="p-4">
@@ -268,10 +290,64 @@ export default function NetworkPage() {
                   {requests.length === 0 && (
                     <div className="text-center py-8">
                       <Send className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No hay solicitudes pendientes</p>
+                      <p className="text-muted-foreground">No hay solicitudes recibidas</p>
                     </div>
                   )}
                 </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sent" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Solicitudes Enviadas</CardTitle>
+                <CardDescription>Solicitudes que has enviado a otras empresas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                <div className="space-y-4">
+                  {sentRequests.map((request) => (
+                    <Card key={request.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Building2 className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{request.toCompanyName}</h3>
+                            <p className="text-sm text-muted-foreground">ID: {request.fromCompanyUniqueId}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Enviado el {new Date(request.requestedAt).toLocaleDateString()}
+                            </p>
+                            {request.message && (
+                              <p className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-700 break-words">
+                                &ldquo;{request.message}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pendiente
+                        </Badge>
+                      </div>
+                    </Card>
+                  ))}
+                  
+                  {sentRequests.length === 0 && (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No has enviado solicitudes</p>
+                    </div>
+                  )}
+                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -315,11 +391,18 @@ export default function NetworkPage() {
               </div>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="w-full sm:w-auto">
+              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="w-full sm:w-auto" disabled={isSending}>
                 Cancelar
               </Button>
-              <Button onClick={handleSendRequest} className="w-full sm:w-auto">
-                Enviar Solicitud
+              <Button onClick={handleSendRequest} className="w-full sm:w-auto" disabled={isSending}>
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  'Enviar Solicitud'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

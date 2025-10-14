@@ -12,6 +12,11 @@ export const networkService = {
     return response.data
   },
 
+  async getSentRequests(companyId: string): Promise<ConnectionRequest[]> {
+    const response = await apiClient.get(`/companies/${companyId}/network/sent`)
+    return response.data
+  },
+
   async getStats(companyId: string): Promise<NetworkStats> {
     const response = await apiClient.get(`/companies/${companyId}/network/stats`)
     return response.data

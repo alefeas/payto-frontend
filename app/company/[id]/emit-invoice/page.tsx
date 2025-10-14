@@ -165,12 +165,28 @@ export default function CreateInvoicePage() {
           socialSecurityRetention: company.socialSecurityRetention || 0
         })
         
-        // TODO: Load connected companies and saved clients when endpoints are ready
-        // const connections = await companyService.getConnections(companyId)
-        // setConnectedCompanies(connections)
+        // Load connected companies
+        try {
+          const { networkService } = await import('@/services/network.service')
+          const connections = await networkService.getConnections(companyId)
+          const connectedCompaniesData = connections.map(conn => ({
+            id: conn.connectedCompanyId,
+            name: conn.connectedCompanyName,
+            tax_condition: 'registered_taxpayer' // Default, would need to be fetched
+          }))
+          setConnectedCompanies(connectedCompaniesData)
+        } catch (error) {
+          console.error('Error loading connections:', error)
+        }
         
-        // const clients = await clientService.getClients(companyId)
-        // setSavedClients(clients)
+        // Load saved clients
+        try {
+          const { clientService } = await import('@/services/client.service')
+          const clients = await clientService.getClients(companyId)
+          setSavedClients(clients)
+        } catch (error) {
+          console.error('Error loading clients:', error)
+        }
         
       } catch (error) {
         console.error('Error loading data:', error)
@@ -486,6 +502,7 @@ export default function CreateInvoicePage() {
                   companyId={companyId}
                   connectedCompanies={connectedCompanies}
                   savedClients={savedClients}
+                  isLoading={isLoadingData}
                   onSelect={(data) => {
                     let clientTaxCondition: string | undefined
                     
