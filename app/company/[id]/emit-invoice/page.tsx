@@ -338,7 +338,12 @@ export default function CreateInvoicePage() {
         quantity: item.quantity,
         unit_price: item.unitPrice,
         tax_rate: item.taxRate || 0
-      }))
+      })),
+      perceptions: perceptions.length > 0 ? perceptions.map(p => ({
+        type: p.type,
+        name: p.name,
+        rate: p.rate
+      })) : undefined
     }
 
     try {

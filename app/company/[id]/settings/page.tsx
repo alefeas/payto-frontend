@@ -338,24 +338,6 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* AFIP Banner */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Shield className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h3 className="font-semibold text-blue-900">Configuración AFIP/ARCA</h3>
-                  <p className="text-sm text-blue-700">Configura certificados para facturación electrónica oficial</p>
-                </div>
-              </div>
-              <Button onClick={() => router.push(`/company/${companyId}/afip`)} variant="outline">
-                Configurar AFIP
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         <Tabs defaultValue="general" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general">General</TabsTrigger>

@@ -43,6 +43,34 @@ export interface Invoice {
   items?: any[];
 }
 
+export interface ValidateAfipData {
+  issuer_cuit: string;
+  invoice_type: 'A' | 'B' | 'C' | 'E';
+  invoice_number: string;
+}
+
+export interface AfipInvoiceData {
+  found: boolean;
+  cae: string;
+  cae_expiration: string;
+  issue_date: string;
+  doc_type: number;
+  doc_number: string;
+  subtotal: number;
+  total_taxes: number;
+  total_perceptions: number;
+  total: number;
+  currency: string;
+  exchange_rate: number;
+  result: string;
+}
+
+export interface InvoiceAttachment {
+  path: string;
+  original_name: string;
+  url: string;
+}
+
 export const invoiceService = {
   async getInvoices(companyId: string) {
     const response = await apiClient.get(`/companies/${companyId}/invoices`);
@@ -59,6 +87,11 @@ export const invoiceService = {
     return response.data;
   },
 
+  async validateWithAfip(companyId: string, data: ValidateAfipData) {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/validate-afip`, data);
+    return response.data;
+  },
+
   async cancelInvoice(companyId: string, invoiceId: string) {
     const response = await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/cancel`);
     return response.data;
@@ -66,6 +99,27 @@ export const invoiceService = {
 
   async deleteInvoice(companyId: string, invoiceId: string) {
     const response = await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}`);
+    return response.data;
+  },
+
+  async uploadAttachment(companyId: string, invoiceId: string, file: File) {
+    const formData = new FormData();
+    formData.append('attachment', file);
+    const response = await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/attachment`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  async downloadAttachment(companyId: string, invoiceId: string) {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/attachment`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  async deleteAttachment(companyId: string, invoiceId: string) {
+    const response = await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}/attachment`);
     return response.data;
   },
 };

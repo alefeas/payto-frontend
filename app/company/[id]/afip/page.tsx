@@ -35,11 +35,13 @@ export default function AfipConfigPage() {
   // Subida asistida
   const [assistedCert, setAssistedCert] = useState("")
   const [assistedPassword, setAssistedPassword] = useState("")
+  const [assistedEnvironment, setAssistedEnvironment] = useState<'testing' | 'production'>('testing')
   
   // Subida manual
   const [manualCert, setManualCert] = useState("")
   const [manualKey, setManualKey] = useState("")
   const [manualPassword, setManualPassword] = useState("")
+  const [manualEnvironment, setManualEnvironment] = useState<'testing' | 'production'>('testing')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -119,7 +121,8 @@ export default function AfipConfigPage() {
       const cert = await afipCertificateService.uploadCertificate(
         companyId,
         assistedCert,
-        assistedPassword || undefined
+        assistedPassword || undefined,
+        assistedEnvironment
       )
       setCertificate(cert)
       setAssistedCert("")
@@ -143,7 +146,8 @@ export default function AfipConfigPage() {
         companyId,
         manualCert,
         manualKey,
-        manualPassword || undefined
+        manualPassword || undefined,
+        manualEnvironment
       )
       setCertificate(cert)
       setManualCert("")
@@ -228,6 +232,13 @@ export default function AfipConfigPage() {
                         {certificate.isExpiringSoon && " ⚠️ Próximo a vencer"}
                       </p>
                     )}
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-xs font-medium">
+                        Ambiente: {certificate.environment === 'production' 
+                          ? '✅ Producción (Facturas reales)' 
+                          : '🧪 Homologación (Testing)'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -283,10 +294,13 @@ export default function AfipConfigPage() {
                     <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                       <li>Genera el CSR aquí</li>
                       <li>Descarga el archivo CSR</li>
-                      <li>Ve a AFIP → Administrador de Relaciones</li>
+                      <li>Ve a AFIP → Administrador de Relaciones → Certificados</li>
                       <li>Sube el CSR y obtén el certificado (.crt)</li>
                       <li>Pega el contenido del certificado aquí</li>
                     </ol>
+                    <p className="text-xs text-blue-700 mt-3 pt-2 border-t border-blue-300">
+                      💡 Para homologación: usa el mismo proceso pero en el ambiente de testing de AFIP
+                    </p>
                   </div>
 
                   {!generatedCSR ? (
@@ -325,6 +339,23 @@ export default function AfipConfigPage() {
                             value={assistedPassword}
                             onChange={(e) => setAssistedPassword(e.target.value)}
                           />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Ambiente AFIP *</Label>
+                          <select 
+                            className="w-full p-2 border rounded-md"
+                            value={assistedEnvironment}
+                            onChange={(e) => setAssistedEnvironment(e.target.value as 'testing' | 'production')}
+                          >
+                            <option value="testing">🧪 Homologación (Testing) - Para pruebas</option>
+                            <option value="production">✅ Producción - Facturas reales</option>
+                          </select>
+                          <p className="text-xs text-muted-foreground">
+                            {assistedEnvironment === 'testing' 
+                              ? '⚠️ Las facturas NO serán válidas legalmente' 
+                              : '✅ Las facturas serán válidas legalmente'}
+                          </p>
                         </div>
 
                         <Button onClick={handleUploadAssisted} disabled={uploading} className="w-full">
@@ -376,6 +407,23 @@ export default function AfipConfigPage() {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Ambiente AFIP *</Label>
+                    <select 
+                      className="w-full p-2 border rounded-md"
+                      value={manualEnvironment}
+                      onChange={(e) => setManualEnvironment(e.target.value as 'testing' | 'production')}
+                    >
+                      <option value="testing">🧪 Homologación (Testing) - Para pruebas</option>
+                      <option value="production">✅ Producción - Facturas reales</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      {manualEnvironment === 'testing' 
+                        ? '⚠️ Las facturas NO serán válidas legalmente' 
+                        : '✅ Las facturas serán válidas legalmente'}
+                    </p>
+                  </div>
+
                   <Button onClick={handleUploadManual} disabled={uploading} className="w-full">
                     <Upload className="h-4 w-4 mr-2" />
                     {uploading ? 'Subiendo...' : 'Configurar Certificado'}
@@ -396,11 +444,16 @@ export default function AfipConfigPage() {
               <strong>Sin certificado:</strong> Puedes usar PayTo normalmente, pero las facturas tendrán un CAE simulado (no válidas legalmente).
             </p>
             <p>
-              <strong>Con certificado:</strong> Las facturas se autorizarán automáticamente con AFIP y serán legalmente válidas.
+              <strong>Con certificado de producción:</strong> Las facturas se autorizarán automáticamente con AFIP y serán legalmente válidas.
             </p>
-            <p className="text-xs">
-              El certificado es personal de tu empresa y se obtiene desde AFIP con tu CUIT y clave fiscal.
+            <p>
+              <strong>Con certificado de homologación:</strong> Puedes probar el sistema con tu CUIT real pero en servidores de prueba de AFIP. Las facturas NO aparecerán en tu perfil fiscal real.
             </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+              <p className="text-xs text-amber-900">
+                <strong>⚠️ Importante:</strong> Si AFIP rechaza una factura (por error en datos, punto de venta no habilitado, etc.), la factura NO se creará en tu sistema.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

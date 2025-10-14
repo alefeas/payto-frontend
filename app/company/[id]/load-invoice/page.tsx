@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Calculator, FileText } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Calculator, FileText, Search, Loader2, Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { invoiceService } from "@/services/invoice.service"
 import type { InvoiceType, Currency, InvoiceItem, InvoicePerception } from "@/types/invoice"
 
 export default function LoadInvoicePage() {
@@ -43,6 +45,14 @@ export default function LoadInvoicePage() {
     totalPerceptions: 0,
     total: 0
   })
+
+  const [validationData, setValidationData] = useState({
+    issuerCuit: '',
+    invoiceType: 'A' as InvoiceType,
+    invoiceNumber: ''
+  })
+  const [isValidating, setIsValidating] = useState(false)
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -112,6 +122,54 @@ export default function LoadInvoicePage() {
     setPerceptions(newPerceptions)
   }
 
+  const handleValidateAfip = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validationData.issuerCuit || !validationData.invoiceNumber) {
+      toast.error('Complete CUIT y número de factura')
+      return
+    }
+
+    setIsValidating(true)
+    try {
+      const result = await invoiceService.validateWithAfip(companyId, {
+        issuer_cuit: validationData.issuerCuit,
+        invoice_type: validationData.invoiceType,
+        invoice_number: validationData.invoiceNumber
+      })
+
+      if (result.success && result.invoice) {
+        const inv = result.invoice
+        setFormData({
+          ...formData,
+          type: validationData.invoiceType,
+          invoiceNumber: validationData.invoiceNumber,
+          issuerCuit: validationData.issuerCuit,
+          emissionDate: inv.issue_date,
+          currency: inv.currency === 'PES' ? 'ARS' : inv.currency,
+          exchangeRate: inv.exchange_rate?.toString() || ''
+        })
+        
+        setTotals({
+          subtotal: inv.subtotal,
+          totalTaxes: inv.total_taxes,
+          totalPerceptions: inv.total_perceptions,
+          total: inv.total
+        })
+
+        toast.success('✓ Factura validada con AFIP', {
+          description: `CAE: ${inv.cae} - Total: $${inv.total.toLocaleString('es-AR')}`
+        })
+      }
+    } catch (error: any) {
+      toast.error('Factura no encontrada en AFIP', {
+        description: 'Verifique los datos o use carga manual'
+      })
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -130,11 +188,19 @@ export default function LoadInvoicePage() {
       return
     }
 
-    toast.success('Factura cargada exitosamente', {
-      description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
-    })
-    
-    router.push(`/company/${companyId}/invoices`)
+    try {
+      // TODO: Implementar guardado en backend
+      // Por ahora solo muestra mensaje de éxito
+      toast.success('Factura cargada exitosamente', {
+        description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
+      })
+      
+      router.push(`/company/${companyId}/invoices`)
+    } catch (error: any) {
+      toast.error('Error al cargar factura', {
+        description: error.response?.data?.message || 'Intente nuevamente'
+      })
+    }
   }
 
   if (authLoading) return null
@@ -149,11 +215,130 @@ export default function LoadInvoicePage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Cargar Factura Recibida</h1>
-            <p className="text-muted-foreground">Registrar factura de empresa que no usa el sistema</p>
+            <p className="text-muted-foreground">Validar con AFIP o cargar manualmente</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <Tabs defaultValue="validate" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="validate">
+              <Search className="h-4 w-4 mr-2" />
+              Validar con AFIP
+            </TabsTrigger>
+            <TabsTrigger value="manual">
+              <FileText className="h-4 w-4 mr-2" />
+              Carga Manual
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="validate" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Validar Factura con AFIP</CardTitle>
+                <CardDescription>
+                  Ingrese los datos de la factura para validarla automáticamente con AFIP y obtener todos los datos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleValidateAfip} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="valCuit">CUIT Emisor *</Label>
+                      <Input
+                        id="valCuit"
+                        placeholder="30-12345678-9"
+                        value={validationData.issuerCuit}
+                        onChange={(e) => setValidationData({...validationData, issuerCuit: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="valType">Tipo *</Label>
+                      <Select 
+                        value={validationData.invoiceType} 
+                        onValueChange={(value: InvoiceType) => setValidationData({...validationData, invoiceType: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">Factura A</SelectItem>
+                          <SelectItem value="B">Factura B</SelectItem>
+                          <SelectItem value="C">Factura C</SelectItem>
+                          <SelectItem value="E">Factura E</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="valNumber">Número *</Label>
+                      <Input
+                        id="valNumber"
+                        placeholder="0001-00001234"
+                        value={validationData.invoiceNumber}
+                        onChange={(e) => setValidationData({...validationData, invoiceNumber: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" disabled={isValidating} className="w-full">
+                    {isValidating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Validando con AFIP...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="h-4 w-4 mr-2" />
+                        Validar Factura
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {totals.total > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="h-5 w-5" />
+                    Datos Obtenidos de AFIP
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span className="font-medium">
+                        {totals.subtotal.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Impuestos:</span>
+                      <span className="font-medium">
+                        {totals.totalTaxes.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                      </span>
+                    </div>
+                    {totals.totalPerceptions > 0 && (
+                      <div className="flex justify-between">
+                        <span>Total Percepciones:</span>
+                        <span className="font-medium text-orange-600">
+                          {totals.totalPerceptions.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <span>Total:</span>
+                      <span>
+                        {totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="manual" className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Datos de la Empresa Emisora</CardTitle>
@@ -447,7 +632,7 @@ export default function LoadInvoicePage() {
             <CardHeader>
               <CardTitle>Información Adicional</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="notes">Notas</Label>
                 <Textarea
@@ -457,23 +642,56 @@ export default function LoadInvoicePage() {
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="attachment">Adjuntar PDF Original</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="attachment"
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+                    className="flex-1"
+                  />
+                  {attachmentFile && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setAttachmentFile(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {attachmentFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Archivo seleccionado: {attachmentFile.name}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Adjunte el PDF original de la factura recibida del proveedor (máx. 10MB)
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          <div className="flex gap-4">
-            <Button type="submit" className="flex-1">
-              <FileText className="h-4 w-4 mr-2" />
-              Cargar Factura
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => router.push(`/company/${companyId}`)}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </form>
+              <div className="flex gap-4">
+                <Button type="submit" className="flex-1">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Cargar Factura
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => router.push(`/company/${companyId}`)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

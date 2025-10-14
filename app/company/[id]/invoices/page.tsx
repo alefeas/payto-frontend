@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink } from "lucide-react"
+import { ArrowLeft, FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink, Loader2 } from "lucide-react"
+import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,76 +14,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
-const mockInvoices = [
-  {
-    id: "1",
-    number: "FC-001-00000123",
-    type: "A",
-    issuerCompany: "Mi Empresa",
-    receiverCompany: "TechCorp SA",
-    issueDate: "2024-01-15",
-    dueDate: "2024-02-15",
-    total: 121000,
-    currency: "ARS",
-    status: "emitida"
-  },
-  {
-    id: "2", 
-    number: "FC-001-00000124",
-    type: "B",
-    issuerCompany: "Mi Empresa",
-    receiverCompany: "StartupXYZ",
-    issueDate: "2024-01-20",
-    dueDate: "2024-02-20",
-    total: 85000,
-    currency: "ARS", 
-    status: "pagada"
-  },
-  {
-    id: "3",
-    number: "FC-001-00000125",
-    type: "C",
-    issuerCompany: "Mi Empresa",
-    receiverCompany: "Consulting LLC",
-    issueDate: "2024-01-25",
-    dueDate: "2024-02-25",
-    total: 50000,
-    currency: "ARS",
-    status: "vencida"
-  },
-  {
-    id: "4",
-    number: "FC-001-00000126",
-    type: "E",
-    issuerCompany: "Mi Empresa",
-    receiverCompany: "TechCorp SA",
-    issueDate: "2024-02-01",
-    dueDate: "2024-03-01",
-    total: 200000,
-    currency: "ARS",
-    status: "pendiente"
-  },
-  {
-    id: "5",
-    number: "FC-001-00000127",
-    type: "A",
-    issuerCompany: "Mi Empresa",
-    receiverCompany: "Digital Solutions",
-    issueDate: "2024-02-05",
-    dueDate: "2024-03-05",
-    total: 150000,
-    currency: "ARS",
-    status: "emitida"
-  }
-]
-
 export default function InvoicesPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
   const companyId = params.id as string
 
-  const [invoices] = useState(mockInvoices)
+  const [invoices, setInvoices] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -97,6 +36,28 @@ export default function InvoicesPage() {
       router.push('/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  useEffect(() => {
+    const loadInvoices = async () => {
+      if (!companyId) return
+      
+      setIsLoading(true)
+      try {
+        const response = await invoiceService.getInvoices(companyId)
+        setInvoices(response.data || [])
+      } catch (error: any) {
+        toast.error('Error al cargar facturas', {
+          description: error.response?.data?.message || 'Intente nuevamente'
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (isAuthenticated && companyId) {
+      loadInvoices()
+    }
+  }, [isAuthenticated, companyId])
 
   const handleSelectInvoice = (invoiceId: string) => {
     setSelectedInvoices(prev => {
@@ -128,18 +89,19 @@ export default function InvoicesPage() {
 
   const getFilteredInvoices = () => {
     return invoices.filter(invoice => {
+      const clientName = invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || 'Sin cliente'
       const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           invoice.receiverCompany.toLowerCase().includes(searchTerm.toLowerCase())
+                           clientName.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === "all" || invoice.status === statusFilter
       const matchesType = typeFilter === "all" || invoice.type === typeFilter
-      const matchesClient = clientFilter === "all" || invoice.receiverCompany === clientFilter
+      const matchesClient = clientFilter === "all" || clientName === clientFilter
       
       let matchesDateRange = true
       if (dateFromFilter) {
-        matchesDateRange = matchesDateRange && new Date(invoice.issueDate) >= new Date(dateFromFilter)
+        matchesDateRange = matchesDateRange && new Date(invoice.issue_date) >= new Date(dateFromFilter)
       }
       if (dateToFilter) {
-        matchesDateRange = matchesDateRange && new Date(invoice.issueDate) <= new Date(dateToFilter)
+        matchesDateRange = matchesDateRange && new Date(invoice.issue_date) <= new Date(dateToFilter)
       }
       
       return matchesSearch && matchesStatus && matchesType && matchesClient && matchesDateRange
@@ -155,7 +117,9 @@ export default function InvoicesPage() {
     setClientFilter("all")
   }
 
-  const uniqueClients = [...new Set(invoices.map(inv => inv.receiverCompany))]
+  const uniqueClients = [...new Set(invoices.map(inv => 
+    inv.client?.business_name || inv.client?.first_name + ' ' + inv.client?.last_name || 'Sin cliente'
+  ))]
 
   const downloadSelectedTXT = () => {
     if (selectedInvoices.length === 0) {
@@ -183,18 +147,28 @@ export default function InvoicesPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      emitida: "bg-blue-100 text-blue-800",
-      pagada: "bg-green-100 text-green-800", 
-      vencida: "bg-red-100 text-red-800",
-      pendiente: "bg-yellow-100 text-yellow-800"
+    const statusMap: Record<string, { label: string; className: string }> = {
+      pending_approval: { label: 'Pendiente Aprobación', className: 'bg-yellow-100 text-yellow-800' },
+      issued: { label: 'Emitida', className: 'bg-blue-100 text-blue-800' },
+      approved: { label: 'Aprobada', className: 'bg-green-100 text-green-800' },
+      rejected: { label: 'Rechazada', className: 'bg-red-100 text-red-800' },
+      paid: { label: 'Pagada', className: 'bg-green-100 text-green-800' },
+      overdue: { label: 'Vencida', className: 'bg-red-100 text-red-800' },
+      cancelled: { label: 'Cancelada', className: 'bg-gray-100 text-gray-800' },
     }
-    return <Badge variant="secondary" className={variants[status as keyof typeof variants]}>{status}</Badge>
+    const statusInfo = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
+    return <Badge variant="secondary" className={statusInfo.className}>{statusInfo.label}</Badge>
   }
 
   const filteredInvoices = getFilteredInvoices()
 
-  if (authLoading) return null
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
   if (!isAuthenticated) return null
 
   return (
@@ -291,10 +265,13 @@ export default function InvoicesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Todos</SelectItem>
-                          <SelectItem value="emitida">Emitida</SelectItem>
-                          <SelectItem value="pagada">Pagada</SelectItem>
-                          <SelectItem value="vencida">Vencida</SelectItem>
-                          <SelectItem value="pendiente">Pendiente</SelectItem>
+                          <SelectItem value="pending_approval">Pendiente Aprobación</SelectItem>
+                          <SelectItem value="issued">Emitida</SelectItem>
+                          <SelectItem value="approved">Aprobada</SelectItem>
+                          <SelectItem value="rejected">Rechazada</SelectItem>
+                          <SelectItem value="paid">Pagada</SelectItem>
+                          <SelectItem value="overdue">Vencida</SelectItem>
+                          <SelectItem value="cancelled">Cancelada</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -371,49 +348,58 @@ export default function InvoicesPage() {
                 <div>Acciones</div>
               </div>
 
-              {filteredInvoices.map((invoice) => (
-                <div key={invoice.id} className="grid grid-cols-8 gap-4 p-4 border-b hover:bg-muted/30">
-                  <div className="flex items-center">
-                    <Checkbox
-                      checked={selectedInvoices.includes(invoice.id)}
-                      onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                    />
+              {filteredInvoices.map((invoice) => {
+                const clientName = invoice.client?.business_name || 
+                                  (invoice.client?.first_name && invoice.client?.last_name 
+                                    ? `${invoice.client.first_name} ${invoice.client.last_name}` 
+                                    : 'Sin cliente')
+                return (
+                  <div key={invoice.id} className="grid grid-cols-8 gap-4 p-4 border-b hover:bg-muted/30">
+                    <div className="flex items-center">
+                      <Checkbox
+                        checked={selectedInvoices.includes(invoice.id)}
+                        onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                      />
+                    </div>
+                    <div className="font-medium">{invoice.number}</div>
+                    <div>
+                      <Badge variant="outline">Tipo {invoice.type}</Badge>
+                    </div>
+                    <div className="truncate" title={clientName}>{clientName}</div>
+                    <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
+                    <div className="font-medium">
+                      {parseFloat(invoice.total).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    </div>
+                    <div>{getStatusBadge(invoice.status)}</div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}
+                        title="Ver detalle"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => downloadPDF(invoice.id)}
+                        title="Descargar PDF"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => downloadTXT(invoice.id)}
+                        title="Descargar TXT AFIP"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="font-medium">{invoice.number}</div>
-                  <div>
-                    <Badge variant="outline">Tipo {invoice.type}</Badge>
-                  </div>
-                  <div>{invoice.receiverCompany}</div>
-                  <div>{new Date(invoice.issueDate).toLocaleDateString()}</div>
-                  <div className="font-medium">
-                    {invoice.total.toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
-                  </div>
-                  <div>{getStatusBadge(invoice.status)}</div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => downloadPDF(invoice.id)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => downloadTXT(invoice.id)}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
 
               {filteredInvoices.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">

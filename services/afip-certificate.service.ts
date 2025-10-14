@@ -22,10 +22,11 @@ export const afipCertificateService = {
     return response.data.data
   },
 
-  async uploadCertificate(companyId: string, certificate: string, password?: string): Promise<AfipCertificate> {
+  async uploadCertificate(companyId: string, certificate: string, password?: string, environment?: 'testing' | 'production'): Promise<AfipCertificate> {
     const response = await apiClient.post(`/companies/${companyId}/afip/certificate/upload`, {
       certificate,
-      password
+      password,
+      environment: environment || 'testing'
     })
     return response.data.data
   },
@@ -34,12 +35,14 @@ export const afipCertificateService = {
     companyId: string,
     certificate: string,
     privateKey: string,
-    password?: string
+    password?: string,
+    environment?: 'testing' | 'production'
   ): Promise<AfipCertificate> {
     const response = await apiClient.post(`/companies/${companyId}/afip/certificate/upload-manual`, {
       certificate,
       private_key: privateKey,
-      password
+      password,
+      environment: environment || 'testing'
     })
     return response.data.data
   },
