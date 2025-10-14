@@ -13,71 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { networkService } from "@/services/network.service"
 import type { CompanyConnection, ConnectionRequest, NetworkStats } from "@/types/network"
-
-const mockConnections: CompanyConnection[] = [
-  {
-    id: "1",
-    companyId: "TC8X9K2L",
-    connectedCompanyId: "SU4P7M9N",
-    connectedCompanyName: "StartupXYZ",
-    connectedCompanyUniqueId: "SU4P7M9N",
-    status: "connected",
-    requestedAt: "2024-01-15T10:00:00Z",
-    connectedAt: "2024-01-15T14:30:00Z",
-    requestedBy: "admin@techcorp.com",
-    totalInvoicesSent: 12,
-    totalInvoicesReceived: 8,
-    totalAmountSent: 45000,
-    totalAmountReceived: 32000,
-    lastTransactionDate: "2024-01-20T09:15:00Z"
-  },
-  {
-    id: "2",
-    companyId: "TC8X9K2L",
-    connectedCompanyId: "CL1Q3R8T",
-    connectedCompanyName: "Consulting LLC",
-    connectedCompanyUniqueId: "CL1Q3R8T",
-    status: "connected",
-    requestedAt: "2024-01-10T08:00:00Z",
-    connectedAt: "2024-01-10T16:45:00Z",
-    requestedBy: "admin@techcorp.com",
-    totalInvoicesSent: 5,
-    totalInvoicesReceived: 15,
-    totalAmountSent: 18000,
-    totalAmountReceived: 67000,
-    lastTransactionDate: "2024-01-18T11:30:00Z"
-  }
-]
-
-const mockRequests: ConnectionRequest[] = [
-  {
-    id: "1",
-    fromCompanyId: "AB1C2D3E",
-    fromCompanyName: "Servicios Digitales SA",
-    fromCompanyUniqueId: "AB1C2D3E",
-    toCompanyId: "TC8X9K2L",
-    toCompanyName: "TechCorp",
-    message: "Nos gustaría establecer una relación comercial para intercambio de servicios tecnológicos.",
-    requestedAt: "2024-01-22T14:20:00Z",
-    requestedBy: "contacto@serviciosdigitales.com"
-  },
-  {
-    id: "2",
-    fromCompanyId: "XY9Z8W7V",
-    fromCompanyName: "Logística Express",
-    fromCompanyUniqueId: "XY9Z8W7V",
-    toCompanyId: "TC8X9K2L",
-    toCompanyName: "TechCorp",
-    requestedAt: "2024-01-21T09:45:00Z",
-    requestedBy: "admin@logisticaexpress.com"
-  }
-]
-
-const mockStats: NetworkStats = {
-  totalConnections: 2,
-  pendingReceived: 2
-}
 
 export default function NetworkPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -85,11 +22,12 @@ export default function NetworkPage() {
   const params = useParams()
   const companyId = params.id as string
 
-  const [connections] = useState<CompanyConnection[]>(mockConnections)
-  const [requests] = useState<ConnectionRequest[]>(mockRequests)
-  const [stats] = useState<NetworkStats>(mockStats)
+  const [connections, setConnections] = useState<CompanyConnection[]>([])
+  const [requests, setRequests] = useState<ConnectionRequest[]>([])
+  const [stats, setStats] = useState<NetworkStats>({ totalConnections: 0, pendingReceived: 0 })
   const [searchTerm, setSearchTerm] = useState("")
   const [showRequestModal, setShowRequestModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [newRequest, setNewRequest] = useState({
     companyId: "",
     message: ""
@@ -98,33 +36,75 @@ export default function NetworkPage() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
+    } else if (isAuthenticated && companyId) {
+      loadData()
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, router, companyId])
 
-  const handleSendRequest = () => {
+  const loadData = async () => {
+    try {
+      setIsLoading(true)
+      const [connectionsData, requestsData, statsData] = await Promise.all([
+        networkService.getConnections(companyId),
+        networkService.getPendingRequests(companyId),
+        networkService.getStats(companyId)
+      ])
+      setConnections(connectionsData)
+      setRequests(requestsData)
+      setStats(statsData)
+    } catch (error) {
+      toast.error('Error al cargar datos de red')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSendRequest = async () => {
     if (!newRequest.companyId.trim()) {
       toast.error('Ingrese el ID de la empresa')
       return
     }
 
-    toast.success('Solicitud enviada exitosamente', {
-      description: `Se envió la solicitud a la empresa con ID ${newRequest.companyId}`
-    })
-    
-    setShowRequestModal(false)
-    setNewRequest({ companyId: "", message: "" })
+    try {
+      await networkService.sendConnectionRequest(companyId, {
+        company_unique_id: newRequest.companyId,
+        message: newRequest.message || undefined
+      })
+      
+      toast.success('Solicitud enviada exitosamente', {
+        description: `Se envió la solicitud a la empresa con ID ${newRequest.companyId}`
+      })
+      
+      setShowRequestModal(false)
+      setNewRequest({ companyId: "", message: "" })
+      loadData()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al enviar solicitud')
+    }
   }
 
-  const handleAcceptRequest = (request: ConnectionRequest) => {
-    toast.success('Solicitud aceptada', {
-      description: `${request.fromCompanyName} ahora está en tu red empresarial`
-    })
+  const handleAcceptRequest = async (request: ConnectionRequest) => {
+    try {
+      await networkService.acceptRequest(companyId, request.id)
+      toast.success('Solicitud aceptada', {
+        description: `${request.fromCompanyName} ahora está en tu red empresarial`
+      })
+      loadData()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al aceptar solicitud')
+    }
   }
 
-  const handleRejectRequest = (request: ConnectionRequest) => {
-    toast.success('Solicitud rechazada', {
-      description: `Se rechazó la solicitud de ${request.fromCompanyName}`
-    })
+  const handleRejectRequest = async (request: ConnectionRequest) => {
+    try {
+      await networkService.rejectRequest(companyId, request.id)
+      toast.success('Solicitud rechazada', {
+        description: `Se rechazó la solicitud de ${request.fromCompanyName}`
+      })
+      loadData()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al rechazar solicitud')
+    }
   }
 
   const filteredConnections = connections.filter(conn =>
@@ -299,10 +279,10 @@ export default function NetworkPage() {
 
         {/* Send Request Modal */}
         <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Conectar con Nueva Empresa</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="break-words">Conectar con Nueva Empresa</DialogTitle>
+              <DialogDescription className="break-words">
                 Envía una solicitud de conexión a otra empresa para establecer una relación comercial
               </DialogDescription>
             </DialogHeader>
@@ -314,8 +294,10 @@ export default function NetworkPage() {
                   placeholder="TC8X9K2L"
                   value={newRequest.companyId}
                   onChange={(e) => setNewRequest({...newRequest, companyId: e.target.value})}
+                  maxLength={10}
+                  className="break-all"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground break-words">
                   Ingresa el ID único de la empresa (ej: TC8X9K2L)
                 </p>
               </div>
@@ -327,14 +309,16 @@ export default function NetworkPage() {
                   value={newRequest.message}
                   onChange={(e) => setNewRequest({...newRequest, message: e.target.value})}
                   rows={3}
+                  maxLength={500}
+                  className="resize-none break-words"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRequestModal(false)}>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="w-full sm:w-auto">
                 Cancelar
               </Button>
-              <Button onClick={handleSendRequest}>
+              <Button onClick={handleSendRequest} className="w-full sm:w-auto">
                 Enviar Solicitud
               </Button>
             </DialogFooter>
