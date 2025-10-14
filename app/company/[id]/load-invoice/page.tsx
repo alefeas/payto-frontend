@@ -53,12 +53,33 @@ export default function LoadInvoicePage() {
   })
   const [isValidating, setIsValidating] = useState(false)
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
+  const [hasAfipCertificate, setHasAfipCertificate] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  useEffect(() => {
+    const checkAfipCertificate = async () => {
+      if (!companyId) return
+      try {
+        const response = await fetch(`/api/v1/companies/${companyId}/afip/certificate`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setHasAfipCertificate(data.certificate?.is_active || false)
+        }
+      } catch (error) {
+        setHasAfipCertificate(false)
+      }
+    }
+    if (isAuthenticated && companyId) {
+      checkAfipCertificate()
+    }
+  }, [isAuthenticated, companyId])
 
   const calculateTotals = useCallback(() => {
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
@@ -125,6 +146,13 @@ export default function LoadInvoicePage() {
   const handleValidateAfip = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!hasAfipCertificate) {
+      toast.error('Certificado AFIP no configurado', {
+        description: 'Configure el certificado AFIP en Configuración para validar facturas'
+      })
+      return
+    }
+    
     if (!validationData.issuerCuit || !validationData.invoiceNumber) {
       toast.error('Complete CUIT y número de factura')
       return
@@ -189,8 +217,26 @@ export default function LoadInvoicePage() {
     }
 
     try {
-      // TODO: Implementar guardado en backend
-      // Por ahora solo muestra mensaje de éxito
+      const payload = {
+        issuer_cuit: formData.issuerCuit,
+        issuer_business_name: formData.issuerBusinessName,
+        invoice_type: formData.type,
+        invoice_number: formData.invoiceNumber,
+        issue_date: formData.emissionDate,
+        due_date: formData.dueDate,
+        currency: formData.currency,
+        exchange_rate: formData.currency === 'ARS' ? 1 : parseFloat(formData.exchangeRate),
+        notes: formData.notes,
+        items: items.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          tax_rate: item.taxRate
+        }))
+      }
+
+      await invoiceService.createReceivedInvoice(companyId, payload)
+      
       toast.success('Factura cargada exitosamente', {
         description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
       })

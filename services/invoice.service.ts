@@ -87,6 +87,11 @@ export const invoiceService = {
     return response.data;
   },
 
+  async createReceivedInvoice(companyId: string, data: any) {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/received`, data);
+    return response.data;
+  },
+
   async validateWithAfip(companyId: string, data: ValidateAfipData) {
     const response = await apiClient.post(`/companies/${companyId}/invoices/validate-afip`, data);
     return response.data;
