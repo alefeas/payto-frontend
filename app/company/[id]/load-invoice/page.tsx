@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Calculator, FileText, Search, Loader2, Upload, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Calculator, FileText, Search, Loader2, Upload, X, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,8 +15,11 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { invoiceService } from "@/services/invoice.service"
 import { companyService } from "@/services/company.service"
+import { supplierService, Supplier } from "@/services/supplier.service"
 import type { InvoiceType, Currency, InvoiceItem, InvoicePerception } from "@/types/invoice"
-import { formatCUIT, formatInvoiceNumber, validateCUIT } from "@/lib/input-formatters"
+import { formatInvoiceNumber } from "@/lib/input-formatters"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { SupplierForm } from "@/components/suppliers/SupplierForm"
 
 export default function LoadInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -27,8 +30,7 @@ export default function LoadInvoicePage() {
   const [formData, setFormData] = useState({
     type: 'A' as InvoiceType,
     invoiceNumber: '',
-    issuerCuit: '',
-    issuerBusinessName: '',
+    supplierId: '',
     emissionDate: '',
     dueDate: '',
     currency: 'ARS' as Currency,
@@ -56,6 +58,8 @@ export default function LoadInvoicePage() {
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
   const [hasAfipCertificate, setHasAfipCertificate] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -67,13 +71,17 @@ export default function LoadInvoicePage() {
 
   const loadCompanyDefaults = async () => {
     try {
-      const company = await companyService.getCompany(companyId)
+      const [company, suppliersList] = await Promise.all([
+        companyService.getCompany(companyId),
+        supplierService.getSuppliers(companyId)
+      ])
       setCompanyDefaults({
         defaultVat: company.defaultVat || 21,
         vatPerception: company.vatPerception || 0,
         grossIncomePerception: company.grossIncomePerception || 2.5,
         socialSecurityPerception: company.socialSecurityPerception || 1
       })
+      setSuppliers(suppliersList)
       setItems([{ description: '', quantity: 1, unitPrice: 0, taxRate: company.defaultVat || 21 }])
     } catch (error) {
       console.error('Error loading company defaults:', error)
@@ -248,15 +256,14 @@ export default function LoadInvoicePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.invoiceNumber || !formData.issuerCuit || !formData.issuerBusinessName || !formData.dueDate || !formData.emissionDate) {
+    if (!formData.supplierId || !formData.invoiceNumber || !formData.dueDate || !formData.emissionDate) {
       toast.error('Complete todos los campos requeridos')
       return
     }
 
-    if (!validateCUIT(formData.issuerCuit)) {
-      toast.error('CUIT inválido', {
-        description: 'Verifique el dígito verificador del CUIT'
-      })
+    const supplier = suppliers.find(s => s.id.toString() === formData.supplierId)
+    if (!supplier) {
+      toast.error('Seleccione un proveedor válido')
       return
     }
 
@@ -273,8 +280,8 @@ export default function LoadInvoicePage() {
     setIsSubmitting(true)
     try {
       const payload = {
-        issuer_cuit: formData.issuerCuit,
-        issuer_business_name: formData.issuerBusinessName,
+        issuer_cuit: supplier.documentNumber,
+        issuer_business_name: supplier.businessName || `${supplier.firstName} ${supplier.lastName}`.trim(),
         invoice_type: formData.type,
         invoice_number: formData.invoiceNumber,
         issue_date: formData.emissionDate,
@@ -448,25 +455,7 @@ export default function LoadInvoicePage() {
               <CardDescription>Información de la empresa que emitió la factura</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="invoiceNumber">Número de Factura *</Label>
-                  <Input
-                    id="invoiceNumber"
-                    placeholder="0001-00001234"
-                    value={formData.invoiceNumber}
-                    onChange={(e) => setFormData({...formData, invoiceNumber: formatInvoiceNumber(e.target.value)})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="issuerCuit">CUIT Emisor *</Label>
-                  <Input
-                    id="issuerCuit"
-                    placeholder="30-12345678-9"
-                    value={formData.issuerCuit}
-                    onChange={(e) => setFormData({...formData, issuerCuit: formatCUIT(e.target.value)})}
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo de Factura *</Label>
                   <Select value={formData.type} onValueChange={(value: InvoiceType) => 
@@ -482,17 +471,51 @@ export default function LoadInvoicePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="invoiceNumber">Número de Factura *</Label>
+                  <Input
+                    id="invoiceNumber"
+                    placeholder="0001-00001234"
+                    value={formData.invoiceNumber}
+                    onChange={(e) => setFormData({...formData, invoiceNumber: formatInvoiceNumber(e.target.value)})}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="issuerBusinessName">Razón Social Emisor *</Label>
-                <Input
-                  id="issuerBusinessName"
-                  placeholder="Nombre de la empresa emisora"
-                  value={formData.issuerBusinessName}
-                  onChange={(e) => setFormData({...formData, issuerBusinessName: e.target.value.slice(0, 150)})}
-                  maxLength={150}
-                />
+                <Label htmlFor="supplier">Proveedor *</Label>
+                {suppliers.length === 0 ? (
+                  <div className="flex gap-2">
+                    <div className="flex-1 flex items-center justify-center border border-dashed rounded-md p-3 bg-muted/50">
+                      <p className="text-sm text-muted-foreground">No hay proveedores registrados</p>
+                    </div>
+                    <Button type="button" onClick={() => setShowNewSupplierDialog(true)}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Crear Proveedor
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Select 
+                      value={formData.supplierId} 
+                      onValueChange={(value) => setFormData({...formData, supplierId: value})}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Seleccionar proveedor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map(s => (
+                          <SelectItem key={s.id} value={s.id.toString()}>
+                            {s.businessName || `${s.firstName} ${s.lastName}`.trim()} - {s.documentNumber}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" onClick={() => setShowNewSupplierDialog(true)}>
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -818,6 +841,30 @@ export default function LoadInvoicePage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* New Supplier Dialog */}
+      <Dialog open={showNewSupplierDialog} onOpenChange={setShowNewSupplierDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Proveedor</DialogTitle>
+            <DialogDescription>
+              Usa el mismo formulario que en Mis Proveedores
+            </DialogDescription>
+          </DialogHeader>
+          <SupplierForm 
+            companyId={companyId} 
+            onClose={() => setShowNewSupplierDialog(false)} 
+            onSuccess={async () => {
+              const updated = await supplierService.getSuppliers(companyId)
+              setSuppliers(updated)
+              if (updated.length > 0) {
+                const newest = updated[updated.length - 1]
+                setFormData({...formData, supplierId: newest.id.toString()})
+              }
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

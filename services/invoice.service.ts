@@ -37,6 +37,8 @@ export interface Invoice {
     business_name: string | null
     first_name: string | null
     last_name: string | null
+    email: string | null
+    phone: string | null
   }
   items?: InvoiceItem[]
   approvals?: InvoiceApproval[]
@@ -116,5 +118,9 @@ export const invoiceService = {
   async validateWithAfip(companyId: string, data: { issuer_cuit: string, invoice_type: string, invoice_number: string }): Promise<any> {
     const response = await apiClient.post(`/companies/${companyId}/invoices/validate-afip`, data)
     return response.data
+  },
+
+  async archiveInvoice(companyId: string, invoiceId: string): Promise<void> {
+    await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/archive`)
   }
 }
