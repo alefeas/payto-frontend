@@ -43,6 +43,7 @@ export default function VerifyCompanyPage() {
   const [manualEnvironment, setManualEnvironment] = useState<'testing' | 'production'>('testing')
   const [uploading, setUploading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -182,6 +183,7 @@ export default function VerifyCompanyPage() {
 
   const handleDeleteCertificate = async () => {
     try {
+      setDeleting(true)
       await afipCertificateService.deleteCertificate(id as string)
       setCertificate(null)
       setShowDeleteDialog(false)
@@ -189,6 +191,8 @@ export default function VerifyCompanyPage() {
       await loadData()
     } catch (error) {
       toast.error('Error al eliminar certificado')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -474,11 +478,11 @@ export default function VerifyCompanyPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={deleting}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDeleteCertificate}>
-              Eliminar
+            <Button variant="destructive" onClick={handleDeleteCertificate} disabled={deleting}>
+              {deleting ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -9,6 +9,7 @@ export interface AfipCertificate {
   isExpiringSoon: boolean
   environment: 'testing' | 'production'
   hasValidToken: boolean
+  isSelfSigned: boolean
 }
 
 export const afipCertificateService = {

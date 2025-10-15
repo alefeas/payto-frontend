@@ -39,6 +39,7 @@ export default function CompanyPage() {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAfipVerified, setIsAfipVerified] = useState(false)
+  const [certificate, setCertificate] = useState<any>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -62,9 +63,11 @@ export default function CompanyPage() {
       if (found) {
         try {
           const cert = await afipCertificateService.getCertificate(companyId)
+          setCertificate(cert)
           setIsAfipVerified(cert.isActive)
         } catch {
           setIsAfipVerified(false)
+          setCertificate(null)
         }
       }
     } catch (error: any) {
@@ -315,19 +318,29 @@ export default function CompanyPage() {
 
         {/* Banner de Estado de Verificación AFIP */}
         {isAfipVerified ? (
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium text-green-900">Perfil Fiscal Verificado</p>
-                  <p className="text-sm text-green-800 mt-1">
-                    Tu empresa está verificada con AFIP. Podés consultar datos de clientes y proveedores automáticamente.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-green-900 text-sm">
+                Verificado {certificate?.isSelfSigned ? '(Autofirmado)' : 'con AFIP'} - {certificate?.environment === 'production' ? 'Producción' : 'Testing'}
+              </p>
+              <p className="text-xs text-green-800 mt-0.5">
+                {certificate?.isSelfSigned 
+                  ? 'Solo para desarrollo. No podrás facturar con AFIP.' 
+                  : certificate?.environment === 'production'
+                    ? 'Facturas legalmente válidas habilitadas.'
+                    : 'Ambiente de prueba. Facturas sin validez legal.'}
+              </p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="border-green-600 text-green-700 hover:bg-green-100 flex-shrink-0"
+              onClick={() => router.push(`/company/${company?.id}/verify`)}
+            >
+              Ver Detalles
+            </Button>
+          </div>
         ) : (
           <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <XCircle className="h-5 w-5 text-orange-600 flex-shrink-0" />
