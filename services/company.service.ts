@@ -34,6 +34,10 @@ export interface Company {
   isActive?: boolean;
   inviteCode?: string;
   role?: string;
+  verificationStatus?: 'unverified' | 'verified';
+  verification_status?: 'unverified' | 'verified';
+  verifiedAt?: string;
+  verified_at?: string;
   createdAt?: string;
   updatedAt?: string;
 }

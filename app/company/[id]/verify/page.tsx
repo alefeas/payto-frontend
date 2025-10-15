@@ -2,96 +2,93 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Shield, CheckCircle, AlertTriangle, Download, Upload, Key, Trash2 } from "lucide-react"
+import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileText, Key, Shield, Info, Download, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { afipVerificationService, type VerificationStatus } from "@/services/afip-verification.service"
 import { afipCertificateService, AfipCertificate } from "@/services/afip-certificate.service"
 import { companyService } from "@/services/company.service"
-import { hasPermission } from "@/lib/permissions"
-import type { CompanyRole } from "@/types"
 
-export default function AfipConfigPage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+export default function VerifyCompanyPage() {
+  const { id } = useParams()
   const router = useRouter()
-  const params = useParams()
-  const companyId = params.id as string
-
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  
+  const [companyName, setCompanyName] = useState("")
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null)
   const [certificate, setCertificate] = useState<AfipCertificate | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [testing, setTesting] = useState(false)
-  const [userRole, setUserRole] = useState<CompanyRole | null>(null)
   
-  // Generación asistida
+  // Método asistido
   const [generatedCSR, setGeneratedCSR] = useState("")
-  
-  // Subida asistida
+  const [generating, setGenerating] = useState(false)
   const [assistedCert, setAssistedCert] = useState("")
   const [assistedPassword, setAssistedPassword] = useState("")
   const [assistedEnvironment, setAssistedEnvironment] = useState<'testing' | 'production'>('testing')
   
-  // Subida manual
+  // Método manual
   const [manualCert, setManualCert] = useState("")
   const [manualKey, setManualKey] = useState("")
   const [manualPassword, setManualPassword] = useState("")
   const [manualEnvironment, setManualEnvironment] = useState<'testing' | 'production'>('testing')
+  const [uploading, setUploading] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
-    } else if (isAuthenticated) {
-      checkPermissions()
+    } else if (isAuthenticated && id) {
+      loadData()
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, id, router])
 
-  const checkPermissions = async () => {
+  const loadData = async () => {
     try {
-      const companies = await companyService.getCompanies()
-      const company = companies.find(c => c.id === companyId)
-      if (!company) {
-        router.push('/dashboard')
-        return
-      }
-      const role = company.role as CompanyRole
-      setUserRole(role)
-      if (!hasPermission(role, 'company.view_settings')) {
-        router.push(`/company/${companyId}`)
-        toast.error('Acceso denegado', {
-          description: 'Solo los propietarios, administradores y directores financieros pueden acceder a la configuración AFIP'
+      setIsLoading(true)
+      const company = await companyService.getCompany(id as string)
+      setCompanyName(company.name)
+      
+      // Cargar certificado si existe
+      try {
+        const cert = await afipCertificateService.getCertificate(id as string)
+        setCertificate(cert)
+        setVerificationStatus({
+          verification_status: cert.isActive ? 'verified' : 'unverified',
+          verified_at: cert.validFrom,
+          has_certificate: true
         })
-        return
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setVerificationStatus({
+            verification_status: 'unverified',
+            verified_at: null,
+            has_certificate: false
+          })
+        } else {
+          console.error('Error loading certificate:', error)
+        }
       }
-      loadCertificate()
     } catch (error) {
-      router.push('/dashboard')
-    }
-  }
-
-  const loadCertificate = async () => {
-    try {
-      setLoading(true)
-      const cert = await afipCertificateService.getCertificate(companyId)
-      setCertificate(cert)
-    } catch (error: any) {
-      if (error.response?.status !== 404) {
-        console.error('Error loading certificate:', error)
-      }
+      toast.error('Error al cargar datos')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
   const handleGenerateCSR = async () => {
     try {
       setGenerating(true)
-      const result = await afipCertificateService.generateCSR(companyId)
+      const result = await afipCertificateService.generateCSR(id as string)
       setGeneratedCSR(result.csr)
       toast.success('CSR generado exitosamente')
     } catch (error) {
@@ -119,7 +116,7 @@ export default function AfipConfigPage() {
     try {
       setUploading(true)
       const cert = await afipCertificateService.uploadCertificate(
-        companyId,
+        id as string,
         assistedCert,
         assistedPassword || undefined,
         assistedEnvironment
@@ -128,8 +125,10 @@ export default function AfipConfigPage() {
       setAssistedCert("")
       setAssistedPassword("")
       toast.success('Certificado configurado exitosamente')
-    } catch (error) {
-      toast.error('Error al subir certificado')
+      await loadData()
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.message || 'Error al subir certificado'
+      toast.error(errorMsg)
     } finally {
       setUploading(false)
     }
@@ -143,7 +142,7 @@ export default function AfipConfigPage() {
     try {
       setUploading(true)
       const cert = await afipCertificateService.uploadManualCertificate(
-        companyId,
+        id as string,
         manualCert,
         manualKey,
         manualPassword || undefined,
@@ -154,8 +153,10 @@ export default function AfipConfigPage() {
       setManualKey("")
       setManualPassword("")
       toast.success('Certificado configurado exitosamente')
-    } catch (error) {
-      toast.error('Error al subir certificado')
+      await loadData()
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.message || 'Error al subir certificado'
+      toast.error(errorMsg)
     } finally {
       setUploading(false)
     }
@@ -164,7 +165,7 @@ export default function AfipConfigPage() {
   const handleTestConnection = async () => {
     try {
       setTesting(true)
-      const result = await afipCertificateService.testConnection(companyId)
+      const result = await afipCertificateService.testConnection(id as string)
       if (result.success) {
         toast.success(result.message, {
           description: result.expires_in_days ? `Expira en ${result.expires_in_days} días` : undefined
@@ -180,32 +181,39 @@ export default function AfipConfigPage() {
   }
 
   const handleDeleteCertificate = async () => {
-    if (!confirm('¿Estás seguro de eliminar el certificado AFIP?')) return
-    
     try {
-      await afipCertificateService.deleteCertificate(companyId)
+      await afipCertificateService.deleteCertificate(id as string)
       setCertificate(null)
+      setShowDeleteDialog(false)
       toast.success('Certificado eliminado')
+      await loadData()
     } catch (error) {
       toast.error('Error al eliminar certificado')
     }
   }
 
-  if (authLoading || loading) return null
+  if (authLoading || isLoading) return null
   if (!isAuthenticated) return null
-  if (userRole && !hasPermission(userRole, 'company.view_settings')) return null
+
+  const isVerified = verificationStatus?.verification_status === 'verified' || (certificate && certificate.isActive)
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}/settings`)}>
+          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${id}`)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Configuración AFIP/ARCA</h1>
-            <p className="text-muted-foreground">Gestiona certificados para facturación electrónica</p>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">Verificar Perfil Fiscal</h1>
+            <p className="text-muted-foreground">{companyName}</p>
           </div>
+          {isVerified && (
+            <Badge className="bg-green-500">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Verificado
+            </Badge>
+          )}
         </div>
 
         {/* Estado del Certificado */}
@@ -217,28 +225,30 @@ export default function AfipConfigPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {certificate && certificate.isActive ? (
+            {isVerified ? (
               <div className="space-y-4">
                 <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium text-green-900">Certificado Activo</p>
                     <p className="text-sm text-green-700 mt-1">
-                      Las facturas se autorizarán automáticamente con AFIP
+                      Facturación electrónica habilitada y consultas AFIP disponibles
                     </p>
-                    {certificate.validUntil && (
+                    {certificate?.validUntil && (
                       <p className="text-xs text-green-600 mt-2">
                         Válido hasta: {new Date(certificate.validUntil).toLocaleDateString()}
                         {certificate.isExpiringSoon && " ⚠️ Próximo a vencer"}
                       </p>
                     )}
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs font-medium">
-                        Ambiente: {certificate.environment === 'production' 
-                          ? '✅ Producción (Facturas reales)' 
-                          : '🧪 Homologación (Testing)'}
-                      </p>
-                    </div>
+                    {certificate && (
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs font-medium">
+                          Ambiente: {certificate.environment === 'production' 
+                            ? '✅ Producción (Facturas reales)' 
+                            : '🧪 Homologación (Testing)'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -246,38 +256,32 @@ export default function AfipConfigPage() {
                   <Button onClick={handleTestConnection} disabled={testing} variant="outline">
                     {testing ? 'Probando...' : 'Probar Conexión'}
                   </Button>
-                  <Button onClick={handleDeleteCertificate} variant="destructive">
+                  <Button onClick={() => setShowDeleteDialog(true)} variant="destructive">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Eliminar Certificado
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-amber-900">Sin Certificado AFIP</p>
-                    <p className="text-sm text-amber-700 mt-1">
-                      Las facturas se generarán con CAE simulado (no válidas legalmente)
-                    </p>
-                    <p className="text-xs text-amber-600 mt-2">
-                      Configura tu certificado para emitir facturas oficiales
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-amber-900">Sin Certificado AFIP</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    No podrás usar facturación electrónica ni consultar datos automáticos de clientes/proveedores
+                  </p>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Configuración */}
-        {(!certificate || !certificate.isActive) && (
+        {!isVerified && (
           <Card>
             <CardHeader>
-              <CardTitle>Configurar Certificado</CardTitle>
+              <CardTitle>Configurar Certificado AFIP</CardTitle>
               <CardDescription>
-                Elige cómo quieres configurar tu certificado AFIP
+                Elige el método que prefieras para configurar tu certificado
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -287,21 +291,20 @@ export default function AfipConfigPage() {
                   <TabsTrigger value="manual">Manual</TabsTrigger>
                 </TabsList>
 
-                {/* Generación Asistida */}
-                <TabsContent value="assisted" className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Pasos:</h4>
-                    <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                      <li>Genera el CSR aquí</li>
-                      <li>Descarga el archivo CSR</li>
-                      <li>Ve a AFIP → Administrador de Relaciones → Certificados</li>
-                      <li>Sube el CSR y obtén el certificado (.crt)</li>
-                      <li>Pega el contenido del certificado aquí</li>
-                    </ol>
-                    <p className="text-xs text-blue-700 mt-3 pt-2 border-t border-blue-300">
-                      💡 Para homologación: usa el mismo proceso pero en el ambiente de testing de AFIP
-                    </p>
-                  </div>
+                <TabsContent value="assisted" className="space-y-4 mt-4">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Pasos del proceso asistido:</AlertTitle>
+                    <AlertDescription>
+                      <ol className="text-sm space-y-1 list-decimal list-inside mt-2">
+                        <li>Genera el CSR aquí</li>
+                        <li>Descarga el archivo CSR</li>
+                        <li>Ve a AFIP → Administrador de Relaciones → Certificados</li>
+                        <li>Sube el CSR y obtén el certificado (.crt)</li>
+                        <li>Pega el contenido del certificado aquí</li>
+                      </ol>
+                    </AlertDescription>
+                  </Alert>
 
                   {!generatedCSR ? (
                     <Button onClick={handleGenerateCSR} disabled={generating} className="w-full">
@@ -312,7 +315,7 @@ export default function AfipConfigPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>CSR Generado</Label>
-                        <Textarea value={generatedCSR} readOnly rows={8} className="font-mono text-xs" />
+                        <Textarea value={generatedCSR} readOnly rows={6} className="font-mono text-xs" />
                         <Button onClick={handleDownloadCSR} variant="outline" className="w-full">
                           <Download className="h-4 w-4 mr-2" />
                           Descargar CSR
@@ -321,12 +324,12 @@ export default function AfipConfigPage() {
 
                       <div className="border-t pt-4 space-y-4">
                         <div className="space-y-2">
-                          <Label>Certificado de AFIP (.crt)</Label>
+                          <Label>Certificado de AFIP (.crt) *</Label>
                           <Textarea
                             placeholder="Pega aquí el contenido del certificado..."
                             value={assistedCert}
                             onChange={(e) => setAssistedCert(e.target.value)}
-                            rows={8}
+                            rows={6}
                             className="font-mono text-xs"
                           />
                         </div>
@@ -367,32 +370,33 @@ export default function AfipConfigPage() {
                   )}
                 </TabsContent>
 
-                {/* Subida Manual */}
-                <TabsContent value="manual" className="space-y-4">
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <p className="text-sm text-amber-900">
-                      Si ya tienes el certificado (.crt) y la clave privada (.key), pégalos aquí
-                    </p>
-                  </div>
+                <TabsContent value="manual" className="space-y-4 mt-4">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Método manual</AlertTitle>
+                    <AlertDescription>
+                      Si ya tienes el certificado (.crt) y la clave privada (.key), pégalos aquí directamente
+                    </AlertDescription>
+                  </Alert>
 
                   <div className="space-y-2">
-                    <Label>Certificado (.crt)</Label>
+                    <Label>Certificado (.crt) *</Label>
                     <Textarea
                       placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
                       value={manualCert}
                       onChange={(e) => setManualCert(e.target.value)}
-                      rows={8}
+                      rows={6}
                       className="font-mono text-xs"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Clave Privada (.key)</Label>
+                    <Label>Clave Privada (.key) *</Label>
                     <Textarea
                       placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
                       value={manualKey}
                       onChange={(e) => setManualKey(e.target.value)}
-                      rows={8}
+                      rows={6}
                       className="font-mono text-xs"
                     />
                   </div>
@@ -441,22 +445,44 @@ export default function AfipConfigPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong>Sin certificado:</strong> Puedes usar PayTo normalmente, pero las facturas tendrán un CAE simulado (no válidas legalmente).
+              <strong>Sin certificado:</strong> No podrás emitir facturas electrónicas válidas ni consultar datos de AFIP automáticamente.
             </p>
             <p>
-              <strong>Con certificado de producción:</strong> Las facturas se autorizarán automáticamente con AFIP y serán legalmente válidas.
+              <strong>Con certificado de producción:</strong> Las facturas se autorizarán automáticamente con AFIP y serán legalmente válidas. Podrás consultar datos de clientes y proveedores.
             </p>
             <p>
               <strong>Con certificado de homologación:</strong> Puedes probar el sistema con tu CUIT real pero en servidores de prueba de AFIP. Las facturas NO aparecerán en tu perfil fiscal real.
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
-              <p className="text-xs text-amber-900">
-                <strong>⚠️ Importante:</strong> Si AFIP rechaza una factura (por error en datos, punto de venta no habilitado, etc.), la factura NO se creará en tu sistema.
-              </p>
-            </div>
           </CardContent>
         </Card>
+
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Importante</AlertTitle>
+          <AlertDescription>
+            Nunca compartas tu clave privada (.key) con nadie. PayTo la almacena de forma segura y encriptada solo para comunicarse con AFIP en tu nombre.
+          </AlertDescription>
+        </Alert>
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar certificado AFIP?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. Se eliminarán el certificado y la clave privada. No podrás emitir facturas electrónicas ni consultar datos de AFIP hasta que configures un nuevo certificado.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteCertificate}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

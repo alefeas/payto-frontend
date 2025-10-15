@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { companyService, CreateCompanyData } from "@/services/company.service"
 import { formatCUIT, formatPhone, formatCBU } from "@/lib/input-formatters"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function CreateCompanyPage() {
   const [formData, setFormData] = useState<CreateCompanyData>({
@@ -56,7 +58,12 @@ export default function CreateCompanyPage() {
     }
     
     if (!formData.national_id.trim()) {
-      toast.error('El CUIT/CUIL/DNI es obligatorio')
+      toast.error('El CUIT/CUIL es obligatorio')
+      return
+    }
+    
+    if (formData.national_id.length !== 13) {
+      toast.error('El CUIT/CUIL debe tener 11 dígitos (formato: XX-XXXXXXXX-X)')
       return
     }
     
@@ -138,7 +145,7 @@ export default function CreateCompanyPage() {
               Información Básica
             </CardTitle>
             <CardDescription>
-              Completa tus datos fiscales. Si sos consumidor final, podrás recibir facturas pero no emitirlas.
+              Completa tus datos fiscales para gestionar facturas y pagos.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -156,25 +163,27 @@ export default function CreateCompanyPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nationalId">CUIT/CUIL/DNI *</Label>
-                    <Input
-                      id="nationalId"
-                      placeholder="20-12345678-9"
-                      value={formData.national_id}
-                      onChange={(e) => setFormData({...formData, national_id: formatCUIT(e.target.value)})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono (Opcional)</Label>
-                    <Input
-                      id="phone"
-                      placeholder="11 1234-5678"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nationalId">CUIT/CUIL *</Label>
+                  <Input
+                    id="nationalId"
+                    placeholder="20-12345678-9"
+                    value={formData.national_id}
+                    onChange={(e) => setFormData({...formData, national_id: formatCUIT(e.target.value)})}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ingresa tu CUIT o CUIL. Formato: XX-XXXXXXXX-X (11 dígitos)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono (Opcional)</Label>
+                  <Input
+                    id="phone"
+                    placeholder="11 1234-5678"
+                    value={formData.phone || ''}
+                    onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -399,17 +408,20 @@ export default function CreateCompanyPage() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">📋 Próximo paso: Configurar AFIP (Opcional)</h4>
-                <p className="text-sm text-blue-800">
-                  Después de crear tu empresa, podrás configurar tu certificado AFIP para emitir facturas electrónicas oficiales.
-                  Si no lo configuras, podrás usar el sistema pero las facturas no serán válidas legalmente.
-                </p>
-              </div>
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong className="block mb-1">📋 Próximo paso: Verificar perfil con certificado AFIP</strong>
+                  Después de crear tu perfil, podrás verificarlo subiendo tu certificado digital de AFIP.
+                  Esto te permitirá emitir facturas electrónicas oficiales y acceder a todas las funciones sin restricciones.
+                  <br /><br />
+                  <strong>Sin verificación:</strong> Podrás usar el sistema normalmente, pero las facturas no serán válidas legalmente ante AFIP.
+                </AlertDescription>
+              </Alert>
 
               <div className="flex gap-4 pt-4">
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Creando...' : 'Crear Empresa'}
+                  {isLoading ? 'Creando...' : 'Crear Perfil Fiscal'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>
                   Cancelar

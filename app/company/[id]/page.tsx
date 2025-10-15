@@ -15,12 +15,15 @@ import {
   AlertTriangle,
   CheckSquare,
   Activity,
-  Shield
+  Shield,
+  CheckCircle2,
+  XCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
+import { afipCertificateService } from "@/services/afip-certificate.service"
 import { toast } from "sonner"
 import { CompanyRole } from "@/types"
 import { translateRole } from "@/lib/role-utils"
@@ -35,6 +38,7 @@ export default function CompanyPage() {
   
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isAfipVerified, setIsAfipVerified] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -54,6 +58,15 @@ export default function CompanyPage() {
       const companies = await companyService.getCompanies()
       const found = companies.find(c => c.id === companyId)
       setCompany(found || null)
+      
+      if (found) {
+        try {
+          const cert = await afipCertificateService.getCertificate(companyId)
+          setIsAfipVerified(cert.isActive)
+        } catch {
+          setIsAfipVerified(false)
+        }
+      }
     } catch (error: any) {
       toast.error('Error al cargar perfil fiscal')
     } finally {
@@ -190,6 +203,13 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company?.id}/clients`)
     },
     {
+      title: "Mis Proveedores",
+      description: "Gestionar proveedores externos",
+      icon: Users,
+      color: "bg-teal-500",
+      action: () => router.push(`/company/${company?.id}/suppliers`)
+    },
+    {
       title: "Red Empresarial",
       description: "Conectar con otras empresas",
       icon: Users,
@@ -226,11 +246,11 @@ export default function CompanyPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => router.push(`/company/${company?.id}/afip`)}
+                  onClick={() => router.push(`/company/${company?.id}/verify`)}
                   className="border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
                   <Shield className="h-4 w-4 mr-2" />
-                  AFIP
+                  Verificar AFIP
                 </Button>
                 <Button 
                   variant="outline" 
@@ -292,6 +312,41 @@ export default function CompanyPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Banner de Estado de Verificación AFIP */}
+        {isAfipVerified ? (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-green-900">Perfil Fiscal Verificado</p>
+                  <p className="text-sm text-green-800 mt-1">
+                    Tu empresa está verificada con AFIP. Podés consultar datos de clientes y proveedores automáticamente.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <XCircle className="h-5 w-5 text-orange-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-orange-900 text-sm">Sin Verificar AFIP</p>
+              <p className="text-xs text-orange-800 mt-0.5">
+                No podrás usar facturación electrónica ni consultar datos automáticos de clientes/proveedores.
+              </p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="border-orange-600 text-orange-700 hover:bg-orange-100 flex-shrink-0"
+              onClick={() => router.push(`/company/${company?.id}/verify`)}
+            >
+              Verificar
+            </Button>
+          </div>
+        )}
 
         {/* Alerta para Consumidor Final */}
         {!canIssueInvoices && (

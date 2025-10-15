@@ -6,19 +6,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { clientService, Client } from "@/services/client.service"
+import { supplierService, Supplier } from "@/services/supplier.service"
 import { formatCUIT, formatPhone, getMaxLengthForDocumentType } from "@/lib/input-formatters"
 import { afipVerificationService } from "@/services/afip-verification.service"
 import { Loader2, CheckCircle2 } from "lucide-react"
 
-interface ClientFormProps {
-  client?: Client | null
+interface SupplierFormProps {
+  supplier?: Supplier | null
   companyId: string
   onClose: () => void
   onSuccess: () => void
 }
 
-export function ClientForm({ client, companyId, onClose, onSuccess }: ClientFormProps) {
+export function SupplierForm({ supplier, companyId, onClose, onSuccess }: SupplierFormProps) {
   const [formData, setFormData] = useState<{
     documentType: "CUIT" | "CUIL"
     documentNumber: string
@@ -30,15 +30,15 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
     address: string
     taxCondition: "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"
   }>({
-    documentType: (client?.documentType === "CUIT" || client?.documentType === "CUIL" ? client.documentType : "CUIT"),
-    documentNumber: client?.documentNumber || "",
-    businessName: client?.businessName || "",
-    firstName: client?.firstName || "",
-    lastName: client?.lastName || "",
-    email: client?.email || "",
-    phone: client?.phone || "",
-    address: client?.address || "",
-    taxCondition: client?.taxCondition || "final_consumer"
+    documentType: supplier?.documentType || "CUIT",
+    documentNumber: supplier?.documentNumber || "",
+    businessName: supplier?.businessName || "",
+    firstName: supplier?.firstName || "",
+    lastName: supplier?.lastName || "",
+    email: supplier?.email || "",
+    phone: supplier?.phone || "",
+    address: supplier?.address || "",
+    taxCondition: supplier?.taxCondition || "final_consumer"
   })
   const [saving, setSaving] = useState(false)
   const [validating, setValidating] = useState(false)
@@ -72,17 +72,17 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
         tax_condition: formData.taxCondition
       }
       
-      if (client) {
-        await clientService.updateClient(companyId, client.id, data)
-        toast.success('Cliente actualizado')
+      if (supplier) {
+        await supplierService.updateSupplier(companyId, supplier.id, data)
+        toast.success('Proveedor actualizado')
       } else {
-        await clientService.createClient(companyId, data)
-        toast.success('Cliente creado')
+        await supplierService.createSupplier(companyId, data)
+        toast.success('Proveedor creado')
       }
       onSuccess()
       onClose()
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al guardar cliente')
+      toast.error(error.response?.data?.message || 'Error al guardar proveedor')
     } finally {
       setSaving(false)
     }
@@ -258,7 +258,7 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           Cancelar
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving ? 'Guardando...' : (client ? "Actualizar" : "Crear")}
+          {saving ? 'Guardando...' : (supplier ? "Actualizar" : "Crear")}
         </Button>
       </div>
     </form>
