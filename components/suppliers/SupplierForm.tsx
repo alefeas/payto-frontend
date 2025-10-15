@@ -29,6 +29,11 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
     phone: string
     address: string
     taxCondition: "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"
+    bankName: string
+    bankAccountType: "CA" | "CC" | ""
+    bankAccountNumber: string
+    bankCbu: string
+    bankAlias: string
   }>({
     documentType: supplier?.documentType || "CUIT",
     documentNumber: supplier?.documentNumber || "",
@@ -38,7 +43,12 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
     email: supplier?.email || "",
     phone: supplier?.phone || "",
     address: supplier?.address || "",
-    taxCondition: supplier?.taxCondition || "final_consumer"
+    taxCondition: supplier?.taxCondition || "final_consumer",
+    bankName: supplier?.bankName || "",
+    bankAccountType: supplier?.bankAccountType || "",
+    bankAccountNumber: supplier?.bankAccountNumber || "",
+    bankCbu: supplier?.bankCbu || "",
+    bankAlias: supplier?.bankAlias || ""
   })
   const [saving, setSaving] = useState(false)
   const [validating, setValidating] = useState(false)
@@ -69,7 +79,12 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
         email: formData.email || undefined,
         phone: formData.phone || undefined,
         address: formData.address,
-        tax_condition: formData.taxCondition
+        tax_condition: formData.taxCondition,
+        bank_name: formData.bankName || undefined,
+        bank_account_type: formData.bankAccountType || undefined,
+        bank_account_number: formData.bankAccountNumber || undefined,
+        bank_cbu: formData.bankCbu || undefined,
+        bank_alias: formData.bankAlias || undefined
       }
       
       if (supplier) {
@@ -89,7 +104,7 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="documentType">Tipo de Documento *</Label>
@@ -251,6 +266,74 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
           onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
           placeholder="Opcional - 11 1234-5678"
         />
+      </div>
+
+      <div className="border-t pt-4 mt-4">
+        <h3 className="font-semibold mb-3 text-sm text-muted-foreground">Datos Bancarios (Opcional)</h3>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="bankCbu">CBU</Label>
+            <Input
+              id="bankCbu"
+              value={formData.bankCbu}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 22)
+                setFormData({...formData, bankCbu: value})
+              }}
+              placeholder="22 dígitos"
+              maxLength={22}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bankAlias">Alias</Label>
+              <Input
+                id="bankAlias"
+                value={formData.bankAlias}
+                onChange={(e) => setFormData({...formData, bankAlias: e.target.value.slice(0, 50)})}
+                placeholder="ALIAS.BANCO.PROVEEDOR"
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bankName">Banco</Label>
+              <Input
+                id="bankName"
+                value={formData.bankName}
+                onChange={(e) => setFormData({...formData, bankName: e.target.value.slice(0, 100)})}
+                placeholder="Nombre del banco"
+                maxLength={100}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bankAccountType">Tipo de Cuenta</Label>
+              <Select value={formData.bankAccountType} onValueChange={(value) => setFormData({...formData, bankAccountType: value as "CA" | "CC" | ""})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CA">Caja de Ahorro</SelectItem>
+                  <SelectItem value="CC">Cuenta Corriente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bankAccountNumber">Número de Cuenta</Label>
+              <Input
+                id="bankAccountNumber"
+                value={formData.bankAccountNumber}
+                onChange={(e) => setFormData({...formData, bankAccountNumber: e.target.value.slice(0, 50)})}
+                placeholder="Número de cuenta"
+                maxLength={50}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">

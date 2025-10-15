@@ -40,6 +40,18 @@ export interface Invoice {
     email: string | null
     phone: string | null
   }
+  supplier?: {
+    id: string
+    document_type: string
+    document_number: string
+    business_name: string | null
+    first_name: string | null
+    last_name: string | null
+    email: string | null
+    phone: string | null
+    bank_cbu: string | null
+    bank_alias: string | null
+  }
   items?: InvoiceItem[]
   approvals?: InvoiceApproval[]
 }

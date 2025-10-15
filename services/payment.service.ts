@@ -1,74 +1,84 @@
-import apiClient from '@/lib/api-client'
+import apiClient from '@/lib/api-client';
 
 export interface InvoicePayment {
-  id: string
-  invoiceId: string
-  amount: number
-  paymentDate: string
-  paymentMethod: 'transfer' | 'cash' | 'check' | 'debit_card' | 'credit_card' | 'mercadopago' | 'other'
-  reference?: string
-  notes?: string
-  createdBy?: string
-  creatorName?: string
-  createdAt: string
-  updatedAt: string
+  id: number;
+  company_id: string;
+  invoice_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: 'transfer' | 'check' | 'cash' | 'card';
+  reference_number?: string;
+  attachment_url?: string;
+  notes?: string;
+  status: 'pending' | 'in_process' | 'confirmed' | 'cancelled';
+  registered_by: string;
+  registered_at: string;
+  confirmed_by?: string;
+  confirmed_at?: string;
+  created_at: string;
+  updated_at: string;
+  invoice?: any;
+  registered_by_user?: any;
+  confirmed_by_user?: any;
 }
 
 export interface CreatePaymentData {
-  amount: number
-  payment_date: string
-  payment_method: 'transfer' | 'cash' | 'check' | 'debit_card' | 'credit_card' | 'mercadopago' | 'other'
-  reference?: string
-  notes?: string
+  invoice_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: 'transfer' | 'check' | 'cash' | 'card';
+  reference_number?: string;
+  attachment_url?: string;
+  notes?: string;
+  status?: 'pending' | 'in_process' | 'confirmed' | 'cancelled';
 }
 
-export interface PaymentSummary {
-  payments: InvoicePayment[]
-  total_paid: number
-  remaining_amount: number
+export interface UpdatePaymentData {
+  amount?: number;
+  payment_date?: string;
+  payment_method?: 'transfer' | 'check' | 'cash' | 'card';
+  reference_number?: string;
+  attachment_url?: string;
+  notes?: string;
 }
 
-export const paymentService = {
-  async getInvoicePayments(companyId: string, invoiceId: string): Promise<PaymentSummary> {
-    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/payments`)
-    return {
-      payments: response.data.data.payments.map((p: any) => ({
-        id: p.id,
-        invoiceId: p.invoice_id,
-        amount: parseFloat(p.amount),
-        paymentDate: p.payment_date,
-        paymentMethod: p.payment_method,
-        reference: p.reference,
-        notes: p.notes,
-        createdBy: p.created_by,
-        creatorName: p.creator?.name,
-        createdAt: p.created_at,
-        updatedAt: p.updated_at,
-      })),
-      total_paid: parseFloat(response.data.data.total_paid),
-      remaining_amount: parseFloat(response.data.data.remaining_amount),
-    }
-  },
-
-  async createPayment(companyId: string, invoiceId: string, data: CreatePaymentData): Promise<InvoicePayment> {
-    const response = await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/payments`, data)
-    const p = response.data.data
-    return {
-      id: p.id,
-      invoiceId: p.invoice_id,
-      amount: parseFloat(p.amount),
-      paymentDate: p.payment_date,
-      paymentMethod: p.payment_method,
-      reference: p.reference,
-      notes: p.notes,
-      createdBy: p.created_by,
-      creatorName: p.creator?.name,
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
-    }
-  },
-
-  async deletePayment(companyId: string, invoiceId: string, paymentId: string): Promise<void> {
-    await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}/payments/${paymentId}`)
-  },
+export interface GenerateTxtResponse {
+  content: string;
+  filename: string;
 }
+
+class PaymentService {
+  async getPayments(companyId: string, status?: string): Promise<InvoicePayment[]> {
+    const params = status ? { status } : {};
+    const response = await apiClient.get(`/companies/${companyId}/payments`, { params });
+    return response.data;
+  }
+
+  async createPayment(companyId: string, data: CreatePaymentData): Promise<InvoicePayment> {
+    const response = await apiClient.post(`/companies/${companyId}/payments`, data);
+    return response.data;
+  }
+
+  async updatePayment(companyId: string, paymentId: number, data: UpdatePaymentData): Promise<InvoicePayment> {
+    const response = await apiClient.put(`/companies/${companyId}/payments/${paymentId}`, data);
+    return response.data;
+  }
+
+  async deletePayment(companyId: string, paymentId: number): Promise<void> {
+    await apiClient.delete(`/companies/${companyId}/payments/${paymentId}`);
+  }
+
+  async confirmPayment(companyId: string, paymentId: number): Promise<InvoicePayment> {
+    const response = await apiClient.post(`/companies/${companyId}/payments/${paymentId}/confirm`);
+    return response.data;
+  }
+
+  async generateTxt(companyId: string, paymentIds: number[]): Promise<GenerateTxtResponse> {
+    const response = await apiClient.post(`/companies/${companyId}/payments/generate-txt`, {
+      payment_ids: paymentIds
+    });
+    return response.data;
+  }
+}
+
+export default new PaymentService();

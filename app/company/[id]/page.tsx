@@ -143,7 +143,7 @@ export default function CompanyPage() {
     }] : []),
     ...(hasPermission(userRole, 'payments.create') ? [{
       title: "Pagar Facturas",
-      description: "Procesar pagos pendientes",
+      description: "Gestionar pagos a proveedores",
       icon: CreditCard,
       color: "bg-orange-500",
       badge: 0,
@@ -151,13 +151,13 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company?.id}/payments`)
     }] : []),
     ...(canIssueInvoices && hasPermission(userRole, 'payments.view') ? [{
-      title: "Confirmar Pagos",
-      description: "Revisar pagos recibidos",
+      title: "Cobrar Facturas",
+      description: "Gestionar cobros de clientes",
       icon: Eye,
       color: "bg-yellow-500",
       badge: 0,
       permission: 'payments.view' as const,
-      action: () => router.push(`/company/${company?.id}/confirm-payments`)
+      action: () => router.push(`/company/${company?.id}/collections`)
     }] : []),
     ...(canIssueInvoices && hasPermission(userRole, 'invoices.approve') ? [{
       title: "Aprobar Facturas",
