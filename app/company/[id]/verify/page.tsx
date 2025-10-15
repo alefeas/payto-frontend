@@ -44,6 +44,7 @@ export default function VerifyCompanyPage() {
   const [uploading, setUploading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [userRole, setUserRole] = useState<string>('')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -58,6 +59,7 @@ export default function VerifyCompanyPage() {
       setIsLoading(true)
       const company = await companyService.getCompany(id as string)
       setCompanyName(company.name)
+      setUserRole(company.role || '')
       
       // Cargar certificado si existe
       try {
@@ -188,9 +190,14 @@ export default function VerifyCompanyPage() {
       setCertificate(null)
       setShowDeleteDialog(false)
       toast.success('Certificado eliminado')
-      await loadData()
-    } catch (error) {
-      toast.error('Error al eliminar certificado')
+      setVerificationStatus({
+        verification_status: 'unverified',
+        verified_at: null,
+        has_certificate: false
+      })
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.message || 'Error al eliminar certificado'
+      toast.error(errorMsg)
     } finally {
       setDeleting(false)
     }
@@ -260,10 +267,12 @@ export default function VerifyCompanyPage() {
                   <Button onClick={handleTestConnection} disabled={testing} variant="outline">
                     {testing ? 'Probando...' : 'Probar Conexión'}
                   </Button>
-                  <Button onClick={() => setShowDeleteDialog(true)} variant="destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar Certificado
-                  </Button>
+                  {userRole === 'owner' && (
+                    <Button onClick={() => setShowDeleteDialog(true)} variant="destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar Certificado
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (

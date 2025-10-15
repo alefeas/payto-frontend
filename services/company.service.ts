@@ -38,6 +38,8 @@ export interface Company {
   verification_status?: 'unverified' | 'verified';
   verifiedAt?: string;
   verified_at?: string;
+  requiredApprovals?: number;
+  required_approvals?: number;
   createdAt?: string;
   updatedAt?: string;
 }

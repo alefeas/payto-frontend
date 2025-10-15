@@ -70,6 +70,7 @@ export default function SettingsPage() {
   const [addingAccount, setAddingAccount] = useState(false)
   const [editingAccountLoading, setEditingAccountLoading] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [maxApprovals, setMaxApprovals] = useState(10)
   const [formData, setFormData] = useState({
     name: '',
     business_name: '',
@@ -91,7 +92,8 @@ export default function SettingsPage() {
     vat_retention: 0,
     income_tax_retention: 2,
     gross_income_retention: 0.42,
-    social_security_retention: 0
+    social_security_retention: 0,
+    required_approvals: 1
   })
   const [bankFormData, setBankFormData] = useState({
     bank_name: '',
@@ -128,6 +130,19 @@ export default function SettingsPage() {
       setCompany(companyData)
       setBankAccounts(accounts)
       
+      // Get members count for approval validation
+      try {
+        const apiClient = (await import('@/lib/api-client')).default
+        const membersResponse = await apiClient.get(`/companies/${companyId}/members`)
+        const approvers = (membersResponse.data.data || []).filter((m: any) => 
+          ['owner', 'administrator', 'financial_director', 'accountant', 'approver'].includes(m.role) && m.isActive
+        )
+        setMaxApprovals(Math.max(1, approvers.length))
+      } catch (error) {
+        console.error('Error loading members:', error)
+        setMaxApprovals(10)
+      }
+      
       const addr = companyData.addressData || {}
       
       const initialData = {
@@ -151,7 +166,8 @@ export default function SettingsPage() {
         vat_retention: Number(companyData.vatRetention) || 0,
         income_tax_retention: Number(companyData.incomeTaxRetention) || 2,
         gross_income_retention: Number(companyData.grossIncomeRetention) || 0.42,
-        social_security_retention: Number(companyData.socialSecurityRetention) || 0
+        social_security_retention: Number(companyData.socialSecurityRetention) || 0,
+        required_approvals: Number(companyData.requiredApprovals || companyData.required_approvals) || 1
       }
       setFormData(initialData)
       setInitialFormData(initialData)
@@ -486,6 +502,27 @@ export default function SettingsPage() {
                       className="max-w-xs"
                     />
                     <p className="text-xs text-muted-foreground">La próxima factura será este número + 1</p>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="font-medium mb-4">Aprobaciones de Facturas</h3>
+                  <div className="space-y-2">
+                    <Label>Aprobaciones Requeridas</Label>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      max={maxApprovals} 
+                      value={formData.required_approvals} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1
+                        setFormData({...formData, required_approvals: Math.min(val, maxApprovals)})
+                      }} 
+                      className="max-w-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Cantidad de personas que deben aprobar cada factura recibida antes de poder pagarla (mínimo 1, máximo {maxApprovals} según miembros con permiso)
+                    </p>
                   </div>
                 </div>
                 
