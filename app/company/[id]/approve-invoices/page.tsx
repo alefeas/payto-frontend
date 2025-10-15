@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, CheckCircle, XCircle, Clock, FileText, User } from "lucide-react"
+import { ArrowLeft, CheckCircle, XCircle, Clock, FileText, User, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,18 +16,19 @@ import { companyService } from "@/services/company.service"
 export default function ApproveInvoicesPage() {
   const { id } = useParams()
   const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
   
   const [companyName, setCompanyName] = useState("")
   const [requiredApprovals, setRequiredApprovals] = useState(0)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [approvalNotes, setApprovalNotes] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
   const [processing, setProcessing] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -44,10 +45,20 @@ export default function ApproveInvoicesPage() {
       setCompanyName(company.name)
       setRequiredApprovals(company.requiredApprovals || company.required_approvals || 1)
       
+      if (user?.id) {
+        setCurrentUserId(user.id)
+      }
+      
       const result = await invoiceService.getInvoices(id as string, 'pending_approval')
-      setInvoices(result.data)
+      console.log('Raw result:', result)
+      console.log('Invoices data:', result.data)
+      if (result.data && result.data.length > 0) {
+        console.log('First invoice approvals:', result.data[0].approvals)
+      }
+      setInvoices(result.data || [])
     } catch (error: any) {
-      toast.error('Error al cargar facturas')
+      console.error('Error loading invoices:', error)
+      toast.error(error.response?.data?.message || 'Error al cargar facturas')
     } finally {
       setLoading(false)
     }
@@ -58,12 +69,22 @@ export default function ApproveInvoicesPage() {
     
     try {
       setProcessing(true)
-      await invoiceService.approveInvoice(id as string, selectedInvoice.id, approvalNotes)
-      toast.success('Factura aprobada exitosamente')
+      const result = await invoiceService.approveInvoice(id as string, selectedInvoice.id, approvalNotes)
+      
+      // Update local state based on approval result
+      if (result.is_approved) {
+        // Invoice fully approved, remove from list
+        setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id))
+        toast.success('Factura aprobada completamente')
+      } else {
+        // Invoice partially approved, reload to get updated approvals list
+        await loadData()
+        toast.success(`Aprobación registrada (${result.approvals_received}/${result.approvals_required})`)
+      }
+      
       setShowApproveDialog(false)
       setApprovalNotes("")
       setSelectedInvoice(null)
-      await loadData()
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || 'Error al aprobar factura'
       toast.error(errorMsg)
@@ -81,11 +102,14 @@ export default function ApproveInvoicesPage() {
     try {
       setProcessing(true)
       await invoiceService.rejectInvoice(id as string, selectedInvoice.id, rejectionReason)
+      
+      // Update local state instead of reloading
+      setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id))
+      
       toast.success('Factura rechazada')
       setShowRejectDialog(false)
       setRejectionReason("")
       setSelectedInvoice(null)
-      await loadData()
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || 'Error al rechazar factura'
       toast.error(errorMsg)
@@ -102,6 +126,10 @@ export default function ApproveInvoicesPage() {
   const openRejectDialog = (invoice: Invoice) => {
     setSelectedInvoice(invoice)
     setShowRejectDialog(true)
+  }
+
+  const viewInvoiceDetails = (invoiceId: string) => {
+    router.push(`/company/${id}/invoices/${invoiceId}`)
   }
 
   if (authLoading || loading) return null
@@ -123,7 +151,11 @@ export default function ApproveInvoicesPage() {
         <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
           <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
           <p className="text-sm text-blue-900">
-            Se requieren <strong>{requiredApprovals}</strong> {requiredApprovals === 1 ? 'aprobación' : 'aprobaciones'} para pagar facturas (mínimo 1, configurable en Configuración).
+            {requiredApprovals === 0 ? (
+              <span>Las facturas se <strong>aprueban automáticamente</strong> (sin control). Cambia esto en Configuración.</span>
+            ) : (
+              <span>Se requieren <strong>{requiredApprovals}</strong> {requiredApprovals === 1 ? 'aprobación' : 'aprobaciones'} para pagar facturas (configurable en Configuración).</span>
+            )}
           </p>
         </div>
 
@@ -144,83 +176,93 @@ export default function ApproveInvoicesPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {invoices.map((invoice) => (
-                  <Card key={invoice.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-blue-500" />
-                            <div>
-                              <p className="font-semibold text-lg">
-                                Factura {invoice.type} {String(invoice.sales_point).padStart(4, '0')}-{String(invoice.voucher_number).padStart(8, '0')}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {invoice.issuerCompany?.business_name || invoice.issuerCompany?.name}
-                              </p>
-                            </div>
+                  <div key={invoice.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <p className="font-semibold truncate">
+                              Factura {invoice.type} {String(invoice.sales_point).padStart(4, '0')}-{String(invoice.voucher_number).padStart(8, '0')}
+                            </p>
+                            <Badge variant={invoice.approvals_received >= invoice.approvals_required ? "default" : "secondary"}>
+                              {invoice.approvals_received}/{invoice.approvals_required}
+                            </Badge>
                           </div>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Fecha</p>
-                              <p className="font-medium">{new Date(invoice.issue_date).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Vencimiento</p>
-                              <p className="font-medium">{new Date(invoice.due_date).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Total</p>
-                              <p className="font-medium text-lg">${invoice.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Aprobaciones</p>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={invoice.approvals_received >= invoice.approvals_required ? "default" : "secondary"}>
-                                  {invoice.approvals_received}/{invoice.approvals_required}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-
-                          {invoice.approvals && invoice.approvals.length > 0 && (
-                            <div className="pt-3 border-t">
-                              <p className="text-sm font-medium mb-2">Aprobado por:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {invoice.approvals.map((approval) => (
-                                  <Badge key={approval.id} variant="outline" className="flex items-center gap-1">
-                                    <User className="h-3 w-3" />
-                                    {approval.user.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                          <p className="text-sm text-muted-foreground truncate">
+                            {invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || invoice.client?.business_name}
+                          </p>
                         </div>
-
-                        <div className="flex flex-col gap-2 ml-4">
-                          <Button 
-                            size="sm" 
-                            onClick={() => openApproveDialog(invoice)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Aprobar
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => openRejectDialog(invoice)}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Rechazar
-                          </Button>
+                        
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm text-muted-foreground">Total</p>
+                          <p className="font-bold text-lg">${invoice.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        
+                        <div className="text-right flex-shrink-0 hidden md:block">
+                          <p className="text-sm text-muted-foreground">Vencimiento</p>
+                          <p className="text-sm font-medium">{new Date(invoice.due_date).toLocaleDateString('es-AR')}</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => viewInvoiceDetails(invoice.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {invoice.approvals?.some(a => a.user?.id === currentUserId) ? (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-700">Ya aprobaste</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Button 
+                              size="sm" 
+                              onClick={() => openApproveDialog(invoice)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Aprobar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => openRejectDialog(invoice)}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Rechazar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {invoice.approvals_received > 0 && invoice.approvals && Array.isArray(invoice.approvals) && invoice.approvals.length > 0 && (
+                      <div className="mt-3 pt-3 border-t flex items-center gap-2 text-sm">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Aprobado por:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {invoice.approvals.map((approval, idx) => {
+                            const fullName = approval.user?.first_name && approval.user?.last_name 
+                              ? `${approval.user.first_name} ${approval.user.last_name}`.trim()
+                              : approval.user?.name?.trim()
+                            return (
+                              <Badge key={approval.id || idx} variant="secondary" className="text-xs">
+                                {fullName || approval.user?.email?.split('@')[0] || `Aprobador ${idx + 1}`}
+                              </Badge>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

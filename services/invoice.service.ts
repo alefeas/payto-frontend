@@ -57,6 +57,8 @@ export interface InvoiceApproval {
   user: {
     id: string
     name: string
+    first_name?: string
+    last_name?: string
     email: string
   }
   notes: string | null
@@ -68,8 +70,8 @@ export const invoiceService = {
     const params = status ? { status } : {}
     const response = await apiClient.get(`/companies/${companyId}/invoices`, { params })
     return {
-      data: response.data.data,
-      total: response.data.total
+      data: response.data.data || response.data,
+      total: response.data.total || response.data.length
     }
   },
 
@@ -78,12 +80,18 @@ export const invoiceService = {
     return response.data
   },
 
-  async approveInvoice(companyId: string, invoiceId: string, notes?: string): Promise<void> {
-    await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/approve`, { notes })
+  async approveInvoice(companyId: string, invoiceId: string, notes?: string): Promise<{
+    approvals_received: number
+    approvals_required: number
+    is_approved: boolean
+  }> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/approve`, { notes })
+    return response.data.data
   },
 
   async rejectInvoice(companyId: string, invoiceId: string, reason: string): Promise<void> {
-    await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/reject`, { reason })
+    const response = await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/reject`, { reason })
+    return response.data
   },
 
   async getApprovals(companyId: string, invoiceId: string): Promise<{
@@ -93,5 +101,20 @@ export const invoiceService = {
   }> {
     const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/approvals`)
     return response.data.data
+  },
+
+  async createInvoice(companyId: string, data: any): Promise<any> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices`, data)
+    return response.data
+  },
+
+  async createReceivedInvoice(companyId: string, data: any): Promise<any> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/received`, data)
+    return response.data
+  },
+
+  async validateWithAfip(companyId: string, data: { issuer_cuit: string, invoice_type: string, invoice_number: string }): Promise<any> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/validate-afip`, data)
+    return response.data
   }
 }

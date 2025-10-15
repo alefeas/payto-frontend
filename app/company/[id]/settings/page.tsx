@@ -511,18 +511,25 @@ export default function SettingsPage() {
                     <Label>Aprobaciones Requeridas</Label>
                     <Input 
                       type="number" 
-                      min="1" 
+                      min="0" 
                       max={maxApprovals} 
                       value={formData.required_approvals} 
                       onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1
-                        setFormData({...formData, required_approvals: Math.min(val, maxApprovals)})
+                        const val = parseInt(e.target.value) || 0
+                        setFormData({...formData, required_approvals: Math.max(0, Math.min(val, maxApprovals))})
                       }} 
                       className="max-w-xs"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Cantidad de personas que deben aprobar cada factura recibida antes de poder pagarla (mínimo 1, máximo {maxApprovals} según miembros con permiso)
+                      <strong>0</strong> = auto-aprobación (sin control), 
+                      <strong>1 o más</strong> = requiere aprobación manual. 
+                      Máximo {maxApprovals} según cantidad de miembros con permiso para aprobar.
                     </p>
+                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-3">
+                      <p className="text-xs text-amber-900 dark:text-amber-100">
+                        <strong>Importante:</strong> Al reducir el número de aprobaciones requeridas, las facturas pendientes que ya cumplan con el nuevo número se aprobarán automáticamente.
+                      </p>
+                    </div>
                   </div>
                 </div>
                 

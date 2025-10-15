@@ -111,9 +111,11 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'invoices.view',
     'invoices.create',
     'invoices.update',
+    'invoices.approve',
     'payments.view',
     'payments.create',
     'payments.update',
+    'payments.approve',
   ],
   
   approver: [

@@ -14,8 +14,9 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { invoiceService } from "@/services/invoice.service"
+import { companyService } from "@/services/company.service"
 import type { InvoiceType, Currency, InvoiceItem, InvoicePerception } from "@/types/invoice"
-import { formatCUIT, formatInvoiceNumber } from "@/lib/input-formatters"
+import { formatCUIT, formatInvoiceNumber, validateCUIT } from "@/lib/input-formatters"
 
 export default function LoadInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -35,11 +36,9 @@ export default function LoadInvoicePage() {
     notes: ''
   })
 
-  const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([
-    { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }
-  ])
-
+  const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([])
   const [perceptions, setPerceptions] = useState<Omit<InvoicePerception, 'id' | 'baseAmount' | 'amount'>[]>([])
+  const [companyDefaults, setCompanyDefaults] = useState<any>(null)
 
   const [totals, setTotals] = useState({
     subtotal: 0,
@@ -56,12 +55,31 @@ export default function LoadInvoicePage() {
   const [isValidating, setIsValidating] = useState(false)
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
   const [hasAfipCertificate, setHasAfipCertificate] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
+    } else if (isAuthenticated && companyId) {
+      loadCompanyDefaults()
     }
-  }, [isAuthenticated, authLoading, router])
+  }, [isAuthenticated, authLoading, router, companyId])
+
+  const loadCompanyDefaults = async () => {
+    try {
+      const company = await companyService.getCompany(companyId)
+      setCompanyDefaults({
+        defaultVat: company.defaultVat || 21,
+        vatPerception: company.vatPerception || 0,
+        grossIncomePerception: company.grossIncomePerception || 2.5,
+        socialSecurityPerception: company.socialSecurityPerception || 1
+      })
+      setItems([{ description: '', quantity: 1, unitPrice: 0, taxRate: company.defaultVat || 21 }])
+    } catch (error) {
+      console.error('Error loading company defaults:', error)
+      setItems([{ description: '', quantity: 1, unitPrice: 0, taxRate: 21 }])
+    }
+  }
 
   useEffect(() => {
     const checkAfipCertificate = async () => {
@@ -116,7 +134,7 @@ export default function LoadInvoicePage() {
   }, [items, perceptions, calculateTotals])
 
   const addItem = () => {
-    setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: 21 }])
+    setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: companyDefaults?.defaultVat || 21 }])
   }
 
   const removeItem = (index: number) => {
@@ -132,7 +150,25 @@ export default function LoadInvoicePage() {
   }
 
   const addPerception = () => {
-    setPerceptions([...perceptions, { type: 'gross_income_perception', name: 'Percepción IIBB', rate: 3 }])
+    setPerceptions([...perceptions, { 
+      type: 'gross_income_perception', 
+      name: 'Percepción IIBB', 
+      rate: companyDefaults?.grossIncomePerception || 2.5 
+    }])
+  }
+
+  const getDefaultPerceptionRate = (type: string): number => {
+    if (!companyDefaults) return 0
+    switch (type) {
+      case 'vat_perception':
+        return companyDefaults.vatPerception || 0
+      case 'gross_income_perception':
+        return companyDefaults.grossIncomePerception || 2.5
+      case 'suss_perception':
+        return companyDefaults.socialSecurityPerception || 1
+      default:
+        return 0
+    }
   }
 
   const removePerception = (index: number) => {
@@ -141,7 +177,16 @@ export default function LoadInvoicePage() {
 
   const updatePerception = (index: number, field: keyof typeof perceptions[0], value: string | number) => {
     const newPerceptions = [...perceptions]
-    newPerceptions[index] = { ...newPerceptions[index], [field]: value }
+    if (field === 'type') {
+      const newType = value as string
+      newPerceptions[index] = { 
+        ...newPerceptions[index], 
+        type: newType as any,
+        rate: getDefaultPerceptionRate(newType)
+      }
+    } else {
+      newPerceptions[index] = { ...newPerceptions[index], [field]: value }
+    }
     setPerceptions(newPerceptions)
   }
 
@@ -208,6 +253,13 @@ export default function LoadInvoicePage() {
       return
     }
 
+    if (!validateCUIT(formData.issuerCuit)) {
+      toast.error('CUIT inválido', {
+        description: 'Verifique el dígito verificador del CUIT'
+      })
+      return
+    }
+
     if (formData.currency !== 'ARS' && !formData.exchangeRate) {
       toast.error('Ingrese la cotización de la moneda')
       return
@@ -218,6 +270,7 @@ export default function LoadInvoicePage() {
       return
     }
 
+    setIsSubmitting(true)
     try {
       const payload = {
         issuer_cuit: formData.issuerCuit,
@@ -248,6 +301,8 @@ export default function LoadInvoicePage() {
       toast.error('Error al cargar factura', {
         description: error.response?.data?.message || 'Intente nuevamente'
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -398,9 +453,9 @@ export default function LoadInvoicePage() {
                   <Label htmlFor="invoiceNumber">Número de Factura *</Label>
                   <Input
                     id="invoiceNumber"
-                    placeholder="Ej: 0001-00001234"
+                    placeholder="0001-00001234"
                     value={formData.invoiceNumber}
-                    onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})}
+                    onChange={(e) => setFormData({...formData, invoiceNumber: formatInvoiceNumber(e.target.value)})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -409,7 +464,7 @@ export default function LoadInvoicePage() {
                     id="issuerCuit"
                     placeholder="30-12345678-9"
                     value={formData.issuerCuit}
-                    onChange={(e) => setFormData({...formData, issuerCuit: e.target.value})}
+                    onChange={(e) => setFormData({...formData, issuerCuit: formatCUIT(e.target.value)})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -533,17 +588,25 @@ export default function LoadInvoicePage() {
                   <div className="space-y-2">
                     <Label>IVA (%)</Label>
                     <Select 
-                      value={item.taxRate?.toString() || '21'} 
+                      value={(item.taxRate ?? companyDefaults?.defaultVat ?? 21).toString()} 
                       onValueChange={(value) => updateItem(index, 'taxRate', parseFloat(value))}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue>
+                          {(item.taxRate ?? companyDefaults?.defaultVat ?? 21) === -1 ? 'Exento' : 
+                           (item.taxRate ?? companyDefaults?.defaultVat ?? 21) === -2 ? 'No Gravado' : 
+                           `${item.taxRate ?? companyDefaults?.defaultVat ?? 21}%`}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="-1">Exento</SelectItem>
                         <SelectItem value="-2">No Gravado</SelectItem>
                         <SelectItem value="0">0%</SelectItem>
+                        <SelectItem value="2.5">2.5%</SelectItem>
+                        <SelectItem value="5">5%</SelectItem>
+                        <SelectItem value="10.5">10.5%</SelectItem>
                         <SelectItem value="21">21%</SelectItem>
+                        <SelectItem value="27">27%</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -620,6 +683,9 @@ export default function LoadInvoicePage() {
                         value={perception.rate}
                         onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Valor por defecto: {getDefaultPerceptionRate(perception.type)}%
+                      </p>
                     </div>
                     
                     <div className="flex items-end">
@@ -727,9 +793,18 @@ export default function LoadInvoicePage() {
           </Card>
 
               <div className="flex gap-4">
-                <Button type="submit" className="flex-1">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Cargar Factura
+                <Button type="submit" disabled={isSubmitting} className="flex-1">
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Cargando...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Cargar Factura
+                    </>
+                  )}
                 </Button>
                 <Button 
                   type="button" 
