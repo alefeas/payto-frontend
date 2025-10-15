@@ -188,13 +188,13 @@ export default function VerifyCompanyPage() {
       setDeleting(true)
       await afipCertificateService.deleteCertificate(id as string)
       setCertificate(null)
-      setShowDeleteDialog(false)
-      toast.success('Certificado eliminado')
       setVerificationStatus({
         verification_status: 'unverified',
         verified_at: null,
         has_certificate: false
       })
+      setShowDeleteDialog(false)
+      toast.success('Certificado eliminado')
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message || 'Error al eliminar certificado'
       toast.error(errorMsg)
