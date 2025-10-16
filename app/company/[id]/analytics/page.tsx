@@ -1,117 +1,14 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, FileText, Clock, Users, BarChart3, PieChart, Activity } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/auth-context"
-import type { Invoice } from "@/types/invoice"
-import type { Payment } from "@/types/payment"
-
-// Mock data - en producción vendría de las APIs existentes
-const mockInvoices: Invoice[] = [
-  {
-    id: "1",
-    number: "FC-001-00000123",
-    type: "A",
-    salesPoint: 1,
-    voucherNumber: 123,
-    afipVoucherType: "001",
-    concept: "products_services",
-    issuerCompanyId: "comp-1",
-    receiverCompanyId: "comp-2",
-    issueDate: "2024-01-15",
-    dueDate: "2024-02-15",
-    currency: "ARS",
-    exchangeRate: 1,
-    subtotal: 100000,
-    totalTaxes: 21000,
-    totalPerceptions: 0,
-    total: 121000,
-    status: "paid",
-    items: [],
-    taxes: [],
-    perceptions: [],
-    approvalsRequired: 2,
-    approvalsReceived: 2,
-    createdAt: "2024-01-15T10:00:00Z",
-    updatedAt: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: "2", 
-    number: "FC-001-00000124",
-    type: "B",
-    salesPoint: 1,
-    voucherNumber: 124,
-    afipVoucherType: "006",
-    concept: "products_services",
-    issuerCompanyId: "comp-1",
-    receiverCompanyId: "comp-3",
-    issueDate: "2024-01-20",
-    dueDate: "2024-02-20",
-    currency: "ARS",
-    exchangeRate: 1,
-    subtotal: 85000,
-    totalTaxes: 17850,
-    totalPerceptions: 0,
-    total: 102850,
-    status: "pending_approval",
-    items: [],
-    taxes: [],
-    perceptions: [],
-    approvalsRequired: 2,
-    approvalsReceived: 0,
-    createdAt: "2024-01-20T14:30:00Z",
-    updatedAt: "2024-01-20T14:30:00Z"
-  },
-  {
-    id: "3",
-    number: "FC-001-00000125", 
-    type: "C",
-    salesPoint: 1,
-    voucherNumber: 125,
-    afipVoucherType: "011",
-    concept: "services",
-    issuerCompanyId: "comp-2",
-    receiverCompanyId: "comp-1",
-    issueDate: "2024-01-10",
-    dueDate: "2024-02-10",
-    currency: "ARS",
-    exchangeRate: 1,
-    subtotal: 50000,
-    totalTaxes: 10500,
-    totalPerceptions: 0,
-    total: 60500,
-    status: "approved",
-    items: [],
-    taxes: [],
-    perceptions: [],
-    approvalsRequired: 2,
-    approvalsReceived: 2,
-    createdAt: "2024-01-10T09:15:00Z",
-    updatedAt: "2024-01-10T09:15:00Z"
-  }
-]
-
-const mockPayments: Payment[] = [
-  {
-    id: "1",
-    invoiceIds: ["FC-001-00000123"],
-    payerCompanyId: "comp-2",
-    payerCompanyName: "TechCorp SA",
-    paymentDate: "2024-01-25",
-    method: "transferencia",
-    originalAmount: 121000,
-    totalRetentions: 2420,
-    netAmount: 118580,
-    status: "confirmed",
-    retentions: [],
-    createdAt: "2024-01-25T10:30:00Z"
-  }
-]
+import { analyticsService, type AnalyticsSummary, type RevenueTrend, type TopClient, type PendingInvoices } from "@/services/analytics.service"
+import { toast } from "sonner"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function AnalyticsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -119,9 +16,11 @@ export default function AnalyticsPage() {
   const params = useParams()
   const companyId = params.id as string
 
-  const [invoices] = useState<Invoice[]>(mockInvoices)
-  const [payments] = useState<Payment[]>(mockPayments)
-  const [selectedPeriod, setSelectedPeriod] = useState("month")
+  const [loading, setLoading] = useState(true)
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
+  const [revenueTrend, setRevenueTrend] = useState<RevenueTrend[]>([])
+  const [topClients, setTopClients] = useState<TopClient[]>([])
+  const [pendingInvoices, setPendingInvoices] = useState<PendingInvoices | null>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -129,91 +28,57 @@ export default function AnalyticsPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  // Cálculos de estadísticas en tiempo real
-  const analytics = useMemo(() => {
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    
-    // Filtrar por período seleccionado
-    const filterByPeriod = (date: string) => {
-      const itemDate = new Date(date)
-      if (selectedPeriod === "month") {
-        return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear
-      } else if (selectedPeriod === "quarter") {
-        const quarter = Math.floor(currentMonth / 3)
-        const itemQuarter = Math.floor(itemDate.getMonth() / 3)
-        return itemQuarter === quarter && itemDate.getFullYear() === currentYear
-      } else {
-        return itemDate.getFullYear() === currentYear
-      }
+  useEffect(() => {
+    if (isAuthenticated && companyId) {
+      loadAnalytics()
     }
+  }, [isAuthenticated, companyId])
 
-    // Facturas emitidas (ingresos)
-    const issuedInvoices = invoices.filter(inv => inv.issuerCompanyId === companyId)
-    const periodIssuedInvoices = issuedInvoices.filter(inv => filterByPeriod(inv.issueDate))
-    
-    // Facturas recibidas (gastos)
-    const receivedInvoices = invoices.filter(inv => inv.receiverCompanyId === companyId)
-    const periodReceivedInvoices = receivedInvoices.filter(inv => filterByPeriod(inv.issueDate))
-
-    // Pagos realizados y recibidos
-    const periodPayments = payments.filter(pay => filterByPeriod(pay.paymentDate))
-    const receivedPayments = periodPayments.filter(pay => 
-      issuedInvoices.some(inv => pay.invoiceIds.includes(inv.number))
-    )
-    const madePayments = periodPayments.filter(pay => 
-      receivedInvoices.some(inv => pay.invoiceIds.includes(inv.number))
-    )
-
-    return {
-      // Ingresos
-      totalRevenue: periodIssuedInvoices.reduce((sum, inv) => sum + inv.total, 0),
-      paidRevenue: receivedPayments.reduce((sum, pay) => sum + pay.netAmount, 0),
-      pendingRevenue: periodIssuedInvoices
-        .filter(inv => inv.status === "pending_approval" || inv.status === "approved")
-        .reduce((sum, inv) => sum + inv.total, 0),
+  const loadAnalytics = async () => {
+    try {
+      setLoading(true)
+      const [summaryData, trendData, clientsData, pendingData] = await Promise.all([
+        analyticsService.getSummary(companyId),
+        analyticsService.getRevenueTrend(companyId),
+        analyticsService.getTopClients(companyId),
+        analyticsService.getPendingInvoices(companyId)
+      ])
       
-      // Gastos
-      totalExpenses: periodReceivedInvoices.reduce((sum, inv) => sum + inv.total, 0),
-      paidExpenses: madePayments.reduce((sum, pay) => sum + pay.originalAmount, 0),
-      pendingExpenses: periodReceivedInvoices
-        .filter(inv => inv.status === "pending_approval" || inv.status === "approved")
-        .reduce((sum, inv) => sum + inv.total, 0),
-
-      // Contadores
-      issuedCount: periodIssuedInvoices.length,
-      receivedCount: periodReceivedInvoices.length,
-      paidInvoicesCount: receivedPayments.length,
-      pendingInvoicesCount: periodIssuedInvoices.filter(inv => inv.status === "pending_approval").length,
-      
-      // Retenciones
-      totalRetentions: receivedPayments.reduce((sum, pay) => sum + pay.totalRetentions, 0),
-      
-      // Clientes únicos
-      uniqueClients: new Set(periodIssuedInvoices.map(inv => inv.receiverCompanyId)).size,
-      uniqueProviders: new Set(periodReceivedInvoices.map(inv => inv.issuerCompanyId)).size,
-
-      // Promedio de días de pago
-      avgPaymentDays: receivedPayments.length > 0 
-        ? receivedPayments.reduce((sum, pay) => {
-            const invoice = issuedInvoices.find(inv => pay.invoiceIds.includes(inv.number))
-            if (invoice) {
-              const issueDate = new Date(invoice.issueDate)
-              const paymentDate = new Date(pay.paymentDate)
-              return sum + Math.ceil((paymentDate.getTime() - issueDate.getTime()) / (1000 * 60 * 60 * 24))
-            }
-            return sum
-          }, 0) / receivedPayments.length
-        : 0
+      setSummary(summaryData)
+      setRevenueTrend(trendData)
+      setTopClients(clientsData)
+      setPendingInvoices(pendingData)
+    } catch (error) {
+      console.error('Error loading analytics:', error)
+      toast.error('Error al cargar estadísticas')
+    } finally {
+      setLoading(false)
     }
-  }, [invoices, payments, companyId, selectedPeriod])
+  }
 
-  const netCashFlow = analytics.paidRevenue - analytics.paidExpenses
-  const profitMargin = analytics.totalRevenue > 0 ? ((analytics.totalRevenue - analytics.totalExpenses) / analytics.totalRevenue) * 100 : 0
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-muted rounded w-64"></div>
+            <div className="grid grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  if (authLoading) return null
-  if (!isAuthenticated) return null
+  if (!isAuthenticated || !summary) return null
+
+  const netBalance = summary.balance
+  const profitMargin = summary.sales.total > 0 
+    ? ((summary.sales.total - summary.purchases.total) / summary.sales.total) * 100 
+    : 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
@@ -225,17 +90,9 @@ export default function AnalyticsPage() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Estadísticas y Análisis</h1>
-              <p className="text-muted-foreground">Dashboard financiero en tiempo real</p>
+              <p className="text-muted-foreground">Período: {summary.period.month}</p>
             </div>
           </div>
-          
-          <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <TabsList>
-              <TabsTrigger value="month">Este Mes</TabsTrigger>
-              <TabsTrigger value="quarter">Trimestre</TabsTrigger>
-              <TabsTrigger value="year">Año</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
         {/* KPIs Principales */}
@@ -244,12 +101,12 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Ingresos Totales</p>
+                  <p className="text-sm text-muted-foreground">Ventas del Mes</p>
                   <p className="text-2xl font-bold text-green-600">
-                    ${analytics.totalRevenue.toLocaleString()}
+                    ${summary.sales.total.toLocaleString('es-AR')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {analytics.issuedCount} facturas emitidas
+                    {summary.sales.count} facturas
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-500" />
@@ -261,12 +118,12 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Gastos Totales</p>
+                  <p className="text-sm text-muted-foreground">Compras del Mes</p>
                   <p className="text-2xl font-bold text-red-600">
-                    ${analytics.totalExpenses.toLocaleString()}
+                    ${summary.purchases.total.toLocaleString('es-AR')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {analytics.receivedCount} facturas recibidas
+                    {summary.purchases.count} facturas
                   </p>
                 </div>
                 <TrendingDown className="h-8 w-8 text-red-500" />
@@ -278,15 +135,15 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Flujo de Caja Neto</p>
-                  <p className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ${netCashFlow.toLocaleString()}
+                  <p className="text-sm text-muted-foreground">Balance Neto</p>
+                  <p className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${netBalance.toLocaleString('es-AR')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Cobrado - Pagado
+                    Ventas - Compras
                   </p>
                 </div>
-                <DollarSign className={`h-8 w-8 ${netCashFlow >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <DollarSign className={`h-8 w-8 ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </CardContent>
           </Card>
@@ -295,12 +152,12 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Margen de Ganancia</p>
+                  <p className="text-sm text-muted-foreground">Margen</p>
                   <p className={`text-2xl font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {profitMargin.toFixed(1)}%
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Rentabilidad bruta
+                    Rentabilidad
                   </p>
                 </div>
                 <BarChart3 className={`h-8 w-8 ${profitMargin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
@@ -310,149 +167,169 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Estado de Cobros */}
+          {/* Gráfico de Tendencia */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Tendencia de Facturación (Últimos 6 Meses)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={revenueTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
+                  <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Top Clientes */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                Estado de Cobros
+                <Users className="h-5 w-5 text-blue-500" />
+                Top 5 Clientes
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-green-800">Cobrado</p>
-                  <p className="text-sm text-green-600">{analytics.paidInvoicesCount} facturas</p>
-                </div>
-                <p className="text-lg font-bold text-green-700">
-                  ${analytics.paidRevenue.toLocaleString()}
+            <CardContent>
+              {topClients.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay datos de clientes
                 </p>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-yellow-800">Pendiente</p>
-                  <p className="text-sm text-yellow-600">{analytics.pendingInvoicesCount} facturas</p>
+              ) : (
+                <div className="space-y-3">
+                  {topClients.map((client, index) => (
+                    <div key={client.client_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium">{client.client_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {client.invoice_count} facturas
+                          </p>
+                        </div>
+                      </div>
+                      <p className="font-bold text-green-600">
+                        ${client.total_amount.toLocaleString('es-AR')}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-lg font-bold text-yellow-700">
-                  ${analytics.pendingRevenue.toLocaleString()}
-                </p>
-              </div>
+              )}
+            </CardContent>
+          </Card>
 
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-blue-800">Retenciones</p>
-                  <p className="text-sm text-blue-600">Aplicadas en pagos</p>
+          {/* Alertas de Vencimientos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Alertas de Vencimientos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingInvoices && (
+                <div className="space-y-3">
+                  <div className="p-3 bg-yellow-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-yellow-800">Facturas a Cobrar</p>
+                        <p className="text-xs text-yellow-600">Pendientes de pago</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-yellow-700">
+                          {pendingInvoices.to_collect}
+                        </p>
+                        <p className="text-xs text-yellow-600">facturas</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-orange-800">Facturas a Pagar</p>
+                        <p className="text-xs text-orange-600">Aprobadas sin pagar</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-orange-700">
+                          {pendingInvoices.to_pay}
+                        </p>
+                        <p className="text-xs text-orange-600">facturas</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-green-800">Pendientes de Aprobar</p>
+                        <p className="text-xs text-green-600">Requieren revisión</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-700">
+                          {pendingInvoices.pending_approvals}
+                        </p>
+                        <p className="text-xs text-green-600">facturas</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-blue-700">
-                  ${analytics.totalRetentions.toLocaleString()}
-                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Promedios */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-indigo-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Promedio por Venta</p>
+                  <p className="text-xl font-bold">
+                    ${summary.sales.average.toLocaleString('es-AR')}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Métricas Operativas */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-500" />
-                Métricas Operativas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-purple-50 rounded-lg">
-                  <Users className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-purple-700">{analytics.uniqueClients}</p>
-                  <p className="text-sm text-purple-600">Clientes Activos</p>
-                </div>
-                
-                <div className="text-center p-3 bg-orange-50 rounded-lg">
-                  <FileText className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-orange-700">{analytics.uniqueProviders}</p>
-                  <p className="text-sm text-orange-600">Proveedores</p>
-                </div>
-              </div>
-
-              <div className="p-3 bg-indigo-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-indigo-500" />
-                    <span className="font-medium text-indigo-800">Tiempo Promedio de Cobro</span>
-                  </div>
-                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-                    {Math.round(analytics.avgPaymentDays)} días
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="p-2 bg-gray-50 rounded text-center">
-                  <p className="font-medium">Tasa de Cobro</p>
-                  <p className="text-lg font-bold">
-                    {analytics.totalRevenue > 0 
-                      ? ((analytics.paidRevenue / analytics.totalRevenue) * 100).toFixed(1)
-                      : 0}%
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-purple-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Promedio por Compra</p>
+                  <p className="text-xl font-bold">
+                    ${summary.purchases.average.toLocaleString('es-AR')}
                   </p>
                 </div>
-                <div className="p-2 bg-gray-50 rounded text-center">
-                  <p className="font-medium">Eficiencia</p>
-                  <p className="text-lg font-bold">
-                    {analytics.issuedCount > 0 
-                      ? ((analytics.paidInvoicesCount / analytics.issuedCount) * 100).toFixed(1)
-                      : 0}%
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Users className="h-8 w-8 text-green-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Clientes Activos</p>
+                  <p className="text-xl font-bold">
+                    {topClients.length}
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Resumen Ejecutivo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5 text-indigo-500" />
-              Resumen Ejecutivo
-            </CardTitle>
-            <CardDescription>
-              Análisis automático basado en los datos del período seleccionado
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-green-700">Fortalezas</h4>
-                <ul className="text-sm space-y-1">
-                  {netCashFlow > 0 && <li>• Flujo de caja positivo</li>}
-                  {analytics.avgPaymentDays < 30 && <li>• Cobros rápidos (&lt; 30 días)</li>}
-                  {profitMargin > 20 && <li>• Margen saludable (&gt; 20%)</li>}
-                  {analytics.uniqueClients > 5 && <li>• Base diversificada de clientes</li>}
-                </ul>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold text-yellow-700">Oportunidades</h4>
-                <ul className="text-sm space-y-1">
-                  {analytics.pendingRevenue > analytics.paidRevenue && <li>• Acelerar cobros pendientes</li>}
-                  {analytics.avgPaymentDays > 45 && <li>• Mejorar términos de pago</li>}
-                  {analytics.uniqueClients < 10 && <li>• Expandir base de clientes</li>}
-                  <li>• Optimizar retenciones fiscales</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold text-red-700">Alertas</h4>
-                <ul className="text-sm space-y-1">
-                  {netCashFlow < 0 && <li>• Flujo de caja negativo</li>}
-                  {profitMargin < 10 && <li>• Margen bajo (&lt; 10%)</li>}
-                  {analytics.pendingInvoicesCount > analytics.paidInvoicesCount && <li>• Muchas facturas pendientes</li>}
-                  {analytics.avgPaymentDays > 60 && <li>• Cobros muy lentos (&gt; 60 días)</li>}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

@@ -242,7 +242,7 @@ export default function RegisterPaymentDialog({
                     </div>
                   ) : (
                     <div className="flex gap-2 flex-wrap">
-                    {companyConfig?.vatRetention > 0 && !retentions.find(r => r.type === 'vat_retention') && (
+                    {companyConfig && !retentions.find(r => r.type === 'vat_retention') && (
                       <Button
                         type="button"
                         variant="outline"
@@ -252,15 +252,15 @@ export default function RegisterPaymentDialog({
                           setRetentions([...retentions, {
                             type: 'vat_retention',
                             name: 'Retención IVA',
-                            rate: companyConfig.vatRetention,
-                            amount: invoiceTaxes * companyConfig.vatRetention / 100
+                            rate: companyConfig.vatRetention || 0,
+                            amount: invoiceTaxes * (companyConfig.vatRetention || 0) / 100
                           }]);
                         }}
                       >
                         + Ret. IVA
                       </Button>
                     )}
-                    {companyConfig?.incomeTaxRetention > 0 && !retentions.find(r => r.type === 'income_tax_retention') && (
+                    {companyConfig && !retentions.find(r => r.type === 'income_tax_retention') && (
                       <Button
                         type="button"
                         variant="outline"
@@ -270,15 +270,15 @@ export default function RegisterPaymentDialog({
                           setRetentions([...retentions, {
                             type: 'income_tax_retention',
                             name: 'Retención Ganancias',
-                            rate: companyConfig.incomeTaxRetention,
-                            amount: invoiceTotal * companyConfig.incomeTaxRetention / 100
+                            rate: companyConfig.incomeTaxRetention || 0,
+                            amount: invoiceTotal * (companyConfig.incomeTaxRetention || 0) / 100
                           }]);
                         }}
                       >
                         + Ret. Ganancias
                       </Button>
                     )}
-                    {companyConfig?.grossIncomeRetention > 0 && !retentions.find(r => r.type === 'gross_income_retention') && (
+                    {companyConfig && !retentions.find(r => r.type === 'gross_income_retention') && (
                       <Button
                         type="button"
                         variant="outline"
@@ -288,15 +288,15 @@ export default function RegisterPaymentDialog({
                           setRetentions([...retentions, {
                             type: 'gross_income_retention',
                             name: 'Retención IIBB',
-                            rate: companyConfig.grossIncomeRetention,
-                            amount: invoiceTotal * companyConfig.grossIncomeRetention / 100
+                            rate: companyConfig.grossIncomeRetention || 0,
+                            amount: invoiceTotal * (companyConfig.grossIncomeRetention || 0) / 100
                           }]);
                         }}
                       >
                         + Ret. IIBB
                       </Button>
                     )}
-                    {companyConfig?.socialSecurityRetention > 0 && !retentions.find(r => r.type === 'suss_retention') && (
+                    {companyConfig && !retentions.find(r => r.type === 'suss_retention') && (
                       <Button
                         type="button"
                         variant="outline"
@@ -306,8 +306,8 @@ export default function RegisterPaymentDialog({
                           setRetentions([...retentions, {
                             type: 'suss_retention',
                             name: 'Retención SUSS',
-                            rate: companyConfig.socialSecurityRetention,
-                            amount: invoiceTotal * companyConfig.socialSecurityRetention / 100
+                            rate: companyConfig.socialSecurityRetention || 0,
+                            amount: invoiceTotal * (companyConfig.socialSecurityRetention || 0) / 100
                           }]);
                         }}
                       >

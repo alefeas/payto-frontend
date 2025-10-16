@@ -41,6 +41,7 @@ export default function CompanyPage() {
   const [loading, setLoading] = useState(true)
   const [isAfipVerified, setIsAfipVerified] = useState(false)
   const [certificate, setCertificate] = useState<any>(null)
+  const [badges, setBadges] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -54,6 +55,20 @@ export default function CompanyPage() {
     }
   }, [isAuthenticated, companyId])
 
+  const loadBadges = async () => {
+    try {
+      const { analyticsService } = await import('@/services/analytics.service')
+      const data = await analyticsService.getPendingInvoices(companyId)
+      setBadges({
+        pending_payments: data.to_pay || 0,
+        pending_collections: data.to_collect || 0,
+        pending_approvals: data.pending_approvals || 0
+      })
+    } catch (error) {
+      console.error('Error loading badges:', error)
+    }
+  }
+
   const loadCompany = async () => {
     try {
       setLoading(true)
@@ -62,6 +77,9 @@ export default function CompanyPage() {
       setCompany(found || null)
       
       if (found) {
+        // Load badges
+        loadBadges()
+        
         // Try to get certificate details if user has permission
         if (['owner', 'administrator'].includes(found.role || '')) {
           try {
@@ -117,7 +135,17 @@ export default function CompanyPage() {
   const canIssueInvoices = !!company.taxCondition && company.taxCondition !== 'final_consumer'
   const userRole = company.role as CompanyRole
 
-  const allMenuItems = [
+  interface MenuItem {
+    title: string
+    description: string
+    icon: any
+    color: string
+    badge?: number | string
+    permission?: string
+    action: () => void
+  }
+
+  const allMenuItems: MenuItem[] = [
     ...(canIssueInvoices && hasPermission(userRole, 'invoices.create') ? [{
       title: "Emitir Comprobante",
       description: "Facturas, NC, ND, Recibos, etc.",
@@ -147,7 +175,7 @@ export default function CompanyPage() {
       description: "Gestionar pagos a proveedores",
       icon: CreditCard,
       color: "bg-orange-500",
-      badge: 0,
+      badge: 'pending_payments',
       permission: 'payments.create' as const,
       action: () => router.push(`/company/${company.id}/payments`)
     }] : []),
@@ -156,7 +184,7 @@ export default function CompanyPage() {
       description: "Gestionar cobros de clientes",
       icon: Eye,
       color: "bg-yellow-500",
-      badge: 0,
+      badge: 'pending_collections',
       permission: 'payments.view' as const,
       action: () => router.push(`/company/${company.id}/collections`)
     }] : []),
@@ -165,7 +193,7 @@ export default function CompanyPage() {
       description: "Revisar facturas de proveedores",
       icon: CheckSquare,
       color: "bg-green-500",
-      badge: 0,
+      badge: 'pending_approvals',
       permission: 'invoices.approve' as const,
       action: () => router.push(`/company/${company.id}/approve-invoices`)
     }] : []),
@@ -389,32 +417,30 @@ export default function CompanyPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {menuItems.map((item, index) => (
+              {menuItems.map((item: MenuItem, index) => (
                 <Card 
                   key={index} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className="cursor-pointer hover:shadow-md transition-shadow relative"
                   onClick={item.action}
                 >
+                  {typeof item.badge === 'string' && badges[item.badge] !== undefined && badges[item.badge] > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[20px] flex items-center justify-center">
+                      {badges[item.badge]}
+                    </div>
+                  )}
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
                       <div className={`p-3 rounded-lg ${item.color}`}>
                         <item.icon className="h-6 w-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{item.title}</h3>
-                          {item.badge !== undefined && item.badge > 0 && (
-                            <div className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                              {item.badge}
-                            </div>
-                          )}
-                        </div>
-                        {item.badge !== undefined && item.badge === 0 && (
-                          <div className="text-xs text-green-600 font-medium mb-1">
+                        <h3 className="font-semibold mb-1">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                        {typeof item.badge === 'string' && badges[item.badge] !== undefined && badges[item.badge] === 0 && (
+                          <div className="text-xs text-green-600 font-medium mt-2">
                             ✓ Todo al día
                           </div>
                         )}
-                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                       </div>
                     </div>
                   </CardContent>

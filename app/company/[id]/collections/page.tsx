@@ -34,16 +34,12 @@ export default function CollectionsPage() {
     try {
       setLoading(true);
       
-      // Load pending invoices (approved, not paid, EMITIDAS por esta empresa)
-      const response = await invoiceService.getInvoices(companyId, 'approved');
+      // Load pending invoices (issued/approved, not paid, EMITIDAS por esta empresa)
+      const response = await invoiceService.getInvoices(companyId);
       const invoices = response.data || response;
-      console.log('COLLECTIONS - All:', invoices);
       const filtered = Array.isArray(invoices) ? invoices.filter((inv: any) => {
-        const match = inv.status === 'approved' && inv.issuer_company_id === companyId && inv.receiver_company_id !== companyId;
-        if (match) console.log('COLLECTION Invoice:', inv.id, 'Client:', inv.client);
-        return match;
+        return (inv.status === 'issued' || inv.status === 'approved') && inv.issuer_company_id === companyId;
       }) : [];
-      console.log('COLLECTIONS - Filtered:', filtered);
       setPendingInvoices(filtered);
 
       // Load collected invoices
