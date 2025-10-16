@@ -11,7 +11,7 @@ import {
   Plus,
   Users,
   Settings,
-  Calendar,
+
   AlertTriangle,
   CheckSquare,
   Activity,
@@ -183,13 +183,6 @@ export default function CompanyPage() {
       icon: BarChart3,
       color: "bg-indigo-500",
       action: () => router.push(`/company/${company.id}/analytics`)
-    },
-    {
-      title: "Vencimientos",
-      description: "Control de fechas y cobros pendientes",
-      icon: Calendar,
-      color: "bg-pink-500",
-      action: () => router.push(`/company/${company.id}/due-invoices`)
     },
     ...(company.taxCondition === 'registered_taxpayer' ? [{
       title: "Libro IVA",
