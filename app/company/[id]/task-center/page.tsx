@@ -140,8 +140,8 @@ export default function TaskCenterPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-bold">${invoice.amount.toLocaleString()}</span>
-                      <Button size="sm" onClick={() => router.push(`/company/${companyId}/rejected-invoices`)}>
-                        Resolver
+                      <Button size="sm" onClick={() => router.push(`/company/${companyId}/invoices`)}>
+                        Ver Detalles
                       </Button>
                     </div>
                   </div>

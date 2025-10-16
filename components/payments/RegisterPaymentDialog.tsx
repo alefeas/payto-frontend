@@ -37,6 +37,7 @@ export default function RegisterPaymentDialog({
   onSuccess
 }: RegisterPaymentDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
   const [activeTab, setActiveTab] = useState('payment');
   const [retentions, setRetentions] = useState<Retention[]>([]);
   const [companyConfig, setCompanyConfig] = useState<any>(null);
@@ -55,11 +56,13 @@ export default function RegisterPaymentDialog({
 
   const loadCompanyConfig = async () => {
     try {
+      setLoadingConfig(true);
       const company = await companyService.getCompany(companyId);
       setCompanyConfig(company);
-      // No calcular retenciones automáticamente
     } catch (error) {
       console.error('Error loading company config:', error);
+    } finally {
+      setLoadingConfig(false);
     }
   };
 
@@ -233,7 +236,12 @@ export default function RegisterPaymentDialog({
                     </>
                   )}
                   
-                  <div className="flex gap-2 flex-wrap">
+                  {loadingConfig ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 flex-wrap">
                     {companyConfig?.vatRetention > 0 && !retentions.find(r => r.type === 'vat_retention') && (
                       <Button
                         type="button"
@@ -306,7 +314,8 @@ export default function RegisterPaymentDialog({
                         + Ret. SUSS
                       </Button>
                     )}
-                  </div>
+                    </div>
+                  )}
                   
                   <div className="flex justify-between text-lg font-bold">
                     <span>Neto a Pagar:</span>

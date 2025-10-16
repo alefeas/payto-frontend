@@ -169,15 +169,6 @@ export default function CompanyPage() {
       permission: 'invoices.approve' as const,
       action: () => router.push(`/company/${company.id}/approve-invoices`)
     }] : []),
-    ...(canIssueInvoices && hasPermission(userRole, 'invoices.view') ? [{
-      title: "Facturas Rechazadas",
-      description: "Gestionar facturas que requieren atención",
-      icon: AlertTriangle,
-      color: "bg-red-500",
-      badge: 0,
-      permission: 'invoices.view' as const,
-      action: () => router.push(`/company/${company.id}/rejected-invoices`)
-    }] : []),
     ...(hasPermission(userRole, 'audit.view') ? [{
       title: "Registro de Auditoría",
       description: "Historial de actividades del sistema",
