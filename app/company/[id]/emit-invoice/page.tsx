@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Plus, Trash2, Calculator, FileText, Shield, Loader2 } from "lucide-react"
-import { AfipVerificationGuard } from "@/components/afip-verification-guard"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -46,11 +46,11 @@ export default function CreateInvoicePage() {
   const [currentCompany, setCurrentCompany] = useState<CompanyData | null>(null)
   const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
   const [savedClients, setSavedClients] = useState<Client[]>([])
-  const [availableTypes, setAvailableTypes] = useState<any[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [associateInvoice, setAssociateInvoice] = useState(false)
 
   const [formData, setFormData] = useState({
     voucherType: '',
@@ -66,6 +66,57 @@ export default function CreateInvoicePage() {
     exchangeRate: '',
     notes: ''
   })
+
+  // Tipos de comprobantes hardcodeados (sincronizados con backend)
+  const availableTypes = [
+    // FACTURAS
+    { code: '001', name: 'Factura A', category: 'invoice' },
+    { code: '006', name: 'Factura B', category: 'invoice' },
+    { code: '011', name: 'Factura C', category: 'invoice' },
+    { code: '051', name: 'Factura M', category: 'invoice' },
+    { code: '019', name: 'Factura E (Exportación)', category: 'invoice' },
+    
+    // NOTAS DE CRÉDITO
+    { code: '003', name: 'Nota de Crédito A', category: 'credit_note' },
+    { code: '008', name: 'Nota de Crédito B', category: 'credit_note' },
+    { code: '013', name: 'Nota de Crédito C', category: 'credit_note' },
+    { code: '053', name: 'Nota de Crédito M', category: 'credit_note' },
+    { code: '021', name: 'Nota de Crédito E', category: 'credit_note' },
+    
+    // NOTAS DE DÉBITO
+    { code: '002', name: 'Nota de Débito A', category: 'debit_note' },
+    { code: '007', name: 'Nota de Débito B', category: 'debit_note' },
+    { code: '012', name: 'Nota de Débito C', category: 'debit_note' },
+    { code: '052', name: 'Nota de Débito M', category: 'debit_note' },
+    { code: '020', name: 'Nota de Débito E', category: 'debit_note' },
+    
+    // RECIBOS
+    { code: '004', name: 'Recibo A', category: 'receipt' },
+    { code: '009', name: 'Recibo B', category: 'receipt' },
+    { code: '015', name: 'Recibo C', category: 'receipt' },
+    { code: '049', name: 'Recibo M', category: 'receipt' },
+    
+    // FACTURA DE CRÉDITO ELECTRÓNICA MiPyME
+    { code: '201', name: 'Factura de Crédito Electrónica MiPyME A', category: 'fce_mipyme' },
+    { code: '206', name: 'Factura de Crédito Electrónica MiPyME B', category: 'fce_mipyme' },
+    { code: '211', name: 'Factura de Crédito Electrónica MiPyME C', category: 'fce_mipyme' },
+    
+    { code: '203', name: 'Nota de Crédito FCE MiPyME A', category: 'credit_note' },
+    { code: '208', name: 'Nota de Crédito FCE MiPyME B', category: 'credit_note' },
+    { code: '213', name: 'Nota de Crédito FCE MiPyME C', category: 'credit_note' },
+    
+    { code: '207', name: 'Nota de Débito FCE MiPyME A', category: 'debit_note' },
+    { code: '212', name: 'Nota de Débito FCE MiPyME B', category: 'debit_note' },
+    { code: '217', name: 'Nota de Débito FCE MiPyME C', category: 'debit_note' },
+    
+    // REMITO ELECTRÓNICO
+    { code: '995', name: 'Remito Electrónico', category: 'remito' },
+    
+    // BIENES USADOS
+    { code: '027', name: 'Liquidación Bienes Usados A', category: 'used_goods' },
+    { code: '028', name: 'Liquidación Bienes Usados B', category: 'used_goods' },
+    { code: '030', name: 'Comprobante Compra Bienes Usados', category: 'used_goods_purchase' }
+  ]
 
 
   const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([])
@@ -114,10 +165,7 @@ export default function CreateInvoicePage() {
           socialSecurityRetention: company.socialSecurityRetention || 0
         })
         
-        // Load available voucher types
-        const typesResponse = await voucherService.getAvailableTypes(companyId)
-        const types = typesResponse.types || []
-        setAvailableTypes(Object.values(types))
+        // Tipos hardcodeados, no necesitamos cargarlos
         
         // Load connected companies
         try {
@@ -171,26 +219,7 @@ export default function CreateInvoicePage() {
     }
   }, [companyId, isAuthenticated])
 
-  // Load available voucher types
-  useEffect(() => {
-    const loadVoucherTypes = async () => {
-      if (!companyId || !isAuthenticated) return
-      try {
-        const response = await voucherService.getAvailableTypes(companyId)
-        const types = Object.entries(response.types).map(([key, type]: [string, any]) => ({
-          key,
-          code: type.code,
-          name: type.name,
-          category: type.category,
-          requires_association: type.requires_association || false
-        }))
-        setAvailableTypes(types)
-      } catch (error) {
-        console.error('Error loading voucher types:', error)
-      }
-    }
-    loadVoucherTypes()
-  }, [companyId, isAuthenticated])
+
 
   useEffect(() => {
     if (currentCompany && !isInitialized) {
@@ -292,9 +321,9 @@ export default function CreateInvoicePage() {
     setPerceptions(newPerceptions)
   }
 
-  const requiresAssociation = Array.isArray(availableTypes) 
-    ? availableTypes.find(t => t.code === formData.voucherType)?.requires_association 
-    : false
+  const selectedType = availableTypes.find(t => t.code === formData.voucherType)
+  const isNoteType = selectedType?.category === 'credit_note' || selectedType?.category === 'debit_note'
+  const showClientSelector = !isNoteType || (isNoteType && !associateInvoice)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -304,12 +333,12 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (requiresAssociation && !formData.relatedInvoiceId) {
+    if (isNoteType && associateInvoice && !formData.relatedInvoiceId) {
       toast.error('Debe seleccionar la factura a asociar')
       return
     }
 
-    if (!requiresAssociation && !formData.clientData?.client_id && !formData.receiverCompanyId) {
+    if (!formData.clientData?.client_id && !formData.receiverCompanyId) {
       toast.error('Debe seleccionar un cliente')
       return
     }
@@ -333,7 +362,7 @@ export default function CreateInvoicePage() {
 
     const isExistingClient = formData.clientData?.client_id
     
-    const payload = requiresAssociation ? {
+    const payload = (isNoteType && associateInvoice) ? {
       voucher_type: formData.voucherType,
       related_invoice_id: formData.relatedInvoiceId,
       sales_point: currentCompany?.default_sales_point || 1,
@@ -374,11 +403,11 @@ export default function CreateInvoicePage() {
     }
 
     try {
-      const result = requiresAssociation 
+      const result = (isNoteType && associateInvoice)
         ? await voucherService.createVoucher(companyId, payload as any)
         : await invoiceService.createInvoice(companyId, payload as any)
       
-      const invoice = requiresAssociation ? result : result.invoice
+      const invoice = (isNoteType && associateInvoice) ? result : result.invoice
       
       if (invoice.afip_status === 'approved') {
         toast.success('Comprobante emitido exitosamente', {
@@ -416,11 +445,6 @@ export default function CreateInvoicePage() {
           </div>
         </div>
 
-        <AfipVerificationGuard 
-          isVerified={cert?.isActive || false} 
-          companyId={companyId}
-          featureName="la emisión de facturas electrónicas"
-        >
           <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datos Básicos */}
           <Card>
@@ -433,8 +457,11 @@ export default function CreateInvoicePage() {
                 <Label>Tipo de Comprobante *</Label>
                 <Select 
                   value={formData.voucherType} 
-                  onValueChange={(value) => setFormData({...formData, voucherType: value, relatedInvoiceId: ''})}
-                  disabled={isLoadingData}
+                  onValueChange={(value) => {
+                    setFormData({...formData, voucherType: value, relatedInvoiceId: ''})
+                    setAssociateInvoice(false)
+                  }}
+
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione tipo de comprobante" />
@@ -448,7 +475,6 @@ export default function CreateInvoicePage() {
                             {type.category === 'invoice' && 'Factura'}
                             {type.category === 'credit_note' && 'Nota de Crédito'}
                             {type.category === 'debit_note' && 'Nota de Débito'}
-                            {type.category === 'receipt' && 'Recibo'}
                           </span>
                         </div>
                       </SelectItem>
@@ -474,7 +500,33 @@ export default function CreateInvoicePage() {
                 </Select>
               </div>
 
-              {requiresAssociation ? (
+              {isNoteType && (
+                <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="associateInvoice"
+                      checked={associateInvoice}
+                      onChange={(e) => {
+                        setAssociateInvoice(e.target.checked)
+                        if (!e.target.checked) {
+                          setFormData({ ...formData, relatedInvoiceId: '' })
+                          setSelectedInvoice(null)
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="associateInvoice" className="cursor-pointer">
+                      Asociar a una factura existente
+                    </Label>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Opcional: Asociá esta nota a una factura específica para mejor trazabilidad
+                  </p>
+                </div>
+              )}
+
+              {isNoteType && associateInvoice && (
                 <InvoiceSelector
                   companyId={companyId}
                   voucherType={formData.voucherType}
@@ -483,7 +535,9 @@ export default function CreateInvoicePage() {
                     setFormData({ ...formData, relatedInvoiceId: invoice?.id || '' })
                   }}
                 />
-              ) : formData.voucherType && (
+              )}
+
+              {showClientSelector && (
                 <div className="space-y-2">
                   <Label>Cliente *</Label>
                   <ClientSelector
@@ -849,7 +903,6 @@ export default function CreateInvoicePage() {
               </Button>
             </div>
           </form>
-        </AfipVerificationGuard>
       </div>
     </div>
   )

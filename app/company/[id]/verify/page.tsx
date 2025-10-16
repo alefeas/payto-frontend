@@ -54,6 +54,14 @@ export default function VerifyCompanyPage() {
     }
   }, [isAuthenticated, authLoading, id, router])
 
+  // Verificar que el usuario sea owner o admin
+  useEffect(() => {
+    if (userRole && userRole !== 'owner' && userRole !== 'administrator') {
+      toast.error('No tienes permisos para acceder a esta página')
+      router.push(`/company/${id}`)
+    }
+  }, [userRole, id, router])
+
   const loadData = async () => {
     try {
       setIsLoading(true)
@@ -289,7 +297,7 @@ export default function VerifyCompanyPage() {
           </CardContent>
         </Card>
 
-        {!isVerified && (
+        {!isVerified && (userRole === 'owner' || userRole === 'administrator') && (
           <Card>
             <CardHeader>
               <CardTitle>Configurar Certificado AFIP</CardTitle>
