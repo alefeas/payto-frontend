@@ -11,7 +11,6 @@ import {
   Plus,
   Users,
   Settings,
-
   AlertTriangle,
   CheckSquare,
   Activity,
@@ -346,23 +345,19 @@ export default function CompanyPage() {
           </Card>
         </div>
 
-        {/* Banner de Estado de Verificación AFIP - Solo para admin */}
-        {hasPermission(userRole, 'company.view_settings') && (
-          isAfipVerified ? (
-            <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-green-900 text-sm">
-                  Verificado {certificate?.isSelfSigned ? '(Autofirmado)' : 'con AFIP'} - {certificate?.environment === 'production' ? 'Producción' : 'Testing'}
-                </p>
-                <p className="text-xs text-green-800 mt-0.5">
-                  {certificate?.isSelfSigned 
-                    ? 'Solo para desarrollo. No podrás facturar con AFIP.' 
-                    : certificate?.environment === 'production'
-                      ? 'Facturas legalmente válidas habilitadas.'
-                      : 'Ambiente de prueba. Facturas sin validez legal.'}
-                </p>
-              </div>
+        {/* Banner de Estado de Verificación AFIP - Visible para todos */}
+        {isAfipVerified ? (
+          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-green-900 text-sm">
+                ✓ Cuenta Verificada con AFIP
+              </p>
+              <p className="text-xs text-green-800 mt-0.5">
+                Todas las funciones están habilitadas. Podés emitir facturas electrónicas oficiales y consultar datos fiscales automáticamente.
+              </p>
+            </div>
+            {hasPermission(userRole, 'company.view_settings') && (
               <Button 
                 size="sm" 
                 variant="outline"
@@ -371,26 +366,30 @@ export default function CompanyPage() {
               >
                 Ver Detalles
               </Button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <Eye className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-blue-900 text-sm">🔓 Modo Vista Previa Activo</p>
+              <p className="text-xs text-blue-800 mt-1">
+                Podés explorar todas las funciones del sistema, pero para usarlas necesitás verificar con AFIP:
+              </p>
+              <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-4">
+                <li>• Emitir facturas electrónicas oficiales con CAE</li>
+                <li>• Consultar datos fiscales automáticos (CUIT, condición IVA)</li>
+                <li>• Validar clientes y proveedores con AFIP</li>
+              </ul>
             </div>
-          ) : (
-            <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <XCircle className="h-5 w-5 text-orange-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-orange-900 text-sm">Sin Verificar AFIP</p>
-                <p className="text-xs text-orange-800 mt-0.5">
-                  No podrás usar facturación electrónica ni consultar datos automáticos de clientes/proveedores.
-                </p>
-              </div>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="border-orange-600 text-orange-700 hover:bg-orange-100 flex-shrink-0"
-                onClick={() => router.push(`/company/${company.id}/verify`)}
-              >
-                Verificar
-              </Button>
-            </div>
-          )
+            <Button 
+              size="sm" 
+              className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${company.id}/verify`)}
+            >
+              Verificar con AFIP
+            </Button>
+          </div>
         )}
 
         {/* Alerta para Consumidor Final */}

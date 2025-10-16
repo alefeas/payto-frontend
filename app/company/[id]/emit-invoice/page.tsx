@@ -821,31 +821,47 @@ export default function CreateInvoicePage() {
 
           {/* Información sobre Autorización AFIP */}
           {!cert?.isActive ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-orange-50 border-2 border-orange-300 rounded-lg">
               <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-red-600 mt-0.5" />
+                <Shield className="h-6 w-6 text-orange-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-red-800">
-                    ⚠️ Certificado AFIP Requerido
+                  <p className="text-sm font-semibold text-orange-900">
+                    🔒 Función Bloqueada - Vista Previa
                   </p>
-                  <p className="text-xs text-red-700 mt-2">
-                    <strong>No puedes emitir facturas sin un certificado AFIP válido.</strong>
+                  <p className="text-sm text-orange-800 mt-2">
+                    Estás viendo cómo funciona la emisión de facturas electrónicas. Para emitir comprobantes reales con validez legal necesitás verificar tu cuenta con AFIP.
                   </p>
-                  <p className="text-xs text-red-600 mt-2">
-                    Ve a Configuración → AFIP/ARCA para subir tu certificado digital y poder emitir facturas electrónicas oficiales.
-                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <Button 
+                      type="button"
+                      size="sm"
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                      onClick={() => router.push(`/company/${companyId}/verify`)}
+                    >
+                      Verificar con AFIP
+                    </Button>
+                    <Button 
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="border-orange-600 text-orange-700 hover:bg-orange-50"
+                      onClick={() => router.push(`/company/${companyId}`)}
+                    >
+                      Volver al Dashboard
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                <Shield className="h-5 w-5 text-green-600 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-blue-800">
-                    ℹ️ Autorización con AFIP
+                  <p className="text-sm font-medium text-green-800">
+                    ✓ Listo para Emitir
                   </p>
-                  <ul className="text-xs text-blue-700 mt-2 space-y-1">
+                  <ul className="text-xs text-green-700 mt-2 space-y-1">
                     <li>• La factura se autoriza automáticamente con AFIP y obtiene CAE oficial</li>
                     <li>• Si AFIP rechaza la factura, NO se creará en el sistema</li>
                     <li>• El certificado está activo y configurado correctamente</li>
