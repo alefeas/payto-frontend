@@ -10,10 +10,9 @@ export interface VoucherType {
 
 export interface VoucherData {
   voucher_type: string
-  client_id: string
+  related_invoice_id: string
   sales_point: number
   issue_date: string
-  due_date?: string
   currency: string
   exchange_rate?: number
   notes?: string
@@ -23,7 +22,6 @@ export interface VoucherData {
     unit_price: number
     tax_rate: number
   }>
-  related_invoice_id?: string
 }
 
 export const voucherService = {
