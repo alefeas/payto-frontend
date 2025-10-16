@@ -374,20 +374,18 @@ export default function CompanyPage() {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-blue-900 text-sm">🔓 Modo Vista Previa Activo</p>
               <p className="text-xs text-blue-800 mt-1">
-                Podés explorar todas las funciones del sistema, pero para usarlas necesitás verificar con AFIP:
+                Podés explorar el sistema y ver cómo funciona cada sección, pero todas las acciones están bloqueadas hasta que verifiques tu cuenta con AFIP.
               </p>
-              <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-4">
-                <li>• Emitir facturas electrónicas oficiales con CAE</li>
-                <li>• Consultar datos fiscales automáticos (CUIT, condición IVA)</li>
-                <li>• Validar clientes y proveedores con AFIP</li>
-              </ul>
+              <p className="text-xs text-blue-700 mt-2 font-medium">
+                La verificación con AFIP garantiza la seguridad y legalidad de todas las operaciones en el sistema.
+              </p>
             </div>
             <Button 
               size="sm" 
               className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
               onClick={() => router.push(`/company/${company.id}/verify`)}
             >
-              Verificar con AFIP
+              Verificar Ahora
             </Button>
           </div>
         )}

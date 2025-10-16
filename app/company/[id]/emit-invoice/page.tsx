@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, Plus, Trash2, Calculator, FileText, Shield, Loader2 } from "lucide-react"
+import { AfipVerificationGuard } from "@/components/afip-verification-guard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -415,7 +416,12 @@ export default function CreateInvoicePage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <AfipVerificationGuard 
+          isVerified={cert?.isActive || false} 
+          companyId={companyId}
+          featureName="la emisión de facturas electrónicas"
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datos Básicos */}
           <Card>
             <CardHeader>
@@ -819,82 +825,31 @@ export default function CreateInvoicePage() {
             </CardContent>
           </Card>
 
-          {/* Información sobre Autorización AFIP */}
-          {!cert?.isActive ? (
-            <div className="p-4 bg-orange-50 border-2 border-orange-300 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Shield className="h-6 w-6 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-orange-900">
-                    🔒 Función Bloqueada - Vista Previa
-                  </p>
-                  <p className="text-sm text-orange-800 mt-2">
-                    Estás viendo cómo funciona la emisión de facturas electrónicas. Para emitir comprobantes reales con validez legal necesitás verificar tu cuenta con AFIP.
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <Button 
-                      type="button"
-                      size="sm"
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                      onClick={() => router.push(`/company/${companyId}/verify`)}
-                    >
-                      Verificar con AFIP
-                    </Button>
-                    <Button 
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="border-orange-600 text-orange-700 hover:bg-orange-50"
-                      onClick={() => router.push(`/company/${companyId}`)}
-                    >
-                      Volver al Dashboard
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            {/* Acciones */}
+            <div className="flex gap-4">
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Emitiendo...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Emitir Comprobante
+                  </>
+                )}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => router.push(`/company/${companyId}`)}
+              >
+                Cancelar
+              </Button>
             </div>
-          ) : (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-green-600 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-green-800">
-                    ✓ Listo para Emitir
-                  </p>
-                  <ul className="text-xs text-green-700 mt-2 space-y-1">
-                    <li>• La factura se autoriza automáticamente con AFIP y obtiene CAE oficial</li>
-                    <li>• Si AFIP rechaza la factura, NO se creará en el sistema</li>
-                    <li>• El certificado está activo y configurado correctamente</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Acciones */}
-          <div className="flex gap-4">
-            <Button type="submit" className="flex-1" disabled={isSubmitting || !cert?.isActive}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Emitiendo...
-                </>
-              ) : (
-                <>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Emitir Comprobante
-                </>
-              )}
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => router.push(`/company/${companyId}`)}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </form>
+          </form>
+        </AfipVerificationGuard>
       </div>
     </div>
   )
