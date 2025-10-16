@@ -41,6 +41,12 @@ export function VoucherTypeSelector({
         return 'Nota de Crédito'
       case 'debit_note':
         return 'Nota de Débito'
+      case 'fce_mipyme':
+        return 'FCE MiPyME'
+      case 'receipt':
+        return 'Recibo'
+      case 'invoice':
+        return 'Factura'
       default:
         return 'Comprobante'
     }

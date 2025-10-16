@@ -60,6 +60,7 @@ export default function CreateInvoicePage() {
     saveClient: false,
     emissionDate: '',
     dueDate: '',
+    paymentDueDate: '',
     currency: 'ARS' as Currency,
     exchangeRate: '',
     notes: ''
@@ -167,6 +168,27 @@ export default function CreateInvoicePage() {
     if (isAuthenticated) {
       loadData()
     }
+  }, [companyId, isAuthenticated])
+
+  // Load available voucher types
+  useEffect(() => {
+    const loadVoucherTypes = async () => {
+      if (!companyId || !isAuthenticated) return
+      try {
+        const response = await voucherService.getAvailableTypes(companyId)
+        const types = Object.entries(response.types).map(([key, type]: [string, any]) => ({
+          key,
+          code: type.code,
+          name: type.name,
+          category: type.category,
+          requires_association: type.requires_association || false
+        }))
+        setAvailableTypes(types)
+      } catch (error) {
+        console.error('Error loading voucher types:', error)
+      }
+    }
+    loadVoucherTypes()
   }, [companyId, isAuthenticated])
 
   useEffect(() => {
@@ -325,7 +347,7 @@ export default function CreateInvoicePage() {
         tax_rate: item.taxRate || 0
       }))
     } : {
-      client_id: isExistingClient ? formData.clientData.client_id : undefined,
+      client_id: isExistingClient ? formData.clientData?.client_id : undefined,
       receiver_company_id: formData.receiverCompanyId || undefined,
       client_data: !isExistingClient && formData.clientData ? formData.clientData : undefined,
       save_client: formData.saveClient,
@@ -333,6 +355,7 @@ export default function CreateInvoicePage() {
       sales_point: currentCompany?.default_sales_point || 1,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
+      payment_due_date: formData.paymentDueDate || undefined,
       currency: formData.currency,
       exchange_rate: formData.exchangeRate ? parseFloat(formData.exchangeRate) : undefined,
       notes: formData.notes,
@@ -512,6 +535,21 @@ export default function CreateInvoicePage() {
                     minDate={formData.emissionDate ? new Date(formData.emissionDate) : new Date()}
                   />
                 </div>
+
+                {availableTypes.find(t => t.code === formData.voucherType)?.category === 'fce_mipyme' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentDueDate">Fecha Venc. Pago (FCE) *</Label>
+                    <DatePicker
+                      date={formData.paymentDueDate ? new Date(formData.paymentDueDate) : undefined}
+                      onSelect={(date) => setFormData({...formData, paymentDueDate: date ? date.toISOString().split('T')[0] : ''})}
+                      placeholder="Fecha límite de pago"
+                      minDate={formData.emissionDate ? new Date(formData.emissionDate) : new Date()}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Obligatorio para FCE MiPyME
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Moneda y Cotización *</Label>
