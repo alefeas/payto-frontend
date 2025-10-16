@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock, Calendar, Download, RefreshCw } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock, Calendar as CalendarIcon, Download, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { DateRange } from "react-day-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { analyticsService, type AnalyticsSummary, type RevenueTrend, type TopClient, type PendingInvoices } from "@/services/analytics.service"
 import { toast } from "sonner"
@@ -22,7 +27,8 @@ export default function AnalyticsPage() {
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrend[]>([])
   const [topClients, setTopClients] = useState<TopClient[]>([])
   const [pendingInvoices, setPendingInvoices] = useState<PendingInvoices | null>(null)
-  const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('month')
+  const [period, setPeriod] = useState<'month' | 'quarter' | 'year' | 'custom'>('month')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
@@ -33,17 +39,29 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (isAuthenticated && companyId) {
+      if (period === 'custom' && (!dateRange?.from || !dateRange?.to)) {
+        return
+      }
       loadAnalytics()
     }
-  }, [isAuthenticated, companyId])
+  }, [isAuthenticated, companyId, period, dateRange])
 
   const loadAnalytics = async () => {
     try {
       setLoading(true)
+      
+      let startDate: string | undefined
+      let endDate: string | undefined
+      
+      if (period === 'custom' && dateRange?.from && dateRange?.to) {
+        startDate = format(dateRange.from, 'yyyy-MM-dd')
+        endDate = format(dateRange.to, 'yyyy-MM-dd')
+      }
+      
       const [summaryData, trendData, clientsData, pendingData] = await Promise.all([
-        analyticsService.getSummary(companyId),
-        analyticsService.getRevenueTrend(companyId),
-        analyticsService.getTopClients(companyId),
+        analyticsService.getSummary(companyId, period, startDate, endDate),
+        analyticsService.getRevenueTrend(companyId, period, startDate, endDate),
+        analyticsService.getTopClients(companyId, period, startDate, endDate),
         analyticsService.getPendingInvoices(companyId)
       ])
       
@@ -59,7 +77,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -76,7 +94,26 @@ export default function AnalyticsPage() {
     )
   }
 
-  if (!isAuthenticated || !summary) return null
+  if (!isAuthenticated) return null
+  
+  if (loading && !summary) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-muted rounded w-64"></div>
+            <div className="grid grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
+  if (!summary) return null
 
   const netBalance = summary.balance
   const profitMargin = summary.sales.total > 0 
@@ -95,6 +132,11 @@ export default function AnalyticsPage() {
               <h1 className="text-3xl font-bold">Estadísticas y Análisis</h1>
               <p className="text-muted-foreground">
                 Período: {(() => {
+                  if (period === 'custom' && dateRange?.from) {
+                    return dateRange.to 
+                      ? `${format(dateRange.from, 'dd/MM/yyyy', { locale: es })} - ${format(dateRange.to, 'dd/MM/yyyy', { locale: es })}`
+                      : format(dateRange.from, 'dd/MM/yyyy', { locale: es })
+                  }
                   const now = new Date()
                   const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
                   if (period === 'month') {
@@ -112,18 +154,47 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-2">
             <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
               <SelectTrigger className="w-[180px]">
-                <Calendar className="h-4 w-4 mr-2" />
+                <CalendarIcon className="h-4 w-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="month">Mes Actual</SelectItem>
                 <SelectItem value="quarter">Trimestre</SelectItem>
                 <SelectItem value="year">Año Completo</SelectItem>
+                <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon" onClick={loadAnalytics}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            {period === 'custom' && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yyyy", { locale: es })} - {format(dateRange.to, "dd/MM/yyyy", { locale: es })}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy", { locale: es })
+                      )
+                    ) : (
+                      <span>Seleccionar fechas</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                    locale={es}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
             <Button 
               variant="outline" 
               size="sm"
@@ -179,69 +250,97 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Ventas del Mes</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    ${summary.sales.total.toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {summary.sales.count} facturas
-                  </p>
+              {loading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Ventas {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
+                    </p>
+                    <p className="text-2xl font-bold text-green-600">
+                      ${summary.sales.total.toLocaleString('es-AR')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {summary.sales.count} facturas
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-green-500" />
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Compras del Mes</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    ${summary.purchases.total.toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {summary.purchases.count} facturas
-                  </p>
+              {loading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <TrendingDown className="h-8 w-8 text-red-500" />
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Compras {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
+                    </p>
+                    <p className="text-2xl font-bold text-red-600">
+                      ${summary.purchases.total.toLocaleString('es-AR')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {summary.purchases.count} facturas
+                    </p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-red-500" />
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Balance Neto</p>
-                  <p className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ${netBalance.toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ventas - Compras
-                  </p>
+              {loading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <DollarSign className={`h-8 w-8 ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Balance Neto</p>
+                    <p className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${netBalance.toLocaleString('es-AR')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ventas - Compras
+                    </p>
+                  </div>
+                  <DollarSign className={`h-8 w-8 ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Margen</p>
-                  <p className={`text-2xl font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {profitMargin.toFixed(1)}%
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Rentabilidad
-                  </p>
+              {loading ? (
+                <div className="flex items-center justify-center h-20">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <BarChart3 className={`h-8 w-8 ${profitMargin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Margen</p>
+                    <p className={`text-2xl font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {profitMargin.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Rentabilidad
+                    </p>
+                  </div>
+                  <BarChart3 className={`h-8 w-8 ${profitMargin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -254,17 +353,23 @@ export default function AnalyticsPage() {
               <CardDescription>Últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={revenueTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
-                  <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="flex items-center justify-center h-[200px]">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
+                    <Legend />
+                    <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
+                    <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -275,184 +380,88 @@ export default function AnalyticsPage() {
               <CardDescription>Balance mes a mes</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={revenueTrend.map((item, index, arr) => {
-                  const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => acc + (curr.sales - curr.purchases), 0)
-                  return {
-                    month: item.month,
-                    balance: accumulated
-                  }
-                })}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="flex items-center justify-center h-[200px]">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={revenueTrend.map((item, index, arr) => {
+                    const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => acc + (curr.sales - curr.purchases), 0)
+                    return {
+                      month: item.month,
+                      balance: accumulated
+                    }
+                  })}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
+                    <Legend />
+                    <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
+        </div>
 
-          {/* Top Clientes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
-                Top 5 Clientes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {topClients.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No hay datos de clientes
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {topClients.map((client, index) => (
-                    <div key={client.client_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium">{client.client_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {client.invoice_count} facturas
-                          </p>
-                        </div>
-                      </div>
-                      <p className="font-bold text-green-600">
-                        ${client.total_amount.toLocaleString('es-AR')}
+        {/* Alertas de Vencimientos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Alertas de Vencimientos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pendingInvoices && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-yellow-800">Facturas a Cobrar</p>
+                      <p className="text-xs text-yellow-600">Pendientes de pago</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-yellow-700">
+                        {pendingInvoices.to_collect}
                       </p>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Alertas de Vencimientos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-500" />
-                Alertas de Vencimientos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pendingInvoices && (
-                <div className="space-y-3">
-                  <div className="p-3 bg-yellow-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-yellow-800">Facturas a Cobrar</p>
-                        <p className="text-xs text-yellow-600">Pendientes de pago</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-yellow-700">
-                          {pendingInvoices.to_collect}
-                        </p>
-                        <p className="text-xs text-yellow-600">facturas</p>
-                      </div>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-orange-800">Facturas a Pagar</p>
+                      <p className="text-xs text-orange-600">Aprobadas sin pagar</p>
                     </div>
-                  </div>
-
-                  <div className="p-3 bg-orange-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-orange-800">Facturas a Pagar</p>
-                        <p className="text-xs text-orange-600">Aprobadas sin pagar</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-orange-700">
-                          {pendingInvoices.to_pay}
-                        </p>
-                        <p className="text-xs text-orange-600">facturas</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-green-800">Pendientes de Aprobar</p>
-                        <p className="text-xs text-green-600">Requieren revisión</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-green-700">
-                          {pendingInvoices.pending_approvals}
-                        </p>
-                        <p className="text-xs text-green-600">facturas</p>
-                      </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-orange-700">
+                        {pendingInvoices.to_pay}
+                      </p>
                     </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Métricas Adicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Clock className="h-8 w-8 text-indigo-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Promedio por Venta</p>
-                  <p className="text-xl font-bold">
-                    ${summary.sales.average.toLocaleString('es-AR')}
-                  </p>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-green-800">Pendientes de Aprobar</p>
+                      <p className="text-xs text-green-600">Requieren revisión</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-green-700">
+                        {pendingInvoices.pending_approvals}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Clock className="h-8 w-8 text-purple-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Promedio por Compra</p>
-                  <p className="text-xl font-bold">
-                    ${summary.purchases.average.toLocaleString('es-AR')}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Clientes Activos</p>
-                  <p className="text-xl font-bold">
-                    {topClients.length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <BarChart3 className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Tasa de Crecimiento</p>
-                  <p className="text-xl font-bold text-green-600">
-                    {revenueTrend.length >= 2 ? (
-                      ((revenueTrend[revenueTrend.length - 1].sales - revenueTrend[revenueTrend.length - 2].sales) / revenueTrend[revenueTrend.length - 2].sales * 100).toFixed(1)
-                    ) : '0'}%
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
 
       </div>

@@ -40,18 +40,30 @@ export interface PendingInvoices {
 }
 
 export const analyticsService = {
-  getSummary: async (companyId: string): Promise<AnalyticsSummary> => {
-    const response = await apiClient.get(`/companies/${companyId}/analytics/summary`)
+  getSummary: async (companyId: string, period: 'month' | 'quarter' | 'year' | 'custom' = 'month', startDate?: string, endDate?: string): Promise<AnalyticsSummary> => {
+    let url = `/companies/${companyId}/analytics/summary?period=${period}`
+    if (period === 'custom' && startDate && endDate) {
+      url += `&start_date=${startDate}&end_date=${endDate}`
+    }
+    const response = await apiClient.get(url)
     return response.data
   },
 
-  getRevenueTrend: async (companyId: string): Promise<RevenueTrend[]> => {
-    const response = await apiClient.get(`/companies/${companyId}/analytics/revenue-trend`)
+  getRevenueTrend: async (companyId: string, period: 'month' | 'quarter' | 'year' | 'custom' = 'month', startDate?: string, endDate?: string): Promise<RevenueTrend[]> => {
+    let url = `/companies/${companyId}/analytics/revenue-trend?period=${period}`
+    if (period === 'custom' && startDate && endDate) {
+      url += `&start_date=${startDate}&end_date=${endDate}`
+    }
+    const response = await apiClient.get(url)
     return response.data
   },
 
-  getTopClients: async (companyId: string): Promise<TopClient[]> => {
-    const response = await apiClient.get(`/companies/${companyId}/analytics/top-clients`)
+  getTopClients: async (companyId: string, period: 'month' | 'quarter' | 'year' | 'custom' = 'month', startDate?: string, endDate?: string): Promise<TopClient[]> => {
+    let url = `/companies/${companyId}/analytics/top-clients?period=${period}`
+    if (period === 'custom' && startDate && endDate) {
+      url += `&start_date=${startDate}&end_date=${endDate}`
+    }
+    const response = await apiClient.get(url)
     return response.data
   },
 

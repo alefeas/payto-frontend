@@ -127,19 +127,27 @@ export default function RegisterPaymentDialog({
     setLoading(true);
 
     try {
-      await paymentService.createPayment(companyId, {
+      const paymentData: any = {
         invoice_id: invoice.id,
         amount: netPayment,
         ...formData,
-        status: 'confirmed',
-        retentions: retentions.length > 0 ? retentions : undefined
-      });
+        status: 'confirmed'
+      };
+      
+      if (retentions.length > 0) {
+        paymentData.retentions = retentions;
+      }
+      
+      console.log('Sending payment data:', paymentData);
+      await paymentService.createPayment(companyId, paymentData);
 
       toast.success('Pago registrado correctamente');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering payment:', error);
-      toast.error('Error al registrar el pago');
+      console.error('Error response:', error.response?.data);
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Error al registrar el pago';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
