@@ -118,7 +118,12 @@ export function InvoiceSelector({
       {error && (
         <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <span className="text-sm text-yellow-800">{error}</span>
+          <div className="flex-1">
+            <span className="text-sm text-yellow-800">{error}</span>
+            <p className="text-xs text-yellow-700 mt-1">
+              Debe emitir primero una factura del tipo compatible para poder crear este comprobante.
+            </p>
+          </div>
         </div>
       )}
 

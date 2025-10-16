@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Calculator, FileText, Download, Shield, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Calculator, FileText, Shield, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,10 +12,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
+import type { Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
 import { ClientSelector } from "@/components/invoices/ClientSelector"
+import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
 import { companyService } from "@/services/company.service"
 import { invoiceService } from "@/services/invoice.service"
+import { voucherService } from "@/services/voucher.service"
 import type { Client } from "@/services/client.service"
 
 interface CompanyData {
@@ -43,66 +45,16 @@ export default function CreateInvoicePage() {
   const [currentCompany, setCurrentCompany] = useState<CompanyData | null>(null)
   const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
   const [savedClients, setSavedClients] = useState<Client[]>([])
+  const [availableTypes, setAvailableTypes] = useState<any[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
-
-  // Determinar tipos de factura permitidos según condición IVA del emisor
-  const getAllowedInvoiceTypes = () => {
-    if (!currentCompany) {
-      console.log('No currentCompany')
-      return []
-    }
-    
-    const taxCondition = currentCompany.tax_condition
-    console.log('getAllowedInvoiceTypes - tax_condition:', taxCondition)
-    
-    // Responsable Inscripto
-    if (taxCondition === 'RI' || taxCondition === 'registered_taxpayer') {
-      return ['A', 'B', 'C', 'E']
-    }
-    
-    // Monotributo
-    if (taxCondition === 'Monotributo' || taxCondition === 'monotax') {
-      return ['C']
-    }
-    
-    // Exento
-    if (taxCondition === 'Exento' || taxCondition === 'exempt') {
-      return ['C', 'E']
-    }
-    
-    // Consumidor Final - no puede emitir
-    if (taxCondition === 'CF' || taxCondition === 'final_consumer' || taxCondition === 'final_consumer_alt') {
-      return []
-    }
-    
-    // Default: asumir RI si no se reconoce
-    console.warn('Unknown tax condition, defaulting to RI:', taxCondition)
-    return ['A', 'B', 'C', 'E']
-  }
-
-  // Determinar tipo de factura recomendado según cliente
-  const getRecommendedInvoiceType = (clientTaxCondition?: string): InvoiceType | null => {
-    if (!currentCompany) return null
-    
-    const isRI = currentCompany.tax_condition === 'RI' || currentCompany.tax_condition === 'registered_taxpayer'
-    if (!isRI) return null
-    
-    if (clientTaxCondition === 'RI' || clientTaxCondition === 'registered_taxpayer') {
-      return 'A' // RI a RI = Factura A
-    } else if (clientTaxCondition === 'Monotributo' || clientTaxCondition === 'monotax' || 
-               clientTaxCondition === 'CF' || clientTaxCondition === 'final_consumer') {
-      return 'B' // RI a no-RI = Factura B
-    } else if (clientTaxCondition === 'Exento' || clientTaxCondition === 'exempt') {
-      return 'C' // A exento = Factura C
-    }
-    
-    return null
-  }
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   const [formData, setFormData] = useState({
-    type: 'A' as InvoiceType,
+    voucherType: '',
     concept: 'products' as InvoiceConcept,
+    relatedInvoiceId: '',
     receiverCompanyId: '',
     clientData: null as { client_id?: string; [key: string]: unknown } | null,
     saveClient: false,
@@ -115,9 +67,7 @@ export default function CreateInvoicePage() {
 
 
   const [items, setItems] = useState<Omit<InvoiceItem, 'id' | 'subtotal' | 'taxAmount'>[]>([])
-
   const [perceptions, setPerceptions] = useState<Omit<InvoicePerception, 'id' | 'baseAmount' | 'amount'>[]>([])
-  const [isInitialized, setIsInitialized] = useState(false)
 
   const [totals, setTotals] = useState({
     subtotal: 0,
@@ -161,6 +111,11 @@ export default function CreateInvoicePage() {
           grossIncomeRetention: company.grossIncomeRetention || 0.42,
           socialSecurityRetention: company.socialSecurityRetention || 0
         })
+        
+        // Load available voucher types
+        const typesResponse = await voucherService.getAvailableTypes(companyId)
+        const types = typesResponse.types || []
+        setAvailableTypes(Object.values(types))
         
         // Load connected companies
         try {
@@ -214,26 +169,12 @@ export default function CreateInvoicePage() {
     }
   }, [companyId, isAuthenticated])
 
-  // Initialize items with company defaults when company loads
   useEffect(() => {
     if (currentCompany && !isInitialized) {
-      // Set initial item with company's default VAT
-      setItems([{ 
-        description: '', 
-        quantity: 1, 
-        unitPrice: 0, 
-        taxRate: currentCompany.defaultVat || 21 
-      }])
-      
-      // Update invoice type if needed
-      const allowedTypes = getAllowedInvoiceTypes()
-      if (allowedTypes.length > 0 && !allowedTypes.includes(formData.type)) {
-        setFormData(prev => ({ ...prev, type: allowedTypes[0] as InvoiceType }))
-      }
-      
+      setItems([{ description: '', quantity: 1, unitPrice: 0, taxRate: currentCompany.defaultVat || 21 }])
       setIsInitialized(true)
     }
-  }, [currentCompany, isInitialized]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentCompany, isInitialized])
 
   const calculateTotals = useCallback(() => {
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
@@ -328,21 +269,30 @@ export default function CreateInvoicePage() {
     setPerceptions(newPerceptions)
   }
 
+  const requiresAssociation = Array.isArray(availableTypes) 
+    ? availableTypes.find(t => t.code === formData.voucherType)?.requires_association 
+    : false
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.emissionDate || !formData.dueDate) {
-      toast.error('Complete las fechas requeridas')
+    if (!formData.voucherType) {
+      toast.error('Seleccione el tipo de comprobante')
       return
     }
 
-    if (!formData.clientData?.client_id && !formData.receiverCompanyId) {
+    if (requiresAssociation && !formData.relatedInvoiceId) {
+      toast.error('Debe seleccionar la factura a asociar')
+      return
+    }
+
+    if (!requiresAssociation && !formData.clientData?.client_id && !formData.receiverCompanyId) {
       toast.error('Debe seleccionar un cliente')
       return
     }
 
-    if (formData.currency !== 'ARS' && !formData.exchangeRate) {
-      toast.error('Ingrese la cotización de la moneda')
+    if (!formData.emissionDate || !formData.dueDate) {
+      toast.error('Complete las fechas requeridas')
       return
     }
 
@@ -351,17 +301,35 @@ export default function CreateInvoicePage() {
       return
     }
 
+    if (selectedInvoice && totals.total > selectedInvoice.available_balance) {
+      toast.error(`El monto no puede exceder el saldo disponible ($${selectedInvoice.available_balance.toLocaleString('es-AR')})`)
+      return
+    }
+
     setIsSubmitting(true)
 
-    // Determinar si es cliente guardado o nuevo
-    const isExistingClient = formData.clientData?.client_id;
+    const isExistingClient = formData.clientData?.client_id
     
-    const payload = {
+    const payload = requiresAssociation ? {
+      voucher_type: formData.voucherType,
+      related_invoice_id: formData.relatedInvoiceId,
+      sales_point: currentCompany?.default_sales_point || 1,
+      issue_date: formData.emissionDate,
+      currency: formData.currency,
+      exchange_rate: formData.exchangeRate ? parseFloat(formData.exchangeRate) : undefined,
+      notes: formData.notes,
+      items: items.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        tax_rate: item.taxRate || 0
+      }))
+    } : {
       client_id: isExistingClient ? formData.clientData.client_id : undefined,
       receiver_company_id: formData.receiverCompanyId || undefined,
       client_data: !isExistingClient && formData.clientData ? formData.clientData : undefined,
       save_client: formData.saveClient,
-      invoice_type: formData.type,
+      invoice_type: formData.voucherType,
       sales_point: currentCompany?.default_sales_point || 1,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
@@ -382,23 +350,25 @@ export default function CreateInvoicePage() {
     }
 
     try {
-      const result = await invoiceService.createInvoice(companyId, payload)
+      const result = requiresAssociation 
+        ? await voucherService.createVoucher(companyId, payload as any)
+        : await invoiceService.createInvoice(companyId, payload as any)
       
-      const invoice = result.invoice
+      const invoice = requiresAssociation ? result : result.invoice
       
       if (invoice.afip_status === 'approved') {
-        toast.success('Factura emitida exitosamente', {
+        toast.success('Comprobante emitido exitosamente', {
           description: `CAE: ${invoice.afip_cae} - Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
         })
       } else if (invoice.afip_status === 'error') {
-        toast.warning('Factura creada pero con error en AFIP', {
+        toast.warning('Comprobante creado pero con error en AFIP', {
           description: invoice.afip_error_message || 'Error desconocido'
         })
       }
       
       router.push(`/company/${companyId}/invoices`)
     } catch (error: any) {
-      toast.error('Error al crear la factura', {
+      toast.error('Error al crear el comprobante', {
         description: error.response?.data?.message || error.message || 'Error desconocido'
       })
     } finally {
@@ -417,8 +387,8 @@ export default function CreateInvoicePage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Emitir Factura</h1>
-            <p className="text-muted-foreground">Crear nueva factura para la empresa</p>
+            <h1 className="text-3xl font-bold">Emitir Comprobante</h1>
+            <p className="text-muted-foreground">Facturas, Notas de Crédito/Débito, Recibos</p>
           </div>
         </div>
 
@@ -427,75 +397,35 @@ export default function CreateInvoicePage() {
           <Card>
             <CardHeader>
               <CardTitle>Información General</CardTitle>
-              <CardDescription>Datos básicos de la factura</CardDescription>
+              <CardDescription>Seleccione el tipo de comprobante</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Tipo de Factura */}
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Factura *</Label>
-                {isLoadingData ? (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-md flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">Cargando información...</p>
-                  </div>
-                ) : getAllowedInvoiceTypes().length === 0 ? (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-800 font-medium">⚠️ No puede emitir facturas</p>
-                    <p className="text-xs text-red-600 mt-1">
-                      Los Consumidores Finales no pueden emitir facturas. Debe cambiar su condición fiscal.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <Select 
-                      value={formData.type} 
-                      onValueChange={(value: InvoiceType) => setFormData({...formData, type: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione tipo de factura" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getAllowedInvoiceTypes().includes('A') && (
-                          <SelectItem value="A">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Factura A</span>
-                              <span className="text-xs text-muted-foreground">IVA discriminado (RI a RI)</span>
-                            </div>
-                          </SelectItem>
-                        )}
-                        {getAllowedInvoiceTypes().includes('B') && (
-                          <SelectItem value="B">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Factura B</span>
-                              <span className="text-xs text-muted-foreground">IVA incluido (RI a Monotributo/CF)</span>
-                            </div>
-                          </SelectItem>
-                        )}
-                        {getAllowedInvoiceTypes().includes('C') && (
-                          <SelectItem value="C">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Factura C</span>
-                              <span className="text-xs text-muted-foreground">Sin IVA (Monotributo/Exento)</span>
-                            </div>
-                          </SelectItem>
-                        )}
-                        {getAllowedInvoiceTypes().includes('E') && (
-                          <SelectItem value="E">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Factura E</span>
-                              <span className="text-xs text-muted-foreground">Exportación</span>
-                            </div>
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      {(currentCompany?.tax_condition === 'RI' || currentCompany?.tax_condition === 'registered_taxpayer') && '✓ Responsable Inscripto: Puede emitir A, B, C, E'}
-                      {(currentCompany?.tax_condition === 'Monotributo' || currentCompany?.tax_condition === 'monotax') && '✓ Monotributo: Solo puede emitir facturas tipo C'}
-                      {(currentCompany?.tax_condition === 'Exento' || currentCompany?.tax_condition === 'exempt') && '✓ Exento: Puede emitir C (local) y E (exportación)'}
-                    </p>
-                  </>
-                )}
+                <Label>Tipo de Comprobante *</Label>
+                <Select 
+                  value={formData.voucherType} 
+                  onValueChange={(value) => setFormData({...formData, voucherType: value, relatedInvoiceId: ''})}
+                  disabled={isLoadingData}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione tipo de comprobante" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTypes.map((type) => (
+                      <SelectItem key={type.code} value={type.code}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{type.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {type.category === 'invoice' && 'Factura'}
+                            {type.category === 'credit_note' && 'Nota de Crédito'}
+                            {type.category === 'debit_note' && 'Nota de Débito'}
+                            {type.category === 'receipt' && 'Recibo'}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Concepto */}
@@ -515,60 +445,50 @@ export default function CreateInvoicePage() {
                 </Select>
               </div>
 
-              {/* Cliente */}
-              <div className="space-y-2">
-                <Label>Cliente *</Label>
-                <ClientSelector
+              {requiresAssociation ? (
+                <InvoiceSelector
                   companyId={companyId}
-                  connectedCompanies={connectedCompanies}
-                  savedClients={savedClients}
-                  isLoading={isLoadingData}
-                  onSelect={(data) => {
-                    let clientTaxCondition: string | undefined
-                    
-                    if (data.receiver_company_id) {
-                      const company = connectedCompanies.find(c => c.id === data.receiver_company_id)
-                      clientTaxCondition = company?.tax_condition
-                      
-                      setFormData({
-                        ...formData,
-                        receiverCompanyId: data.receiver_company_id,
-                        clientData: null,
-                        saveClient: false
-                      })
-                    } else if (data.client_id) {
-                      const client = savedClients.find(c => c.id === data.client_id)
-                      clientTaxCondition = client?.taxCondition
-                      
-                      setFormData({
-                        ...formData,
-                        receiverCompanyId: '',
-                        clientData: { 
-                          client_id: data.client_id,
-                          ...data.client_data 
-                        },
-                        saveClient: false
-                      })
-                    } else if (data.client_data) {
-                      clientTaxCondition = (data.client_data as any).tax_condition
-                      
-                      setFormData({
-                        ...formData,
-                        receiverCompanyId: '',
-                        clientData: data.client_data,
-                        saveClient: data.save_client || false
-                      })
-                    }
-                    
-                    // Auto-select recommended invoice type
-                    const recommended = getRecommendedInvoiceType(clientTaxCondition)
-                    const allowed = getAllowedInvoiceTypes()
-                    if (recommended && allowed.includes(recommended)) {
-                      setFormData(prev => ({ ...prev, type: recommended }))
-                    }
+                  voucherType={formData.voucherType}
+                  onSelect={(invoice) => {
+                    setSelectedInvoice(invoice)
+                    setFormData({ ...formData, relatedInvoiceId: invoice?.id || '' })
                   }}
                 />
-              </div>
+              ) : formData.voucherType && (
+                <div className="space-y-2">
+                  <Label>Cliente *</Label>
+                  <ClientSelector
+                    companyId={companyId}
+                    connectedCompanies={connectedCompanies}
+                    savedClients={savedClients}
+                    isLoading={isLoadingData}
+                    onSelect={(data) => {
+                      if (data.receiver_company_id) {
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: data.receiver_company_id,
+                          clientData: null,
+                          saveClient: false
+                        })
+                      } else if (data.client_id) {
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: '',
+                          clientData: { client_id: data.client_id, ...data.client_data },
+                          saveClient: false
+                        })
+                      } else if (data.client_data) {
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: '',
+                          clientData: data.client_data,
+                          saveClient: data.save_client || false
+                        })
+                      }
+                    }}
+                  />
+                </div>
+              )}
 
 
 
@@ -830,6 +750,14 @@ export default function CreateInvoicePage() {
                     {totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
                   </span>
                 </div>
+                {selectedInvoice && (
+                  <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
+                    <span>Saldo Disponible:</span>
+                    <span className={totals.total > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>
+                      ${selectedInvoice.available_balance.toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -900,7 +828,7 @@ export default function CreateInvoicePage() {
               ) : (
                 <>
                   <FileText className="h-4 w-4 mr-2" />
-                  Emitir Factura
+                  Emitir Comprobante
                 </>
               )}
             </Button>
