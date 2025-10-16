@@ -17,7 +17,8 @@ import {
   Activity,
   Shield,
   CheckCircle2,
-  XCircle
+  XCircle,
+  BookOpen
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -198,7 +199,14 @@ export default function CompanyPage() {
       icon: Calendar,
       color: "bg-pink-500",
       action: () => router.push(`/company/${company.id}/due-invoices`)
-    }
+    },
+    ...(company.taxCondition === 'registered_taxpayer' ? [{
+      title: "Libro IVA",
+      description: "Registro de operaciones con IVA",
+      icon: BookOpen,
+      color: "bg-emerald-500",
+      action: () => router.push(`/company/${company.id}/iva-book`)
+    }] : [])
   ]
 
   const menuItems = allMenuItems
