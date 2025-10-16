@@ -38,9 +38,23 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
     })
   }
 
-  const handleNewClientSuccess = () => {
+  const handleNewClientSuccess = (createdClient?: any) => {
     setIsNewClientDialogOpen(false)
-    // Reload clients list if needed
+    if (createdClient) {
+      // Auto-select the newly created client
+      setClientType('saved')
+      setSelectedClient(createdClient.id)
+      onSelect({ 
+        client_id: createdClient.id,
+        client_data: {
+          document_type: createdClient.documentType,
+          document_number: createdClient.documentNumber,
+          business_name: createdClient.businessName || `${createdClient.firstName} ${createdClient.lastName}`,
+          email: createdClient.email,
+          tax_condition: createdClient.taxCondition
+        }
+      })
+    }
   }
 
   return (

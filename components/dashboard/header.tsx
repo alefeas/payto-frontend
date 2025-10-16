@@ -26,6 +26,7 @@ const mockNotifications: Notification[] = [
 export function DashboardHeader() {
   const [notifications, setNotifications] = useState(mockNotifications)
   const [mounted, setMounted] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const { user, logout } = useAuth()
   const router = useRouter()
 
@@ -47,8 +48,9 @@ export function DashboardHeader() {
     )
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    await logout()
     router.push('/')
   }
 
@@ -147,9 +149,9 @@ export function DashboardHeader() {
                 Editar perfil
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Cerrar sesión
+                {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

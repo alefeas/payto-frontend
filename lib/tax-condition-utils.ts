@@ -7,7 +7,8 @@ export const taxConditionTranslations: Record<string, string> = {
   'Exento': 'Exento',
   'final_consumer': 'Consumidor Final',
   'CF': 'Consumidor Final',
-  'final_consumer_alt': 'Consumidor Final'
+  'final_consumer_alt': 'Consumidor Final',
+  'not_specified': 'No especificado'
 }
 
 export function translateTaxCondition(taxCondition: string): string {

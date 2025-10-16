@@ -51,7 +51,10 @@ export default function DashboardPage() {
       const data = await companyService.getCompanies()
       setCompanies(data)
     } catch (error: any) {
-      toast.error('Error al cargar perfiles')
+      // Solo mostrar error si el usuario está autenticado
+      if (isAuthenticated) {
+        toast.error('Error al cargar perfiles')
+      }
     } finally {
       setLoadingCompanies(false)
     }

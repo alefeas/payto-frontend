@@ -15,7 +15,7 @@ interface ClientFormProps {
   client?: Client | null
   companyId: string
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (createdClient?: Client) => void
 }
 
 export function ClientForm({ client, companyId, onClose, onSuccess }: ClientFormProps) {
@@ -75,11 +75,12 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
       if (client) {
         await clientService.updateClient(companyId, client.id, data)
         toast.success('Cliente actualizado')
+        onSuccess()
       } else {
-        await clientService.createClient(companyId, data)
-        toast.success('Cliente creado')
+        const createdClient = await clientService.createClient(companyId, data)
+        toast.success('Cliente creado y seleccionado')
+        onSuccess(createdClient)
       }
-      onSuccess()
       onClose()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al guardar cliente')
@@ -258,7 +259,7 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           Cancelar
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving ? 'Guardando...' : (client ? "Actualizar" : "Crear")}
+          {saving ? (client ? 'Actualizando...' : 'Creando...') : (client ? "Actualizar" : "Crear")}
         </Button>
       </div>
     </form>

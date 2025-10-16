@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Download, CheckCircle, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
+import { Download, CheckCircle, ArrowLeft, Loader2, CreditCard, Eye, Info } from 'lucide-react';
 import paymentService, { InvoicePayment } from '@/services/payment.service';
 import { invoiceService } from '@/services/invoice.service';
 import { formatCurrency } from '@/lib/utils';
@@ -152,7 +152,23 @@ export default function PaymentsPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Pagar Facturas</h1>
-            <p className="text-muted-foreground">Facturas recibidas pendientes de pago</p>
+            <p className="text-muted-foreground">Gestiona el pago de facturas recibidas de proveedores</p>
+          </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-blue-900 text-sm">¿Cómo funciona?</p>
+              <ul className="text-xs text-blue-800 mt-2 space-y-1">
+                <li>• <strong>Ver Detalles:</strong> Revisa ítems, totales y datos bancarios del proveedor</li>
+                <li>• <strong>Registrar Pago:</strong> Marca facturas como pagadas con retenciones automáticas</li>
+                <li>• <strong>Archivo Homebanking:</strong> Genera TXT con múltiples pagos para tu banco</li>
+                <li>• <strong>Retenciones:</strong> Se calculan según tu configuración fiscal (IVA, Ganancias, IIBB, SUSS)</li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -162,12 +178,12 @@ export default function PaymentsPage() {
               <div>
                 <CardTitle>Gestión de Pagos</CardTitle>
                 <CardDescription>
-                  Registra pagos individuales o genera archivo para homebanking
+                  Selecciona facturas para pagar individualmente o generar archivo bancario
                 </CardDescription>
               </div>
               <Button onClick={handleGenerateTxt} disabled={selectedInvoices.length === 0}>
                 <Download className="mr-2 h-4 w-4" />
-                Generar Archivo Homebanking {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+                Generar TXT {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
               </Button>
             </div>
           </CardHeader>
@@ -202,29 +218,34 @@ export default function PaymentsPage() {
                           key={invoice.id} 
                           className="hover:shadow-md transition-shadow cursor-pointer"
                           onClick={(e) => {
-                            if (!(e.target as HTMLElement).closest('button, input')) {
+                            if (!(e.target as HTMLElement).closest('button')) {
                               toggleInvoiceSelection(invoice.id);
                             }
                           }}
                         >
-                          <CardContent className="p-2">
+                          <CardContent className="p-3">
                             <div className="flex items-center gap-3">
                               <Checkbox
                                 checked={selectedInvoices.includes(invoice.id)}
                                 onCheckedChange={() => toggleInvoiceSelection(invoice.id)}
                               />
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 mb-1">
                                   <span className="font-medium text-sm">
                                     {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                                   </span>
                                   {(invoice.supplier?.bank_cbu || invoice.supplier?.bank_alias) ? (
-                                    <Badge variant="outline" className="text-xs h-5 text-green-600 border-green-600">Datos bancarios</Badge>
+                                    <Badge variant="outline" className="text-xs h-5 text-green-600 border-green-600">✓ Datos bancarios</Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-xs h-5 text-amber-600 border-amber-600">Sin datos bancarios</Badge>
+                                    <Badge variant="outline" className="text-xs h-5 text-amber-600 border-amber-600">⚠ Sin datos bancarios</Badge>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground">{supplierName}</p>
+                                <p className="text-xs text-muted-foreground mb-1">{supplierName}</p>
+                                {(invoice.supplier?.bank_cbu || invoice.supplier?.bank_alias) && (
+                                  <p className="text-xs text-muted-foreground font-mono">
+                                    {invoice.supplier.bank_alias || invoice.supplier.bank_cbu}
+                                  </p>
+                                )}
                               </div>
                               <div className="text-right flex-shrink-0">
                                 <p className="font-bold text-sm">{formatCurrency(invoice.total || 0)}</p>
@@ -232,15 +253,22 @@ export default function PaymentsPage() {
                                   Vto: {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('es-AR') : '-'}
                                 </p>
                               </div>
-                              <Button
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRegisterPayment(invoice);
-                                }}
-                              >
-                                Registrar
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRegisterPayment(invoice)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleRegisterPayment(invoice)}
+                                >
+                                  Pagar
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>

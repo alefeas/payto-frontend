@@ -49,8 +49,8 @@ export interface CreateCompanyData {
   business_name?: string;
   national_id: string;
   phone?: string;
-  tax_condition: string;
   default_sales_point?: number;
+  last_invoice_number?: number;
   deletion_code: string;
   street: string;
   street_number: string;

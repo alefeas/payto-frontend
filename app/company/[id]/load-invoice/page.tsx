@@ -17,7 +17,7 @@ import { invoiceService } from "@/services/invoice.service"
 import { companyService } from "@/services/company.service"
 import { supplierService, Supplier } from "@/services/supplier.service"
 import type { InvoiceType, Currency, InvoiceItem, InvoicePerception } from "@/types/invoice"
-import { formatInvoiceNumber } from "@/lib/input-formatters"
+import { formatInvoiceNumber, formatCUIT } from "@/lib/input-formatters"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
 
@@ -701,13 +701,17 @@ export default function LoadInvoicePage() {
                       <Input
                         type="number"
                         min="0"
-                        max="100"
+                        max={perception.type === 'vat_perception' ? 10 : perception.type === 'gross_income_perception' ? 5 : 2}
                         step="0.01"
                         value={perception.rate}
-                        onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const maxRate = perception.type === 'vat_perception' ? 10 : perception.type === 'gross_income_perception' ? 5 : 2;
+                          const value = Math.min(parseFloat(e.target.value) || 0, maxRate);
+                          updatePerception(index, 'rate', value);
+                        }}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Valor por defecto: {getDefaultPerceptionRate(perception.type)}%
+                        Límite AFIP: {perception.type === 'vat_perception' ? '0-10%' : perception.type === 'gross_income_perception' ? '0-5%' : '0-2%'}
                       </p>
                     </div>
                     

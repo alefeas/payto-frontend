@@ -466,15 +466,38 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Condición Fiscal</Label>
-                        <Select value={formData.tax_condition} onValueChange={(value) => setFormData({...formData, tax_condition: value})}>
-                          <SelectTrigger><SelectValue placeholder="Selecciona condición fiscal" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
-                            <SelectItem value="monotax">Monotributo</SelectItem>
-                            <SelectItem value="final_consumer">Consumidor Final</SelectItem>
-                            <SelectItem value="exempt">Exento</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select value={formData.tax_condition} disabled>
+                            <SelectTrigger><SelectValue placeholder="No configurada" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
+                              <SelectItem value="monotax">Monotributo</SelectItem>
+                              <SelectItem value="final_consumer">Consumidor Final</SelectItem>
+                              <SelectItem value="exempt">Exento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            onClick={async () => {
+                              try {
+                                const apiClient = (await import('@/lib/api-client')).default
+                                const response = await apiClient.post(`/afip/companies/${companyId}/update-tax-condition`)
+                                if (response.data.success) {
+                                  setFormData({...formData, tax_condition: response.data.data.taxCondition})
+                                  toast.success('Condición fiscal actualizada desde AFIP')
+                                  loadData()
+                                }
+                              } catch (error: any) {
+                                toast.error(error.response?.data?.message || 'Error al actualizar desde AFIP')
+                              }
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Solo se actualiza desde AFIP (requiere certificado)</p>
                       </div>
                       <div className="space-y-2">
                         <Label>Punto de Venta</Label>

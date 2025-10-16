@@ -22,8 +22,8 @@ export default function CreateCompanyPage() {
     business_name: '',
     national_id: '',
     phone: '',
-    tax_condition: 'RI',
     default_sales_point: 1,
+    last_invoice_number: 0,
     deletion_code: '',
     province: '',
     postal_code: '',
@@ -202,20 +202,6 @@ export default function CreateCompanyPage() {
                 <h3 className="text-lg font-medium">Configuración Fiscal</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="taxCondition">Condición Fiscal *</Label>
-                    <Select value={formData.tax_condition} onValueChange={(value) => setFormData({...formData, tax_condition: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="RI">Responsable Inscripto</SelectItem>
-                        <SelectItem value="Monotributo">Monotributo</SelectItem>
-                        <SelectItem value="CF">Consumidor Final</SelectItem>
-                        <SelectItem value="Exento">Exento</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="defaultSalesPoint">Punto de Venta *</Label>
                     <Input
                       id="defaultSalesPoint"
@@ -225,8 +211,27 @@ export default function CreateCompanyPage() {
                       value={formData.default_sales_point}
                       onChange={(e) => setFormData({...formData, default_sales_point: parseInt(e.target.value) || 1})}
                     />
+                    <p className="text-xs text-muted-foreground">Número de punto de venta asignado por AFIP</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastInvoiceNumber">Último Número de Factura</Label>
+                    <Input
+                      id="lastInvoiceNumber"
+                      type="number"
+                      min="0"
+                      value={formData.last_invoice_number || 0}
+                      onChange={(e) => setFormData({...formData, last_invoice_number: parseInt(e.target.value) || 0})}
+                    />
+                    <p className="text-xs text-muted-foreground">La próxima factura será este número + 1 (dejar en 0 para empezar desde 1)</p>
                   </div>
                 </div>
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Condición Fiscal:</strong> Se obtendrá automáticamente desde AFIP al subir tu certificado digital.
+                    No es necesario ingresarla manualmente.
+                  </AlertDescription>
+                </Alert>
               </div>
 
               <div className="border-t pt-6 space-y-4">
@@ -411,11 +416,16 @@ export default function CreateCompanyPage() {
               <Alert className="bg-blue-50 border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
-                  <strong className="block mb-1">📋 Próximo paso: Verificar perfil con certificado AFIP</strong>
-                  Después de crear tu perfil, podrás verificarlo subiendo tu certificado digital de AFIP.
-                  Esto te permitirá emitir facturas electrónicas oficiales y acceder a todas las funciones sin restricciones.
-                  <br /><br />
-                  <strong>Sin verificación:</strong> Podrás usar el sistema normalmente, pero las facturas no serán válidas legalmente ante AFIP.
+                  <strong className="block mb-1">📋 Próximo paso: Subir certificado AFIP (OBLIGATORIO)</strong>
+                  Después de crear tu perfil, <strong>DEBES subir tu certificado digital de AFIP</strong> para poder emitir facturas.
+                  El certificado permite:
+                  <ul className="list-disc list-inside mt-2 ml-2">
+                    <li>Obtener automáticamente tu condición fiscal desde AFIP</li>
+                    <li>Emitir facturas electrónicas oficiales con CAE válido</li>
+                    <li>Acceder a todas las funciones del sistema</li>
+                  </ul>
+                  <br />
+                  <strong className="text-red-600">⚠️ Sin certificado AFIP no podrás emitir facturas.</strong>
                 </AlertDescription>
               </Alert>
 

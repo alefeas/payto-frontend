@@ -16,10 +16,12 @@ import type { InvoiceType, Currency, InvoiceItem, InvoicePerception, InvoiceConc
 import { ClientSelector } from "@/components/invoices/ClientSelector"
 import { companyService } from "@/services/company.service"
 import { invoiceService } from "@/services/invoice.service"
+import type { Client } from "@/services/client.service"
 
 interface CompanyData {
   id: string
   name: string
+  uniqueId: string
   tax_condition: string
   default_sales_point?: number
   defaultVat?: number
@@ -32,15 +34,6 @@ interface CompanyData {
   socialSecurityRetention?: number
 }
 
-interface Client {
-  id: string
-  business_name?: string
-  first_name?: string
-  last_name?: string
-  document_number: string
-  tax_condition: string
-}
-
 export default function CreateInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -51,6 +44,7 @@ export default function CreateInvoicePage() {
   const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
   const [savedClients, setSavedClients] = useState<Client[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
 
   // Determinar tipos de factura permitidos según condición IVA del emisor
   const getAllowedInvoiceTypes = () => {
@@ -132,6 +126,8 @@ export default function CreateInvoicePage() {
     total: 0
   })
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login')
@@ -153,6 +149,7 @@ export default function CreateInvoicePage() {
         setCurrentCompany({
           id: company.id,
           name: company.name,
+          uniqueId: company.id,
           tax_condition: company.taxCondition || 'registered_taxpayer',
           default_sales_point: company.defaultSalesPoint || 1,
           defaultVat: company.defaultVat || 21,
@@ -172,6 +169,7 @@ export default function CreateInvoicePage() {
           const connectedCompaniesData = connections.map(conn => ({
             id: conn.connectedCompanyId,
             name: conn.connectedCompanyName,
+            uniqueId: conn.connectedCompanyId,
             tax_condition: 'registered_taxpayer' // Default, would need to be fetched
           }))
           setConnectedCompanies(connectedCompaniesData)
@@ -186,6 +184,21 @@ export default function CreateInvoicePage() {
           setSavedClients(clients)
         } catch (error) {
           console.error('Error loading clients:', error)
+        }
+        
+        // Load AFIP certificate status
+        try {
+          const apiClient = (await import('@/lib/api-client')).default
+          const certResponse = await apiClient.get(`/afip/companies/${companyId}/certificate`)
+          setCert(certResponse.data.data)
+        } catch (error: any) {
+          // Si es 404, significa que no hay certificado configurado
+          if (error.response?.status === 404) {
+            setCert({ isActive: false })
+          } else {
+            console.error('Error loading certificate:', error)
+            setCert({ isActive: false })
+          }
         }
         
       } catch (error) {
@@ -338,10 +351,15 @@ export default function CreateInvoicePage() {
       return
     }
 
+    setIsSubmitting(true)
+
+    // Determinar si es cliente guardado o nuevo
+    const isExistingClient = formData.clientData?.client_id;
+    
     const payload = {
-      client_id: formData.clientData?.client_id || undefined,
+      client_id: isExistingClient ? formData.clientData.client_id : undefined,
       receiver_company_id: formData.receiverCompanyId || undefined,
-      client_data: formData.clientData && !formData.clientData.client_id ? formData.clientData : undefined,
+      client_data: !isExistingClient && formData.clientData ? formData.clientData : undefined,
       save_client: formData.saveClient,
       invoice_type: formData.type,
       sales_point: currentCompany?.default_sales_point || 1,
@@ -383,6 +401,8 @@ export default function CreateInvoicePage() {
       toast.error('Error al crear la factura', {
         description: error.response?.data?.message || error.message || 'Error desconocido'
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -518,7 +538,7 @@ export default function CreateInvoicePage() {
                       })
                     } else if (data.client_id) {
                       const client = savedClients.find(c => c.id === data.client_id)
-                      clientTaxCondition = client?.tax_condition
+                      clientTaxCondition = client?.taxCondition
                       
                       setFormData({
                         ...formData,
@@ -744,13 +764,17 @@ export default function CreateInvoicePage() {
                       <Input
                         type="number"
                         min="0"
-                        max="100"
+                        max={perception.type === 'vat_perception' ? 10 : perception.type === 'gross_income_perception' ? 5 : 2}
                         step="0.01"
                         value={perception.rate}
-                        onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const maxRate = perception.type === 'vat_perception' ? 10 : perception.type === 'gross_income_perception' ? 5 : 2
+                          const value = Math.min(parseFloat(e.target.value) || 0, maxRate)
+                          updatePerception(index, 'rate', value)
+                        }}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Valor por defecto según configuración: {getDefaultPerceptionRate(perception.type)}%
+                        Límite AFIP: {perception.type === 'vat_perception' ? '0-10%' : perception.type === 'gross_income_perception' ? '0-5%' : '0-2%'}
                       </p>
                     </div>
                     
@@ -830,30 +854,55 @@ export default function CreateInvoicePage() {
           </Card>
 
           {/* Información sobre Autorización AFIP */}
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-blue-800">
-                  ℹ️ Autorización con AFIP
-                </p>
-                <ul className="text-xs text-blue-700 mt-2 space-y-1">
-                  <li>• <strong>Con certificado AFIP:</strong> La factura se autoriza automáticamente y obtiene CAE oficial</li>
-                  <li>• <strong>Sin certificado:</strong> Se genera con CAE simulado (no válida legalmente)</li>
-                  <li>• <strong>Si AFIP rechaza:</strong> La factura NO se creará en el sistema</li>
-                </ul>
-                <p className="text-xs text-blue-600 mt-2">
-                  Configura tu certificado AFIP desde Configuración → AFIP/ARCA
-                </p>
+          {!cert?.isActive ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-red-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800">
+                    ⚠️ Certificado AFIP Requerido
+                  </p>
+                  <p className="text-xs text-red-700 mt-2">
+                    <strong>No puedes emitir facturas sin un certificado AFIP válido.</strong>
+                  </p>
+                  <p className="text-xs text-red-600 mt-2">
+                    Ve a Configuración → AFIP/ARCA para subir tu certificado digital y poder emitir facturas electrónicas oficiales.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-800">
+                    ℹ️ Autorización con AFIP
+                  </p>
+                  <ul className="text-xs text-blue-700 mt-2 space-y-1">
+                    <li>• La factura se autoriza automáticamente con AFIP y obtiene CAE oficial</li>
+                    <li>• Si AFIP rechaza la factura, NO se creará en el sistema</li>
+                    <li>• El certificado está activo y configurado correctamente</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Acciones */}
           <div className="flex gap-4">
-            <Button type="submit" className="flex-1">
-              <FileText className="h-4 w-4 mr-2" />
-              Emitir Factura
+            <Button type="submit" className="flex-1" disabled={isSubmitting || !cert?.isActive}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Emitiendo...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Emitir Factura
+                </>
+              )}
             </Button>
             <Button 
               type="button" 

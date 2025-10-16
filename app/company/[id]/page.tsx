@@ -66,7 +66,7 @@ export default function CompanyPage() {
           try {
             const cert = await afipCertificateService.getCertificate(companyId)
             setCertificate(cert)
-            setIsAfipVerified(cert.isActive)
+            setIsAfipVerified(cert?.isActive || false)
           } catch {
             setIsAfipVerified(false)
             setCertificate(null)
@@ -113,7 +113,7 @@ export default function CompanyPage() {
     )
   }
 
-  const canIssueInvoices = company.taxCondition !== 'final_consumer'
+  const canIssueInvoices = !!company.taxCondition && company.taxCondition !== 'final_consumer'
   const userRole = company.role as CompanyRole
 
   const allMenuItems = [
@@ -123,7 +123,7 @@ export default function CompanyPage() {
       icon: FileText,
       color: "bg-blue-500",
       permission: 'invoices.create' as const,
-      action: () => router.push(`/company/${company?.id}/emit-invoice`)
+      action: () => router.push(`/company/${company.id}/emit-invoice`)
     }] : []),
     ...(hasPermission(userRole, 'invoices.create') ? [{
       title: "Cargar Factura Recibida",
@@ -131,7 +131,7 @@ export default function CompanyPage() {
       icon: Plus,
       color: "bg-teal-500",
       permission: 'invoices.create' as const,
-      action: () => router.push(`/company/${company?.id}/load-invoice`)
+      action: () => router.push(`/company/${company.id}/load-invoice`)
     }] : []),
     ...(hasPermission(userRole, 'invoices.view') ? [{
       title: "Ver Facturas",
@@ -139,7 +139,7 @@ export default function CompanyPage() {
       icon: FileText,
       color: "bg-purple-500",
       permission: 'invoices.view' as const,
-      action: () => router.push(`/company/${company?.id}/invoices`)
+      action: () => router.push(`/company/${company.id}/invoices`)
     }] : []),
     ...(hasPermission(userRole, 'payments.create') ? [{
       title: "Pagar Facturas",
@@ -148,7 +148,7 @@ export default function CompanyPage() {
       color: "bg-orange-500",
       badge: 0,
       permission: 'payments.create' as const,
-      action: () => router.push(`/company/${company?.id}/payments`)
+      action: () => router.push(`/company/${company.id}/payments`)
     }] : []),
     ...(canIssueInvoices && hasPermission(userRole, 'payments.view') ? [{
       title: "Cobrar Facturas",
@@ -157,7 +157,7 @@ export default function CompanyPage() {
       color: "bg-yellow-500",
       badge: 0,
       permission: 'payments.view' as const,
-      action: () => router.push(`/company/${company?.id}/collections`)
+      action: () => router.push(`/company/${company.id}/collections`)
     }] : []),
     ...(canIssueInvoices && hasPermission(userRole, 'invoices.approve') ? [{
       title: "Aprobar Facturas",
@@ -166,7 +166,7 @@ export default function CompanyPage() {
       color: "bg-green-500",
       badge: 0,
       permission: 'invoices.approve' as const,
-      action: () => router.push(`/company/${company?.id}/approve-invoices`)
+      action: () => router.push(`/company/${company.id}/approve-invoices`)
     }] : []),
     ...(canIssueInvoices && hasPermission(userRole, 'invoices.view') ? [{
       title: "Facturas Rechazadas",
@@ -175,7 +175,7 @@ export default function CompanyPage() {
       color: "bg-red-500",
       badge: 0,
       permission: 'invoices.view' as const,
-      action: () => router.push(`/company/${company?.id}/rejected-invoices`)
+      action: () => router.push(`/company/${company.id}/rejected-invoices`)
     }] : []),
     ...(hasPermission(userRole, 'audit.view') ? [{
       title: "Registro de Auditoría",
@@ -183,21 +183,21 @@ export default function CompanyPage() {
       icon: Activity,
       color: "bg-gray-600",
       permission: 'audit.view' as const,
-      action: () => router.push(`/company/${company?.id}/audit-log`)
+      action: () => router.push(`/company/${company.id}/audit-log`)
     }] : []),
     {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
       icon: BarChart3,
       color: "bg-indigo-500",
-      action: () => router.push(`/company/${company?.id}/analytics`)
+      action: () => router.push(`/company/${company.id}/analytics`)
     },
     {
       title: "Vencimientos",
       description: "Control de fechas y cobros pendientes",
       icon: Calendar,
       color: "bg-pink-500",
-      action: () => router.push(`/company/${company?.id}/due-invoices`)
+      action: () => router.push(`/company/${company.id}/due-invoices`)
     }
   ]
 
@@ -209,21 +209,21 @@ export default function CompanyPage() {
       description: "Gestionar clientes externos",
       icon: Users,
       color: "bg-blue-500",
-      action: () => router.push(`/company/${company?.id}/clients`)
+      action: () => router.push(`/company/${company.id}/clients`)
     },
     {
       title: "Mis Proveedores",
       description: "Gestionar proveedores externos",
       icon: Users,
       color: "bg-teal-500",
-      action: () => router.push(`/company/${company?.id}/suppliers`)
+      action: () => router.push(`/company/${company.id}/suppliers`)
     },
     {
       title: "Red Empresarial",
       description: "Conectar con otras empresas",
       icon: Users,
       color: "bg-pink-500",
-      action: () => router.push(`/company/${company?.id}/network`)
+      action: () => router.push(`/company/${company.id}/network`)
     }
   ]
 
@@ -237,14 +237,14 @@ export default function CompanyPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition)}</p>
+            <p className="text-muted-foreground">Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}</p>
           </div>
           <div className="flex gap-2">
             {hasPermission(userRole, 'members.view') && (
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => router.push(`/company/${company?.id}/members`)}
+                onClick={() => router.push(`/company/${company.id}/members`)}
               >
                 <Users className="h-4 w-4 mr-2" />
                 Miembros
@@ -255,7 +255,7 @@ export default function CompanyPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => router.push(`/company/${company?.id}/verify`)}
+                  onClick={() => router.push(`/company/${company.id}/verify`)}
                   className="border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
                   <Shield className="h-4 w-4 mr-2" />
@@ -264,7 +264,7 @@ export default function CompanyPage() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => router.push(`/company/${company?.id}/settings`)}
+                  onClick={() => router.push(`/company/${company.id}/settings`)}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Configurar
@@ -343,7 +343,7 @@ export default function CompanyPage() {
                 size="sm" 
                 variant="outline"
                 className="border-green-600 text-green-700 hover:bg-green-100 flex-shrink-0"
-                onClick={() => router.push(`/company/${company?.id}/verify`)}
+                onClick={() => router.push(`/company/${company.id}/verify`)}
               >
                 Ver Detalles
               </Button>
@@ -361,7 +361,7 @@ export default function CompanyPage() {
                 size="sm" 
                 variant="outline"
                 className="border-orange-600 text-orange-700 hover:bg-orange-100 flex-shrink-0"
-                onClick={() => router.push(`/company/${company?.id}/verify`)}
+                onClick={() => router.push(`/company/${company.id}/verify`)}
               >
                 Verificar
               </Button>
