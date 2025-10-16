@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock, Calendar, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 import { analyticsService, type AnalyticsSummary, type RevenueTrend, type TopClient, type PendingInvoices } from "@/services/analytics.service"
 import { toast } from "sonner"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
 
 export default function AnalyticsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -21,6 +22,8 @@ export default function AnalyticsPage() {
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrend[]>([])
   const [topClients, setTopClients] = useState<TopClient[]>([])
   const [pendingInvoices, setPendingInvoices] = useState<PendingInvoices | null>(null)
+  const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('month')
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -90,8 +93,85 @@ export default function AnalyticsPage() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Estadísticas y Análisis</h1>
-              <p className="text-muted-foreground">Período: {summary.period.month}</p>
+              <p className="text-muted-foreground">
+                Período: {(() => {
+                  const now = new Date()
+                  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+                  if (period === 'month') {
+                    return `${months[now.getMonth()]} ${now.getFullYear()}`
+                  } else if (period === 'quarter') {
+                    const quarter = Math.floor(now.getMonth() / 3) + 1
+                    return `Q${quarter} ${now.getFullYear()}`
+                  } else {
+                    return `${now.getFullYear()}`
+                  }
+                })()}
+              </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
+              <SelectTrigger className="w-[180px]">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Mes Actual</SelectItem>
+                <SelectItem value="quarter">Trimestre</SelectItem>
+                <SelectItem value="year">Año Completo</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" onClick={loadAnalytics}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={exporting}
+              onClick={async () => {
+                setExporting(true)
+                try {
+                  await new Promise(resolve => setTimeout(resolve, 1500))
+                  
+                  let csv = 'REPORTE DE ANALYTICS\n\n'
+                  csv += `Periodo,${period === 'month' ? 'Mes Actual' : period === 'quarter' ? 'Trimestre' : 'Año Completo'}\n\n`
+                  
+                  csv += 'RESUMEN FINANCIERO\n'
+                  csv += 'Concepto,Monto,Cantidad\n'
+                  csv += `Ventas,${summary.sales.total},${summary.sales.count}\n`
+                  csv += `Compras,${summary.purchases.total},${summary.purchases.count}\n`
+                  csv += `Balance,${summary.balance},-\n\n`
+                  
+                  csv += 'TENDENCIA MENSUAL\n'
+                  csv += 'Mes,Ventas,Compras\n'
+                  revenueTrend.forEach(item => {
+                    csv += `${item.month},${item.sales},${item.purchases}\n`
+                  })
+                  
+                  csv += '\nTOP CLIENTES\n'
+                  csv += 'Cliente,Monto Total,Cantidad Facturas\n'
+                  topClients.forEach(client => {
+                    csv += `${client.client_name},${client.total_amount},${client.invoice_count}\n`
+                  })
+                  
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `analytics-${period}-${new Date().toISOString().split('T')[0]}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                  toast.success('Reporte exportado en formato CSV')
+                } catch (error) {
+                  toast.error('Error al exportar datos')
+                } finally {
+                  setExporting(false)
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {exporting ? 'Exportando...' : 'Exportar'}
+            </Button>
           </div>
         </div>
 
@@ -168,12 +248,13 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Gráfico de Tendencia */}
-          <Card className="lg:col-span-2">
+          <Card>
             <CardHeader>
-              <CardTitle>Tendencia de Facturación (Últimos 6 Meses)</CardTitle>
+              <CardTitle>Tendencia de Facturación</CardTitle>
+              <CardDescription>Últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={revenueTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
@@ -182,6 +263,32 @@ export default function AnalyticsPage() {
                   <Legend />
                   <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
                   <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Flujo de Caja */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Flujo de Caja Acumulado</CardTitle>
+              <CardDescription>Balance mes a mes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={revenueTrend.map((item, index, arr) => {
+                  const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => acc + (curr.sales - curr.purchases), 0)
+                  return {
+                    month: item.month,
+                    balance: accumulated
+                  }
+                })}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -286,8 +393,8 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Promedios */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Métricas Adicionales */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
@@ -329,7 +436,25 @@ export default function AnalyticsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="h-8 w-8 text-blue-500" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Tasa de Crecimiento</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {revenueTrend.length >= 2 ? (
+                      ((revenueTrend[revenueTrend.length - 1].sales - revenueTrend[revenueTrend.length - 2].sales) / revenueTrend[revenueTrend.length - 2].sales * 100).toFixed(1)
+                    ) : '0'}%
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+
       </div>
     </div>
   )

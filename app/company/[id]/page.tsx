@@ -42,6 +42,7 @@ export default function CompanyPage() {
   const [isAfipVerified, setIsAfipVerified] = useState(false)
   const [certificate, setCertificate] = useState<any>(null)
   const [badges, setBadges] = useState<Record<string, number>>({})
+  const [badgesLoading, setBadgesLoading] = useState(true)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -57,6 +58,7 @@ export default function CompanyPage() {
 
   const loadBadges = async () => {
     try {
+      setBadgesLoading(true)
       const { analyticsService } = await import('@/services/analytics.service')
       const data = await analyticsService.getPendingInvoices(companyId)
       setBadges({
@@ -66,6 +68,8 @@ export default function CompanyPage() {
       })
     } catch (error) {
       console.error('Error loading badges:', error)
+    } finally {
+      setBadgesLoading(false)
     }
   }
 
@@ -423,10 +427,16 @@ export default function CompanyPage() {
                   className="cursor-pointer hover:shadow-md transition-shadow relative"
                   onClick={item.action}
                 >
-                  {typeof item.badge === 'string' && badges[item.badge] !== undefined && badges[item.badge] > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[20px] flex items-center justify-center">
-                      {badges[item.badge]}
-                    </div>
+                  {typeof item.badge === 'string' && (
+                    badgesLoading ? (
+                      <div className="absolute -top-2 -right-2 bg-gray-300 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[24px] h-[24px] flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                      </div>
+                    ) : badges[item.badge] !== undefined && badges[item.badge] > 0 ? (
+                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[20px] flex items-center justify-center">
+                        {badges[item.badge]}
+                      </div>
+                    ) : null
                   )}
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
@@ -436,7 +446,7 @@ export default function CompanyPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold mb-1">{item.title}</h3>
                         <p className="text-sm text-muted-foreground">{item.description}</p>
-                        {typeof item.badge === 'string' && badges[item.badge] !== undefined && badges[item.badge] === 0 && (
+                        {typeof item.badge === 'string' && !badgesLoading && badges[item.badge] !== undefined && badges[item.badge] === 0 && (
                           <div className="text-xs text-green-600 font-medium mt-2">
                             ✓ Todo al día
                           </div>
