@@ -119,8 +119,8 @@ export default function CompanyPage() {
 
   const allMenuItems = [
     ...(canIssueInvoices && hasPermission(userRole, 'invoices.create') ? [{
-      title: "Emitir Factura",
-      description: "Crear nueva factura para clientes",
+      title: "Emitir Comprobante",
+      description: "Facturas, NC, ND, Recibos, etc.",
       icon: FileText,
       color: "bg-blue-500",
       permission: 'invoices.create' as const,
