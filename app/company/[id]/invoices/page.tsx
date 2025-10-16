@@ -155,7 +155,8 @@ export default function InvoicesPage() {
       rejected: { label: 'Rechazada', className: 'bg-red-100 text-red-800' },
       paid: { label: 'Pagada', className: 'bg-green-100 text-green-800' },
       overdue: { label: 'Vencida', className: 'bg-red-100 text-red-800' },
-      cancelled: { label: 'Cancelada', className: 'bg-gray-100 text-gray-800' },
+      cancelled: { label: 'Anulada', className: 'bg-gray-100 text-gray-800' },
+      partially_cancelled: { label: 'Parcialmente Anulada', className: 'bg-orange-100 text-orange-800' },
     }
     const statusInfo = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
     return <Badge variant="secondary" className={statusInfo.className}>{statusInfo.label}</Badge>
@@ -272,7 +273,8 @@ export default function InvoicesPage() {
                           <SelectItem value="rejected">Rechazada</SelectItem>
                           <SelectItem value="paid">Pagada</SelectItem>
                           <SelectItem value="overdue">Vencida</SelectItem>
-                          <SelectItem value="cancelled">Cancelada</SelectItem>
+                          <SelectItem value="cancelled">Anulada</SelectItem>
+                          <SelectItem value="partially_cancelled">Parcialmente Anulada</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -285,10 +287,38 @@ export default function InvoicesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Todos</SelectItem>
-                          <SelectItem value="A">Tipo A</SelectItem>
-                          <SelectItem value="B">Tipo B</SelectItem>
-                          <SelectItem value="C">Tipo C</SelectItem>
-                          <SelectItem value="E">Tipo E</SelectItem>
+                          <SelectItem value="A">Factura A</SelectItem>
+                          <SelectItem value="B">Factura B</SelectItem>
+                          <SelectItem value="C">Factura C</SelectItem>
+                          <SelectItem value="M">Factura M</SelectItem>
+                          <SelectItem value="E">Factura E (Exportación)</SelectItem>
+                          <SelectItem value="NCA">Nota de Crédito A</SelectItem>
+                          <SelectItem value="NCB">Nota de Crédito B</SelectItem>
+                          <SelectItem value="NCC">Nota de Crédito C</SelectItem>
+                          <SelectItem value="NCM">Nota de Crédito M</SelectItem>
+                          <SelectItem value="NCE">Nota de Crédito E</SelectItem>
+                          <SelectItem value="NDA">Nota de Débito A</SelectItem>
+                          <SelectItem value="NDB">Nota de Débito B</SelectItem>
+                          <SelectItem value="NDC">Nota de Débito C</SelectItem>
+                          <SelectItem value="NDM">Nota de Débito M</SelectItem>
+                          <SelectItem value="NDE">Nota de Débito E</SelectItem>
+                          <SelectItem value="RA">Recibo A</SelectItem>
+                          <SelectItem value="RB">Recibo B</SelectItem>
+                          <SelectItem value="RC">Recibo C</SelectItem>
+                          <SelectItem value="RM">Recibo M</SelectItem>
+                          <SelectItem value="FCEA">FCE MiPyME A</SelectItem>
+                          <SelectItem value="FCEB">FCE MiPyME B</SelectItem>
+                          <SelectItem value="FCEC">FCE MiPyME C</SelectItem>
+                          <SelectItem value="NCFCEA">NC FCE MiPyME A</SelectItem>
+                          <SelectItem value="NCFCEB">NC FCE MiPyME B</SelectItem>
+                          <SelectItem value="NCFCEC">NC FCE MiPyME C</SelectItem>
+                          <SelectItem value="NDFCEA">ND FCE MiPyME A</SelectItem>
+                          <SelectItem value="NDFCEB">ND FCE MiPyME B</SelectItem>
+                          <SelectItem value="NDFCEC">ND FCE MiPyME C</SelectItem>
+                          <SelectItem value="R">Remito Electrónico</SelectItem>
+                          <SelectItem value="LBUA">Liquidación Bienes Usados A</SelectItem>
+                          <SelectItem value="LBUB">Liquidación Bienes Usados B</SelectItem>
+                          <SelectItem value="CBUCF">Comprobante Compra Bienes Usados</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

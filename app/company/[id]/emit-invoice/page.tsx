@@ -63,7 +63,7 @@ export default function CreateInvoicePage() {
     dueDate: '',
     paymentDueDate: '',
     currency: 'ARS' as Currency,
-    exchangeRate: '',
+    exchangeRate: '1',
     notes: ''
   })
 
@@ -338,7 +338,8 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (!formData.clientData?.client_id && !formData.receiverCompanyId) {
+    // Solo validar cliente si NO es una nota asociada (el cliente se toma de la factura)
+    if (!(isNoteType && associateInvoice) && !formData.clientData?.client_id && !formData.receiverCompanyId) {
       toast.error('Debe seleccionar un cliente')
       return
     }
@@ -367,6 +368,7 @@ export default function CreateInvoicePage() {
       related_invoice_id: formData.relatedInvoiceId,
       sales_point: currentCompany?.default_sales_point || 1,
       issue_date: formData.emissionDate,
+      due_date: formData.dueDate,
       currency: formData.currency,
       exchange_rate: formData.exchangeRate ? parseFloat(formData.exchangeRate) : undefined,
       notes: formData.notes,
@@ -407,15 +409,24 @@ export default function CreateInvoicePage() {
         ? await voucherService.createVoucher(companyId, payload as any)
         : await invoiceService.createInvoice(companyId, payload as any)
       
-      const invoice = (isNoteType && associateInvoice) ? result : result.invoice
+      // Extraer el voucher/invoice de la respuesta
+      const invoice = (isNoteType && associateInvoice) 
+        ? (result.voucher || result) 
+        : (result.invoice || result)
       
-      if (invoice.afip_status === 'approved') {
+      // Siempre mostrar toast de éxito
+      if (invoice?.afip_status === 'approved') {
         toast.success('Comprobante emitido exitosamente', {
           description: `CAE: ${invoice.afip_cae} - Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
         })
-      } else if (invoice.afip_status === 'error') {
+      } else if (invoice?.afip_status === 'error') {
         toast.warning('Comprobante creado pero con error en AFIP', {
           description: invoice.afip_error_message || 'Error desconocido'
+        })
+      } else {
+        // Fallback: mostrar éxito genérico si no hay afip_status
+        toast.success('Comprobante creado exitosamente', {
+          description: `Total: ${totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}`
         })
       }
       
@@ -583,7 +594,13 @@ export default function CreateInvoicePage() {
                     date={formData.emissionDate ? new Date(formData.emissionDate) : undefined}
                     onSelect={(date) => setFormData({...formData, emissionDate: date ? date.toISOString().split('T')[0] : ''})}
                     placeholder="Seleccionar fecha de emisión"
+                    minDate={selectedInvoice ? new Date(selectedInvoice.issue_date) : undefined}
                   />
+                  {selectedInvoice && (
+                    <p className="text-xs text-muted-foreground">
+                      Fecha mínima: {new Date(selectedInvoice.issue_date).toLocaleDateString('es-AR')} (fecha de la factura)
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -611,31 +628,36 @@ export default function CreateInvoicePage() {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label>Moneda y Cotización *</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select value={formData.currency} onValueChange={(value: Currency) => 
-                      setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '' : formData.exchangeRate})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ARS">Pesos Argentinos (ARS)</SelectItem>
-                        <SelectItem value="USD">Dólares (USD)</SelectItem>
-                        <SelectItem value="EUR">Euros (EUR)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="Cotización"
-                      value={formData.exchangeRate}
-                      onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
-                      disabled={formData.currency === 'ARS'}
-                    />
+                {!selectedInvoice && (
+                  <div className="space-y-2">
+                    <Label>Moneda y Cotización *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Select 
+                        value={formData.currency} 
+                        onValueChange={(value: Currency) => 
+                          setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '' : formData.exchangeRate})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ARS">Pesos Argentinos (ARS)</SelectItem>
+                          <SelectItem value="USD">Dólares (USD)</SelectItem>
+                          <SelectItem value="EUR">Euros (EUR)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Cotización"
+                        value={formData.exchangeRate || ''}
+                        onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
+                        disabled={formData.currency === 'ARS'}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
