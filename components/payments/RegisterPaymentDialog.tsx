@@ -57,7 +57,7 @@ export default function RegisterPaymentDialog({
     try {
       const company = await companyService.getCompany(companyId);
       setCompanyConfig(company);
-      calculateRetentions(company);
+      // No calcular retenciones automáticamente
     } catch (error) {
       console.error('Error loading company config:', error);
     }
@@ -217,12 +217,96 @@ export default function RegisterPaymentDialog({
                               className="w-20 h-8 text-sm"
                             />
                             <span className="text-sm text-orange-600 w-24 text-right">-${ret.amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRetentions(retentions.filter((_, i) => i !== idx))}
+                              className="h-6 w-6 p-0"
+                            >
+                              ×
+                            </Button>
                           </div>
                         ))}
                       </div>
                       <Separator />
                     </>
                   )}
+                  
+                  <div className="flex gap-2 flex-wrap">
+                    {companyConfig?.vatRetention > 0 && !retentions.find(r => r.type === 'vat_retention') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const invoiceTaxes = invoice?.total_taxes || 0;
+                          setRetentions([...retentions, {
+                            type: 'vat_retention',
+                            name: 'Retención IVA',
+                            rate: companyConfig.vatRetention,
+                            amount: invoiceTaxes * companyConfig.vatRetention / 100
+                          }]);
+                        }}
+                      >
+                        + Ret. IVA
+                      </Button>
+                    )}
+                    {companyConfig?.incomeTaxRetention > 0 && !retentions.find(r => r.type === 'income_tax_retention') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const invoiceTotal = invoice?.total || 0;
+                          setRetentions([...retentions, {
+                            type: 'income_tax_retention',
+                            name: 'Retención Ganancias',
+                            rate: companyConfig.incomeTaxRetention,
+                            amount: invoiceTotal * companyConfig.incomeTaxRetention / 100
+                          }]);
+                        }}
+                      >
+                        + Ret. Ganancias
+                      </Button>
+                    )}
+                    {companyConfig?.grossIncomeRetention > 0 && !retentions.find(r => r.type === 'gross_income_retention') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const invoiceTotal = invoice?.total || 0;
+                          setRetentions([...retentions, {
+                            type: 'gross_income_retention',
+                            name: 'Retención IIBB',
+                            rate: companyConfig.grossIncomeRetention,
+                            amount: invoiceTotal * companyConfig.grossIncomeRetention / 100
+                          }]);
+                        }}
+                      >
+                        + Ret. IIBB
+                      </Button>
+                    )}
+                    {companyConfig?.socialSecurityRetention > 0 && !retentions.find(r => r.type === 'suss_retention') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const invoiceTotal = invoice?.total || 0;
+                          setRetentions([...retentions, {
+                            type: 'suss_retention',
+                            name: 'Retención SUSS',
+                            rate: companyConfig.socialSecurityRetention,
+                            amount: invoiceTotal * companyConfig.socialSecurityRetention / 100
+                          }]);
+                        }}
+                      >
+                        + Ret. SUSS
+                      </Button>
+                    )}
+                  </div>
                   
                   <div className="flex justify-between text-lg font-bold">
                     <span>Neto a Pagar:</span>
