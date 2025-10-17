@@ -478,22 +478,22 @@ export default function CreateInvoicePage() {
         </div>
 
         {cert && !cert.isActive && (
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-amber-600 mt-0.5" />
+              <Shield className="h-5 w-5 text-red-600 mt-0.5" />
               <div className="flex-1">
-                <h3 className="font-semibold text-amber-900">Certificado AFIP no configurado</h3>
-                <p className="text-sm text-amber-700 mt-1">
-                  Las facturas se crearán como borradores y NO serán válidas fiscalmente hasta que configures tu certificado AFIP.
+                <h3 className="font-semibold text-red-900">Certificado AFIP requerido</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  No puedes emitir facturas electrónicas sin un certificado AFIP activo. Configura tu certificado para comenzar a facturar.
                 </p>
                 <Button 
                   type="button"
-                  variant="outline" 
+                  variant="default" 
                   size="sm" 
-                  className="mt-2"
+                  className="mt-2 bg-red-600 hover:bg-red-700"
                   onClick={() => router.push(`/company/${companyId}/verify`)}
                 >
-                  Configurar Certificado AFIP
+                  Configurar Certificado AFIP Ahora
                 </Button>
               </div>
             </div>
@@ -947,7 +947,11 @@ export default function CreateInvoicePage() {
 
             {/* Acciones */}
             <div className="flex gap-4">
-              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                className="flex-1" 
+                disabled={isSubmitting || (cert && !cert.isActive)}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -173,12 +173,25 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
               </SelectTrigger>
               <SelectContent>
                 {savedClients.map(client => {
-                  const displayName = client.businessName || `${client.firstName} ${client.lastname}` || client.documentNumber
+                  const displayName = client.businessName || `${client.firstName} ${client.lastName}` || client.documentNumber
+                  const taxConditionLabel = {
+                    'registered_taxpayer': 'RI',
+                    'monotax': 'Monotributo',
+                    'exempt': 'Exento',
+                    'final_consumer': 'CF'
+                  }[client.taxCondition] || client.taxCondition
+                  
                   return (
                     <SelectItem key={client.id} value={client.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{displayName}</span>
-                        <span className="text-xs text-muted-foreground">({client.documentNumber})</span>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{displayName}</span>
+                          <span className="text-xs text-muted-foreground">({client.documentType} {client.documentNumber})</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{taxConditionLabel}</span>
+                          {client.email && <span>• {client.email}</span>}
+                        </div>
                       </div>
                     </SelectItem>
                   )
