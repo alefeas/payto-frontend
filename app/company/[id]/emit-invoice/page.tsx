@@ -48,6 +48,7 @@ export default function CreateInvoicePage() {
   const [savedClients, setSavedClients] = useState<Client[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
+  const [isLoadingCert, setIsLoadingCert] = useState(true)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [associateInvoice, setAssociateInvoice] = useState(false)
@@ -213,18 +214,20 @@ export default function CreateInvoicePage() {
         }
         
         // Load AFIP certificate status
+        setIsLoadingCert(true)
         try {
           const apiClient = (await import('@/lib/api-client')).default
-          const certResponse = await apiClient.get(`/afip/companies/${companyId}/certificate`)
+          const certResponse = await apiClient.get(`/companies/${companyId}/afip/certificate`)
           setCert(certResponse.data.data)
         } catch (error: any) {
-          // Si es 404, significa que no hay certificado configurado
           if (error.response?.status === 404) {
             setCert({ isActive: false })
           } else {
             console.error('Error loading certificate:', error)
             setCert({ isActive: false })
           }
+        } finally {
+          setIsLoadingCert(false)
         }
         
       } catch (error) {
@@ -478,7 +481,14 @@ export default function CreateInvoicePage() {
           </div>
         </div>
 
-        {cert && !cert.isActive && (
+        {isLoadingCert ? (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+              <p className="text-sm text-blue-700">Verificando certificado AFIP...</p>
+            </div>
+          </div>
+        ) : cert && !cert.isActive && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-red-600 mt-0.5" />
