@@ -400,7 +400,7 @@ export default function CreateInvoicePage() {
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
-        tax_rate: item.taxRate || 0
+        tax_rate: (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
       }))
     } : {
       client_id: isExistingClient ? formData.clientData?.client_id : undefined,
@@ -419,7 +419,7 @@ export default function CreateInvoicePage() {
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
-        tax_rate: item.taxRate || 0
+        tax_rate: (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
       })),
       perceptions: perceptions.length > 0 ? perceptions.map(p => ({
         type: p.type,
