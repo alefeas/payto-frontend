@@ -145,5 +145,29 @@ export const invoiceService = {
       params: { sales_point: salesPoint, invoice_type: invoiceType }
     })
     return response.data
+  },
+
+  async downloadPDF(companyId: string, invoiceId: string): Promise<Blob> {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/pdf`, {
+      responseType: 'blob'
+    })
+    return response.data
+  },
+
+  async downloadTXT(companyId: string, invoiceId: string): Promise<Blob> {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/txt`, {
+      responseType: 'blob'
+    })
+    return response.data
+  },
+
+  async downloadBulk(companyId: string, invoiceIds: string[], format: 'pdf' | 'txt'): Promise<Blob> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/download-bulk`, {
+      invoice_ids: invoiceIds,
+      format
+    }, {
+      responseType: 'blob'
+    })
+    return response.data
   }
 }

@@ -122,29 +122,40 @@ export default function InvoicesPage() {
     inv.client?.business_name || inv.client?.first_name + ' ' + inv.client?.last_name || 'Sin cliente'
   ))]
 
-  const downloadSelectedTXT = () => {
-    if (selectedInvoices.length === 0) {
-      toast.error('Selecciona al menos una factura')
-      return
+  const downloadPDF = async (invoiceId: string) => {
+    const invoice = invoices.find(inv => inv.id === invoiceId)
+    try {
+      const blob = await invoiceService.downloadPDF(companyId, invoiceId)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${invoice?.number || 'factura'}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast.success('PDF descargado')
+    } catch (error) {
+      toast.error('Error al descargar PDF')
     }
-    
-    toast.success(`Descargando ${selectedInvoices.length} archivos TXT`, {
-      description: 'Los archivos se están preparando para descarga'
-    })
   }
 
-  const downloadPDF = (invoiceId: string) => {
+  const downloadTXT = async (invoiceId: string) => {
     const invoice = invoices.find(inv => inv.id === invoiceId)
-    toast.success(`Descargando PDF de ${invoice?.number}`, {
-      description: 'El archivo PDF se está descargando'
-    })
-  }
-
-  const downloadTXT = (invoiceId: string) => {
-    const invoice = invoices.find(inv => inv.id === invoiceId)
-    toast.success(`Descargando TXT de ${invoice?.number}`, {
-      description: 'Archivo TXT para AFIP/ARCA'
-    })
+    try {
+      const blob = await invoiceService.downloadTXT(companyId, invoiceId)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${invoice?.number || 'factura'}.txt`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast.success('TXT descargado')
+    } catch (error) {
+      toast.error('Error al descargar TXT')
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -192,7 +203,29 @@ export default function InvoicesPage() {
               <span>Facturas Emitidas</span>
               <div className="flex gap-2">
                 <Button 
-                  onClick={downloadSelectedTXT}
+                  onClick={async () => {
+                    if (selectedInvoices.length === 0) {
+                      toast.error('Selecciona al menos una factura')
+                      return
+                    }
+                    
+                    try {
+                      toast.info('Generando TXT...')
+                      const blob = await invoiceService.downloadBulk(companyId, selectedInvoices, 'txt')
+                      const url = window.URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `facturas_${new Date().toISOString().split('T')[0]}.zip`
+                      document.body.appendChild(a)
+                      a.click()
+                      window.URL.revokeObjectURL(url)
+                      document.body.removeChild(a)
+                      toast.success('TXT descargados')
+                    } catch (error: any) {
+                      console.error('Download error:', error)
+                      toast.error(error.response?.data?.error || 'Error al descargar archivos')
+                    }
+                  }}
                   disabled={selectedInvoices.length === 0}
                   size="sm"
                 >
@@ -200,14 +233,28 @@ export default function InvoicesPage() {
                   Descargar TXT ({selectedInvoices.length})
                 </Button>
                 <Button 
-                  onClick={() => {
+                  onClick={async () => {
                     if (selectedInvoices.length === 0) {
                       toast.error('Selecciona al menos una factura')
                       return
                     }
-                    toast.success(`Descargando ${selectedInvoices.length} PDFs`, {
-                      description: 'Los archivos PDF se están preparando'
-                    })
+                    
+                    try {
+                      toast.info('Generando PDF...')
+                      const blob = await invoiceService.downloadBulk(companyId, selectedInvoices, 'pdf')
+                      const url = window.URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `facturas_${new Date().toISOString().split('T')[0]}.zip`
+                      document.body.appendChild(a)
+                      a.click()
+                      window.URL.revokeObjectURL(url)
+                      document.body.removeChild(a)
+                      toast.success('PDF descargados')
+                    } catch (error: any) {
+                      console.error('Download error:', error)
+                      toast.error(error.response?.data?.error || 'Error al descargar archivos')
+                    }
                   }}
                   disabled={selectedInvoices.length === 0}
                   size="sm"
