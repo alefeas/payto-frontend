@@ -453,8 +453,9 @@ export default function CreateInvoicePage() {
       
       router.push(`/company/${companyId}/invoices`)
     } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Error desconocido'
       toast.error('Error al crear el comprobante', {
-        description: error.response?.data?.message || error.message || 'Error desconocido'
+        description: errorMessage
       })
     } finally {
       setIsSubmitting(false)

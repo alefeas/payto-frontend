@@ -136,8 +136,10 @@ export default function VerifyCompanyPage() {
       toast.success('Certificado configurado exitosamente')
       await loadData()
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || error.message || 'Error al subir certificado'
-      toast.error(errorMsg)
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Error al subir certificado'
+      toast.error('Error al configurar certificado', {
+        description: errorMsg
+      })
     } finally {
       setUploading(false)
     }
@@ -164,8 +166,10 @@ export default function VerifyCompanyPage() {
       toast.success('Certificado configurado exitosamente')
       await loadData()
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || error.message || 'Error al subir certificado'
-      toast.error(errorMsg)
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Error al subir certificado'
+      toast.error('Error al configurar certificado', {
+        description: errorMsg
+      })
     } finally {
       setUploading(false)
     }
