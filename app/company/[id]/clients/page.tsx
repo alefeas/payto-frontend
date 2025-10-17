@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { clientService, Client } from "@/services/client.service"
 import { ClientForm } from "@/components/clients/ClientForm"
-
+            
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
   monotax: "Monotributo",
@@ -323,5 +323,3 @@ export default function ClientsPage() {
     </div>
   )
 }
-
-
