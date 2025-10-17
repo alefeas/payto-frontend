@@ -74,20 +74,17 @@ export default function VerifyCompanyPage() {
         const cert = await afipCertificateService.getCertificate(id as string)
         setCertificate(cert)
         setVerificationStatus({
-          verification_status: cert.isActive ? 'verified' : 'unverified',
-          verified_at: cert.validFrom,
+          verification_status: cert?.isActive ? 'verified' : 'unverified',
+          verified_at: cert?.validFrom || null,
           has_certificate: true
         })
       } catch (error: any) {
-        if (error.response?.status === 404) {
-          setVerificationStatus({
-            verification_status: 'unverified',
-            verified_at: null,
-            has_certificate: false
-          })
-        } else {
-          console.error('Error loading certificate:', error)
-        }
+        console.error('Error loading certificate:', error)
+        setVerificationStatus({
+          verification_status: 'unverified',
+          verified_at: null,
+          has_certificate: false
+        })
       }
     } catch (error) {
       toast.error('Error al cargar datos')
@@ -102,8 +99,9 @@ export default function VerifyCompanyPage() {
       const result = await afipCertificateService.generateCSR(id as string)
       setGeneratedCSR(result.csr)
       toast.success('CSR generado exitosamente')
-    } catch (error) {
-      toast.error('Error al generar CSR')
+    } catch (error: any) {
+      console.error('Error generating CSR:', error)
+      toast.error(error.message || 'Error al generar CSR')
     } finally {
       setGenerating(false)
     }

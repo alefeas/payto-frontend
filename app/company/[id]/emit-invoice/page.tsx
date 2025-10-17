@@ -138,6 +138,27 @@ export default function CreateInvoicePage() {
   }, [isAuthenticated, authLoading, router])
 
   // Load company and clients data
+  const loadClientsData = async () => {
+    if (!companyId) return
+    
+    try {
+      const { clientService } = await import('@/services/client.service')
+      const clients = await clientService.getClients(companyId)
+      setSavedClients(clients)
+    } catch (error) {
+      console.error('Error loading clients:', error)
+    }
+  }
+  
+  useEffect(() => {
+    // Expose reload function globally
+    (window as any).reloadClients = loadClientsData
+    
+    return () => {
+      delete (window as any).reloadClients
+    }
+  }, [companyId])
+  
   useEffect(() => {
     const loadData = async () => {
       if (!companyId) return

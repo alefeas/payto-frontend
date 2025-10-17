@@ -54,6 +54,11 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
           tax_condition: createdClient.taxCondition
         }
       })
+      
+      // Trigger parent reload if callback exists
+      if (typeof (window as any).reloadClients === 'function') {
+        (window as any).reloadClients()
+      }
     }
   }
 
