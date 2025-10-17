@@ -52,6 +52,7 @@ export default function CreateInvoicePage() {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [associateInvoice, setAssociateInvoice] = useState(false)
+  const [salesPoints, setSalesPoints] = useState<{id: string, point_number: number, name: string | null}[]>([])
 
   const [formData, setFormData] = useState({
     voucherType: '',
@@ -60,6 +61,7 @@ export default function CreateInvoicePage() {
     receiverCompanyId: '',
     clientData: null as { client_id?: string; [key: string]: unknown } | null,
     saveClient: false,
+    salesPoint: 0,
     emissionDate: '',
     dueDate: '',
     paymentDueDate: '',
@@ -131,6 +133,8 @@ export default function CreateInvoicePage() {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [nextVoucherNumber, setNextVoucherNumber] = useState<string>('')
+  const [isLoadingNumber, setIsLoadingNumber] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -213,6 +217,28 @@ export default function CreateInvoicePage() {
           console.error('Error loading clients:', error)
         }
         
+        // Load sales points
+        try {
+          const apiClient = (await import('@/lib/api-client')).default
+          const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
+          const points = spResponse.data.data || []
+          setSalesPoints(points)
+          
+          // Set default sales point
+          if (points.length > 0) {
+            const defaultPoint = points.find((p: any) => p.point_number === company.defaultSalesPoint) || points[0]
+            setFormData(prev => ({ ...prev, salesPoint: defaultPoint.point_number }))
+          } else if (company.defaultSalesPoint) {
+            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
+          }
+        } catch (error) {
+          console.error('Error loading sales points:', error)
+          // Fallback to company default
+          if (company.defaultSalesPoint) {
+            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
+          }
+        }
+        
         // Load AFIP certificate status
         setIsLoadingCert(true)
         try {
@@ -284,6 +310,30 @@ export default function CreateInvoicePage() {
   useEffect(() => {
     calculateTotals()
   }, [items, perceptions, calculateTotals])
+
+  // Consultar próximo número cuando cambia tipo de factura o punto de venta
+  useEffect(() => {
+    const loadNextNumber = async () => {
+      if (!formData.voucherType || !formData.salesPoint) return
+      
+      setIsLoadingNumber(true)
+      try {
+        const data = await invoiceService.getNextNumber(
+          companyId,
+          formData.salesPoint,
+          formData.voucherType
+        )
+        setNextVoucherNumber(data.formatted_number)
+      } catch (error) {
+        console.error('Error loading next number:', error)
+        setNextVoucherNumber('0001-00000001')
+      } finally {
+        setIsLoadingNumber(false)
+      }
+    }
+
+    loadNextNumber()
+  }, [formData.voucherType, formData.salesPoint, companyId])
 
   const addItem = () => {
     setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: currentCompany?.defaultVat || 21 }])
@@ -390,7 +440,7 @@ export default function CreateInvoicePage() {
     const payload = (isNoteType && associateInvoice) ? {
       voucher_type: formData.voucherType,
       related_invoice_id: formData.relatedInvoiceId,
-      sales_point: currentCompany?.default_sales_point || 1,
+      sales_point: formData.salesPoint,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
       currency: formData.currency,
@@ -408,7 +458,7 @@ export default function CreateInvoicePage() {
       client_data: !isExistingClient && formData.clientData ? formData.clientData : undefined,
       save_client: formData.saveClient,
       invoice_type: formData.voucherType,
-      sales_point: currentCompany?.default_sales_point || 1,
+      sales_point: formData.salesPoint,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
       payment_due_date: formData.paymentDueDate || undefined,
@@ -519,35 +569,84 @@ export default function CreateInvoicePage() {
               <CardDescription>Seleccione el tipo de comprobante</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Tipo de Comprobante *</Label>
-                <Select 
-                  value={formData.voucherType} 
-                  onValueChange={(value) => {
-                    setFormData({...formData, voucherType: value, relatedInvoiceId: ''})
-                    setAssociateInvoice(false)
-                  }}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tipo de Comprobante *</Label>
+                  <Select 
+                    value={formData.voucherType} 
+                    onValueChange={(value) => {
+                      setFormData({...formData, voucherType: value, relatedInvoiceId: ''})
+                      setAssociateInvoice(false)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione tipo de comprobante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTypes.map((type) => (
+                        <SelectItem key={type.code} value={type.code}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{type.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {type.category === 'invoice' && 'Factura'}
+                              {type.category === 'credit_note' && 'Nota de Crédito'}
+                              {type.category === 'debit_note' && 'Nota de Débito'}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione tipo de comprobante" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTypes.map((type) => (
-                      <SelectItem key={type.code} value={type.code}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{type.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {type.category === 'invoice' && 'Factura'}
-                            {type.category === 'credit_note' && 'Nota de Crédito'}
-                            {type.category === 'debit_note' && 'Nota de Débito'}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label>Punto de Venta *</Label>
+                  <Select 
+                    value={formData.salesPoint.toString()} 
+                    onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione punto de venta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salesPoints.length > 0 ? (
+                        salesPoints.map((sp) => (
+                          <SelectItem key={sp.id} value={sp.point_number.toString()}>
+                            {sp.point_number.toString().padStart(4, '0')}{sp.name ? ` - ${sp.name}` : ''}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value={currentCompany?.default_sales_point?.toString() || '1'}>
+                          {(currentCompany?.default_sales_point || 1).toString().padStart(4, '0')}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* Número de Comprobante (readonly) */}
+              {nextVoucherNumber && (
+                <div className="space-y-2">
+                  <Label>Número de Comprobante</Label>
+                  <div className="relative">
+                    <Input
+                      value={nextVoucherNumber}
+                      readOnly
+                      disabled
+                      className="bg-gray-100 dark:bg-gray-800 font-mono"
+                    />
+                    {isLoadingNumber && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Próximo número disponible según AFIP
+                  </p>
+                </div>
+              )}
 
               {/* Concepto */}
               <div className="space-y-2">

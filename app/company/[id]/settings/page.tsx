@@ -55,6 +55,14 @@ export default function SettingsPage() {
 
   const [company, setCompany] = useState<Company | null>(null)
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [salesPoints, setSalesPoints] = useState<any[]>([])
+  const [showAddSalesPointDialog, setShowAddSalesPointDialog] = useState(false)
+  const [showEditSalesPointDialog, setShowEditSalesPointDialog] = useState(false)
+  const [showDeleteSalesPointDialog, setShowDeleteSalesPointDialog] = useState(false)
+  const [editingSalesPoint, setEditingSalesPoint] = useState<any>(null)
+  const [deletingSalesPointId, setDeletingSalesPointId] = useState<string | null>(null)
+  const [salesPointFormData, setSalesPointFormData] = useState({ point_number: '', name: '' })
+  const [addingSalesPoint, setAddingSalesPoint] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -84,7 +92,6 @@ export default function SettingsPage() {
     province: '',
     tax_condition: '',
     default_sales_point: 1,
-    last_invoice_number: 0,
     default_vat: 21,
     vat_perception: 0,
     gross_income_perception: 2.5,
@@ -130,6 +137,15 @@ export default function SettingsPage() {
       setCompany(companyData)
       setBankAccounts(accounts)
       
+      // Load sales points
+      try {
+        const apiClient = (await import('@/lib/api-client')).default
+        const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
+        setSalesPoints(spResponse.data.data || [])
+      } catch (error) {
+        console.error('Error loading sales points:', error)
+      }
+      
       // Get members count for approval validation
       try {
         const apiClient = (await import('@/lib/api-client')).default
@@ -158,7 +174,6 @@ export default function SettingsPage() {
         province: addr.province || '',
         tax_condition: companyData.taxCondition || '',
         default_sales_point: companyData.defaultSalesPoint || 1,
-        last_invoice_number: companyData.lastInvoiceNumber || 0,
         default_vat: Number(companyData.defaultVat) || 21,
         vat_perception: Number(companyData.vatPerception) || 0,
         gross_income_perception: Number(companyData.grossIncomePerception) || 2.5,
@@ -393,7 +408,8 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>CUIT</Label>
-                        <Input value={formData.national_id} onChange={(e) => setFormData({...formData, national_id: formatCUIT(e.target.value)})} />
+                        <Input value={formData.national_id} readOnly disabled className="bg-gray-100 dark:bg-gray-800" />
+                        <p className="text-xs text-muted-foreground">El CUIT no puede modificarse ya que está vinculado al certificado AFIP</p>
                       </div>
                       <div className="space-y-2">
                         <Label>Teléfono</Label>
@@ -500,32 +516,80 @@ export default function SettingsPage() {
                         <p className="text-xs text-muted-foreground">Solo se actualiza desde AFIP (requiere certificado)</p>
                       </div>
                       <div className="space-y-2">
-                        <Label>Punto de Venta</Label>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="9999" 
-                          value={formData.default_sales_point} 
-                          onChange={(e) => setFormData({...formData, default_sales_point: parseInt(e.target.value) || 1})} 
-                        />
+                        <Label>Punto de Venta Predeterminado</Label>
+                        <Select 
+                          value={formData.default_sales_point.toString()} 
+                          onValueChange={(value) => setFormData({...formData, default_sales_point: parseInt(value)})}
+                          disabled={salesPoints.length === 0}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Selecciona un punto de venta" /></SelectTrigger>
+                          <SelectContent>
+                            {salesPoints.map((sp) => (
+                              <SelectItem key={sp.id} value={sp.point_number.toString()}>
+                                {sp.point_number.toString().padStart(4, '0')}{sp.name ? ` - ${sp.name}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {salesPoints.length === 0 && (
+                          <p className="text-xs text-muted-foreground">Primero agrega un punto de venta</p>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
                 
                 <div className="border-t pt-6">
-                  <h3 className="font-medium mb-4">Numeración de Facturas</h3>
-                  <div className="space-y-2">
-                    <Label>Último Número de Factura</Label>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      value={formData.last_invoice_number} 
-                      onChange={(e) => setFormData({...formData, last_invoice_number: parseInt(e.target.value) || 0})} 
-                      className="max-w-xs"
-                    />
-                    <p className="text-xs text-muted-foreground">La próxima factura será este número + 1</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium">Puntos de Venta</h3>
+                    {canUpdate && (
+                      <Button size="sm" onClick={() => setShowAddSalesPointDialog(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar
+                      </Button>
+                    )}
                   </div>
+                  {salesPoints.length === 0 ? (
+                    <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                      <p className="text-sm text-muted-foreground">No hay puntos de venta configurados</p>
+                      {canUpdate && (
+                        <Button size="sm" className="mt-2" onClick={() => setShowAddSalesPointDialog(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Agregar Primer Punto de Venta
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {salesPoints.map((sp) => (
+                        <div key={sp.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-semibold">{sp.point_number.toString().padStart(4, '0')}</span>
+                              {sp.name && <span className="text-sm text-muted-foreground">- {sp.name}</span>}
+                            </div>
+                          </div>
+                          {canUpdate && (
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="ghost" onClick={() => {
+                                setEditingSalesPoint(sp)
+                                setSalesPointFormData({ point_number: sp.point_number.toString(), name: sp.name || '' })
+                                setShowEditSalesPointDialog(true)
+                              }}>
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => {
+                                setDeletingSalesPointId(sp.id)
+                                setShowDeleteSalesPointDialog(true)
+                              }}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="border-t pt-6">
@@ -1022,6 +1086,144 @@ export default function SettingsPage() {
               <Button onClick={regenerateInviteCode}>
                 Regenerar Código
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Sales Point Dialog */}
+        <Dialog open={showAddSalesPointDialog} onOpenChange={setShowAddSalesPointDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Punto de Venta</DialogTitle>
+              <DialogDescription>Configura un nuevo punto de venta para emitir facturas</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Número de Punto de Venta *</Label>
+                <Input 
+                  type="text" 
+                  placeholder="1" 
+                  value={salesPointFormData.point_number} 
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4)
+                    setSalesPointFormData({...salesPointFormData, point_number: value})
+                  }} 
+                  maxLength={4}
+                />
+                <p className="text-xs text-muted-foreground">Número entre 1 y 9999 (máx. 4 dígitos)</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Nombre (opcional)</Label>
+                <Input 
+                  placeholder="Sucursal Centro" 
+                  value={salesPointFormData.name} 
+                  onChange={(e) => setSalesPointFormData({...salesPointFormData, name: e.target.value.slice(0, 100)})} 
+                  maxLength={100}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowAddSalesPointDialog(false); setSalesPointFormData({ point_number: '', name: '' }); }} disabled={addingSalesPoint}>Cancelar</Button>
+              <Button onClick={async () => {
+                if (!salesPointFormData.point_number) {
+                  toast.error('Ingresa el número de punto de venta')
+                  return
+                }
+                setAddingSalesPoint(true)
+                try {
+                  const apiClient = (await import('@/lib/api-client')).default
+                  const response = await apiClient.post(`/companies/${companyId}/sales-points`, {
+                    point_number: parseInt(salesPointFormData.point_number),
+                    name: salesPointFormData.name || null
+                  })
+                  const newSalesPoint = response.data.data
+                  setSalesPoints([...salesPoints, newSalesPoint])
+                  if (salesPoints.length === 0) {
+                    setFormData({...formData, default_sales_point: newSalesPoint.point_number})
+                  }
+                  toast.success('Punto de venta agregado')
+                  setShowAddSalesPointDialog(false)
+                  setSalesPointFormData({ point_number: '', name: '' })
+                } catch (error: any) {
+                  toast.error(error.response?.data?.error || 'Error al agregar punto de venta')
+                } finally {
+                  setAddingSalesPoint(false)
+                }
+              }} disabled={addingSalesPoint}>{addingSalesPoint ? 'Agregando...' : 'Agregar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Sales Point Dialog */}
+        <Dialog open={showEditSalesPointDialog} onOpenChange={setShowEditSalesPointDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Punto de Venta</DialogTitle>
+              <DialogDescription>Modifica el nombre del punto de venta</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Número de Punto de Venta</Label>
+                <Input value={salesPointFormData.point_number} readOnly disabled className="bg-gray-100 dark:bg-gray-800" />
+                <p className="text-xs text-muted-foreground">El número no puede modificarse</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Nombre (opcional)</Label>
+                <Input 
+                  placeholder="Sucursal Centro" 
+                  value={salesPointFormData.name} 
+                  onChange={(e) => setSalesPointFormData({...salesPointFormData, name: e.target.value.slice(0, 100)})} 
+                  maxLength={100}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowEditSalesPointDialog(false); setEditingSalesPoint(null); setSalesPointFormData({ point_number: '', name: '' }); }}>Cancelar</Button>
+              <Button onClick={async () => {
+                if (!editingSalesPoint) return
+                try {
+                  const apiClient = (await import('@/lib/api-client')).default
+                  const response = await apiClient.put(`/companies/${companyId}/sales-points/${editingSalesPoint.id}`, {
+                    name: salesPointFormData.name || null
+                  })
+                  const updatedSalesPoint = response.data.data
+                  setSalesPoints(salesPoints.map(sp => sp.id === updatedSalesPoint.id ? updatedSalesPoint : sp))
+                  toast.success('Punto de venta actualizado')
+                  setShowEditSalesPointDialog(false)
+                  setEditingSalesPoint(null)
+                  setSalesPointFormData({ point_number: '', name: '' })
+                } catch (error: any) {
+                  toast.error(error.response?.data?.error || 'Error al actualizar punto de venta')
+                }
+              }}>Guardar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Sales Point Dialog */}
+        <Dialog open={showDeleteSalesPointDialog} onOpenChange={setShowDeleteSalesPointDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Eliminar punto de venta?</DialogTitle>
+              <DialogDescription>
+                Esta acción no se puede deshacer. No podrás eliminar un punto de venta que tenga facturas asociadas.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowDeleteSalesPointDialog(false); setDeletingSalesPointId(null); }}>Cancelar</Button>
+              <Button variant="destructive" onClick={async () => {
+                if (!deletingSalesPointId) return
+                try {
+                  const apiClient = (await import('@/lib/api-client')).default
+                  await apiClient.delete(`/companies/${companyId}/sales-points/${deletingSalesPointId}`)
+                  setSalesPoints(salesPoints.filter(sp => sp.id !== deletingSalesPointId))
+                  toast.success('Punto de venta eliminado')
+                  setShowDeleteSalesPointDialog(false)
+                  setDeletingSalesPointId(null)
+                } catch (error: any) {
+                  toast.error(error.response?.data?.error || 'Error al eliminar punto de venta')
+                }
+              }}>Eliminar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

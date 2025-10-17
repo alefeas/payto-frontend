@@ -200,6 +200,15 @@ export default function InvoiceDetailPage() {
                   <p className="font-medium">{invoice.currency}</p>
                 </div>
               </div>
+              {invoice.afip_cae && (
+                <div className="pt-2 border-t">
+                  <p className="text-sm font-medium text-muted-foreground">CAE (AFIP)</p>
+                  <p className="font-mono font-semibold text-green-700">{invoice.afip_cae}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Vto: {new Date(invoice.afip_cae_due_date).toLocaleDateString('es-AR')}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

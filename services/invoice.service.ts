@@ -134,5 +134,16 @@ export const invoiceService = {
 
   async archiveInvoice(companyId: string, invoiceId: string): Promise<void> {
     await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/archive`)
+  },
+
+  async getNextNumber(companyId: string, salesPoint: number, invoiceType: string): Promise<{
+    last_number: number
+    next_number: number
+    formatted_number: string
+  }> {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/next-number`, {
+      params: { sales_point: salesPoint, invoice_type: invoiceType }
+    })
+    return response.data
   }
 }
