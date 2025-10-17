@@ -40,8 +40,7 @@ export const afipCertificateService = {
 
   async uploadCertificate(companyId: string, certificate: string, password?: string, environment?: 'testing' | 'production'): Promise<AfipCertificate> {
     const formData = new FormData()
-    const certBlob = new Blob([certificate], { type: 'application/x-pem-file' })
-    formData.append('certificate', certBlob, 'certificate.pem')
+    formData.append('certificate', certificate)
     if (password) formData.append('password', password)
     formData.append('environment', environment || 'testing')
     
@@ -57,10 +56,8 @@ export const afipCertificateService = {
     environment?: 'testing' | 'production'
   ): Promise<AfipCertificate> {
     const formData = new FormData()
-    const certBlob = new Blob([certificate], { type: 'application/x-pem-file' })
-    const keyBlob = new Blob([privateKey], { type: 'application/x-pem-file' })
-    formData.append('certificate', certBlob, 'certificate.pem')
-    formData.append('private_key', keyBlob, 'private_key.pem')
+    formData.append('certificate', certificate)
+    formData.append('private_key', privateKey)
     if (password) formData.append('password', password)
     formData.append('environment', environment || 'testing')
     
