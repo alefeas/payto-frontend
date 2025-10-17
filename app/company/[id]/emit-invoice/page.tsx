@@ -477,6 +477,29 @@ export default function CreateInvoicePage() {
           </div>
         </div>
 
+        {cert && !cert.isActive && (
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900">Certificado AFIP no configurado</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  Las facturas se crearán como borradores y NO serán válidas fiscalmente hasta que configures tu certificado AFIP.
+                </p>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => router.push(`/company/${companyId}/verify`)}
+                >
+                  Configurar Certificado AFIP
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datos Básicos */}
           <Card>
