@@ -543,10 +543,27 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium">Puntos de Venta</h3>
                     {canUpdate && (
-                      <Button size="sm" onClick={() => setShowAddSalesPointDialog(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Agregar
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={async () => {
+                          try {
+                            const apiClient = (await import('@/lib/api-client')).default
+                            const response = await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
+                            toast.success(`Sincronizados: ${response.data.created} nuevos, ${response.data.synced} actualizados`)
+                            // Reload only sales points without full page reload
+                            const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
+                            setSalesPoints(spResponse.data.data || [])
+                          } catch (error: any) {
+                            toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
+                          }
+                        }}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Sincronizar con AFIP
+                        </Button>
+                        <Button size="sm" onClick={() => setShowAddSalesPointDialog(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Agregar
+                        </Button>
+                      </div>
                     )}
                   </div>
                   {salesPoints.length === 0 ? (

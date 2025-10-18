@@ -273,15 +273,21 @@ export default function CreateInvoicePage() {
 
   useEffect(() => {
     if (currentCompany && !isInitialized) {
-      setItems([{ description: '', quantity: 1, unitPrice: 0, taxRate: currentCompany.defaultVat || 21 }])
+      setItems([{ description: '', quantity: 1, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany.defaultVat || 21 }])
       setIsInitialized(true)
     }
   }, [currentCompany, isInitialized])
 
   const calculateTotals = useCallback(() => {
-    const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
+    const subtotal = items.reduce((sum, item) => {
+      const itemBase = item.quantity * item.unitPrice
+      const discount = (item.discountPercentage || 0) / 100
+      return sum + (itemBase * (1 - discount))
+    }, 0)
     const totalTaxes = items.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unitPrice
+      const itemBase = item.quantity * item.unitPrice
+      const discount = (item.discountPercentage || 0) / 100
+      const itemSubtotal = itemBase * (1 - discount)
       // Exento (-1) y No Gravado (-2) no pagan IVA
       const taxRate = (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
       const taxAmount = itemSubtotal * taxRate / 100
@@ -336,7 +342,7 @@ export default function CreateInvoicePage() {
   }, [formData.voucherType, formData.salesPoint, companyId])
 
   const addItem = () => {
-    setItems([...items, { description: '', quantity: 1, unitPrice: 0, taxRate: currentCompany?.defaultVat || 21 }])
+    setItems([...items, { description: '', quantity: 1, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany?.defaultVat || 21 }])
   }
 
   const removeItem = (index: number) => {
@@ -349,6 +355,23 @@ export default function CreateInvoicePage() {
     const newItems = [...items]
     newItems[index] = { ...newItems[index], [field]: value }
     setItems(newItems)
+  }
+
+  const getTaxRateLabel = (rate: number | undefined): string => {
+    const actualRate = rate !== undefined ? rate : (currentCompany?.defaultVat ?? 21)
+    const numRate = Number(actualRate)
+    if (numRate === -1) return 'Exento'
+    if (numRate === -2) return 'No Gravado'
+    return `${actualRate}%`
+  }
+
+  const calculateItemTotal = (item: typeof items[0]) => {
+    const base = item.quantity * item.unitPrice
+    const discount = (item.discountPercentage || 0) / 100
+    const subtotal = base * (1 - discount)
+    const taxRate = (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
+    const tax = subtotal * taxRate / 100
+    return { subtotal, total: subtotal + tax }
   }
 
   const addPerception = () => {
@@ -450,6 +473,7 @@ export default function CreateInvoicePage() {
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
+        discount_percentage: item.discountPercentage || 0,
         tax_rate: (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
       }))
     } : {
@@ -469,6 +493,7 @@ export default function CreateInvoicePage() {
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
+        discount_percentage: item.discountPercentage || 0,
         tax_rate: (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
       })),
       perceptions: perceptions.length > 0 ? perceptions.map(p => ({
@@ -626,27 +651,29 @@ export default function CreateInvoicePage() {
               </div>
 
               {/* Número de Comprobante (readonly) */}
-              {nextVoucherNumber && (
-                <div className="space-y-2">
-                  <Label>Número de Comprobante</Label>
-                  <div className="relative">
-                    <Input
-                      value={nextVoucherNumber}
-                      readOnly
-                      disabled
-                      className="bg-gray-100 dark:bg-gray-800 font-mono"
-                    />
-                    {isLoadingNumber && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Próximo número disponible según AFIP
-                  </p>
+              <div className="space-y-2 transition-all duration-300 ease-in-out" style={{ 
+                opacity: nextVoucherNumber ? 1 : 0,
+                maxHeight: nextVoucherNumber ? '200px' : '0px',
+                overflow: 'hidden'
+              }}>
+                <Label>Número de Comprobante</Label>
+                <div className="relative">
+                  <Input
+                    value={nextVoucherNumber}
+                    readOnly
+                    disabled
+                    className="bg-gray-100 dark:bg-gray-800 font-mono"
+                  />
+                  {isLoadingNumber && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  Próximo número disponible según AFIP
+                </p>
+              </div>
 
               {/* Concepto */}
               <div className="space-y-2">
@@ -829,8 +856,11 @@ export default function CreateInvoicePage() {
               <CardDescription>Detalle de productos o servicios</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {items.map((item, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 border rounded-lg">
+              {items.map((item, index) => {
+                const itemTotals = calculateItemTotal(item)
+                return (
+                <div key={index} className="space-y-3 p-4 border rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
                   <div className="md:col-span-2 space-y-2">
                     <Label>Descripción *</Label>
                     <Input
@@ -864,6 +894,25 @@ export default function CreateInvoicePage() {
                   </div>
                   
                   <div className="space-y-2">
+                    <Label>Bonif. (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={item.discountPercentage || 0}
+                      onChange={(e) => {
+                        const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
+                        updateItem(index, 'discountPercentage', value)
+                      }}
+                      onBlur={(e) => {
+                        const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
+                        updateItem(index, 'discountPercentage', value)
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label>IVA (%)</Label>
                     <Select 
                       value={(item.taxRate ?? currentCompany?.defaultVat ?? 21).toString()} 
@@ -871,9 +920,7 @@ export default function CreateInvoicePage() {
                     >
                       <SelectTrigger>
                         <SelectValue>
-                          {(item.taxRate ?? currentCompany?.defaultVat ?? 21) === -1 ? 'Exento' : 
-                           (item.taxRate ?? currentCompany?.defaultVat ?? 21) === -2 ? 'No Gravado' : 
-                           `${item.taxRate ?? currentCompany?.defaultVat ?? 21}%`}
+                          {getTaxRateLabel(item.taxRate)}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
@@ -900,8 +947,14 @@ export default function CreateInvoicePage() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+                  </div>
+                  <div className="flex justify-end gap-4 text-sm border-t pt-2">
+                    <span className="text-muted-foreground">Subtotal: <span className="font-medium text-foreground">${itemTotals.subtotal.toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">Total c/IVA: <span className="font-medium text-foreground">${itemTotals.total.toFixed(2)}</span></span>
+                  </div>
                 </div>
-              ))}
+              )
+              })}
             </CardContent>
           </Card>
 

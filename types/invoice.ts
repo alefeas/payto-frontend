@@ -18,6 +18,7 @@ export interface InvoiceItem {
   description: string
   quantity: number
   unitPrice: number
+  discountPercentage?: number
   subtotal: number
   taxRate?: number // -1: Exento, -2: No Gravado, 0+: Alícuota normal
   taxAmount?: number
