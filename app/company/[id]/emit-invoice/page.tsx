@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Calculator, FileText, Shield, Loader2 } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Calculator, FileText, Shield, Loader2, Download } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import type { Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
 import { ClientSelector } from "@/components/invoices/ClientSelector"
 import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { companyService } from "@/services/company.service"
 import { invoiceService } from "@/services/invoice.service"
 import { voucherService } from "@/services/voucher.service"
@@ -47,6 +48,8 @@ export default function CreateInvoicePage() {
   const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
   const [savedClients, setSavedClients] = useState<Client[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [isLoadingSalesPoints, setIsLoadingSalesPoints] = useState(true)
+  const [isSyncingSalesPoints, setIsSyncingSalesPoints] = useState(false)
   const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
   const [isLoadingCert, setIsLoadingCert] = useState(true)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
@@ -135,6 +138,9 @@ export default function CreateInvoicePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [nextVoucherNumber, setNextVoucherNumber] = useState<string>('')
   const [isLoadingNumber, setIsLoadingNumber] = useState(false)
+  const [showAddSalesPointDialog, setShowAddSalesPointDialog] = useState(false)
+  const [salesPointFormData, setSalesPointFormData] = useState({ point_number: '', name: '' })
+  const [addingSalesPoint, setAddingSalesPoint] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -218,6 +224,7 @@ export default function CreateInvoicePage() {
         }
         
         // Load sales points
+        setIsLoadingSalesPoints(true)
         try {
           const apiClient = (await import('@/lib/api-client')).default
           const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
@@ -237,6 +244,8 @@ export default function CreateInvoicePage() {
           if (company.defaultSalesPoint) {
             setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
           }
+        } finally {
+          setIsLoadingSalesPoints(false)
         }
         
         // Load AFIP certificate status
@@ -593,10 +602,10 @@ export default function CreateInvoicePage() {
               <CardTitle>Información General</CardTitle>
               <CardDescription>Seleccione el tipo de comprobante</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo de Comprobante *</Label>
+                <div className="space-y-2 flex-1">
+                  <Label className="h-4 flex items-center">Tipo de Comprobante *</Label>
                   <Select 
                     value={formData.voucherType} 
                     onValueChange={(value) => {
@@ -624,29 +633,82 @@ export default function CreateInvoicePage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Punto de Venta *</Label>
-                  <Select 
-                    value={formData.salesPoint.toString()} 
-                    onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione punto de venta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {salesPoints.length > 0 ? (
-                        salesPoints.map((sp) => (
-                          <SelectItem key={sp.id} value={sp.point_number.toString()}>
-                            {sp.point_number.toString().padStart(4, '0')}{sp.name ? ` - ${sp.name}` : ''}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value={currentCompany?.default_sales_point?.toString() || '1'}>
-                          {(currentCompany?.default_sales_point || 1).toString().padStart(4, '0')}
-                        </SelectItem>
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="h-4 flex items-center">Punto de Venta *</Label>
+                    <div className="flex gap-1">
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="ghost"
+                        className="h-4 w-4 p-0 shrink-0"
+                        onClick={async () => {
+                          setIsSyncingSalesPoints(true)
+                          try {
+                            const apiClient = (await import('@/lib/api-client')).default
+                            const response = await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
+                            toast.success(`Sincronizados: ${response.data.created} nuevos, ${response.data.synced} actualizados`)
+                            const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
+                            setSalesPoints(spResponse.data.data || [])
+                          } catch (error: any) {
+                            toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
+                          } finally {
+                            setIsSyncingSalesPoints(false)
+                          }
+                        }}
+                        disabled={isLoadingSalesPoints || isSyncingSalesPoints}
+                        title="Sincronizar con AFIP"
+                      >
+                        {isSyncingSalesPoints ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="ghost"
+                        className="h-4 w-4 p-0 shrink-0"
+                        onClick={() => setShowAddSalesPointDialog(true)}
+                        disabled={isLoadingSalesPoints}
+                        title="Agregar punto de venta"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  {isLoadingSalesPoints ? (
+                    <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <span className="text-sm text-muted-foreground">Cargando...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Select 
+                        value={formData.salesPoint.toString()} 
+                        onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione punto de venta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {salesPoints.length > 0 ? (
+                            salesPoints.map((sp) => (
+                              <SelectItem key={sp.id} value={sp.point_number.toString()}>
+                                {sp.point_number.toString().padStart(4, '0')}{sp.name ? ` - ${sp.name}` : ''}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value={currentCompany?.default_sales_point?.toString() || '1'}>
+                              {(currentCompany?.default_sales_point || 1).toString().padStart(4, '0')}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {salesPoints.length === 0 && (
+                        <p className="text-xs text-amber-600">
+                          No hay puntos de venta. Sincronizá desde AFIP o agregá uno manualmente.
+                        </p>
                       )}
-                    </SelectContent>
-                  </Select>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -675,21 +737,55 @@ export default function CreateInvoicePage() {
                 </p>
               </div>
 
-              {/* Concepto */}
-              <div className="space-y-2">
-                <Label>Concepto *</Label>
-                <Select 
-                  value={formData.concept} 
-                  onValueChange={(value: InvoiceConcept) => 
-                    setFormData({...formData, concept: value})}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="products">Productos</SelectItem>
-                    <SelectItem value="services">Servicios</SelectItem>
-                    <SelectItem value="products_services">Productos y Servicios</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Concepto y Moneda */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Concepto *</Label>
+                  <Select 
+                    value={formData.concept} 
+                    onValueChange={(value: InvoiceConcept) => 
+                      setFormData({...formData, concept: value})}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="products">Productos</SelectItem>
+                      <SelectItem value="services">Servicios</SelectItem>
+                      <SelectItem value="products_services">Productos y Servicios</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {!selectedInvoice && (
+                  <div className="space-y-2">
+                    <Label>Moneda *</Label>
+                    <div className="flex gap-2">
+                      <Select 
+                        value={formData.currency} 
+                        onValueChange={(value: Currency) => 
+                          setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '1' : formData.exchangeRate})}
+                      >
+                        <SelectTrigger className="flex-1 h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ARS">ARS</SelectItem>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Cotización"
+                        value={formData.exchangeRate || ''}
+                        onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
+                        disabled={formData.currency === 'ARS'}
+                        className="flex-1 h-10"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {isNoteType && (
@@ -809,36 +905,7 @@ export default function CreateInvoicePage() {
                   </div>
                 )}
 
-                {!selectedInvoice && (
-                  <div className="space-y-2">
-                    <Label>Moneda y Cotización *</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Select 
-                        value={formData.currency} 
-                        onValueChange={(value: Currency) => 
-                          setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '' : formData.exchangeRate})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ARS">Pesos Argentinos (ARS)</SelectItem>
-                          <SelectItem value="USD">Dólares (USD)</SelectItem>
-                          <SelectItem value="EUR">Euros (EUR)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Cotización"
-                        value={formData.exchangeRate || ''}
-                        onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
-                        disabled={formData.currency === 'ARS'}
-                      />
-                    </div>
-                  </div>
-                )}
+
               </div>
             </CardContent>
           </Card>
@@ -1136,6 +1203,68 @@ export default function CreateInvoicePage() {
               </Button>
             </div>
           </form>
+
+          {/* Add Sales Point Dialog */}
+          <Dialog open={showAddSalesPointDialog} onOpenChange={setShowAddSalesPointDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Agregar Punto de Venta</DialogTitle>
+                <DialogDescription>Configura un nuevo punto de venta para emitir facturas</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Número de Punto de Venta *</Label>
+                  <Input 
+                    type="text" 
+                    placeholder="1" 
+                    value={salesPointFormData.point_number} 
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 4)
+                      setSalesPointFormData({...salesPointFormData, point_number: value})
+                    }} 
+                    maxLength={4}
+                  />
+                  <p className="text-xs text-muted-foreground">Número entre 1 y 9999 (máx. 4 dígitos)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Nombre (opcional)</Label>
+                  <Input 
+                    placeholder="Sucursal Centro" 
+                    value={salesPointFormData.name} 
+                    onChange={(e) => setSalesPointFormData({...salesPointFormData, name: e.target.value.slice(0, 100)})} 
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setShowAddSalesPointDialog(false); setSalesPointFormData({ point_number: '', name: '' }); }} disabled={addingSalesPoint}>Cancelar</Button>
+                <Button onClick={async () => {
+                  if (!salesPointFormData.point_number) {
+                    toast.error('Ingresa el número de punto de venta')
+                    return
+                  }
+                  setAddingSalesPoint(true)
+                  try {
+                    const apiClient = (await import('@/lib/api-client')).default
+                    const response = await apiClient.post(`/companies/${companyId}/sales-points`, {
+                      point_number: parseInt(salesPointFormData.point_number),
+                      name: salesPointFormData.name || null
+                    })
+                    const newSalesPoint = response.data.data
+                    setSalesPoints([...salesPoints, newSalesPoint])
+                    setFormData({...formData, salesPoint: newSalesPoint.point_number})
+                    toast.success('Punto de venta agregado')
+                    setShowAddSalesPointDialog(false)
+                    setSalesPointFormData({ point_number: '', name: '' })
+                  } catch (error: any) {
+                    toast.error(error.response?.data?.error || 'Error al agregar punto de venta')
+                  } finally {
+                    setAddingSalesPoint(false)
+                  }
+                }} disabled={addingSalesPoint}>{addingSalesPoint ? 'Agregando...' : 'Agregar'}</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
       </div>
     </div>
   )
