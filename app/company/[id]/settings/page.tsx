@@ -93,14 +93,11 @@ export default function SettingsPage() {
     tax_condition: '',
     default_sales_point: 1,
     default_vat: 21,
-    vat_perception: 0,
-    gross_income_perception: 2.5,
-    social_security_perception: 1,
-    vat_retention: 0,
-    income_tax_retention: 2,
-    gross_income_retention: 0.42,
-    social_security_retention: 0,
-    required_approvals: 1
+    required_approvals: 1,
+    is_perception_agent: false,
+    auto_perceptions: [] as any[],
+    is_retention_agent: false,
+    auto_retentions: [] as any[]
   })
   const [bankFormData, setBankFormData] = useState({
     bank_name: '',
@@ -175,14 +172,11 @@ export default function SettingsPage() {
         tax_condition: companyData.taxCondition || '',
         default_sales_point: companyData.defaultSalesPoint || 1,
         default_vat: Number(companyData.defaultVat) || 21,
-        vat_perception: Number(companyData.vatPerception) || 0,
-        gross_income_perception: Number(companyData.grossIncomePerception) || 2.5,
-        social_security_perception: Number(companyData.socialSecurityPerception) || 1,
-        vat_retention: Number(companyData.vatRetention) || 0,
-        income_tax_retention: Number(companyData.incomeTaxRetention) || 2,
-        gross_income_retention: Number(companyData.grossIncomeRetention) || 0.42,
-        social_security_retention: Number(companyData.socialSecurityRetention) || 0,
-        required_approvals: Number(companyData.requiredApprovals || companyData.required_approvals) || 1
+        required_approvals: Number(companyData.requiredApprovals || companyData.required_approvals) || 1,
+        is_perception_agent: companyData.isPerceptionAgent || false,
+        auto_perceptions: companyData.autoPerceptions || [],
+        is_retention_agent: companyData.isRetentionAgent || false,
+        auto_retentions: companyData.autoRetentions || []
       }
       setFormData(initialData)
       setInitialFormData(initialData)
@@ -613,21 +607,24 @@ export default function SettingsPage() {
                   <h3 className="font-medium mb-4">Aprobaciones de Facturas</h3>
                   <div className="space-y-2">
                     <Label>Aprobaciones Requeridas</Label>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max={maxApprovals} 
-                      value={formData.required_approvals} 
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 0
-                        setFormData({...formData, required_approvals: Math.max(0, Math.min(val, maxApprovals))})
-                      }} 
-                      className="max-w-xs"
-                    />
+                    <Select 
+                      value={formData.required_approvals.toString()} 
+                      onValueChange={(value) => setFormData({...formData, required_approvals: parseInt(value)})}
+                    >
+                      <SelectTrigger className="max-w-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Sin aprobación (automático)</SelectItem>
+                        {Array.from({length: maxApprovals}, (_, i) => i + 1).map(num => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num} aprobación{num > 1 ? 'es' : ''} requerida{num > 1 ? 's' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
-                      <strong>0</strong> = auto-aprobación (sin control), 
-                      <strong>1 o más</strong> = requiere aprobación manual. 
-                      Máximo {maxApprovals} según cantidad de miembros con permiso para aprobar.
+                      Máximo {maxApprovals} aprobaciones según cantidad de miembros con permiso para aprobar.
                     </p>
                     <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-3">
                       <p className="text-xs text-amber-900 dark:text-amber-100">
@@ -638,13 +635,12 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="border-t pt-6">
-                  <h3 className="font-medium mb-4">Impuesto Predeterminado</h3>
+                  <h3 className="font-medium mb-4">IVA Predeterminado</h3>
                   <div className="space-y-2">
-                    <Label>IVA (%)</Label>
+                    <Label>Alícuota de IVA por defecto</Label>
                     <Select 
                       value={formData.default_vat.toString()} 
                       onValueChange={(value) => {
-                        console.log('Changing VAT to:', value)
                         setFormData({...formData, default_vat: parseFloat(value)})
                       }}
                     >
@@ -662,7 +658,7 @@ export default function SettingsPage() {
                         <SelectItem value="2.5">2.5%</SelectItem>
                         <SelectItem value="5">5%</SelectItem>
                         <SelectItem value="10.5">10.5%</SelectItem>
-                        <SelectItem value="21">21%</SelectItem>
+                        <SelectItem value="21">21% (General)</SelectItem>
                         <SelectItem value="27">27%</SelectItem>
                       </SelectContent>
                     </Select>
@@ -671,97 +667,307 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="border-t pt-6">
-                  <h3 className="font-medium mb-4">Percepciones Predeterminadas (%)</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">IVA</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.vat_perception} 
-                        onChange={(e) => setFormData({...formData, vat_perception: parseFloat(e.target.value) || 0})} 
-                      />
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-medium">Agente de Percepciones</h3>
+                      <p className="text-sm text-muted-foreground">Percepciones que se aplicarán automáticamente al emitir facturas</p>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Ingresos Brutos</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.gross_income_perception} 
-                        onChange={(e) => setFormData({...formData, gross_income_perception: parseFloat(e.target.value) || 0})} 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Seguridad Social</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.social_security_perception} 
-                        onChange={(e) => setFormData({...formData, social_security_perception: parseFloat(e.target.value) || 0})} 
-                      />
-                    </div>
+                    <Switch 
+                      checked={formData.is_perception_agent} 
+                      onCheckedChange={(checked) => setFormData({...formData, is_perception_agent: checked})} 
+                    />
                   </div>
+                  
+                  {formData.is_perception_agent && (
+                    <div className="space-y-3">
+                      {formData.auto_perceptions.map((perception: any, index: number) => (
+                        <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const newPerceptions = formData.auto_perceptions.filter((_: any, i: number) => i !== index)
+                              setFormData({...formData, auto_perceptions: newPerceptions})
+                            }}
+                            className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                            <div className="space-y-2">
+                              <Label>Tipo *</Label>
+                              <Select
+                                value={perception.type}
+                                onValueChange={(value) => {
+                                  const newPerceptions = [...formData.auto_perceptions]
+                                  newPerceptions[index] = {...newPerceptions[index], type: value}
+                                  setFormData({...formData, auto_perceptions: newPerceptions})
+                                }}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent className="max-h-[300px]">
+                                  <SelectItem value="iva">Percepción IVA</SelectItem>
+                                  <SelectItem value="ganancias">Percepción Ganancias</SelectItem>
+                                  <SelectItem value="impuestos_internos">Impuestos Internos</SelectItem>
+                                  <SelectItem value="iibb_bsas">IIBB Buenos Aires</SelectItem>
+                                  <SelectItem value="iibb_caba">IIBB CABA</SelectItem>
+                                  <SelectItem value="iibb_catamarca">IIBB Catamarca</SelectItem>
+                                  <SelectItem value="iibb_chaco">IIBB Chaco</SelectItem>
+                                  <SelectItem value="iibb_chubut">IIBB Chubut</SelectItem>
+                                  <SelectItem value="iibb_cordoba">IIBB Córdoba</SelectItem>
+                                  <SelectItem value="iibb_corrientes">IIBB Corrientes</SelectItem>
+                                  <SelectItem value="iibb_entrerios">IIBB Entre Ríos</SelectItem>
+                                  <SelectItem value="iibb_formosa">IIBB Formosa</SelectItem>
+                                  <SelectItem value="iibb_jujuy">IIBB Jujuy</SelectItem>
+                                  <SelectItem value="iibb_lapampa">IIBB La Pampa</SelectItem>
+                                  <SelectItem value="iibb_larioja">IIBB La Rioja</SelectItem>
+                                  <SelectItem value="iibb_mendoza">IIBB Mendoza</SelectItem>
+                                  <SelectItem value="iibb_misiones">IIBB Misiones</SelectItem>
+                                  <SelectItem value="iibb_neuquen">IIBB Neuquén</SelectItem>
+                                  <SelectItem value="iibb_rionegro">IIBB Río Negro</SelectItem>
+                                  <SelectItem value="iibb_salta">IIBB Salta</SelectItem>
+                                  <SelectItem value="iibb_sanjuan">IIBB San Juan</SelectItem>
+                                  <SelectItem value="iibb_sanluis">IIBB San Luis</SelectItem>
+                                  <SelectItem value="iibb_santacruz">IIBB Santa Cruz</SelectItem>
+                                  <SelectItem value="iibb_santafe">IIBB Santa Fe</SelectItem>
+                                  <SelectItem value="iibb_sgo_estero">IIBB Santiago del Estero</SelectItem>
+                                  <SelectItem value="iibb_tdf">IIBB Tierra del Fuego</SelectItem>
+                                  <SelectItem value="iibb_tucuman">IIBB Tucumán</SelectItem>
+                                  <SelectItem value="custom">Otra Percepción</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Descripción *</Label>
+                              <Input
+                                placeholder="Ej: Percepción IIBB Buenos Aires"
+                                value={perception.name}
+                                onChange={(e) => {
+                                  const newPerceptions = [...formData.auto_perceptions]
+                                  newPerceptions[index] = {...newPerceptions[index], name: e.target.value.slice(0, 100)}
+                                  setFormData({...formData, auto_perceptions: newPerceptions})
+                                }}
+                                maxLength={100}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Alícuota (%) *</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                placeholder="Ej: 3.5"
+                                value={perception.rate}
+                                onChange={(e) => {
+                                  const newPerceptions = [...formData.auto_perceptions]
+                                  newPerceptions[index] = {...newPerceptions[index], rate: parseFloat(e.target.value) || 0}
+                                  setFormData({...formData, auto_perceptions: newPerceptions})
+                                }}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Base de Cálculo *</Label>
+                              <Select
+                                value={perception.base_type || 'net'}
+                                onValueChange={(value) => {
+                                  const newPerceptions = [...formData.auto_perceptions]
+                                  newPerceptions[index] = {...newPerceptions[index], base_type: value}
+                                  setFormData({...formData, auto_perceptions: newPerceptions})
+                                }}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="net">Neto sin IVA</SelectItem>
+                                  <SelectItem value="total">Total con IVA</SelectItem>
+                                  <SelectItem value="vat">Solo IVA</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      <Button 
+                        type="button" 
+                        onClick={() => {
+                          setFormData({
+                            ...formData, 
+                            auto_perceptions: [...formData.auto_perceptions, {
+                              type: 'iibb_bsas',
+                              name: '',
+                              rate: 3,
+                              base_type: 'net'
+                            }]
+                          })
+                        }} 
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar Percepción Automática
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="border-t pt-6">
-                  <h3 className="font-medium mb-4">Retenciones Predeterminadas (%)</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">IVA</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.vat_retention} 
-                        onChange={(e) => setFormData({...formData, vat_retention: parseFloat(e.target.value) || 0})} 
-                      />
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-medium">Agente de Retenciones</h3>
+                      <p className="text-sm text-muted-foreground">Retenciones que se aplicarán automáticamente al registrar facturas recibidas</p>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Ganancias</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.income_tax_retention} 
-                        onChange={(e) => setFormData({...formData, income_tax_retention: parseFloat(e.target.value) || 0})} 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Ingresos Brutos</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.gross_income_retention} 
-                        onChange={(e) => setFormData({...formData, gross_income_retention: parseFloat(e.target.value) || 0})} 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Seguridad Social</Label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="100" 
-                        step="0.01"
-                        value={formData.social_security_retention} 
-                        onChange={(e) => setFormData({...formData, social_security_retention: parseFloat(e.target.value) || 0})} 
-                      />
-                    </div>
+                    <Switch 
+                      checked={formData.is_retention_agent} 
+                      onCheckedChange={(checked) => setFormData({...formData, is_retention_agent: checked})} 
+                    />
                   </div>
-                  <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-4">
-                    <p className="text-xs text-amber-900 dark:text-amber-100">
-                      Estos valores se aplicarán por defecto al crear nuevas facturas y pagos. Podrás modificarlos individualmente.
-                    </p>
-                  </div>
+                  
+                  {formData.is_retention_agent && (
+                    <div className="space-y-3">
+                      {formData.auto_retentions.map((retention: any, index: number) => (
+                        <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const newRetentions = formData.auto_retentions.filter((_: any, i: number) => i !== index)
+                              setFormData({...formData, auto_retentions: newRetentions})
+                            }}
+                            className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                            <div className="space-y-2">
+                              <Label>Tipo *</Label>
+                              <Select
+                                value={retention.type}
+                                onValueChange={(value) => {
+                                  const newRetentions = [...formData.auto_retentions]
+                                  newRetentions[index] = {...newRetentions[index], type: value}
+                                  setFormData({...formData, auto_retentions: newRetentions})
+                                }}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent className="max-h-[300px]">
+                                  <SelectItem value="iva">Retención IVA</SelectItem>
+                                  <SelectItem value="ganancias">Retención Ganancias</SelectItem>
+                                  <SelectItem value="suss">Retención SUSS</SelectItem>
+                                  <SelectItem value="iibb_bsas">Retención IIBB Buenos Aires</SelectItem>
+                                  <SelectItem value="iibb_caba">Retención IIBB CABA</SelectItem>
+                                  <SelectItem value="iibb_catamarca">Retención IIBB Catamarca</SelectItem>
+                                  <SelectItem value="iibb_chaco">Retención IIBB Chaco</SelectItem>
+                                  <SelectItem value="iibb_chubut">Retención IIBB Chubut</SelectItem>
+                                  <SelectItem value="iibb_cordoba">Retención IIBB Córdoba</SelectItem>
+                                  <SelectItem value="iibb_corrientes">Retención IIBB Corrientes</SelectItem>
+                                  <SelectItem value="iibb_entrerios">Retención IIBB Entre Ríos</SelectItem>
+                                  <SelectItem value="iibb_formosa">Retención IIBB Formosa</SelectItem>
+                                  <SelectItem value="iibb_jujuy">Retención IIBB Jujuy</SelectItem>
+                                  <SelectItem value="iibb_lapampa">Retención IIBB La Pampa</SelectItem>
+                                  <SelectItem value="iibb_larioja">Retención IIBB La Rioja</SelectItem>
+                                  <SelectItem value="iibb_mendoza">Retención IIBB Mendoza</SelectItem>
+                                  <SelectItem value="iibb_misiones">Retención IIBB Misiones</SelectItem>
+                                  <SelectItem value="iibb_neuquen">Retención IIBB Neuquén</SelectItem>
+                                  <SelectItem value="iibb_rionegro">Retención IIBB Río Negro</SelectItem>
+                                  <SelectItem value="iibb_salta">Retención IIBB Salta</SelectItem>
+                                  <SelectItem value="iibb_sanjuan">Retención IIBB San Juan</SelectItem>
+                                  <SelectItem value="iibb_sanluis">Retención IIBB San Luis</SelectItem>
+                                  <SelectItem value="iibb_santacruz">Retención IIBB Santa Cruz</SelectItem>
+                                  <SelectItem value="iibb_santafe">Retención IIBB Santa Fe</SelectItem>
+                                  <SelectItem value="iibb_sgo_estero">Retención IIBB Santiago del Estero</SelectItem>
+                                  <SelectItem value="iibb_tdf">Retención IIBB Tierra del Fuego</SelectItem>
+                                  <SelectItem value="iibb_tucuman">Retención IIBB Tucumán</SelectItem>
+                                  <SelectItem value="custom">Otra Retención</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Descripción *</Label>
+                              <Input
+                                placeholder="Ej: Retención IIBB Buenos Aires"
+                                value={retention.name}
+                                onChange={(e) => {
+                                  const newRetentions = [...formData.auto_retentions]
+                                  newRetentions[index] = {...newRetentions[index], name: e.target.value.slice(0, 100)}
+                                  setFormData({...formData, auto_retentions: newRetentions})
+                                }}
+                                maxLength={100}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Alícuota (%) *</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                placeholder="Ej: 2"
+                                value={retention.rate}
+                                onChange={(e) => {
+                                  const newRetentions = [...formData.auto_retentions]
+                                  newRetentions[index] = {...newRetentions[index], rate: parseFloat(e.target.value) || 0}
+                                  setFormData({...formData, auto_retentions: newRetentions})
+                                }}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Base de Cálculo *</Label>
+                              <Select
+                                value={retention.base_type || 'net'}
+                                onValueChange={(value) => {
+                                  const newRetentions = [...formData.auto_retentions]
+                                  newRetentions[index] = {...newRetentions[index], base_type: value}
+                                  setFormData({...formData, auto_retentions: newRetentions})
+                                }}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="net">Neto sin IVA</SelectItem>
+                                  <SelectItem value="total">Total con IVA</SelectItem>
+                                  <SelectItem value="vat">Solo IVA</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      <Button 
+                        type="button" 
+                        onClick={() => {
+                          setFormData({
+                            ...formData, 
+                            auto_retentions: [...formData.auto_retentions, {
+                              type: 'ganancias',
+                              name: '',
+                              rate: 2,
+                              base_type: 'net'
+                            }]
+                          })
+                        }} 
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar Retención Automática
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
