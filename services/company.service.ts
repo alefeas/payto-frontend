@@ -40,6 +40,10 @@ export interface Company {
   verified_at?: string;
   requiredApprovals?: number;
   required_approvals?: number;
+  isPerceptionAgent?: boolean;
+  autoPerceptions?: any[];
+  isRetentionAgent?: boolean;
+  autoRetentions?: any[];
   createdAt?: string;
   updatedAt?: string;
 }

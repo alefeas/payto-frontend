@@ -43,7 +43,8 @@ export default function ApproveInvoicesPage() {
       setLoading(true)
       const company = await companyService.getCompany(id as string)
       setCompanyName(company.name)
-      setRequiredApprovals(company.requiredApprovals || company.required_approvals || 1)
+      const reqApprovals = company.requiredApprovals !== undefined ? company.requiredApprovals : (company.required_approvals !== undefined ? company.required_approvals : 0)
+      setRequiredApprovals(reqApprovals)
       
       if (user?.id) {
         setCurrentUserId(user.id)

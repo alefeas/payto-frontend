@@ -36,6 +36,10 @@ interface CompanyData {
   incomeTaxRetention?: number
   grossIncomeRetention?: number
   socialSecurityRetention?: number
+  isPerceptionAgent?: boolean
+  autoPerceptions?: any[]
+  isRetentionAgent?: boolean
+  autoRetentions?: any[]
 }
 
 export default function CreateInvoicePage() {
@@ -181,6 +185,8 @@ export default function CreateInvoicePage() {
         const company = await companyService.getCompany(companyId)
         console.log('Loaded company:', company)
         console.log('Tax condition:', company.taxCondition)
+        console.log('isPerceptionAgent:', company.isPerceptionAgent)
+        console.log('autoPerceptions:', company.autoPerceptions)
         setCurrentCompany({
           id: company.id,
           name: company.name,
@@ -194,7 +200,11 @@ export default function CreateInvoicePage() {
           vatRetention: company.vatRetention || 0,
           incomeTaxRetention: company.incomeTaxRetention || 2,
           grossIncomeRetention: company.grossIncomeRetention || 0.42,
-          socialSecurityRetention: company.socialSecurityRetention || 0
+          socialSecurityRetention: company.socialSecurityRetention || 0,
+          isPerceptionAgent: company.isPerceptionAgent || false,
+          autoPerceptions: company.autoPerceptions || [],
+          isRetentionAgent: company.isRetentionAgent || false,
+          autoRetentions: company.autoRetentions || []
         })
         
         // Tipos hardcodeados, no necesitamos cargarlos
@@ -282,7 +292,30 @@ export default function CreateInvoicePage() {
 
   useEffect(() => {
     if (currentCompany && !isInitialized) {
+      console.log('Initializing with company:', currentCompany)
       setItems([{ description: '', quantity: 1, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany.defaultVat || 21 }])
+      
+      // Load auto-perceptions if company is perception agent with smooth animation
+      if (currentCompany.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
+        console.log('Loading auto-perceptions:', currentCompany.autoPerceptions)
+        // Add perceptions one by one with delay for smooth animation
+        const perceptionsToAdd = currentCompany.autoPerceptions.map((p: any) => ({
+          type: p.type,
+          name: p.name,
+          rate: p.rate,
+          baseType: p.base_type || 'net',
+          jurisdiction: p.jurisdiction
+        }))
+        
+        perceptionsToAdd.forEach((perception, index) => {
+          setTimeout(() => {
+            setPerceptions(prev => [...prev, perception])
+          }, index * 100) // 100ms delay between each perception
+        })
+      } else {
+        console.log('No auto-perceptions to load')
+      }
+      
       setIsInitialized(true)
     }
   }, [currentCompany, isInitialized])

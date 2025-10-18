@@ -93,7 +93,7 @@ export default function SettingsPage() {
     tax_condition: '',
     default_sales_point: 1,
     default_vat: 21,
-    required_approvals: 1,
+    required_approvals: 0,
     is_perception_agent: false,
     auto_perceptions: [] as any[],
     is_retention_agent: false,
@@ -170,9 +170,9 @@ export default function SettingsPage() {
         postal_code: addr.postalCode || '',
         province: addr.province || '',
         tax_condition: companyData.taxCondition || '',
-        default_sales_point: companyData.defaultSalesPoint || 1,
-        default_vat: Number(companyData.defaultVat) || 21,
-        required_approvals: Number(companyData.requiredApprovals || companyData.required_approvals) || 1,
+        default_sales_point: parseInt(companyData.defaultSalesPoint) || 1,
+        default_vat: parseFloat(companyData.defaultVat) || 21,
+        required_approvals: companyData.requiredApprovals !== undefined ? parseInt(String(companyData.requiredApprovals)) : (companyData.required_approvals !== undefined ? parseInt(String(companyData.required_approvals)) : 0),
         is_perception_agent: companyData.isPerceptionAgent || false,
         auto_perceptions: companyData.autoPerceptions || [],
         is_retention_agent: companyData.isRetentionAgent || false,
@@ -200,7 +200,14 @@ export default function SettingsPage() {
   const saveCompany = async () => {
     try {
       setSaving(true)
-      const updatedCompany = await companyService.updateCompany(companyId, formData)
+      // Ensure numeric fields are sent as numbers
+      const payload = {
+        ...formData,
+        default_sales_point: parseInt(String(formData.default_sales_point)),
+        default_vat: parseFloat(String(formData.default_vat)),
+        required_approvals: parseInt(String(formData.required_approvals))
+      }
+      const updatedCompany = await companyService.updateCompany(companyId, payload)
       setCompany(updatedCompany)
       setInitialFormData(formData)
       setHasChanges(false)
@@ -624,7 +631,7 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Máximo {maxApprovals} aprobaciones según cantidad de miembros con permiso para aprobar.
+                      {maxApprovals === 1 ? 'Hay 1 miembro' : `Hay ${maxApprovals} miembros`} con permiso para aprobar facturas.
                     </p>
                     <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-3">
                       <p className="text-xs text-amber-900 dark:text-amber-100">
