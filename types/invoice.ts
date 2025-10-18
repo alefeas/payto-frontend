@@ -34,9 +34,11 @@ export interface InvoiceTax {
 
 export interface InvoicePerception {
   id: string
-  type: 'vat_perception' | 'gross_income_perception' | 'suss_perception'
+  type: string // 'iva', 'ganancias', 'iibb_bsas', 'iibb_caba', etc., or 'custom'
   name: string
   rate: number
+  baseType: 'net' | 'total' | 'vat'
+  jurisdiction?: string
   baseAmount: number
   amount: number
 }

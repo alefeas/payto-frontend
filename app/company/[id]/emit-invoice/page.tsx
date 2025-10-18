@@ -304,13 +304,14 @@ export default function CreateInvoicePage() {
     }, 0)
     
     const totalPerceptions = perceptions.reduce((sum, perception) => {
-      let baseAmount
-      if (perception.type === 'vat_perception') {
-        baseAmount = totalTaxes // Percepción IVA solo sobre el IVA
-      } else {
-        baseAmount = subtotal + totalTaxes // Otras percepciones sobre subtotal + IVA
+      // Calculate base according to baseType
+      let base = subtotal // default: net (without IVA)
+      if (perception.baseType === 'total') {
+        base = subtotal + totalTaxes // total with IVA
+      } else if (perception.baseType === 'vat') {
+        base = totalTaxes // only IVA
       }
-      const perceptionAmount = baseAmount * perception.rate / 100
+      const perceptionAmount = base * (perception.rate || 0) / 100
       return sum + perceptionAmount
     }, 0)
     
@@ -384,25 +385,20 @@ export default function CreateInvoicePage() {
   }
 
   const addPerception = () => {
-    // Default to gross income perception with company's configured rate
     setPerceptions([...perceptions, { 
-      type: 'gross_income_perception', 
+      type: 'iibb_bsas', 
       name: '', 
-      rate: currentCompany?.grossIncomePerception || 2.5 
+      rate: 2.5,
+      jurisdiction: 'Buenos Aires',
+      baseType: 'net'
     }])
   }
 
   const getDefaultPerceptionRate = (type: string): number => {
-    switch (type) {
-      case 'vat_perception':
-        return currentCompany?.vatPerception || 0
-      case 'gross_income_perception':
-        return currentCompany?.grossIncomePerception || 2.5
-      case 'suss_perception':
-        return currentCompany?.socialSecurityPerception || 1
-      default:
-        return 0
-    }
+    if (type.startsWith('iibb_')) return 3
+    if (type === 'iva') return 10
+    if (type === 'ganancias') return 2
+    return 0
   }
 
   const removePerception = (index: number) => {
@@ -508,7 +504,8 @@ export default function CreateInvoicePage() {
       perceptions: perceptions.length > 0 ? perceptions.map(p => ({
         type: p.type,
         name: p.name,
-        rate: p.rate
+        rate: p.rate,
+        base_type: p.baseType || 'net'
       })) : undefined
     }
 
@@ -926,98 +923,109 @@ export default function CreateInvoicePage() {
               {items.map((item, index) => {
                 const itemTotals = calculateItemTotal(item)
                 return (
-                <div key={index} className="space-y-3 p-4 border rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-                  <div className="md:col-span-2 space-y-2">
-                    <Label>Descripción *</Label>
-                    <Input
-                      placeholder="Descripción del ítem"
-                      value={item.description}
-                      onChange={(e) => updateItem(index, 'description', e.target.value.slice(0, 200))}
-                      maxLength={200}
-                    />
+                <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeItem(index)}
+                    disabled={items.length === 1}
+                    className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+                    title="Eliminar ítem"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="grid grid-cols-1 gap-4 pr-10">
+                    <div className="space-y-2">
+                      <Label>Descripción *</Label>
+                      <Input
+                        placeholder="Descripción del ítem"
+                        value={item.description}
+                        onChange={(e) => updateItem(index, 'description', e.target.value.slice(0, 200))}
+                        maxLength={200}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="space-y-2">
+                        <Label>Cantidad *</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Precio Unit. *</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.unitPrice}
+                          onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Bonif. (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={item.discountPercentage || 0}
+                          onChange={(e) => {
+                            const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
+                            updateItem(index, 'discountPercentage', value)
+                          }}
+                          onBlur={(e) => {
+                            const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
+                            updateItem(index, 'discountPercentage', value)
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>IVA *</Label>
+                        <Select 
+                          value={(item.taxRate ?? currentCompany?.defaultVat ?? 21).toString()} 
+                          onValueChange={(value) => updateItem(index, 'taxRate', parseFloat(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue>
+                              {getTaxRateLabel(item.taxRate)}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="-1">Exento</SelectItem>
+                            <SelectItem value="-2">No Gravado</SelectItem>
+                            <SelectItem value="0">0%</SelectItem>
+                            <SelectItem value="2.5">2.5%</SelectItem>
+                            <SelectItem value="5">5%</SelectItem>
+                            <SelectItem value="10.5">10.5%</SelectItem>
+                            <SelectItem value="21">21%</SelectItem>
+                            <SelectItem value="27">27%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="text-xs">Total</Label>
+                        <div className="h-10 flex items-center justify-end px-3 bg-muted rounded-md font-medium">
+                          ${itemTotals.total.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Cantidad *</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Precio Unit. *</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.unitPrice}
-                      onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Bonif. (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={item.discountPercentage || 0}
-                      onChange={(e) => {
-                        const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
-                        updateItem(index, 'discountPercentage', value)
-                      }}
-                      onBlur={(e) => {
-                        const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
-                        updateItem(index, 'discountPercentage', value)
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>IVA (%)</Label>
-                    <Select 
-                      value={(item.taxRate ?? currentCompany?.defaultVat ?? 21).toString()} 
-                      onValueChange={(value) => updateItem(index, 'taxRate', parseFloat(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue>
-                          {getTaxRateLabel(item.taxRate)}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="-1">Exento</SelectItem>
-                        <SelectItem value="-2">No Gravado</SelectItem>
-                        <SelectItem value="0">0%</SelectItem>
-                        <SelectItem value="2.5">2.5%</SelectItem>
-                        <SelectItem value="5">5%</SelectItem>
-                        <SelectItem value="10.5">10.5%</SelectItem>
-                        <SelectItem value="21">21%</SelectItem>
-                        <SelectItem value="27">27%</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                      disabled={items.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  </div>
                   <div className="flex justify-end gap-4 text-sm border-t pt-2">
                     <span className="text-muted-foreground">Subtotal: <span className="font-medium text-foreground">${itemTotals.subtotal.toFixed(2)}</span></span>
-                    <span className="text-muted-foreground">Total c/IVA: <span className="font-medium text-foreground">${itemTotals.total.toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">IVA: <span className="font-medium text-foreground">${(itemTotals.total - itemTotals.subtotal).toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">Total: <span className="font-medium text-foreground">${itemTotals.total.toFixed(2)}</span></span>
                   </div>
                 </div>
               )
@@ -1044,66 +1052,132 @@ export default function CreateInvoicePage() {
                   <p className="text-xs">Las percepciones se agregan según la jurisdicción</p>
                 </div>
               ) : (
-                perceptions.map((perception, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
-                    <div className="space-y-2">
-                      <Label>Tipo de Percepción</Label>
-                      <Select 
-                        value={perception.type} 
-                        onValueChange={(value: typeof perception.type) => updatePerception(index, 'type', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="vat_perception">Percepción IVA</SelectItem>
-                          <SelectItem value="gross_income_perception">Percepción IIBB</SelectItem>
-                          <SelectItem value="suss_perception">Percepción SUSS</SelectItem>
-                        </SelectContent>
-                      </Select>
+                perceptions.map((perception, index) => {
+                  // Calculate perception amount
+                  let base = totals.subtotal
+                  if (perception.baseType === 'total') {
+                    base = totals.subtotal + totals.totalTaxes
+                  } else if (perception.baseType === 'vat') {
+                    base = totals.totalTaxes
+                  }
+                  const perceptionAmount = base * (perception.rate || 0) / 100
+                  
+                  return (
+                  <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removePerception(index)}
+                      className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      title="Eliminar percepción"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                        <div className="space-y-2">
+                          <Label>Tipo de Percepción *</Label>
+                          <Select 
+                            value={perception.type} 
+                            onValueChange={(value: typeof perception.type) => updatePerception(index, 'type', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              <SelectItem value="iva">Percepción IVA</SelectItem>
+                              <SelectItem value="ganancias">Percepción Ganancias</SelectItem>
+                              <SelectItem value="impuestos_internos">Impuestos Internos</SelectItem>
+                              <SelectItem value="iibb_bsas">IIBB Buenos Aires</SelectItem>
+                              <SelectItem value="iibb_caba">IIBB CABA</SelectItem>
+                              <SelectItem value="iibb_catamarca">IIBB Catamarca</SelectItem>
+                              <SelectItem value="iibb_chaco">IIBB Chaco</SelectItem>
+                              <SelectItem value="iibb_chubut">IIBB Chubut</SelectItem>
+                              <SelectItem value="iibb_cordoba">IIBB Córdoba</SelectItem>
+                              <SelectItem value="iibb_corrientes">IIBB Corrientes</SelectItem>
+                              <SelectItem value="iibb_entrerios">IIBB Entre Ríos</SelectItem>
+                              <SelectItem value="iibb_formosa">IIBB Formosa</SelectItem>
+                              <SelectItem value="iibb_jujuy">IIBB Jujuy</SelectItem>
+                              <SelectItem value="iibb_lapampa">IIBB La Pampa</SelectItem>
+                              <SelectItem value="iibb_larioja">IIBB La Rioja</SelectItem>
+                              <SelectItem value="iibb_mendoza">IIBB Mendoza</SelectItem>
+                              <SelectItem value="iibb_misiones">IIBB Misiones</SelectItem>
+                              <SelectItem value="iibb_neuquen">IIBB Neuquén</SelectItem>
+                              <SelectItem value="iibb_rionegro">IIBB Río Negro</SelectItem>
+                              <SelectItem value="iibb_salta">IIBB Salta</SelectItem>
+                              <SelectItem value="iibb_sanjuan">IIBB San Juan</SelectItem>
+                              <SelectItem value="iibb_sanluis">IIBB San Luis</SelectItem>
+                              <SelectItem value="iibb_santacruz">IIBB Santa Cruz</SelectItem>
+                              <SelectItem value="iibb_santafe">IIBB Santa Fe</SelectItem>
+                              <SelectItem value="iibb_sgo_estero">IIBB Santiago del Estero</SelectItem>
+                              <SelectItem value="iibb_tdf">IIBB Tierra del Fuego</SelectItem>
+                              <SelectItem value="iibb_tucuman">IIBB Tucumán</SelectItem>
+                              <SelectItem value="custom">Otra Percepción</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Descripción</Label>
+                          <Input
+                            placeholder="Ej: Percepción IIBB Buenos Aires"
+                            value={perception.name}
+                            onChange={(e) => updatePerception(index, 'name', e.target.value.slice(0, 100))}
+                            maxLength={100}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Alícuota (%) *</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="Ej: 3.5"
+                            value={perception.rate || ''}
+                            onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Base de Cálculo *</Label>
+                          <Select 
+                            value={perception.baseType || 'net'} 
+                            onValueChange={(value: 'net' | 'total' | 'vat') => updatePerception(index, 'baseType', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="net">Neto sin IVA</SelectItem>
+                              <SelectItem value="total">Total con IVA</SelectItem>
+                              <SelectItem value="vat">Solo IVA</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-xs">Monto</Label>
+                          <div className="h-10 flex items-center justify-end px-3 bg-muted rounded-md font-medium">
+                            ${perceptionAmount.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label>Descripción</Label>
-                      <Input
-                        placeholder="Ej: Percepción IIBB Buenos Aires"
-                        value={perception.name}
-                        onChange={(e) => updatePerception(index, 'name', e.target.value.slice(0, 100))}
-                        maxLength={100}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Alícuota (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max={perception.type === 'vat_perception' ? 10 : perception.type === 'gross_income_perception' ? 5 : 2}
-                        step="0.01"
-                        value={perception.rate}
-                        onChange={(e) => {
-                          const maxRate = perception.type === 'vat_perception' ? 10 : perception.type === 'gross_income_perception' ? 5 : 2
-                          const value = Math.min(parseFloat(e.target.value) || 0, maxRate)
-                          updatePerception(index, 'rate', value)
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Límite AFIP: {perception.type === 'vat_perception' ? '0-10%' : perception.type === 'gross_income_perception' ? '0-5%' : '0-2%'}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removePerception(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="flex justify-end gap-4 text-sm border-t pt-2">
+                      <span className="text-muted-foreground">Base: <span className="font-medium text-foreground">${base.toFixed(2)}</span></span>
+                      <span className="text-muted-foreground">Alícuota: <span className="font-medium text-foreground">{perception.rate || 0}%</span></span>
+                      <span className="text-muted-foreground">Total: <span className="font-medium text-orange-600">${perceptionAmount.toFixed(2)}</span></span>
                     </div>
                   </div>
-                ))
+                  )
+                })
               )}
             </CardContent>
           </Card>
