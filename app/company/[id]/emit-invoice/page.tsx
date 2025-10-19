@@ -220,8 +220,12 @@ export default function CreateInvoicePage() {
             tax_condition: 'registered_taxpayer' // Default, would need to be fetched
           }))
           setConnectedCompanies(connectedCompaniesData)
-        } catch (error) {
-          console.error('Error loading connections:', error)
+        } catch (error: any) {
+          // Silently fail if user doesn't have permission
+          if (error.response?.status !== 403) {
+            console.error('Error loading connections:', error)
+          }
+          setConnectedCompanies([])
         }
         
         // Load saved clients
@@ -486,6 +490,11 @@ export default function CreateInvoicePage() {
 
     if (items.some(item => !item.description || item.quantity <= 0 || item.unitPrice <= 0)) {
       toast.error('Complete todos los ítems correctamente')
+      return
+    }
+
+    if (perceptions.some(p => !p.name || !p.name.trim())) {
+      toast.error('Complete el nombre/descripción de todas las percepciones')
       return
     }
 
@@ -902,12 +911,14 @@ export default function CreateInvoicePage() {
                     onSelect={(date) => setFormData({...formData, emissionDate: date ? date.toISOString().split('T')[0] : ''})}
                     placeholder="Seleccionar fecha de emisión"
                     minDate={selectedInvoice ? new Date(selectedInvoice.issue_date) : undefined}
+                    maxDate={new Date()}
                   />
-                  {selectedInvoice && (
-                    <p className="text-xs text-muted-foreground">
-                      Fecha mínima: {new Date(selectedInvoice.issue_date).toLocaleDateString('es-AR')} (fecha de la factura)
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {selectedInvoice 
+                      ? `Fecha mínima: ${new Date(selectedInvoice.issue_date).toLocaleDateString('es-AR')} (fecha de la factura)`
+                      : 'No se permiten fechas futuras según normativa AFIP'
+                    }
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -1153,12 +1164,13 @@ export default function CreateInvoicePage() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label>Descripción</Label>
+                          <Label>Descripción *</Label>
                           <Input
                             placeholder="Ej: Percepción IIBB Buenos Aires"
                             value={perception.name}
                             onChange={(e) => updatePerception(index, 'name', e.target.value.slice(0, 100))}
                             maxLength={100}
+                            required
                           />
                         </div>
                       </div>
