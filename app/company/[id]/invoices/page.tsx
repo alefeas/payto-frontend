@@ -158,19 +158,37 @@ export default function InvoicesPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string }> = {
-      pending_approval: { label: 'Pendiente Aprobación', className: 'bg-yellow-100 text-yellow-800' },
-      issued: { label: 'Emitida', className: 'bg-blue-100 text-blue-800' },
-      approved: { label: 'Aprobada', className: 'bg-green-100 text-green-800' },
-      rejected: { label: 'Rechazada', className: 'bg-red-100 text-red-800' },
-      paid: { label: 'Pagada', className: 'bg-green-100 text-green-800' },
-      overdue: { label: 'Vencida', className: 'bg-red-100 text-red-800' },
-      cancelled: { label: 'Anulada', className: 'bg-gray-100 text-gray-800' },
-      partially_cancelled: { label: 'Parcialmente Anulada', className: 'bg-orange-100 text-orange-800' },
+  const getInvoiceStatusBadges = (invoice: any) => {
+    const badges = []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const dueDate = new Date(invoice.due_date)
+    dueDate.setHours(0, 0, 0, 0)
+    const isOverdue = dueDate < today && invoice.status !== 'paid' && invoice.status !== 'cancelled'
+    
+    // 1. Vencimiento (máxima prioridad visual)
+    if (isOverdue) {
+      badges.push(<Badge key="overdue" className="bg-red-500 text-white">Vencida</Badge>)
     }
-    const statusInfo = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
-    return <Badge variant="secondary" className={statusInfo.className}>{statusInfo.label}</Badge>
+    
+    // 2. Estado de aprobación/workflow
+    if (invoice.status === 'pending_approval') {
+      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">Pend. Aprobación</Badge>)
+    } else if (invoice.status === 'issued') {
+      badges.push(<Badge key="status" className="bg-blue-100 text-blue-800">Emitida</Badge>)
+    } else if (invoice.status === 'approved') {
+      badges.push(<Badge key="status" className="bg-green-100 text-green-800">Aprobada</Badge>)
+    } else if (invoice.status === 'rejected') {
+      badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
+    } else if (invoice.status === 'paid') {
+      badges.push(<Badge key="status" className="bg-green-500 text-white">Pagada</Badge>)
+    } else if (invoice.status === 'cancelled') {
+      badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
+    } else if (invoice.status === 'partially_cancelled') {
+      badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)
+    }
+    
+    return <div className="flex gap-1.5 flex-wrap items-center">{badges}</div>
   }
 
   const filteredInvoices = getFilteredInvoices()
@@ -448,7 +466,7 @@ export default function InvoicesPage() {
                     <div className="font-medium">
                       {parseFloat(invoice.total).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
                     </div>
-                    <div>{getStatusBadge(invoice.status)}</div>
+                    <div>{getInvoiceStatusBadges(invoice)}</div>
                     <div className="flex gap-1">
                       <Button
                         size="sm"

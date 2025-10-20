@@ -985,7 +985,7 @@ export default function CreateInvoicePage() {
                       <Label>Descripción *</Label>
                       <Input
                         placeholder="Descripción del ítem"
-                        value={item.description}
+                        value={item.description ?? ''}
                         onChange={(e) => updateItem(index, 'description', e.target.value.slice(0, 200))}
                         maxLength={200}
                       />
@@ -998,7 +998,7 @@ export default function CreateInvoicePage() {
                           type="number"
                           min="1"
                           step="0.01"
-                          value={item.quantity}
+                          value={item.quantity ?? 1}
                           onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                         />
                       </div>
@@ -1009,7 +1009,7 @@ export default function CreateInvoicePage() {
                           type="number"
                           min="0"
                           step="0.01"
-                          value={item.unitPrice}
+                          value={item.unitPrice ?? 0}
                           onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
                         />
                       </div>
@@ -1021,7 +1021,7 @@ export default function CreateInvoicePage() {
                           min="0"
                           max="100"
                           step="0.01"
-                          value={item.discountPercentage || 0}
+                          value={item.discountPercentage ?? 0}
                           onChange={(e) => {
                             const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
                             updateItem(index, 'discountPercentage', value)
@@ -1167,7 +1167,7 @@ export default function CreateInvoicePage() {
                           <Label>Descripción *</Label>
                           <Input
                             placeholder="Ej: Percepción IIBB Buenos Aires"
-                            value={perception.name}
+                            value={perception.name ?? ''}
                             onChange={(e) => updatePerception(index, 'name', e.target.value.slice(0, 100))}
                             maxLength={100}
                             required
@@ -1184,7 +1184,7 @@ export default function CreateInvoicePage() {
                             max="100"
                             step="0.01"
                             placeholder="Ej: 3.5"
-                            value={perception.rate || ''}
+                            value={perception.rate ?? ''}
                             onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
                           />
                         </div>

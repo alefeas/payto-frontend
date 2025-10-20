@@ -110,7 +110,7 @@ export interface CompanySettings {
   paymentTerms: number
   defaultIVA: number
   defaultIIBB: number
-  defaultGanancias: number
+  defaultIncomeTax: number
   defaultIIBBRet: number
   defaultSUSS: number
   emailNotifications: boolean

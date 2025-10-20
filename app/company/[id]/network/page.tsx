@@ -114,6 +114,18 @@ export default function NetworkPage() {
     }
   }
 
+  const handleDeleteConnection = async (connection: CompanyConnection) => {
+    if (!confirm(`¿Eliminar conexión con ${connection.connectedCompanyName}?`)) return
+    
+    try {
+      await networkService.deleteConnection(companyId, connection.id)
+      toast.success('Conexión eliminada')
+      loadData()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al eliminar conexión')
+    }
+  }
+
   const filteredConnections = connections.filter(conn =>
     conn.connectedCompanyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conn.connectedCompanyUniqueId.includes(searchTerm)
@@ -215,6 +227,13 @@ export default function NetworkPage() {
                             <p className="text-xs text-muted-foreground">Total</p>
                           </div>
                           <Badge variant="secondary">Conectado</Badge>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleDeleteConnection(connection)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </Card>

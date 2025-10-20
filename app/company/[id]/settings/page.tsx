@@ -702,8 +702,8 @@ export default function SettingsPage() {
                               >
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent className="max-h-[300px]">
-                                  <SelectItem value="iva">Percepción IVA</SelectItem>
-                                  <SelectItem value="ganancias">Percepción Ganancias</SelectItem>
+                                  <SelectItem value="vat">Percepción IVA</SelectItem>
+                                  <SelectItem value="income_tax">Percepción Ganancias</SelectItem>
                                   <SelectItem value="impuestos_internos">Impuestos Internos</SelectItem>
                                   <SelectItem value="iibb_bsas">IIBB Buenos Aires</SelectItem>
                                   <SelectItem value="iibb_caba">IIBB CABA</SelectItem>
@@ -854,34 +854,34 @@ export default function SettingsPage() {
                               >
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent className="max-h-[300px]">
-                                  <SelectItem value="iva">Retención IVA</SelectItem>
-                                  <SelectItem value="ganancias">Retención Ganancias</SelectItem>
-                                  <SelectItem value="suss">Retención SUSS</SelectItem>
-                                  <SelectItem value="iibb_bsas">Retención IIBB Buenos Aires</SelectItem>
-                                  <SelectItem value="iibb_caba">Retención IIBB CABA</SelectItem>
-                                  <SelectItem value="iibb_catamarca">Retención IIBB Catamarca</SelectItem>
-                                  <SelectItem value="iibb_chaco">Retención IIBB Chaco</SelectItem>
-                                  <SelectItem value="iibb_chubut">Retención IIBB Chubut</SelectItem>
-                                  <SelectItem value="iibb_cordoba">Retención IIBB Córdoba</SelectItem>
-                                  <SelectItem value="iibb_corrientes">Retención IIBB Corrientes</SelectItem>
-                                  <SelectItem value="iibb_entrerios">Retención IIBB Entre Ríos</SelectItem>
-                                  <SelectItem value="iibb_formosa">Retención IIBB Formosa</SelectItem>
-                                  <SelectItem value="iibb_jujuy">Retención IIBB Jujuy</SelectItem>
-                                  <SelectItem value="iibb_lapampa">Retención IIBB La Pampa</SelectItem>
-                                  <SelectItem value="iibb_larioja">Retención IIBB La Rioja</SelectItem>
-                                  <SelectItem value="iibb_mendoza">Retención IIBB Mendoza</SelectItem>
-                                  <SelectItem value="iibb_misiones">Retención IIBB Misiones</SelectItem>
-                                  <SelectItem value="iibb_neuquen">Retención IIBB Neuquén</SelectItem>
-                                  <SelectItem value="iibb_rionegro">Retención IIBB Río Negro</SelectItem>
-                                  <SelectItem value="iibb_salta">Retención IIBB Salta</SelectItem>
-                                  <SelectItem value="iibb_sanjuan">Retención IIBB San Juan</SelectItem>
-                                  <SelectItem value="iibb_sanluis">Retención IIBB San Luis</SelectItem>
-                                  <SelectItem value="iibb_santacruz">Retención IIBB Santa Cruz</SelectItem>
-                                  <SelectItem value="iibb_santafe">Retención IIBB Santa Fe</SelectItem>
-                                  <SelectItem value="iibb_sgo_estero">Retención IIBB Santiago del Estero</SelectItem>
-                                  <SelectItem value="iibb_tdf">Retención IIBB Tierra del Fuego</SelectItem>
-                                  <SelectItem value="iibb_tucuman">Retención IIBB Tucumán</SelectItem>
-                                  <SelectItem value="custom">Otra Retención</SelectItem>
+                                  <SelectItem value="vat_retention">Retención IVA</SelectItem>
+                                  <SelectItem value="income_tax_retention">Retención Ganancias</SelectItem>
+                                  <SelectItem value="suss_retention">Retención SUSS</SelectItem>
+                                  <SelectItem value="gross_income_buenosaires">Retención IIBB Buenos Aires</SelectItem>
+                                  <SelectItem value="gross_income_caba">Retención IIBB CABA</SelectItem>
+                                  <SelectItem value="gross_income_catamarca">Retención IIBB Catamarca</SelectItem>
+                                  <SelectItem value="gross_income_chaco">Retención IIBB Chaco</SelectItem>
+                                  <SelectItem value="gross_income_chubut">Retención IIBB Chubut</SelectItem>
+                                  <SelectItem value="gross_income_cordoba">Retención IIBB Córdoba</SelectItem>
+                                  <SelectItem value="gross_income_corrientes">Retención IIBB Corrientes</SelectItem>
+                                  <SelectItem value="gross_income_entrerios">Retención IIBB Entre Ríos</SelectItem>
+                                  <SelectItem value="gross_income_formosa">Retención IIBB Formosa</SelectItem>
+                                  <SelectItem value="gross_income_jujuy">Retención IIBB Jujuy</SelectItem>
+                                  <SelectItem value="gross_income_lapampa">Retención IIBB La Pampa</SelectItem>
+                                  <SelectItem value="gross_income_larioja">Retención IIBB La Rioja</SelectItem>
+                                  <SelectItem value="gross_income_mendoza">Retención IIBB Mendoza</SelectItem>
+                                  <SelectItem value="gross_income_misiones">Retención IIBB Misiones</SelectItem>
+                                  <SelectItem value="gross_income_neuquen">Retención IIBB Neuquén</SelectItem>
+                                  <SelectItem value="gross_income_rionegro">Retención IIBB Río Negro</SelectItem>
+                                  <SelectItem value="gross_income_salta">Retención IIBB Salta</SelectItem>
+                                  <SelectItem value="gross_income_sanjuan">Retención IIBB San Juan</SelectItem>
+                                  <SelectItem value="gross_income_sanluis">Retención IIBB San Luis</SelectItem>
+                                  <SelectItem value="gross_income_santacruz">Retención IIBB Santa Cruz</SelectItem>
+                                  <SelectItem value="gross_income_santafe">Retención IIBB Santa Fe</SelectItem>
+                                  <SelectItem value="gross_income_santiagodelestero">Retención IIBB Santiago del Estero</SelectItem>
+                                  <SelectItem value="gross_income_tierradelfuego">Retención IIBB Tierra del Fuego</SelectItem>
+                                  <SelectItem value="gross_income_tucuman">Retención IIBB Tucumán</SelectItem>
+                                  <SelectItem value="other">Otra Retención</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -947,7 +947,7 @@ export default function SettingsPage() {
                           setFormData({
                             ...formData, 
                             auto_retentions: [...formData.auto_retentions, {
-                              type: 'ganancias',
+                              type: 'income_tax_retention',
                               name: '',
                               rate: 2,
                               base_type: 'net'

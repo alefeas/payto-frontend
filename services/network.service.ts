@@ -36,4 +36,9 @@ export const networkService = {
     const response = await apiClient.post(`/companies/${companyId}/network/requests/${connectionId}/reject`)
     return response.data
   },
+
+  async deleteConnection(companyId: string, connectionId: string) {
+    const response = await apiClient.delete(`/companies/${companyId}/network/${connectionId}`)
+    return response.data
+  },
 }

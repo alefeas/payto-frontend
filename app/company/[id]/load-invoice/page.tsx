@@ -280,8 +280,7 @@ export default function LoadInvoicePage() {
     setIsSubmitting(true)
     try {
       const payload = {
-        issuer_cuit: supplier.documentNumber,
-        issuer_business_name: supplier.businessName || `${supplier.firstName} ${supplier.lastName}`.trim(),
+        supplier_id: formData.supplierId,
         invoice_type: formData.type,
         invoice_number: formData.invoiceNumber,
         issue_date: formData.emissionDate,

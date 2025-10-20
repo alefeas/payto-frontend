@@ -174,13 +174,13 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company.id}/invoices`)
     }] : []),
     ...(hasPermission(userRole, 'payments.create') ? [{
-      title: "Pagar Facturas",
+      title: "Cuentas por Pagar",
       description: "Gestionar pagos a proveedores",
       icon: CreditCard,
       color: "bg-orange-500",
       badge: 'pending_payments',
       permission: 'payments.create' as const,
-      action: () => router.push(`/company/${company.id}/payments`)
+      action: () => router.push(`/company/${company.id}/accounts-payable`)
     }] : []),
     ...(canIssueInvoices && hasPermission(userRole, 'payments.view') ? [{
       title: "Cobrar Facturas",
