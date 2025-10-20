@@ -39,6 +39,6 @@ export const networkService = {
 
   async deleteConnection(companyId: string, connectionId: string) {
     const response = await apiClient.delete(`/companies/${companyId}/network/${connectionId}`)
-    return response.data
+    return response
   },
 }

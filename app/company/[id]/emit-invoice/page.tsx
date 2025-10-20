@@ -216,8 +216,9 @@ export default function CreateInvoicePage() {
           const connectedCompaniesData = connections.map(conn => ({
             id: conn.connectedCompanyId,
             name: conn.connectedCompanyName,
-            uniqueId: conn.connectedCompanyId,
-            tax_condition: 'registered_taxpayer' // Default, would need to be fetched
+            uniqueId: conn.connectedCompanyUniqueId,
+            cuit: conn.connectedCompanyCuit,
+            taxCondition: conn.connectedCompanyTaxCondition
           }))
           setConnectedCompanies(connectedCompaniesData)
         } catch (error: any) {

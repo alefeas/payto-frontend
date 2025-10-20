@@ -90,5 +90,28 @@ export const clientService = {
 
   async deleteClient(companyId: string, clientId: string): Promise<void> {
     await apiClient.delete(`/companies/${companyId}/clients/${clientId}`)
+  },
+
+  async getTrashedClients(companyId: string): Promise<Client[]> {
+    const response = await apiClient.get(`/companies/${companyId}/clients/trashed`)
+    return response.data.data.map((client: any) => ({
+      id: client.id,
+      companyId: client.company_id,
+      documentType: client.document_type,
+      documentNumber: client.document_number,
+      businessName: client.business_name,
+      firstName: client.first_name,
+      lastName: client.last_name,
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+      taxCondition: client.tax_condition,
+      createdAt: client.created_at,
+      updatedAt: client.updated_at
+    }))
+  },
+
+  async restoreClient(companyId: string, clientId: string): Promise<void> {
+    await apiClient.post(`/companies/${companyId}/clients/${clientId}/restore`)
   }
 }

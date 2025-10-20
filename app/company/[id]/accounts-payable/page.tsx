@@ -363,7 +363,7 @@ export default function AccountsPayablePage() {
               disabled={selectedInvoices.length === 0 || invoices.filter(inv => selectedInvoices.includes(inv.id)).some(inv => !inv.has_bank_data)}
             >
               <Download className="h-4 w-4 mr-2" />
-              Generar TXT {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+              Generar TXT Homebanking {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
             </Button>
             <Button 
               onClick={() => {

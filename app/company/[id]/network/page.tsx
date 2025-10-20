@@ -115,11 +115,17 @@ export default function NetworkPage() {
   }
 
   const handleDeleteConnection = async (connection: CompanyConnection) => {
-    if (!confirm(`¿Eliminar conexión con ${connection.connectedCompanyName}?`)) return
+    if (!confirm(
+      `¿Eliminar conexión con ${connection.connectedCompanyName}?\n\n` +
+      `La empresa se convertirá automáticamente en Cliente/Proveedor externo para mantener el historial del Libro IVA.\n\n` +
+      `Podrás editar sus datos y seguir viendo las facturas históricas, pero ya no podrás facturar directamente a esta empresa.`
+    )) return
     
     try {
-      await networkService.deleteConnection(companyId, connection.id)
-      toast.success('Conexión eliminada')
+      const response = await networkService.deleteConnection(companyId, connection.id)
+      toast.success('Conexión eliminada', {
+        description: response.data?.message || 'La empresa fue convertida en cliente/proveedor externo'
+      })
       loadData()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al eliminar conexión')
@@ -204,7 +210,9 @@ export default function NetworkPage() {
                           </div>
                           <div>
                             <h3 className="font-semibold">{connection.connectedCompanyName}</h3>
-                            <p className="text-sm text-muted-foreground">ID: {connection.connectedCompanyUniqueId}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ID de Conexión: <span className="font-mono">{connection.connectedCompanyUniqueId}</span>
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               Conectado el {new Date(connection.connectedAt!).toLocaleDateString()}
                             </p>
@@ -273,7 +281,9 @@ export default function NetworkPage() {
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold">{request.fromCompanyName}</h3>
-                            <p className="text-sm text-muted-foreground">ID: {request.fromCompanyUniqueId}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ID de Conexión: <span className="font-mono">{request.fromCompanyUniqueId}</span>
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               Solicitado el {new Date(request.requestedAt).toLocaleDateString()}
                             </p>
@@ -340,7 +350,9 @@ export default function NetworkPage() {
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold">{request.toCompanyName}</h3>
-                            <p className="text-sm text-muted-foreground">ID: {request.fromCompanyUniqueId}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ID de Conexión: <span className="font-mono">{request.fromCompanyUniqueId}</span>
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               Enviado el {new Date(request.requestedAt).toLocaleDateString()}
                             </p>

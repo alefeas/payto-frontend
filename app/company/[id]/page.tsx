@@ -260,7 +260,12 @@ export default function CompanyPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}</p>
+            <p className="text-muted-foreground">
+              Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              ID de Conexión: <span className="font-mono font-semibold">{company.uniqueId}</span>
+            </p>
           </div>
           <div className="flex gap-2">
             {hasPermission(userRole, 'members.view') && (

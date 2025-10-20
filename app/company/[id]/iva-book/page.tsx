@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, BookOpen, Download, TrendingUp, TrendingDown } from "lucide-react"
+import { ArrowLeft, BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import apiClient from "@/lib/api-client"
@@ -26,6 +27,7 @@ export default function IvaBookPage() {
   const [purchasesBook, setPurchasesBook] = useState<any>(null)
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [validationError, setValidationError] = useState<{message: string, type: 'sales' | 'purchases'} | null>(null)
 
   const months = [
     { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
@@ -237,8 +239,28 @@ export default function IvaBookPage() {
                         link.click()
                         link.remove()
                         toast.success('Archivo descargado correctamente')
-                      } catch (error) {
-                        toast.error('Error al descargar archivo')
+                      } catch (error: any) {
+                        let errorMsg = 'Error desconocido'
+                        if (error.response?.data instanceof Blob) {
+                          const text = await error.response.data.text()
+                          try {
+                            const json = JSON.parse(text)
+                            errorMsg = json.message || text
+                          } catch {
+                            errorMsg = text
+                          }
+                        } else {
+                          errorMsg = error.response?.data?.message || error.message
+                        }
+                        
+                        if (error.response?.status === 422 && errorMsg.includes('CUIT')) {
+                          setValidationError({ message: errorMsg, type: 'sales' })
+                        } else {
+                          toast.error('Error al descargar archivo', {
+                            description: errorMsg
+                          })
+                        }
+                        console.error('Download error:', error, errorMsg)
                       }
                     }}
                   >
@@ -248,6 +270,21 @@ export default function IvaBookPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {salesBook?.warnings && salesBook.warnings.length > 0 && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-yellow-900">Advertencias</p>
+                        <ul className="text-sm text-yellow-800 mt-1 space-y-1">
+                          {salesBook.warnings.map((warning: string, idx: number) => (
+                            <li key={idx}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">Cargando...</div>
                 ) : salesBook?.records?.length === 0 ? (
@@ -340,8 +377,28 @@ export default function IvaBookPage() {
                         link.click()
                         link.remove()
                         toast.success('Archivo descargado correctamente')
-                      } catch (error) {
-                        toast.error('Error al descargar archivo')
+                      } catch (error: any) {
+                        let errorMsg = 'Error desconocido'
+                        if (error.response?.data instanceof Blob) {
+                          const text = await error.response.data.text()
+                          try {
+                            const json = JSON.parse(text)
+                            errorMsg = json.message || text
+                          } catch {
+                            errorMsg = text
+                          }
+                        } else {
+                          errorMsg = error.response?.data?.message || error.message
+                        }
+                        
+                        if (error.response?.status === 422 && errorMsg.includes('CUIT')) {
+                          setValidationError({ message: errorMsg, type: 'purchases' })
+                        } else {
+                          toast.error('Error al descargar archivo', {
+                            description: errorMsg
+                          })
+                        }
+                        console.error('Download error:', error, errorMsg)
                       }
                     }}
                   >
@@ -351,6 +408,21 @@ export default function IvaBookPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {purchasesBook?.warnings && purchasesBook.warnings.length > 0 && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-yellow-900">Advertencias</p>
+                        <ul className="text-sm text-yellow-800 mt-1 space-y-1">
+                          {purchasesBook.warnings.map((warning: string, idx: number) => (
+                            <li key={idx}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">Cargando...</div>
                 ) : purchasesBook?.records?.length === 0 ? (
@@ -418,6 +490,95 @@ export default function IvaBookPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!validationError} onOpenChange={() => setValidationError(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              Errores de validación
+            </DialogTitle>
+            <DialogDescription>
+              Se encontraron errores que impedirán que AFIP acepte este archivo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto space-y-3">
+            <div className="bg-muted p-4 rounded-lg space-y-3">
+              <p className="text-sm font-medium">
+                {validationError?.message.split(':')[0]}:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {validationError?.message
+                  .split(':')
+                  .slice(1)
+                  .join(':')
+                  .split('.')
+                  .filter(part => !part.includes('force=1') && !part.includes('AFIP rechazar'))
+                  .join('')
+                  .split(',')
+                  .filter(item => item.trim())
+                  .map((item, idx) => (
+                    <li key={idx} className="ml-2">{item.trim()}</li>
+                  ))}
+              </ul>
+            </div>
+            <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+              <p className="text-sm font-medium text-red-900">
+                ⚠️ AFIP rechazará este archivo
+              </p>
+              <p className="text-xs text-red-700 mt-1">
+                Corrige los CUITs inválidos editando los {validationError?.type === 'sales' ? 'clientes/empresas en sus secciones respectivas' : 'proveedores/empresas en sus secciones respectivas'}. Si fueron eliminados, restáuralos primero usando el botón "Ver Eliminados".
+              </p>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs text-red-700 hover:text-red-900 mt-2"
+                onClick={() => {
+                  setValidationError(null)
+                  router.push(`/company/${companyId}/${validationError?.type === 'sales' ? 'clients' : 'suppliers'}`)
+                }}
+              >
+                Ir a {validationError?.type === 'sales' ? 'Clientes' : 'Proveedores'} →
+              </Button>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setValidationError(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  const endpoint = validationError?.type === 'sales' ? 'sales' : 'purchases'
+                  const filename = validationError?.type === 'sales' 
+                    ? `REGINFO_CV_VENTAS_${selectedYear}_${selectedMonth}.txt`
+                    : `REGINFO_CV_COMPRAS_${selectedYear}_${selectedMonth}.txt`
+                  
+                  const response = await apiClient.get(`/companies/${companyId}/iva-book/export/${endpoint}?month=${selectedMonth}&year=${selectedYear}&force=1`, {
+                    responseType: 'blob'
+                  })
+                  const url = window.URL.createObjectURL(new Blob([response.data]))
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.setAttribute('download', filename)
+                  document.body.appendChild(link)
+                  link.click()
+                  link.remove()
+                  setValidationError(null)
+                  toast.warning('Archivo descargado con errores', {
+                    description: 'AFIP rechazará este archivo. Corrija los errores antes de enviarlo.'
+                  })
+                } catch (e) {
+                  toast.error('Error al descargar')
+                }
+              }}
+            >
+              Descargar de todas maneras
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

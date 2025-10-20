@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2 } from "lucide-react"
+import { ArrowLeft, Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -44,6 +44,9 @@ export default function ClientsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [trashedClients, setTrashedClients] = useState<Client[]>([])
+  const [showTrashed, setShowTrashed] = useState(false)
+  const [loadingTrashed, setLoadingTrashed] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -66,8 +69,44 @@ export default function ClientsPage() {
     }
   }
 
+  const loadTrashedClients = async () => {
+    try {
+      setLoadingTrashed(true)
+      const data = await clientService.getTrashedClients(companyId)
+      setTrashedClients(data)
+    } catch (error: any) {
+      console.error('Error loading trashed clients:', error)
+      toast.error(error.response?.data?.message || 'Error al cargar clientes eliminados')
+    } finally {
+      setLoadingTrashed(false)
+    }
+  }
+
+  const handleRestore = async (clientId: string) => {
+    try {
+      await clientService.restoreClient(companyId, clientId)
+      toast.success('Cliente restaurado')
+      loadTrashedClients()
+      loadClients()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al restaurar cliente')
+    }
+  }
+
   // Filtrar clientes
   const filteredClients = clients.filter(client => {
+    const matchesSearch = 
+      client.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesFilter = filterCondicion === "all" || client.taxCondition === filterCondicion
+
+    return matchesSearch && matchesFilter
+  })
+
+  const filteredTrashedClients = trashedClients.filter(client => {
     const matchesSearch = 
       client.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,13 +136,27 @@ export default function ClientsPage() {
             <h1 className="text-3xl font-bold">Mis Clientes</h1>
             <p className="text-muted-foreground">Gestiona tus clientes externos para facturación</p>
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Cliente
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              variant={showTrashed ? "outline" : "default"}
+              onClick={() => {
+                setShowTrashed(!showTrashed)
+                if (!showTrashed && trashedClients.length === 0) {
+                  loadTrashedClients()
+                }
+              }}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showTrashed ? "Ver Activos" : "Ver Eliminados"}
+            </Button>
+            {!showTrashed && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuevo Cliente
+                  </Button>
+                </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Crear Nuevo Cliente</DialogTitle>
@@ -113,7 +166,9 @@ export default function ClientsPage() {
               </DialogHeader>
               <ClientForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadClients} />
             </DialogContent>
-          </Dialog>
+              </Dialog>
+            )}
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -151,18 +206,80 @@ export default function ClientsPage() {
         {/* Clients List */}
         <Card>
           <CardHeader>
-            <CardTitle>Clientes ({filteredClients.length})</CardTitle>
+            <CardTitle>
+              {showTrashed ? `Clientes Eliminados (${trashedClients.length})` : `Clientes (${filteredClients.length})`}
+            </CardTitle>
             <CardDescription>
-              Lista de clientes externos guardados para facturación rápida
+              {showTrashed 
+                ? "Clientes eliminados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
+                : "Lista de clientes externos guardados para facturación rápida"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {(showTrashed ? loadingTrashed : loading) ? (
               <div className="text-center py-12">
                 <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
                 <h3 className="text-lg font-semibold mb-2">Cargando clientes...</h3>
                 <p className="text-muted-foreground">Por favor espera un momento</p>
               </div>
+            ) : showTrashed ? (
+              filteredTrashedClients.length === 0 ? (
+                <div className="text-center py-12">
+                  <Archive className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No hay clientes eliminados</h3>
+                  <p className="text-muted-foreground">Los clientes eliminados aparecerán aquí</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredTrashedClients.map((client) => (
+                    <Card key={client.id} className="hover:shadow-md transition-shadow bg-muted/30">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-base truncate">{getClientDisplayName(client)}</h3>
+                              <Badge className={condicionIvaColors[client.taxCondition]}>
+                                {condicionIvaLabels[client.taxCondition]}
+                              </Badge>
+                              <Badge variant="outline" className="text-red-600 border-red-600">
+                                Eliminado
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                {client.documentType}: {client.documentNumber}
+                              </span>
+                              {client.email && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {client.email}
+                                </span>
+                              )}
+                              {client.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {client.phone}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleRestore(client.id)}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Restaurar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )
             ) : filteredClients.length === 0 ? (
               <div className="text-center py-12">
                 <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -281,7 +398,7 @@ export default function ClientsPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
                 Eliminar Cliente
               </DialogTitle>
               <DialogDescription>
@@ -290,7 +407,7 @@ export default function ClientsPage() {
             </DialogHeader>
             <div className="py-4">
               <p className="text-sm text-muted-foreground">
-                Esta acción no se puede deshacer. El cliente será eliminado permanentemente de tu lista.
+                El cliente se ocultará de tu lista pero podrás restaurarlo desde "Ver Eliminados". Los datos históricos del Libro IVA se mantendrán intactos.
               </p>
             </div>
             <DialogFooter>

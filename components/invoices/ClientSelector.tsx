@@ -76,7 +76,7 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
               Empresa en mi red PayTo
             </div>
             <p className="text-xs text-muted-foreground">
-              Notificaciones automáticas y confirmación de pago
+              Facturación directa entre empresas conectadas. Notificaciones automáticas y confirmación de pago en tiempo real.
             </p>
           </div>
         </Label>
@@ -139,9 +139,17 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
               <SelectContent>
                 {connectedCompanies.map(company => (
                   <SelectItem key={company.id} value={company.id}>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      <span>{company.name}</span>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span className="font-medium">{company.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {company.taxCondition === 'registered_taxpayer' ? 'Responsable Inscripto' : 
+                         company.taxCondition === 'monotax' ? 'Monotributo' : 
+                         company.taxCondition === 'exempt' ? 'Exento' : 'Consumidor Final'}
+                        {company.cuit && ` • CUIT: ${company.cuit}`}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}

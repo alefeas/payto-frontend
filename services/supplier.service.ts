@@ -98,5 +98,33 @@ export const supplierService = {
 
   async deleteSupplier(companyId: string, id: number): Promise<void> {
     await apiClient.delete(`/companies/${companyId}/suppliers/${id}`)
+  },
+
+  async getTrashedSuppliers(companyId: string): Promise<Supplier[]> {
+    const response = await apiClient.get(`/companies/${companyId}/suppliers/trashed`)
+    return response.data.map((s: any) => ({
+      id: s.id,
+      companyId: s.company_id,
+      documentType: s.document_type,
+      documentNumber: s.document_number,
+      businessName: s.business_name,
+      firstName: s.first_name,
+      lastName: s.last_name,
+      email: s.email,
+      phone: s.phone,
+      address: s.address,
+      taxCondition: s.tax_condition,
+      bankName: s.bank_name,
+      bankAccountType: s.bank_account_type,
+      bankAccountNumber: s.bank_account_number,
+      bankCbu: s.bank_cbu,
+      bankAlias: s.bank_alias,
+      createdAt: s.created_at,
+      updatedAt: s.updated_at
+    }))
+  },
+
+  async restoreSupplier(companyId: string, id: number): Promise<void> {
+    await apiClient.post(`/companies/${companyId}/suppliers/${id}/restore`)
   }
 }

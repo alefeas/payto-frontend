@@ -14,7 +14,7 @@ export interface SidebarCompany {
 }
 
 export interface ClientSelectorProps {
-  connectedCompanies: Array<{ id: string; name: string; uniqueId: string }>
+  connectedCompanies: Array<{ id: string; name: string; uniqueId: string; cuit?: string; taxCondition?: string }>
   savedClients?: Array<{ 
     id: string
     businessName?: string
