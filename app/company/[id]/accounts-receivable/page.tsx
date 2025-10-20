@@ -31,7 +31,6 @@ export default function AccountsReceivablePage() {
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [showCollectionDialog, setShowCollectionDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('invoices')
-  const [loadingFilters, setLoadingFilters] = useState(false)
   const [collectionForm, setCollectionForm] = useState({
     collection_date: new Date().toISOString().split('T')[0],
     collection_method: 'transfer',
@@ -54,10 +53,7 @@ export default function AccountsReceivablePage() {
   
   useEffect(() => {
     if (isAuthenticated && companyId) {
-      const delayedLoad = setTimeout(() => {
-        loadInvoices()
-      }, 300)
-      return () => clearTimeout(delayedLoad)
+      loadInvoices()
     }
   }, [filters.search, filters.from_date, filters.to_date, isAuthenticated, companyId])
   
@@ -77,7 +73,9 @@ export default function AccountsReceivablePage() {
         
         if (filters.search) {
           const cuit = inv.client?.document_number || inv.receiverCompany?.national_id || ''
-          if (!cuit.includes(filters.search)) return false
+          const searchClean = filters.search.replace(/[^0-9]/g, '')
+          const cuitClean = cuit.replace(/[^0-9]/g, '')
+          if (!cuitClean.includes(searchClean)) return false
         }
         
         return true
@@ -678,23 +676,13 @@ export default function AccountsReceivablePage() {
                             <Button 
                               size="sm" 
                               className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                              disabled={loadingFilters}
-                              onClick={async () => {
-                                setLoadingFilters(true)
+                              onClick={() => {
                                 setActiveTab('invoices')
-                                await new Promise(resolve => setTimeout(resolve, 100))
                                 setFilters({...filters, search: client.client_cuit})
-                                setLoadingFilters(false)
                               }}
                             >
-                              {loadingFilters ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                              ) : (
-                                <>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Ver Facturas
-                                </>
-                              )}
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Facturas
                             </Button>
                           </div>
                         </div>

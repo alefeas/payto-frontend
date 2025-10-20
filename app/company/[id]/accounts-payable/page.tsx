@@ -62,10 +62,7 @@ export default function AccountsPayablePage() {
   
   useEffect(() => {
     if (isAuthenticated && companyId) {
-      const delayedLoad = setTimeout(() => {
-        loadInvoices()
-      }, 300)
-      return () => clearTimeout(delayedLoad)
+      loadInvoices()
     }
   }, [filters.search, filters.from_date, filters.to_date, isAuthenticated, companyId])
   
@@ -850,9 +847,7 @@ export default function AccountsPayablePage() {
                           className="bg-violet-500 hover:bg-violet-600 text-white"
                           onClick={() => {
                             setActiveTab('invoices')
-                            setTimeout(() => {
-                              setFilters({...filters, search: cuit})
-                            }, 100)
+                            setFilters({...filters, search: cuit})
                           }}
                         >
                           <Eye className="h-4 w-4 mr-2" />

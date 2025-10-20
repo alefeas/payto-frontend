@@ -171,8 +171,8 @@ export default function SettingsPage() {
         postal_code: addr.postalCode || '',
         province: addr.province || '',
         tax_condition: companyData.taxCondition || '',
-        default_sales_point: parseInt(companyData.defaultSalesPoint) || 1,
-        default_vat: parseFloat(companyData.defaultVat) || 21,
+        default_sales_point: parseInt(String(companyData.defaultSalesPoint || 1)),
+        default_vat: parseFloat(String(companyData.defaultVat || 21)),
         required_approvals: companyData.requiredApprovals !== undefined ? parseInt(String(companyData.requiredApprovals)) : (companyData.required_approvals !== undefined ? parseInt(String(companyData.required_approvals)) : 0),
         is_perception_agent: companyData.isPerceptionAgent || false,
         auto_perceptions: companyData.autoPerceptions || [],
@@ -583,7 +583,7 @@ export default function SettingsPage() {
                               }}>
                                 <Edit className="h-3 w-3" />
                               </Button>
-                              {company.role === 'owner' && (
+                              {company.role === 'owner' && process.env.NEXT_PUBLIC_AFIP_ENVIRONMENT === 'homologacion' && (
                                 <Button size="sm" variant="ghost" className="text-orange-600 hover:text-orange-700" onClick={async () => {
                                   if (!confirm(`¿Reiniciar números de comprobante del punto ${sp.point_number}?\n\nEsto eliminará TODAS las facturas de este punto de venta.\n\nEsta acción NO se puede deshacer.`)) return
                                   try {
@@ -594,7 +594,7 @@ export default function SettingsPage() {
                                   } catch (error: any) {
                                     toast.error(error.response?.data?.error || 'Error al reiniciar')
                                   }
-                                }} title="Reiniciar números">
+                                }} title="Reiniciar números (solo Homologación)">
                                   <span className="text-xs">🔄</span>
                                 </Button>
                               )}
