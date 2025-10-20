@@ -19,6 +19,7 @@ import { bankAccountService, BankAccount } from "@/services/bank-account.service
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { formatCUIT, formatPhone, formatCBU } from "@/lib/input-formatters"
+import { AfipFiscalDataButton } from "@/components/company/AfipFiscalDataButton"
 
 const PROVINCIAS = [
   "Buenos Aires",
@@ -484,7 +485,7 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <Label>Condición Fiscal</Label>
                         <div className="flex gap-2">
-                          <Select value={formData.tax_condition} disabled>
+                          <Select value={formData.tax_condition} onValueChange={(value) => setFormData({...formData, tax_condition: value})}>
                             <SelectTrigger><SelectValue placeholder="No configurada" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
@@ -493,28 +494,14 @@ export default function SettingsPage() {
                               <SelectItem value="exempt">Exento</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button 
-                            type="button"
-                            variant="outline" 
-                            onClick={async () => {
-                              try {
-                                const apiClient = (await import('@/lib/api-client')).default
-                                const response = await apiClient.post(`/afip/companies/${companyId}/update-tax-condition`)
-                                if (response.data.success) {
-                                  setFormData({...formData, tax_condition: response.data.data.taxCondition})
-                                  toast.success('Condición fiscal actualizada desde AFIP')
-                                  loadData()
-                                }
-                              } catch (error: any) {
-                                toast.error(error.response?.data?.message || 'Error al actualizar desde AFIP')
-                              }
+                          <AfipFiscalDataButton 
+                            companyId={companyId}
+                            onDataFetched={(taxCondition) => {
+                              setFormData({...formData, tax_condition: taxCondition})
                             }}
-                            className="flex-shrink-0"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
+                          />
                         </div>
-                        <p className="text-xs text-muted-foreground">Solo se actualiza desde AFIP (requiere certificado)</p>
+                        <p className="text-xs text-muted-foreground">Actualiza desde AFIP o selecciona manualmente</p>
                       </div>
                       <div className="space-y-2">
                         <Label>Punto de Venta Predeterminado</Label>
@@ -751,7 +738,7 @@ export default function SettingsPage() {
                               <Label>Descripción *</Label>
                               <Input
                                 placeholder="Ej: Percepción IIBB Buenos Aires"
-                                value={perception.name}
+                                value={perception.name || ''}
                                 onChange={(e) => {
                                   const newPerceptions = [...formData.auto_perceptions]
                                   newPerceptions[index] = {...newPerceptions[index], name: e.target.value.slice(0, 100)}
@@ -903,7 +890,7 @@ export default function SettingsPage() {
                               <Label>Descripción *</Label>
                               <Input
                                 placeholder="Ej: Retención IIBB Buenos Aires"
-                                value={retention.name}
+                                value={retention.name || ''}
                                 onChange={(e) => {
                                   const newRetentions = [...formData.auto_retentions]
                                   newRetentions[index] = {...newRetentions[index], name: e.target.value.slice(0, 100)}

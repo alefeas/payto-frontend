@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner"
 import { supplierService, Supplier } from "@/services/supplier.service"
 import { formatCUIT, formatPhone, getMaxLengthForDocumentType } from "@/lib/input-formatters"
-import { afipVerificationService } from "@/services/afip-verification.service"
+import { afipPadronService } from "@/services/afip-padron.service"
 import { Loader2, CheckCircle2 } from "lucide-react"
 
 interface SupplierFormProps {
@@ -145,39 +145,53 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
                   }
                   try {
                     setValidating(true)
-                    const result = await afipVerificationService.validateCuit(formData.documentNumber, companyId)
-                    if (result.valid && result.data) {
+                    const result = await afipPadronService.searchByCuit(companyId, formData.documentNumber)
+                    
+                    if (result.success && result.data) {
+                      const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
+                        'responsable_inscripto': 'registered_taxpayer',
+                        'monotributo': 'monotax',
+                        'exento': 'exempt',
+                        'consumidor_final': 'final_consumer'
+                      }
+                      
                       setFormData({
                         ...formData,
-                        businessName: result.data.businessName || formData.businessName,
-                        taxCondition: (result.data.taxCondition as "registered_taxpayer" | "monotax" | "exempt" | "final_consumer") || formData.taxCondition,
-                        address: result.data.fiscalAddress || formData.address
+                        businessName: result.data.business_name || result.data.name || formData.businessName,
+                        taxCondition: taxConditionMap[result.data.tax_condition] || formData.taxCondition,
+                        address: result.data.address || formData.address
                       })
                       setValidated(true)
-                      toast.success('Datos obtenidos de AFIP')
-                    } else if (result.requires_verification) {
-                      toast.error(result.message || 'Debes verificar tu perfil fiscal primero', { duration: 6000 })
-                    } else {
-                      toast.error(result.message || 'No se encontraron datos en AFIP')
+                      
+                      const message = result.mock_mode
+                        ? 'Datos simulados cargados (modo testing)'
+                        : 'Datos obtenidos de AFIP'
+                      
+                      toast.success(message, {
+                        description: result.mock_mode
+                          ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
+                          : undefined
+                      })
                     }
                   } catch (error: any) {
-                    if (error.response?.status === 403) {
-                      toast.error(error.response?.data?.message || 'Debes verificar tu perfil fiscal primero', { duration: 6000 })
+                    if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
+                      toast.error('Configura un certificado AFIP primero', { duration: 6000 })
                     } else {
-                      toast.error(error.response?.data?.message || 'Error al validar con AFIP')
+                      toast.error(error.response?.data?.error || 'Error al consultar AFIP')
                     }
                   } finally {
                     setValidating(false)
                   }
                 }}
                 disabled={validating}
+                title="Buscar datos en AFIP"
               >
                 {validating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : validated ? (
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                 ) : (
-                  'Validar AFIP'
+                  'Buscar AFIP'
                 )}
               </Button>
             )}
