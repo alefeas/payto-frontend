@@ -165,6 +165,7 @@ export default function InvoicesPage() {
     const dueDate = new Date(invoice.due_date)
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.status !== 'paid' && invoice.status !== 'cancelled'
+    const isEmitted = !invoice.supplier_id // Factura emitida (sin supplier)
     
     // 1. Vencimiento (máxima prioridad visual)
     if (isOverdue) {
@@ -181,7 +182,9 @@ export default function InvoicesPage() {
     } else if (invoice.status === 'rejected') {
       badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
     } else if (invoice.status === 'paid') {
-      badges.push(<Badge key="status" className="bg-green-500 text-white">Pagada</Badge>)
+      // Diferenciar entre facturas emitidas (cobradas) y recibidas (pagadas)
+      const label = isEmitted ? 'Cobrada' : 'Pagada'
+      badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
     } else if (invoice.status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
     } else if (invoice.status === 'partially_cancelled') {

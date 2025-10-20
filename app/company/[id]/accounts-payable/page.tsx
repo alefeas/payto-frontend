@@ -651,12 +651,16 @@ export default function AccountsPayablePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Historial de Pagos</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {payments.length} pago{payments.length !== 1 ? 's' : ''} registrado{payments.length !== 1 ? 's' : ''}
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {payments.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No hay pagos registrados</p>
+                      <p className="text-xs mt-2">Los pagos aparecerán aquí una vez que registres pagos de facturas</p>
                     </div>
                   ) : (
                     payments
@@ -667,25 +671,76 @@ export default function AccountsPayablePage() {
                         if (filters.to_date && paymentDate > new Date(filters.to_date)) return false
                         return true
                       })
-                      .map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{payment.supplier?.name || 'Proveedor'}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {payment.voucher_number || 'S/N'} • {new Date(payment.payment_date).toLocaleDateString('es-AR')}
+                      .map((payment) => {
+                        const methodLabels: Record<string, string> = {
+                          transfer: 'Transferencia',
+                          check: 'Cheque',
+                          cash: 'Efectivo',
+                          debit_card: 'Débito',
+                          credit_card: 'Crédito',
+                          card: 'Tarjeta',
+                          other: 'Otro'
+                        }
+                        const totalRetentions = Array.isArray(payment.retentions) ? payment.retentions.reduce((sum: number, r: any) => sum + (parseFloat(r.amount) || 0), 0) : 0
+                        const netAmount = (parseFloat(payment.amount) || 0) - totalRetentions
+                        
+                        return (
+                    <div key={payment.id} className="p-4 border rounded-lg bg-blue-50/50">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="font-medium text-lg">{payment.supplier?.name || payment.invoice?.supplier?.business_name || payment.invoice?.issuerCompany?.business_name || 'Proveedor'}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Factura: {payment.invoice?.type || 'FC'} {String(payment.invoice?.sales_point || 0).padStart(4, '0')}-{String(payment.invoice?.voucher_number || payment.voucher_number || 0).padStart(8, '0')}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-lg text-blue-600">{formatCurrency(parseFloat(payment.amount) || 0)}</div>
+                          <Badge className="bg-blue-600 text-white mt-1">Pagado</Badge>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">{formatCurrency(parseFloat(payment.amount) || 0)}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Retenciones: {formatCurrency(Array.isArray(payment.retentions) ? payment.retentions.reduce((sum: number, r: any) => sum + (parseFloat(r.amount) || 0), 0) : 0)}
+                      <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
+                        <div>
+                          <span className="font-medium">Fecha:</span> {new Date(payment.payment_date).toLocaleDateString('es-AR')}
                         </div>
-                        <div className="text-xs text-green-600 font-medium">
-                          Neto: {formatCurrency((parseFloat(payment.amount) || 0) - (Array.isArray(payment.retentions) ? payment.retentions.reduce((sum: number, r: any) => sum + (parseFloat(r.amount) || 0), 0) : 0))}
+                        <div>
+                          <span className="font-medium">Método:</span> {methodLabels[payment.payment_method] || payment.payment_method}
                         </div>
+                        {payment.reference_number && (
+                          <div>
+                            <span className="font-medium">Ref:</span> {payment.reference_number}
+                          </div>
+                        )}
                       </div>
+                      {totalRetentions > 0 && (
+                        <div className="mt-2 pt-2 border-t">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">Retenciones aplicadas:</span>
+                            <span className="font-medium text-orange-600">{formatCurrency(totalRetentions)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm font-semibold">
+                            <span>Neto pagado:</span>
+                            <span className="text-green-600">{formatCurrency(netAmount)}</span>
+                          </div>
+                          {Array.isArray(payment.retentions) && payment.retentions.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {payment.retentions.map((ret: any, idx: number) => (
+                                <div key={idx} className="text-xs text-muted-foreground flex justify-between">
+                                  <span>• {ret.name || getRetentionLabel(ret.type)}</span>
+                                  <span>{formatCurrency(parseFloat(ret.amount) || 0)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {payment.notes && (
+                        <div className="text-sm text-muted-foreground mt-2 pt-2 border-t">
+                          <span className="font-medium">Notas:</span> {payment.notes}
+                        </div>
+                      )}
                     </div>
-                    ))
+                        )
+                      })
                   )}
                 </div>
               </CardContent>
@@ -764,37 +819,49 @@ export default function AccountsPayablePage() {
                         const cuit = supplierInvoices[0]?.supplier?.document_number || supplierInvoices[0]?.issuerCompany?.national_id || ''
                         return cuit.includes(filters.search)
                       })
-                      .map((supplier: any) => (
-                    <div key={supplier.supplier_id} className="p-4 border rounded-lg hover:bg-accent">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <div className="font-medium text-lg">{supplier.supplier_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {supplier.invoice_count} factura{supplier.invoice_count !== 1 ? 's' : ''} pendiente{supplier.invoice_count !== 1 ? 's' : ''}
+                      .map((supplier: any) => {
+                        const firstInvoice = invoices.find(inv => 
+                          (inv.supplier_id || inv.issuer_company_id) === supplier.supplier_id
+                        )
+                        const cuit = firstInvoice?.supplier?.document_number || firstInvoice?.issuerCompany?.national_id || ''
+                        return (
+                    <div key={supplier.supplier_id} className="p-4 border border-violet-200 bg-violet-50 rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-violet-500"></div>
+                            <div className="font-semibold text-gray-900">{supplier.supplier_name}</div>
                           </div>
+                          {cuit && (
+                            <div className="text-sm text-gray-500 ml-4">{cuit}</div>
+                          )}
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-lg">{formatCurrency(supplier.total_pending)}</div>
+                          <div className="text-xs text-gray-500 mb-1">Pendiente</div>
+                          <div className="font-bold text-lg text-violet-600">{formatCurrency(supplier.total_pending)}</div>
                         </div>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          const firstInvoice = invoices.find(inv => 
-                            (inv.supplier_id || inv.issuer_company_id) === supplier.supplier_id
-                          )
-                          const cuit = firstInvoice?.supplier?.document_number || firstInvoice?.issuerCompany?.national_id || ''
-                          setActiveTab('invoices')
-                          setTimeout(() => {
-                            setFilters({...filters, search: cuit})
-                          }, 100)
-                        }}
-                      >
-                        Ver Facturas
-                      </Button>
+                      <div className="flex items-center justify-between pt-3 border-t border-violet-200">
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium text-gray-900">{supplier.invoice_count}</span> factura{supplier.invoice_count !== 1 ? 's' : ''}
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-violet-500 hover:bg-violet-600 text-white"
+                          onClick={() => {
+                            setActiveTab('invoices')
+                            setTimeout(() => {
+                              setFilters({...filters, search: cuit})
+                            }, 100)
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Facturas
+                        </Button>
+                      </div>
                     </div>
-                    ))
+                        )
+                      })
                   )}
                 </div>
               </CardContent>

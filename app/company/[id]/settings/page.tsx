@@ -583,6 +583,21 @@ export default function SettingsPage() {
                               }}>
                                 <Edit className="h-3 w-3" />
                               </Button>
+                              {company.role === 'owner' && (
+                                <Button size="sm" variant="ghost" className="text-orange-600 hover:text-orange-700" onClick={async () => {
+                                  if (!confirm(`¿Reiniciar números de comprobante del punto ${sp.point_number}?\n\nEsto eliminará TODAS las facturas de este punto de venta.\n\nEsta acción NO se puede deshacer.`)) return
+                                  try {
+                                    const apiClient = (await import('@/lib/api-client')).default
+                                    const response = await apiClient.post(`/companies/${companyId}/sales-points/${sp.point_number}/reset-vouchers`)
+                                    toast.success(`Reiniciado. ${response.data.deleted_invoices} facturas eliminadas. Próximo número: 1`)
+                                    await loadData()
+                                  } catch (error: any) {
+                                    toast.error(error.response?.data?.error || 'Error al reiniciar')
+                                  }
+                                }} title="Reiniciar números">
+                                  <span className="text-xs">🔄</span>
+                                </Button>
+                              )}
                               <Button size="sm" variant="ghost" onClick={() => {
                                 setDeletingSalesPointId(sp.id)
                                 setShowDeleteSalesPointDialog(true)
@@ -702,34 +717,34 @@ export default function SettingsPage() {
                               >
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent className="max-h-[300px]">
-                                  <SelectItem value="vat">Percepción IVA</SelectItem>
-                                  <SelectItem value="income_tax">Percepción Ganancias</SelectItem>
-                                  <SelectItem value="impuestos_internos">Impuestos Internos</SelectItem>
-                                  <SelectItem value="iibb_bsas">IIBB Buenos Aires</SelectItem>
-                                  <SelectItem value="iibb_caba">IIBB CABA</SelectItem>
-                                  <SelectItem value="iibb_catamarca">IIBB Catamarca</SelectItem>
-                                  <SelectItem value="iibb_chaco">IIBB Chaco</SelectItem>
-                                  <SelectItem value="iibb_chubut">IIBB Chubut</SelectItem>
-                                  <SelectItem value="iibb_cordoba">IIBB Córdoba</SelectItem>
-                                  <SelectItem value="iibb_corrientes">IIBB Corrientes</SelectItem>
-                                  <SelectItem value="iibb_entrerios">IIBB Entre Ríos</SelectItem>
-                                  <SelectItem value="iibb_formosa">IIBB Formosa</SelectItem>
-                                  <SelectItem value="iibb_jujuy">IIBB Jujuy</SelectItem>
-                                  <SelectItem value="iibb_lapampa">IIBB La Pampa</SelectItem>
-                                  <SelectItem value="iibb_larioja">IIBB La Rioja</SelectItem>
-                                  <SelectItem value="iibb_mendoza">IIBB Mendoza</SelectItem>
-                                  <SelectItem value="iibb_misiones">IIBB Misiones</SelectItem>
-                                  <SelectItem value="iibb_neuquen">IIBB Neuquén</SelectItem>
-                                  <SelectItem value="iibb_rionegro">IIBB Río Negro</SelectItem>
-                                  <SelectItem value="iibb_salta">IIBB Salta</SelectItem>
-                                  <SelectItem value="iibb_sanjuan">IIBB San Juan</SelectItem>
-                                  <SelectItem value="iibb_sanluis">IIBB San Luis</SelectItem>
-                                  <SelectItem value="iibb_santacruz">IIBB Santa Cruz</SelectItem>
-                                  <SelectItem value="iibb_santafe">IIBB Santa Fe</SelectItem>
-                                  <SelectItem value="iibb_sgo_estero">IIBB Santiago del Estero</SelectItem>
-                                  <SelectItem value="iibb_tdf">IIBB Tierra del Fuego</SelectItem>
-                                  <SelectItem value="iibb_tucuman">IIBB Tucumán</SelectItem>
-                                  <SelectItem value="custom">Otra Percepción</SelectItem>
+                                  <SelectItem value="vat_perception">Percepción IVA</SelectItem>
+                                  <SelectItem value="income_tax_perception">Percepción Ganancias</SelectItem>
+                                  <SelectItem value="internal_taxes_perception">Impuestos Internos</SelectItem>
+                                  <SelectItem value="gross_income_buenosaires">IIBB Buenos Aires</SelectItem>
+                                  <SelectItem value="gross_income_caba">IIBB CABA</SelectItem>
+                                  <SelectItem value="gross_income_catamarca">IIBB Catamarca</SelectItem>
+                                  <SelectItem value="gross_income_chaco">IIBB Chaco</SelectItem>
+                                  <SelectItem value="gross_income_chubut">IIBB Chubut</SelectItem>
+                                  <SelectItem value="gross_income_cordoba">IIBB Córdoba</SelectItem>
+                                  <SelectItem value="gross_income_corrientes">IIBB Corrientes</SelectItem>
+                                  <SelectItem value="gross_income_entrerios">IIBB Entre Ríos</SelectItem>
+                                  <SelectItem value="gross_income_formosa">IIBB Formosa</SelectItem>
+                                  <SelectItem value="gross_income_jujuy">IIBB Jujuy</SelectItem>
+                                  <SelectItem value="gross_income_lapampa">IIBB La Pampa</SelectItem>
+                                  <SelectItem value="gross_income_larioja">IIBB La Rioja</SelectItem>
+                                  <SelectItem value="gross_income_mendoza">IIBB Mendoza</SelectItem>
+                                  <SelectItem value="gross_income_misiones">IIBB Misiones</SelectItem>
+                                  <SelectItem value="gross_income_neuquen">IIBB Neuquén</SelectItem>
+                                  <SelectItem value="gross_income_rionegro">IIBB Río Negro</SelectItem>
+                                  <SelectItem value="gross_income_salta">IIBB Salta</SelectItem>
+                                  <SelectItem value="gross_income_sanjuan">IIBB San Juan</SelectItem>
+                                  <SelectItem value="gross_income_sanluis">IIBB San Luis</SelectItem>
+                                  <SelectItem value="gross_income_santacruz">IIBB Santa Cruz</SelectItem>
+                                  <SelectItem value="gross_income_santafe">IIBB Santa Fe</SelectItem>
+                                  <SelectItem value="gross_income_santiagodelestero">IIBB Santiago del Estero</SelectItem>
+                                  <SelectItem value="gross_income_tierradelfuego">IIBB Tierra del Fuego</SelectItem>
+                                  <SelectItem value="gross_income_tucuman">IIBB Tucumán</SelectItem>
+                                  <SelectItem value="other_perception">Otra Percepción</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -795,7 +810,7 @@ export default function SettingsPage() {
                           setFormData({
                             ...formData, 
                             auto_perceptions: [...formData.auto_perceptions, {
-                              type: 'iibb_bsas',
+                              type: 'gross_income_buenosaires',
                               name: '',
                               rate: 3,
                               base_type: 'net'
