@@ -162,9 +162,9 @@ export const accountsPayableService = {
     return response.data.data
   },
 
-  async generatePaymentTxt(companyId: string, paymentIds: string[]): Promise<Blob> {
-    const response = await apiClient.post(`/companies/${companyId}/supplier-payments/generate-txt`, 
-      { payment_ids: paymentIds },
+  async generatePaymentTxt(companyId: string, invoiceIds: string[]): Promise<Blob> {
+    const response = await apiClient.post(`/companies/${companyId}/accounts-payable/generate-txt`, 
+      { invoice_ids: invoiceIds },
       { responseType: 'blob' }
     )
     return response.data
