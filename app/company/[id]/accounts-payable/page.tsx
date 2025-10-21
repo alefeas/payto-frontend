@@ -26,6 +26,7 @@ export default function AccountsPayablePage() {
   const companyId = params.id as string
 
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [dashboard, setDashboard] = useState<any>(null)
   const [invoices, setInvoices] = useState<any[]>([])
@@ -181,8 +182,14 @@ export default function AccountsPayablePage() {
       }
       
       setShowPaymentDialog(false)
-      setInvoices(prev => prev.filter(inv => !selectedInvoices.includes(inv.id)))
       setSelectedInvoices([])
+      
+      // Recargar datos sin recargar página
+      setRefreshing(true)
+      await loadInvoices()
+      const paymentsData = await accountsPayableService.getPayments(companyId)
+      setPayments(paymentsData.data || [])
+      setRefreshing(false)
     } catch (error: any) {
       console.error('Payment error:', error)
       toast.error(error.response?.data?.message || error.response?.data?.error || 'Error al registrar pago')
@@ -654,7 +661,11 @@ export default function AccountsPayablePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {payments.length === 0 ? (
+                  {refreshing ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Cargando pagos...</p>
+                    </div>
+                  ) : payments.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No hay pagos registrados</p>
                       <p className="text-xs mt-2">Los pagos aparecerán aquí una vez que registres pagos de facturas</p>
@@ -682,7 +693,7 @@ export default function AccountsPayablePage() {
                         const netAmount = (parseFloat(payment.amount) || 0) - totalRetentions
                         
                         return (
-                    <div key={payment.id} className="p-4 border rounded-lg bg-blue-50/50">
+                    <div key={payment.id} className="p-4 border rounded-lg bg-blue-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="font-medium text-lg">{payment.supplier?.name || payment.invoice?.supplier?.business_name || payment.invoice?.issuerCompany?.business_name || 'Proveedor'}</div>

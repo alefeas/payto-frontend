@@ -2,21 +2,25 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, AlertCircle, Calendar, DollarSign, Plus, Eye } from "lucide-react"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { invoiceService } from "@/services/invoice.service"
 import collectionService from "@/services/collection.service"
+import { AccountsLayout } from "@/components/accounts/AccountsLayout"
+import { SummaryCards } from "@/components/accounts/SummaryCards"
+import { InvoiceList } from "@/components/accounts/InvoiceList"
+import { UpcomingTab } from "@/components/accounts/UpcomingTab"
+import { OverdueTab } from "@/components/accounts/OverdueTab"
+import { ByEntityTab } from "@/components/accounts/ByEntityTab"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function AccountsReceivablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -137,10 +141,13 @@ export default function AccountsReceivablePage() {
       toast.success(`${selectedInvoices.length} cobro(s) registrado(s) exitosamente`)
       setShowCollectionDialog(false)
       setSelectedInvoices([])
-      // Recargar solo los datos necesarios sin recargar la página
+      
+      // Recargar datos con loader
+      setLoading(true)
       await loadInvoices()
       const collectionsData = await collectionService.getCollections(companyId)
       setCollections(collectionsData.filter((c: any) => c.status === 'confirmed') || [])
+      setLoading(false)
     } catch (error: any) {
       console.error('Collection error:', error)
       toast.error(error.response?.data?.message || 'Error al registrar cobro')
@@ -183,366 +190,95 @@ export default function AccountsReceivablePage() {
     }
   }
 
-  const getInvoiceStatusBadges = (invoice: any) => {
-    const badges = []
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const dueDate = new Date(invoice.due_date)
-    dueDate.setHours(0, 0, 0, 0)
-    const isOverdue = dueDate < today
-    
-    if (isOverdue) {
-      badges.push(<Badge key="overdue" className="bg-red-500 text-white font-semibold">Vencida</Badge>)
-    }
-    
-    badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Pendiente Cobro</Badge>)
-    
-    return <div className="flex gap-1 flex-wrap">{badges}</div>
-  }
-
-  if (authLoading || loading) return null
+  if (authLoading) return null
   if (!isAuthenticated) return null
 
   const summary = getFilteredSummary()
+  const filtered = getFilteredInvoices()
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Cuentas por Cobrar</h1>
-              <p className="text-muted-foreground">Gestión de facturas emitidas y cobros</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => {
-                if (selectedInvoices.length > 0) {
-                  handleCollectInvoices(selectedInvoices)
-                }
+    <>
+    <AccountsLayout
+      companyId={companyId}
+      title="Cuentas por Cobrar"
+      subtitle="Gestión de facturas emitidas y cobros"
+      headerActions={
+        <Button 
+          onClick={() => selectedInvoices.length > 0 && handleCollectInvoices(selectedInvoices)}
+          disabled={selectedInvoices.length === 0}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Registrar Cobro {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+        </Button>
+      }
+      summaryCards={
+        <SummaryCards 
+          summary={summary} 
+          invoiceCount={filtered.length} 
+          filters={filters} 
+          formatCurrency={formatCurrency}
+          type="receivable"
+        />
+      }
+      filters={filters}
+      onFiltersChange={setFilters}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      tabs={[
+        {
+          value: 'invoices',
+          label: 'Facturas Pendientes',
+          content: (
+            <InvoiceList
+              invoices={filtered}
+              selectedInvoices={selectedInvoices}
+              onSelectionChange={setSelectedInvoices}
+              onAction={(id) => {
+                setSelectedInvoices([id])
+                handleCollectInvoices([id])
               }}
-              disabled={selectedInvoices.length === 0}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Registrar Cobro {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendiente de Cobro</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(summary.total_pending)}</div>
-              <p className="text-xs text-muted-foreground">
-                {filters.from_date || filters.to_date ? 'Del periodo filtrado' : 'Total pendiente'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Facturas Vencidas</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{summary.overdue_count}</div>
-              <p className="text-xs text-muted-foreground">
-                {formatCurrency(summary.overdue_amount)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Facturas por Cobrar</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{getFilteredInvoices().length}</div>
-              <p className="text-xs text-muted-foreground">Facturas emitidas</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cobrado</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.total_collected)}</div>
-              <p className="text-xs text-muted-foreground">
-                {filters.from_date || filters.to_date ? 'Del periodo filtrado' : 'Total histórico'}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={filters.from_date}
-                onChange={(e) => setFilters({...filters, from_date: e.target.value})}
-                className="w-40"
-                placeholder="Desde"
-              />
-              <Input
-                type="date"
-                value={filters.to_date}
-                onChange={(e) => setFilters({...filters, to_date: e.target.value})}
-                className="w-40"
-                placeholder="Hasta"
-              />
-              <Input
-                placeholder="Buscar por CUIT (XX-XXXXXXXX-X)..."
-                value={filters.search}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/[^0-9]/g, '')
-                  if (value.length > 11) value = value.slice(0, 11)
-                  if (value.length > 2) value = value.slice(0, 2) + '-' + value.slice(2)
-                  if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11)
-                  setFilters({...filters, search: value})
-                }}
-                maxLength={13}
-                className="flex-1"
-              />
-              {(filters.from_date || filters.to_date || filters.search) && (
-                <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: ''})}>
-                  Limpiar Filtros
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="invoices">Facturas Pendientes</TabsTrigger>
-            <TabsTrigger value="upcoming">Próximos Vencimientos</TabsTrigger>
-            <TabsTrigger value="overdue">Vencidas</TabsTrigger>
-            <TabsTrigger value="collections">Cobros Realizados</TabsTrigger>
-            <TabsTrigger value="clients">Por Cliente</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="invoices" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Facturas Pendientes de Cobro</CardTitle>
-                    {selectedInvoices.length > 0 && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} seleccionada{selectedInvoices.length !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                  {getFilteredInvoices().length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        const filtered = getFilteredInvoices()
-                        if (selectedInvoices.length === filtered.length) {
-                          setSelectedInvoices([])
-                        } else {
-                          setSelectedInvoices(filtered.map(inv => inv.id))
-                        }
-                      }}
-                    >
-                      {selectedInvoices.length === getFilteredInvoices().length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {loading ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Cargando facturas...</p>
-                    </div>
-                  ) : invoices.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay facturas pendientes de cobro</p>
-                    </div>
-                  ) : (
-                    getFilteredInvoices().map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer" onClick={() => {
-                      if (selectedInvoices.includes(invoice.id)) {
-                        setSelectedInvoices(selectedInvoices.filter(id => id !== invoice.id))
-                      } else {
-                        setSelectedInvoices([...selectedInvoices, invoice.id])
-                      }
-                    }}>
-                      <div className="flex items-center gap-4">
-                        <Checkbox
-                          checked={selectedInvoices.includes(invoice.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedInvoices([...selectedInvoices, invoice.id])
-                            } else {
-                              setSelectedInvoices(selectedInvoices.filter(id => id !== invoice.id))
-                            }
-                          }}
-                        />
-                        <div>
-                          <div className="font-medium">{invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || invoice.receiverCompany?.business_name || 'Cliente'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="font-medium">{formatCurrency(invoice.total)}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Vence: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
-                          </div>
-                        </div>
-                        {getInvoiceStatusBadges(invoice)}
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/company/${companyId}/invoices/${invoice.id}`)
-                          }}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedInvoices([invoice.id])
-                            handleCollectInvoices([invoice.id])
-                          }}>
-                            Cobrar
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="upcoming" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-yellow-600">Próximos Vencimientos (30 días)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {getFilteredInvoices().filter(inv => {
-                    const today = new Date()
-                    today.setHours(0, 0, 0, 0)
-                    const dueDate = new Date(inv.due_date)
-                    dueDate.setHours(0, 0, 0, 0)
-                    const thirtyDaysFromNow = new Date(today)
-                    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
-                    return dueDate >= today && dueDate <= thirtyDaysFromNow
-                  }).length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay facturas próximas a vencer</p>
-                    </div>
-                  ) : (
-                    getFilteredInvoices().filter(inv => {
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      const dueDate = new Date(inv.due_date)
-                      dueDate.setHours(0, 0, 0, 0)
-                      const thirtyDaysFromNow = new Date(today)
-                      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
-                      return dueDate >= today && dueDate <= thirtyDaysFromNow
-                    }).map((invoice) => {
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      const dueDate = new Date(invoice.due_date)
-                      dueDate.setHours(0, 0, 0, 0)
-                      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                      
-                      return (
-                        <div key={invoice.id} className="flex items-center justify-between p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                          <div>
-                            <div className="font-medium">{invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || invoice.receiverCompany?.business_name || 'Cliente'}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')} • Vence en {daysUntilDue} día{daysUntilDue !== 1 ? 's' : ''}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium text-yellow-600">{formatCurrency(invoice.total)}</div>
-                            <Button size="sm" variant="outline" onClick={() => {
-                              setSelectedInvoices([invoice.id])
-                              handleCollectInvoices([invoice.id])
-                            }}>
-                              Cobrar
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="overdue" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Facturas Vencidas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {getFilteredInvoices().filter(inv => {
-                    const today = new Date()
-                    today.setHours(0, 0, 0, 0)
-                    const dueDate = new Date(inv.due_date)
-                    dueDate.setHours(0, 0, 0, 0)
-                    return dueDate < today
-                  }).length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay facturas vencidas</p>
-                    </div>
-                  ) : (
-                    getFilteredInvoices().filter(inv => {
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      const dueDate = new Date(inv.due_date)
-                      dueDate.setHours(0, 0, 0, 0)
-                      return dueDate < today
-                    }).map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
-                      <div>
-                        <div className="font-medium">{invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || invoice.receiverCompany?.business_name || 'Cliente'}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-red-600">{formatCurrency(invoice.total)}</div>
-                        <Button size="sm" variant="destructive" onClick={() => {
-                          setSelectedInvoices([invoice.id])
-                          handleCollectInvoices([invoice.id])
-                        }}>
-                          Cobrar Urgente
-                        </Button>
-                      </div>
-                    </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="collections" className="space-y-4">
+              onView={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+              formatCurrency={formatCurrency}
+              actionLabel="Cobrar"
+              type="receivable"
+              loading={loading}
+            />
+          )
+        },
+        {
+          value: 'upcoming',
+          label: 'Próximos Vencimientos',
+          content: (
+            <UpcomingTab
+              invoices={filtered}
+              formatCurrency={formatCurrency}
+              onAction={(id) => {
+                setSelectedInvoices([id])
+                handleCollectInvoices([id])
+              }}
+              type="receivable"
+            />
+          )
+        },
+        {
+          value: 'overdue',
+          label: 'Vencidas',
+          content: (
+            <OverdueTab
+              invoices={filtered}
+              formatCurrency={formatCurrency}
+              onAction={(id) => {
+                setSelectedInvoices([id])
+                handleCollectInvoices([id])
+              }}
+              type="receivable"
+            />
+          )
+        },
+        {
+          value: 'collections',
+          label: 'Cobros Realizados',
+          content: (
             <Card>
               <CardHeader>
                 <CardTitle>Historial de Cobros</CardTitle>
@@ -552,7 +288,11 @@ export default function AccountsReceivablePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {collections.length === 0 ? (
+                  {loading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Cargando cobros...</p>
+                    </div>
+                  ) : collections.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No hay cobros registrados</p>
                       <p className="text-xs mt-2">Los cobros aparecerán aquí una vez que registres pagos de facturas emitidas</p>
@@ -577,7 +317,7 @@ export default function AccountsReceivablePage() {
                           other: 'Otro'
                         }
                         return (
-                    <div key={collection.id} className="p-4 border rounded-lg bg-green-50/50">
+                    <div key={collection.id} className="p-4 border rounded-lg bg-green-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="font-medium text-lg">{collection.invoice?.client?.business_name || collection.invoice?.client?.first_name + ' ' + collection.invoice?.client?.last_name || collection.invoice?.receiverCompany?.business_name || 'Cliente'}</div>
@@ -615,87 +355,27 @@ export default function AccountsReceivablePage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="clients" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumen por Cliente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {(() => {
-                    const byClient = getFilteredInvoices().reduce((acc: any, inv) => {
-                      const clientId = inv.client_id || inv.receiver_company_id || 'unknown'
-                      const clientName = inv.client?.business_name || inv.client?.first_name + ' ' + inv.client?.last_name || inv.receiverCompany?.business_name || 'Cliente sin nombre'
-                      
-                      if (!acc[clientId]) {
-                        acc[clientId] = {
-                          client_id: clientId,
-                          client_name: clientName,
-                          invoice_count: 0,
-                          total_pending: 0,
-                          client_cuit: inv.client?.document_number || inv.receiverCompany?.national_id || ''
-                        }
-                      }
-                      
-                      acc[clientId].invoice_count++
-                      acc[clientId].total_pending += parseFloat(inv.total) || 0
-                      
-                      return acc
-                    }, {})
-                    
-                    const clientsArray = Object.values(byClient).sort((a: any, b: any) => b.total_pending - a.total_pending)
-                    
-                    return clientsArray.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No hay datos por cliente</p>
-                      </div>
-                    ) : (
-                      clientsArray.map((client: any) => (
-                        <div key={client.client_id} className="p-4 border border-emerald-200 bg-emerald-50 rounded-lg">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                <div className="font-semibold text-gray-900">{client.client_name}</div>
-                              </div>
-                              {client.client_cuit && (
-                                <div className="text-sm text-gray-500 ml-4">{client.client_cuit}</div>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs text-gray-500 mb-1">Pendiente</div>
-                              <div className="font-bold text-lg text-emerald-600">{formatCurrency(client.total_pending)}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between pt-3 border-t border-emerald-200">
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium text-gray-900">{client.invoice_count}</span> factura{client.invoice_count !== 1 ? 's' : ''}
-                            </div>
-                            <Button 
-                              size="sm" 
-                              className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                              onClick={() => {
-                                setActiveTab('invoices')
-                                setFilters({...filters, search: client.client_cuit})
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Facturas
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
+          )
+        },
+        {
+          value: 'clients',
+          label: 'Por Cliente',
+          content: (
+            <ByEntityTab
+              invoices={filtered}
+              formatCurrency={formatCurrency}
+              onViewInvoices={(cuit) => {
+                setActiveTab('invoices')
+                setFilters({...filters, search: cuit})
+              }}
+              type="receivable"
+            />
+          )
+        }
+      ]}
+    />
+    
+    <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Registrar Cobro</DialogTitle>
@@ -768,8 +448,7 @@ export default function AccountsReceivablePage() {
               <Button onClick={handleSubmitCollection} disabled={submitting}>{submitting ? 'Registrando...' : 'Registrar Cobro'}</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
-      </div>
-    </div>
+    </Dialog>
+    </>
   )
 }
