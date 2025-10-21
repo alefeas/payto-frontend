@@ -11,6 +11,16 @@ import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
+const formatCurrency = (amount: number, currency: string) => {
+  const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const formats: Record<string, string> = {
+    'ARS': `ARS $${formatted}`,
+    'USD': `USD $${formatted}`,
+    'EUR': `EUR €${formatted}`
+  }
+  return formats[currency] || `ARS $${formatted}`
+}
+
 export default function InvoiceDetailPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -243,13 +253,13 @@ export default function InvoiceDetailPage() {
                         </td>
                         <td className="p-4 text-center">{parseFloat(item.quantity)}</td>
                         <td className="p-4 text-right text-sm">
-                          {parseFloat(item.unit_price).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                          {formatCurrency(parseFloat(item.unit_price), invoice.currency)}
                         </td>
                         <td className="p-4 text-center">
                           <Badge variant="outline" className="text-xs">{parseFloat(item.tax_rate)}%</Badge>
                         </td>
                         <td className="p-4 text-right font-medium">
-                          {parseFloat(item.subtotal).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                          {formatCurrency(parseFloat(item.subtotal), invoice.currency)}
                         </td>
                       </tr>
                     ))}
@@ -274,27 +284,27 @@ export default function InvoiceDetailPage() {
                 <div className="flex justify-between items-center py-2">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">
-                    {parseFloat(invoice.subtotal).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    {formatCurrency(parseFloat(invoice.subtotal), invoice.currency)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-t">
                   <span className="text-muted-foreground">Impuestos (IVA)</span>
                   <span className="font-medium">
-                    {parseFloat(invoice.total_taxes).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    {formatCurrency(parseFloat(invoice.total_taxes), invoice.currency)}
                   </span>
                 </div>
                 {parseFloat(invoice.total_perceptions || 0) > 0 && (
                   <div className="flex justify-between items-center py-2 border-t">
                     <span className="text-orange-600">Percepciones</span>
                     <span className="font-medium text-orange-600">
-                      {parseFloat(invoice.total_perceptions).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                      {formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center py-3 border-t-2 text-lg font-bold">
                   <span>Total Factura</span>
                   <span className="text-primary">
-                    {parseFloat(invoice.total).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                    {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                   </span>
                 </div>
               </div>
@@ -311,19 +321,19 @@ export default function InvoiceDetailPage() {
                   <div className="flex justify-between items-center py-2">
                     <span className="text-muted-foreground">Total Factura</span>
                     <span className="font-medium">
-                      {parseFloat(invoice.total).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                      {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-t">
                     <span className="text-red-600">Retenciones</span>
                     <span className="font-medium text-red-600">
-                      -{parseFloat(invoice.total_retentions).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                      -{formatCurrency(parseFloat(invoice.total_retentions), invoice.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-t-2 text-xl font-bold">
                     <span className="text-green-700">Total Cobrado</span>
                     <span className="text-green-700">
-                      {(parseFloat(invoice.total) - parseFloat(invoice.total_retentions)).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                      {formatCurrency(parseFloat(invoice.total) - parseFloat(invoice.total_retentions), invoice.currency)}
                     </span>
                   </div>
                 </div>

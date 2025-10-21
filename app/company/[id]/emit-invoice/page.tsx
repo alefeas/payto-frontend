@@ -43,8 +43,12 @@ interface CompanyData {
 }
 
 const getCurrencySymbol = (currency: Currency): string => {
-  const symbols = { ARS: '$', USD: 'US$', EUR: '€' }
-  return symbols[currency] || '$'
+  const formats = { 
+    ARS: 'ARS $', 
+    USD: 'USD $', 
+    EUR: 'EUR €' 
+  }
+  return formats[currency] || 'ARS $'
 }
 
 export default function CreateInvoicePage() {
@@ -1332,27 +1336,27 @@ export default function CreateInvoicePage() {
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span className="font-medium">
-                    {totals.subtotal.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                    {getCurrencySymbol(formData.currency)}{totals.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total Impuestos:</span>
                   <span className="font-medium">
-                    {totals.totalTaxes.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                    {getCurrencySymbol(formData.currency)}{totals.totalTaxes.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 {totals.totalPerceptions > 0 && (
                   <div className="flex justify-between">
                     <span>Total Percepciones:</span>
                     <span className="font-medium text-orange-600">
-                      {totals.totalPerceptions.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                      {getCurrencySymbol(formData.currency)}{totals.totalPerceptions.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total:</span>
                   <span>
-                    {totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                    {getCurrencySymbol(formData.currency)}{totals.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 {selectedInvoice && (

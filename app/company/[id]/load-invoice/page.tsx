@@ -21,6 +21,16 @@ import { formatInvoiceNumber, formatCUIT } from "@/lib/input-formatters"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
 
+const formatCurrency = (amount: number, currency: string) => {
+  const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const formats: Record<string, string> = {
+    'ARS': `ARS $${formatted}`,
+    'USD': `USD $${formatted}`,
+    'EUR': `EUR €${formatted}`
+  }
+  return formats[currency] || `ARS $${formatted}`
+}
+
 export default function LoadInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -417,27 +427,27 @@ export default function LoadInvoicePage() {
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-medium">
-                        {totals.subtotal.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                        {formatCurrency(totals.subtotal, formData.currency)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Impuestos:</span>
                       <span className="font-medium">
-                        {totals.totalTaxes.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                        {formatCurrency(totals.totalTaxes, formData.currency)}
                       </span>
                     </div>
                     {totals.totalPerceptions > 0 && (
                       <div className="flex justify-between">
                         <span>Total Percepciones:</span>
                         <span className="font-medium text-orange-600">
-                          {totals.totalPerceptions.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                          {formatCurrency(totals.totalPerceptions, formData.currency)}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between text-lg font-bold border-t pt-2">
                       <span>Total:</span>
                       <span>
-                        {totals.total.toLocaleString('es-AR', { style: 'currency', currency: formData.currency })}
+                        {formatCurrency(totals.total, formData.currency)}
                       </span>
                     </div>
                   </div>

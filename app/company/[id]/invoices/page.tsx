@@ -16,6 +16,16 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
+const formatCurrency = (amount: number, currency: string) => {
+  const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const formats: Record<string, string> = {
+    'ARS': `ARS $${formatted}`,
+    'USD': `USD $${formatted}`,
+    'EUR': `EUR €${formatted}`
+  }
+  return formats[currency] || `ARS $${formatted}`
+}
+
 export default function InvoicesPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -487,7 +497,7 @@ export default function InvoicesPage() {
                     <div className="truncate" title={clientName}>{clientName}</div>
                     <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
                     <div className="font-medium">
-                      {parseFloat(invoice.total).toLocaleString('es-AR', { style: 'currency', currency: invoice.currency })}
+                      {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                     </div>
                     <div>{getInvoiceStatusBadges(invoice)}</div>
                     <div className="flex gap-1">
@@ -733,7 +743,7 @@ export default function InvoicesPage() {
                           <div className="flex-1">
                             <p className="font-medium">{inv.formatted_number} - Tipo {inv.type}</p>
                             <p className="text-sm text-muted-foreground">
-                              CAE: {inv.data.cae} | Total: ${inv.data.total}
+                              CAE: {inv.data.cae} | Total: {formatCurrency(parseFloat(inv.data.total), inv.data.currency || 'ARS')}
                             </p>
                             {!inv.saved && (
                               <p className="text-xs text-orange-600 mt-1">
