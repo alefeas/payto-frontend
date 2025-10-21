@@ -189,12 +189,17 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
                     'final_consumer': 'CF'
                   }[client.taxCondition] || client.taxCondition
                   
+                  // Show DNI instead of CUIT for final consumers
+                  const docTypeDisplay = client.taxCondition === 'final_consumer' && client.documentType === 'CUIT' 
+                    ? 'DNI' 
+                    : client.documentType
+                  
                   return (
                     <SelectItem key={client.id} value={client.id}>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{displayName}</span>
-                          <span className="text-xs text-muted-foreground">({client.documentType} {client.documentNumber})</span>
+                          <span className="text-xs text-muted-foreground">({docTypeDisplay} {client.documentNumber})</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{taxConditionLabel}</span>
