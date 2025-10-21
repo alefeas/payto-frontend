@@ -264,11 +264,18 @@ export default function CreateInvoicePage() {
           } else if (company.defaultSalesPoint) {
             setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error loading sales points:', error)
-          // Fallback to company default
+          // Fallback to company default - don't block the page
+          setSalesPoints([])
           if (company.defaultSalesPoint) {
             setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
+          } else {
+            setFormData(prev => ({ ...prev, salesPoint: 1 }))
+          }
+          // Only show error if it's not a 404 (no sales points yet)
+          if (error.response?.status !== 404) {
+            toast.error('Error al cargar puntos de venta. Usando punto de venta por defecto.')
           }
         } finally {
           setIsLoadingSalesPoints(false)
@@ -1178,7 +1185,13 @@ export default function CreateInvoicePage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Percepciones
-                <Button type="button" onClick={addPerception} size="sm" variant="outline">
+                <Button 
+                  type="button" 
+                  onClick={addPerception} 
+                  size="sm" 
+                  variant="outline"
+                  disabled={formData.clientData?.tax_condition === 'final_consumer'}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Percepción
                 </Button>
@@ -1186,7 +1199,12 @@ export default function CreateInvoicePage() {
               <CardDescription>Percepciones aplicables según jurisdicción</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {perceptions.length === 0 ? (
+              {formData.clientData?.tax_condition === 'final_consumer' ? (
+                <div className="text-center py-6 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-800 font-medium">No se pueden aplicar percepciones a Consumidores Finales</p>
+                  <p className="text-xs text-amber-600 mt-1">Según normativa AFIP, las percepciones no aplican para esta condición fiscal</p>
+                </div>
+              ) : perceptions.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
                   <p className="text-sm">No hay percepciones aplicadas</p>
                   <p className="text-xs">Las percepciones se agregan según la jurisdicción</p>

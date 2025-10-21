@@ -66,9 +66,16 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.businessName && (!formData.firstName || !formData.lastName)) {
-      toast.error('Debes completar Razón Social o Nombre y Apellido')
-      return
+    if (formData.taxCondition === 'final_consumer') {
+      if (!formData.firstName || !formData.lastName) {
+        toast.error('Nombre y Apellido son obligatorios para Consumidor Final')
+        return
+      }
+    } else {
+      if (!formData.businessName && (!formData.firstName || !formData.lastName)) {
+        toast.error('Debes completar Razón Social o Nombre y Apellido')
+        return
+      }
     }
     
     if (!formData.address) {
@@ -271,36 +278,44 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="businessName">Razón Social * (o Nombre y Apellido)</Label>
-        <Input
-          id="businessName"
-          value={formData.businessName}
-          onChange={(e) => setFormData({...formData, businessName: e.target.value.slice(0, 100)})}
-          maxLength={100}
-          placeholder="Requerido para empresas"
-        />
-      </div>
+      {formData.taxCondition !== 'final_consumer' && (
+        <div className="space-y-2">
+          <Label htmlFor="businessName">Razón Social {formData.taxCondition !== 'final_consumer' ? '(Opcional si completas Nombre y Apellido)' : ''}</Label>
+          <Input
+            id="businessName"
+            value={formData.businessName}
+            onChange={(e) => setFormData({...formData, businessName: e.target.value.slice(0, 100)})}
+            maxLength={100}
+            placeholder="Ej: Empresa S.A."
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="firstName">Nombre * (si no tiene Razón Social)</Label>
+          <Label htmlFor="firstName">
+            Nombre {formData.taxCondition === 'final_consumer' ? '*' : '(Opcional si completas Razón Social)'}
+          </Label>
           <Input
             id="firstName"
             value={formData.firstName}
             onChange={(e) => setFormData({...formData, firstName: e.target.value.slice(0, 50)})}
             maxLength={50}
-            placeholder="Requerido para personas"
+            placeholder="Ej: Juan"
+            required={formData.taxCondition === 'final_consumer'}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="lastName">Apellido * (si no tiene Razón Social)</Label>
+          <Label htmlFor="lastName">
+            Apellido {formData.taxCondition === 'final_consumer' ? '*' : '(Opcional si completas Razón Social)'}
+          </Label>
           <Input
             id="lastName"
             value={formData.lastName}
             onChange={(e) => setFormData({...formData, lastName: e.target.value.slice(0, 50)})}
             maxLength={50}
-            placeholder="Requerido para personas"
+            placeholder="Ej: Pérez"
+            required={formData.taxCondition === 'final_consumer'}
           />
         </div>
       </div>

@@ -793,15 +793,21 @@ export default function InvoicesPage() {
                     const syncToast = toast.loading(syncMode === 'date_range' ? 'Sincronizando facturas desde AFIP... Puede tardar varios minutos' : 'Consultando factura en AFIP...')
                     
                     try {
-                      const payload: any = { mode: syncMode }
+                      let payload: any
                       
                       if (syncMode === 'single') {
-                        payload.sales_point = syncForm.sales_point
-                        payload.invoice_type = syncForm.invoice_type
-                        payload.invoice_number = parseInt(syncForm.invoice_number)
+                        payload = {
+                          mode: 'single',
+                          sales_point: syncForm.sales_point,
+                          invoice_type: syncForm.invoice_type,
+                          invoice_number: parseInt(syncForm.invoice_number)
+                        }
                       } else {
-                        payload.date_from = syncForm.date_from
-                        payload.date_to = syncForm.date_to
+                        payload = {
+                          mode: 'date_range',
+                          date_from: syncForm.date_from,
+                          date_to: syncForm.date_to
+                        }
                       }
                       
                       const result = await invoiceService.syncFromAfip(companyId, payload)
@@ -831,8 +837,9 @@ export default function InvoicesPage() {
                     } catch (error: any) {
                       toast.dismiss(syncToast)
                       console.error('Sync error:', error)
-                      console.error('Error response:', error.response?.data)
-                      const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Intente nuevamente'
+                      const errorData = error.response?.data
+                      console.error('Error response:', errorData)
+                      const errorMsg = errorData?.message || errorData?.error || error.message || 'Intente nuevamente'
                       toast.error('Error al sincronizar', {
                         description: errorMsg
                       })

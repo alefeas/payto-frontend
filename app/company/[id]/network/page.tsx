@@ -76,6 +76,8 @@ export default function NetworkPage() {
         setSentRequests(sentRequestsResult.value)
       } else {
         console.error('Error al cargar solicitudes enviadas:', sentRequestsResult.reason)
+        setSentRequests([]) // Asegurar que sea un array vacío
+        // No mostrar toast para este error, es opcional
       }
       
       if (statsResult.status === 'fulfilled') {

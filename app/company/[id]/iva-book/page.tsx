@@ -13,6 +13,14 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import apiClient from "@/lib/api-client"
 import { companyService } from "@/services/company.service"
+import { translateTaxCondition } from "@/lib/tax-condition-utils"
+
+// Normalizar condición IVA según AFIP (backend ya lo hace, pero por si acaso)
+const normalizeAfipTaxCondition = (condition: string | null | undefined): string => {
+  if (!condition) return 'Responsable No Inscripto'
+  // El backend ya normaliza, solo mostramos
+  return condition
+}
 
 export default function IvaBookPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -87,6 +95,11 @@ export default function IvaBookPage() {
       setSalesBook(salesResponse.data.data)
       setPurchasesBook(purchasesResponse.data.data)
       setSummary(summaryResponse.data.data)
+      
+      // Debug: verificar valores del backend
+      console.log('Summary from backend:', summaryResponse.data.data)
+      console.log('Sales totals:', salesResponse.data.data?.totals)
+      console.log('Purchases totals:', purchasesResponse.data.data?.totals)
     } catch (error: any) {
       toast.error('Error al cargar datos', {
         description: error.response?.data?.message || 'Intente nuevamente'
@@ -300,6 +313,7 @@ export default function IvaBookPage() {
                           <TableHead>Comprobante</TableHead>
                           <TableHead>Cliente</TableHead>
                           <TableHead>CUIT</TableHead>
+                          <TableHead>Condición IVA</TableHead>
                           <TableHead className="text-right">Neto</TableHead>
                           <TableHead className="text-right">21%</TableHead>
                           <TableHead className="text-right">10.5%</TableHead>
@@ -318,6 +332,7 @@ export default function IvaBookPage() {
                             <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
                             <TableCell className="max-w-[150px] truncate">{record.cliente}</TableCell>
                             <TableCell>{record.cuit}</TableCell>
+                            <TableCell className="text-xs">{record.condicion_iva || 'Responsable No Inscripto'}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.neto_gravado)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.iva_21)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.iva_105)}</TableCell>
@@ -331,7 +346,7 @@ export default function IvaBookPage() {
                         ))}
                         {salesBook?.totals && (
                           <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={4}>TOTALES</TableCell>
+                            <TableCell colSpan={5}>TOTALES</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.neto_gravado)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_21)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_105)}</TableCell>
@@ -438,6 +453,7 @@ export default function IvaBookPage() {
                           <TableHead>Comprobante</TableHead>
                           <TableHead>Proveedor</TableHead>
                           <TableHead>CUIT</TableHead>
+                          <TableHead>Condición IVA</TableHead>
                           <TableHead className="text-right">Neto</TableHead>
                           <TableHead className="text-right">21%</TableHead>
                           <TableHead className="text-right">10.5%</TableHead>
@@ -456,6 +472,7 @@ export default function IvaBookPage() {
                             <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
                             <TableCell className="max-w-[150px] truncate">{record.proveedor}</TableCell>
                             <TableCell>{record.cuit}</TableCell>
+                            <TableCell className="text-xs">{record.condicion_iva || 'Responsable No Inscripto'}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.neto_gravado)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.iva_21)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.iva_105)}</TableCell>
@@ -469,7 +486,7 @@ export default function IvaBookPage() {
                         ))}
                         {purchasesBook?.totals && (
                           <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={4}>TOTALES</TableCell>
+                            <TableCell colSpan={5}>TOTALES</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.neto_gravado)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_21)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_105)}</TableCell>

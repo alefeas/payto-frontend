@@ -127,13 +127,19 @@ export default function AccountsReceivablePage() {
         const invoice = invoices.find(inv => inv.id === invoiceId)
         if (!invoice) continue
         
+        // Normalizar método de cobro
+        let method = collectionForm.collection_method
+        if (method === 'debit_card' || method === 'credit_card') {
+          method = 'card'
+        }
+        
         await collectionService.createCollection(companyId, {
           invoice_id: invoiceId,
           amount: invoice.total,
           collection_date: collectionForm.collection_date,
-          collection_method: collectionForm.collection_method as 'transfer' | 'check' | 'cash' | 'card',
-          reference_number: collectionForm.reference_number,
-          notes: collectionForm.notes,
+          collection_method: method as 'transfer' | 'check' | 'cash' | 'card',
+          reference_number: collectionForm.reference_number || undefined,
+          notes: collectionForm.notes || undefined,
           status: 'confirmed'
         })
       }
