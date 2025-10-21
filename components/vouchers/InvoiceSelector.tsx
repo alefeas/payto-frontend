@@ -12,10 +12,14 @@ interface Invoice {
   id: string
   invoice_number: string
   invoice_type: string
+  sales_point?: number
   client_name: string
   total_amount: number
   available_balance: number
   issue_date: string
+  concept?: string
+  service_date_from?: string
+  service_date_to?: string
 }
 
 interface InvoiceSelectorProps {
@@ -86,7 +90,10 @@ export function InvoiceSelector({
             } />
           </SelectTrigger>
           <SelectContent>
-            {invoices.map((invoice) => (
+            {invoices.map((invoice) => {
+              const conceptLabel = invoice.concept === 'services' ? 'Servicios' : 
+                                   invoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'
+              return (
               <SelectItem key={invoice.id} value={invoice.id}>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
@@ -98,12 +105,15 @@ export function InvoiceSelector({
                       {invoice.client_name}
                     </Badge>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    Saldo: ${invoice.available_balance.toLocaleString('es-AR')} de ${invoice.total_amount.toLocaleString('es-AR')}
-                  </span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Concepto: {conceptLabel}</span>
+                    <span>•</span>
+                    <span>Saldo: ${invoice.available_balance.toLocaleString('es-AR')} de ${invoice.total_amount.toLocaleString('es-AR')}</span>
+                  </div>
                 </div>
               </SelectItem>
-            ))}
+              )
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -140,9 +150,25 @@ export function InvoiceSelector({
                 <span className="font-medium">{selectedInvoice.client_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Fecha:</span>
+                <span className="text-muted-foreground">Concepto:</span>
+                <span className="font-medium">
+                  {selectedInvoice.concept === 'services' ? 'Servicios' : 
+                   selectedInvoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fecha Emisión:</span>
                 <span>{new Date(selectedInvoice.issue_date).toLocaleDateString('es-AR')}</span>
               </div>
+              {(selectedInvoice.concept === 'services' || selectedInvoice.concept === 'products_services') && 
+               selectedInvoice.service_date_from && selectedInvoice.service_date_to && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Período Servicio:</span>
+                  <span>
+                    {new Date(selectedInvoice.service_date_from).toLocaleDateString('es-AR')} - {new Date(selectedInvoice.service_date_to).toLocaleDateString('es-AR')}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between border-t pt-2">
                 <span className="text-muted-foreground">Total Original:</span>
                 <span className="font-medium">${selectedInvoice.total_amount.toLocaleString('es-AR')}</span>

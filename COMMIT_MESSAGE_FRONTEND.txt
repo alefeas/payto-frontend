@@ -1,0 +1,19 @@
+feat: improve network page error handling and delete confirmation UX
+
+- Replace Promise.all with Promise.allSettled for resilient data loading
+- Add granular error handling per endpoint (connections, requests, stats)
+- Implement custom delete confirmation modal with styled warnings
+- Replace native browser confirm() with accessible Dialog component
+- Add loading states and detailed error logging for better debugging
+- Display specific error messages per failed request
+- Ensure partial data loading when some requests fail
+
+UX improvements:
+- Custom modal with color-coded information boxes (warning/info)
+- Clear explanation of consequences when deleting connections
+- Responsive design with loading spinners
+- Better visual feedback during operations
+- Consistent styling with application design system
+
+Files modified:
+- app/company/[id]/network/page.tsx

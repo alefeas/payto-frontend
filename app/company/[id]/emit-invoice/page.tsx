@@ -42,6 +42,11 @@ interface CompanyData {
   autoRetentions?: any[]
 }
 
+const getCurrencySymbol = (currency: Currency): string => {
+  const symbols = { ARS: '$', USD: 'US$', EUR: '€' }
+  return symbols[currency] || '$'
+}
+
 export default function CreateInvoicePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -72,6 +77,8 @@ export default function CreateInvoicePage() {
     emissionDate: '',
     dueDate: '',
     paymentDueDate: '',
+    serviceDateFrom: '',
+    serviceDateTo: '',
     currency: 'ARS' as Currency,
     exchangeRate: '1',
     notes: ''
@@ -489,6 +496,11 @@ export default function CreateInvoicePage() {
       return
     }
 
+    if ((formData.concept === 'services' || formData.concept === 'products_services') && (!formData.serviceDateFrom || !formData.serviceDateTo)) {
+      toast.error('Complete las fechas de servicio (requeridas para servicios)')
+      return
+    }
+
     if (items.some(item => !item.description || item.quantity <= 0 || item.unitPrice <= 0)) {
       toast.error('Complete todos los ítems correctamente')
       return
@@ -512,8 +524,11 @@ export default function CreateInvoicePage() {
       voucher_type: formData.voucherType,
       related_invoice_id: formData.relatedInvoiceId,
       sales_point: formData.salesPoint,
+      concept: formData.concept,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
+      service_date_from: (formData.concept === 'services' || formData.concept === 'products_services') ? formData.serviceDateFrom : undefined,
+      service_date_to: (formData.concept === 'services' || formData.concept === 'products_services') ? formData.serviceDateTo : undefined,
       currency: formData.currency,
       exchange_rate: formData.exchangeRate ? parseFloat(formData.exchangeRate) : undefined,
       notes: formData.notes,
@@ -531,9 +546,12 @@ export default function CreateInvoicePage() {
       save_client: formData.saveClient,
       invoice_type: formData.voucherType,
       sales_point: formData.salesPoint,
+      concept: formData.concept,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
       payment_due_date: formData.paymentDueDate || undefined,
+      service_date_from: (formData.concept === 'services' || formData.concept === 'products_services') ? formData.serviceDateFrom : undefined,
+      service_date_to: (formData.concept === 'services' || formData.concept === 'products_services') ? formData.serviceDateTo : undefined,
       currency: formData.currency,
       exchange_rate: formData.exchangeRate ? parseFloat(formData.exchangeRate) : undefined,
       notes: formData.notes,
@@ -724,6 +742,7 @@ export default function CreateInvoicePage() {
                       <Select 
                         value={formData.salesPoint.toString()} 
                         onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
+                        disabled={isNoteType && associateInvoice && !!selectedInvoice}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione punto de venta" />
@@ -745,6 +764,11 @@ export default function CreateInvoicePage() {
                       {salesPoints.length === 0 && (
                         <p className="text-xs text-amber-600">
                           No hay puntos de venta. Sincronizá desde AFIP o agregá uno manualmente.
+                        </p>
+                      )}
+                      {isNoteType && associateInvoice && selectedInvoice && (
+                        <p className="text-xs text-blue-600">
+                          Heredado de la factura asociada (requerido por AFIP)
                         </p>
                       )}
                     </>
@@ -785,6 +809,7 @@ export default function CreateInvoicePage() {
                     value={formData.concept} 
                     onValueChange={(value: InvoiceConcept) => 
                       setFormData({...formData, concept: value})}
+                    disabled={isNoteType && associateInvoice && !!selectedInvoice}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -793,6 +818,11 @@ export default function CreateInvoicePage() {
                       <SelectItem value="products_services">Productos y Servicios</SelectItem>
                     </SelectContent>
                   </Select>
+                  {isNoteType && associateInvoice && selectedInvoice && (
+                    <p className="text-xs text-blue-600">
+                      Heredado de la factura asociada
+                    </p>
+                  )}
                 </div>
 
                 {!selectedInvoice && (
@@ -845,12 +875,20 @@ export default function CreateInvoicePage() {
                       className="h-4 w-4"
                     />
                     <Label htmlFor="associateInvoice" className="cursor-pointer">
-                      Asociar a una factura existente
+                      Asociar a una factura emitida por mi empresa
                     </Label>
                   </div>
-                  <p className="text-xs text-blue-700">
-                    Opcional: Asociá esta nota a una factura específica para mejor trazabilidad
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-blue-700">
+                      ✓ Asociá esta nota a una factura que emitiste para mejor trazabilidad
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      ✓ El punto de venta y concepto se heredarán automáticamente (requerido por AFIP)
+                    </p>
+                    <p className="text-xs text-amber-700 font-medium">
+                      ⚠ Para facturas recibidas de proveedores, ellos deben emitir la NC/ND
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -860,7 +898,18 @@ export default function CreateInvoicePage() {
                   voucherType={formData.voucherType}
                   onSelect={(invoice) => {
                     setSelectedInvoice(invoice)
-                    setFormData({ ...formData, relatedInvoiceId: invoice?.id || '' })
+                    if (invoice) {
+                      setFormData({ 
+                        ...formData, 
+                        relatedInvoiceId: invoice.id,
+                        salesPoint: invoice.sales_point || formData.salesPoint,
+                        concept: (invoice.concept || 'products') as InvoiceConcept,
+                        serviceDateFrom: invoice.service_date_from || '',
+                        serviceDateTo: invoice.service_date_to || ''
+                      })
+                    } else {
+                      setFormData({ ...formData, relatedInvoiceId: '' })
+                    }
                   }}
                 />
               )}
@@ -931,6 +980,42 @@ export default function CreateInvoicePage() {
                     minDate={formData.emissionDate ? new Date(formData.emissionDate) : new Date()}
                   />
                 </div>
+
+                {/* Fechas de Servicio (solo para servicios o productos y servicios) */}
+                {(formData.concept === 'services' || formData.concept === 'products_services') && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceDateFrom">Fecha Servicio Desde *</Label>
+                      <DatePicker
+                        date={formData.serviceDateFrom ? new Date(formData.serviceDateFrom) : undefined}
+                        onSelect={(date) => setFormData({...formData, serviceDateFrom: date ? date.toISOString().split('T')[0] : ''})}
+                        placeholder="Fecha inicio del servicio"
+                        disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                      />
+                      {isNoteType && associateInvoice && selectedInvoice && (
+                        <p className="text-xs text-blue-600">
+                          Heredado de la factura asociada
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceDateTo">Fecha Servicio Hasta *</Label>
+                      <DatePicker
+                        date={formData.serviceDateTo ? new Date(formData.serviceDateTo) : undefined}
+                        onSelect={(date) => setFormData({...formData, serviceDateTo: date ? date.toISOString().split('T')[0] : ''})}
+                        placeholder="Fecha fin del servicio"
+                        minDate={formData.serviceDateFrom ? new Date(formData.serviceDateFrom) : undefined}
+                        disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                      />
+                      {isNoteType && associateInvoice && selectedInvoice && (
+                        <p className="text-xs text-blue-600">
+                          Heredado de la factura asociada
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {availableTypes.find(t => t.code === formData.voucherType)?.category === 'fce_mipyme' && (
                   <div className="space-y-2">
@@ -1061,16 +1146,16 @@ export default function CreateInvoicePage() {
                       <div className="space-y-2">
                         <Label className="text-xs">Total</Label>
                         <div className="h-10 flex items-center justify-end px-3 bg-muted rounded-md font-medium">
-                          ${itemTotals.total.toFixed(2)}
+                          {getCurrencySymbol(formData.currency)}{itemTotals.total.toFixed(2)}
                         </div>
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex justify-end gap-4 text-sm border-t pt-2">
-                    <span className="text-muted-foreground">Subtotal: <span className="font-medium text-foreground">${itemTotals.subtotal.toFixed(2)}</span></span>
-                    <span className="text-muted-foreground">IVA: <span className="font-medium text-foreground">${(itemTotals.total - itemTotals.subtotal).toFixed(2)}</span></span>
-                    <span className="text-muted-foreground">Total: <span className="font-medium text-foreground">${itemTotals.total.toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">Subtotal: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{itemTotals.subtotal.toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">IVA: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{(itemTotals.total - itemTotals.subtotal).toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">Total: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{itemTotals.total.toFixed(2)}</span></span>
                   </div>
                 </div>
               )
@@ -1210,16 +1295,16 @@ export default function CreateInvoicePage() {
                         <div className="space-y-2">
                           <Label className="text-xs">Monto</Label>
                           <div className="h-10 flex items-center justify-end px-3 bg-muted rounded-md font-medium">
-                            ${perceptionAmount.toFixed(2)}
+                            {getCurrencySymbol(formData.currency)}{perceptionAmount.toFixed(2)}
                           </div>
                         </div>
                       </div>
                     </div>
                     
                     <div className="flex justify-end gap-4 text-sm border-t pt-2">
-                      <span className="text-muted-foreground">Base: <span className="font-medium text-foreground">${base.toFixed(2)}</span></span>
+                      <span className="text-muted-foreground">Base: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{base.toFixed(2)}</span></span>
                       <span className="text-muted-foreground">Alícuota: <span className="font-medium text-foreground">{perception.rate || 0}%</span></span>
-                      <span className="text-muted-foreground">Total: <span className="font-medium text-orange-600">${perceptionAmount.toFixed(2)}</span></span>
+                      <span className="text-muted-foreground">Total: <span className="font-medium text-orange-600">{getCurrencySymbol(formData.currency)}{perceptionAmount.toFixed(2)}</span></span>
                     </div>
                   </div>
                   )
@@ -1268,7 +1353,7 @@ export default function CreateInvoicePage() {
                   <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
                     <span>Saldo Disponible:</span>
                     <span className={totals.total > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>
-                      ${selectedInvoice.available_balance.toLocaleString('es-AR')}
+                      {getCurrencySymbol(formData.currency)}{selectedInvoice.available_balance.toLocaleString('es-AR')}
                     </span>
                   </div>
                 )}
