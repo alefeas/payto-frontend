@@ -847,9 +847,15 @@ export default function CreateInvoicePage() {
                         type="number"
                         step="0.01"
                         min="0"
+                        max="9999.9999"
                         placeholder="Cotización"
                         value={formData.exchangeRate || ''}
-                        onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value.length <= 10) {
+                            setFormData({...formData, exchangeRate: value})
+                          }
+                        }}
                         disabled={formData.currency === 'ARS'}
                         className="flex-1 h-10"
                       />

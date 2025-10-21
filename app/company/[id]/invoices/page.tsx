@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink, Loader2 } from "lucide-react"
+import { ArrowLeft, FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink, Loader2, RefreshCw, Trash2 } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export default function InvoicesPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -31,6 +32,17 @@ export default function InvoicesPage() {
   const [dateToFilter, setDateToFilter] = useState("")
   const [clientFilter, setClientFilter] = useState("all")
   const [showFilters, setShowFilters] = useState(false)
+  const [showSyncDialog, setShowSyncDialog] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMode, setSyncMode] = useState<'single' | 'date_range'>('single')
+  const [syncForm, setSyncForm] = useState({
+    sales_point: 1,
+    invoice_type: 'B',
+    invoice_number: '',
+    date_from: '',
+    date_to: ''
+  })
+  const [syncResults, setSyncResults] = useState<any>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -223,6 +235,14 @@ export default function InvoicesPage() {
             <CardTitle className="flex items-center justify-between">
               <span>Facturas Emitidas</span>
               <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowSyncDialog(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sincronizar con AFIP
+                </Button>
                 <Button 
                   onClick={async () => {
                     if (selectedInvoices.length === 0) {
@@ -495,6 +515,25 @@ export default function InvoicesPage() {
                       >
                         <FileText className="h-4 w-4" />
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          if (confirm('¿Estás seguro de eliminar esta factura? Solo se borrará de tu sistema, no de AFIP.')) {
+                            try {
+                              await invoiceService.deleteInvoice(companyId, invoice.id)
+                              toast.success('Factura eliminada')
+                              window.location.reload()
+                            } catch (error: any) {
+                              toast.error(error.response?.data?.message || 'Error al eliminar factura')
+                            }
+                          }
+                        }}
+                        title="Eliminar (solo en homologación)"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 )
@@ -510,6 +549,323 @@ export default function InvoicesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sync Dialog */}
+      <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Sincronizar Facturas desde AFIP</DialogTitle>
+            <DialogDescription>
+              Importa facturas emitidas directamente desde los registros de AFIP
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!syncResults ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSyncMode('single')}
+                  className={`p-4 border-2 rounded-lg text-left transition-all ${
+                    syncMode === 'single' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium mb-1">Una factura específica</div>
+                  <div className="text-sm text-muted-foreground">Consultar por número de comprobante</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSyncMode('date_range')}
+                  className={`p-4 border-2 rounded-lg text-left transition-all ${
+                    syncMode === 'date_range' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium mb-1">Rango de fechas</div>
+                  <div className="text-sm text-muted-foreground">Traer todas las facturas de un período</div>
+                </button>
+              </div>
+
+              {syncMode === 'single' ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Punto de Venta *</Label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        min="1"
+                        max="9999"
+                        value={syncForm.sales_point}
+                        onChange={(e) => {
+                          const num = parseInt(e.target.value) || 1
+                          if (num >= 1 && num <= 9999) {
+                            setSyncForm({...syncForm, sales_point: num})
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">Se formateará como {syncForm.sales_point.toString().padStart(4, '0')}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tipo *</Label>
+                      <Select value={syncForm.invoice_type} onValueChange={(value) => setSyncForm({...syncForm, invoice_type: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">Factura A</SelectItem>
+                          <SelectItem value="B">Factura B</SelectItem>
+                          <SelectItem value="C">Factura C</SelectItem>
+                          <SelectItem value="M">Factura M</SelectItem>
+                          <SelectItem value="NCA">Nota de Crédito A</SelectItem>
+                          <SelectItem value="NCB">Nota de Crédito B</SelectItem>
+                          <SelectItem value="NCC">Nota de Crédito C</SelectItem>
+                          <SelectItem value="NCM">Nota de Crédito M</SelectItem>
+                          <SelectItem value="NDA">Nota de Débito A</SelectItem>
+                          <SelectItem value="NDB">Nota de Débito B</SelectItem>
+                          <SelectItem value="NDC">Nota de Débito C</SelectItem>
+                          <SelectItem value="NDM">Nota de Débito M</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Número *</Label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        min="1"
+                        max="99999999"
+                        value={syncForm.invoice_number}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          if (val.length <= 8) {
+                            setSyncForm({...syncForm, invoice_number: val})
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {syncForm.invoice_number && `Se formateará como ${syncForm.invoice_number.toString().padStart(8, '0')}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
+                    <p className="mb-1">ℹ️ Se consultará la factura específica en AFIP</p>
+                    <p className="text-xs">📅 La fecha de vencimiento se calculará automáticamente como 30 días desde la fecha de emisión</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Fecha Desde *</Label>
+                      <Input
+                        type="date"
+                        value={syncForm.date_from}
+                        onChange={(e) => setSyncForm({...syncForm, date_from: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Fecha Hasta *</Label>
+                      <Input
+                        type="date"
+                        value={syncForm.date_to}
+                        min={syncForm.date_from}
+                        onChange={(e) => setSyncForm({...syncForm, date_to: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-800">
+                    <p><strong>⚠️ Límite:</strong> El rango máximo permitido es de 90 días (3 meses).</p>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
+                    <p className="font-medium mb-1">ℹ️ Se consultarán:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Facturas, Notas de Crédito y Notas de Débito (A, B, C, M)</li>
+                      <li>Todos los puntos de venta autorizados en AFIP (incluso no consecutivos)</li>
+                      <li>Solo comprobantes dentro del rango de fechas</li>
+                    </ul>
+                    <p className="text-xs mt-2">📅 La fecha de vencimiento se calculará automáticamente como 30 días desde la fecha de emisión de cada factura</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4">
+                  <p className="text-sm text-muted-foreground">Facturas Encontradas</p>
+                  <p className="text-3xl font-bold text-green-600">{syncResults.imported_count}</p>
+                </Card>
+                <Card className="p-4">
+                  <p className="text-sm text-muted-foreground">Puntos de Venta Activos</p>
+                  <p className="text-3xl font-bold text-blue-600">{syncResults.summary?.length || 0}</p>
+                </Card>
+              </div>
+              
+              {syncResults.summary && syncResults.summary.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Resumen por Punto de Venta</Label>
+                  <div className="max-h-48 overflow-y-auto border rounded-lg">
+                    {syncResults.summary.map((item: any, idx: number) => (
+                      <div key={idx} className="p-3 border-b last:border-b-0 hover:bg-muted/50">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">PV {item.sales_point.toString().padStart(4, '0')} - Tipo {item.type}</p>
+                          </div>
+                          <Badge variant="outline">Último: {item.last_number}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {syncResults.invoices && syncResults.invoices.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Facturas Encontradas ({syncResults.invoices.length})</Label>
+                  <div className="max-h-60 overflow-y-auto border rounded-lg">
+                    {syncResults.invoices.map((inv: any, idx: number) => (
+                      <div key={idx} className="p-3 border-b last:border-b-0 hover:bg-muted/50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-medium">{inv.formatted_number} - Tipo {inv.type}</p>
+                            <p className="text-sm text-muted-foreground">
+                              CAE: {inv.data.cae} | Total: ${inv.data.total}
+                            </p>
+                            {!inv.saved && (
+                              <p className="text-xs text-orange-600 mt-1">
+                                ⚠️ Esta factura ya se encuentra en tu sistema
+                              </p>
+                            )}
+                          </div>
+                          <Badge className={inv.saved ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}>
+                            {inv.saved ? 'Importada' : 'Ya existe'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {syncResults.imported_count === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No se encontraron facturas en AFIP</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            {!syncResults ? (
+              <>
+                <Button variant="outline" onClick={() => setShowSyncDialog(false)} disabled={syncing}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={async () => {
+                    if (syncMode === 'single' && !syncForm.invoice_number) {
+                      toast.error('Ingresá el número de factura')
+                      return
+                    }
+                    if (syncMode === 'date_range') {
+                      if (!syncForm.date_from || !syncForm.date_to) {
+                        toast.error('Ingresá ambas fechas')
+                        return
+                      }
+                      
+                      const from = new Date(syncForm.date_from)
+                      const to = new Date(syncForm.date_to)
+                      const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24))
+                      
+                      if (diffDays > 90) {
+                        toast.error('El rango no puede superar los 90 días (3 meses)')
+                        return
+                      }
+                    }
+                    
+                    setSyncing(true)
+                    try {
+                      const payload: any = { mode: syncMode }
+                      
+                      if (syncMode === 'single') {
+                        payload.sales_point = syncForm.sales_point
+                        payload.invoice_type = syncForm.invoice_type
+                        payload.invoice_number = parseInt(syncForm.invoice_number)
+                      } else {
+                        payload.date_from = syncForm.date_from
+                        payload.date_to = syncForm.date_to
+                      }
+                      
+                      const result = await invoiceService.syncFromAfip(companyId, payload)
+                      setSyncResults(result)
+                      
+                      if (result.imported_count === 0) {
+                        toast.warning('No se encontraron facturas')
+                      } else {
+                        toast.success(`${result.imported_count} factura${result.imported_count > 1 ? 's' : ''} encontrada${result.imported_count > 1 ? 's' : ''}`)  
+                      }
+                    } catch (error: any) {
+                      toast.error('Error al sincronizar', {
+                        description: error.response?.data?.error || error.response?.data?.message || 'Intente nuevamente'
+                      })
+                    } finally {
+                      setSyncing(false)
+                    }
+                  }}
+                  disabled={syncing}
+                >
+                  {syncing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {syncMode === 'date_range' ? 'Sincronizando... Puede tardar varios minutos' : 'Consultando...'}
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      {syncMode === 'single' ? 'Consultar Factura' : 'Sincronizar por Fechas'}
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => {
+                  setSyncResults(null)
+                  setSyncForm({
+                    sales_point: 1,
+                    invoice_type: 'B',
+                    invoice_number: '',
+                    date_from: '',
+                    date_to: ''
+                  })
+                }}>
+                  Nueva Consulta
+                </Button>
+                <Button onClick={async () => {
+                  setShowSyncDialog(false)
+                  setSyncResults(null)
+                  // Recargar facturas
+                  setIsLoading(true)
+                  try {
+                    const response = await invoiceService.getInvoices(companyId)
+                    setInvoices(response.data || [])
+                  } catch (error: any) {
+                    toast.error('Error al recargar facturas')
+                  } finally {
+                    setIsLoading(false)
+                  }
+                }}>
+                  Cerrar
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -169,5 +169,21 @@ export const invoiceService = {
       responseType: 'blob'
     })
     return response.data
+  },
+
+  async syncFromAfip(companyId: string, data: any): Promise<{
+    success: boolean
+    imported_count: number
+    summary?: any[]
+    invoices: any[]
+    date_from?: string
+    date_to?: string
+  }> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/sync-from-afip`, data)
+    return response.data
+  },
+
+  async deleteInvoice(companyId: string, invoiceId: string): Promise<void> {
+    await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}`)
   }
 }
