@@ -704,34 +704,24 @@ export default function InvoicesPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Facturas Encontradas</p>
-                  <p className="text-3xl font-bold text-green-600">{syncResults.imported_count}</p>
+                  <p className="text-sm text-muted-foreground">Total Encontradas</p>
+                  <p className="text-3xl font-bold text-blue-600">{syncResults.imported_count}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Puntos de Venta Activos</p>
-                  <p className="text-3xl font-bold text-blue-600">{syncResults.summary?.length || 0}</p>
+                  <p className="text-sm text-muted-foreground">Nuevas Importadas</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {syncResults.invoices?.filter((inv: any) => inv.saved).length || 0}
+                  </p>
+                </Card>
+                <Card className="p-4">
+                  <p className="text-sm text-muted-foreground">Ya Existían</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {syncResults.invoices?.filter((inv: any) => !inv.saved).length || 0}
+                  </p>
                 </Card>
               </div>
-              
-              {syncResults.summary && syncResults.summary.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Resumen por Punto de Venta</Label>
-                  <div className="max-h-48 overflow-y-auto border rounded-lg">
-                    {syncResults.summary.map((item: any, idx: number) => (
-                      <div key={idx} className="p-3 border-b last:border-b-0 hover:bg-muted/50">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">PV {item.sales_point.toString().padStart(4, '0')} - Tipo {item.type}</p>
-                          </div>
-                          <Badge variant="outline">Último: {item.last_number}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               
               {syncResults.invoices && syncResults.invoices.length > 0 && (
                 <div className="space-y-2">
@@ -742,9 +732,11 @@ export default function InvoicesPage() {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <p className="font-medium">{inv.formatted_number} - Tipo {inv.type}</p>
-                            <p className="text-sm text-muted-foreground">
-                              CAE: {inv.data.cae} | Total: {formatCurrency(parseFloat(inv.data.total), inv.data.currency || 'ARS')}
-                            </p>
+                            {inv.data && (
+                              <p className="text-sm text-muted-foreground">
+                                CAE: {inv.data.cae} | Total: {formatCurrency(parseFloat(inv.data.total), inv.data.currency || 'ARS')}
+                              </p>
+                            )}
                             {!inv.saved && (
                               <p className="text-xs text-orange-600 mt-1">
                                 ⚠️ Esta factura ya se encuentra en tu sistema
@@ -798,6 +790,8 @@ export default function InvoicesPage() {
                     }
                     
                     setSyncing(true)
+                    const syncToast = toast.loading(syncMode === 'date_range' ? 'Sincronizando facturas desde AFIP... Puede tardar varios minutos' : 'Consultando factura en AFIP...')
+                    
                     try {
                       const payload: any = { mode: syncMode }
                       
@@ -811,16 +805,36 @@ export default function InvoicesPage() {
                       }
                       
                       const result = await invoiceService.syncFromAfip(companyId, payload)
+                      toast.dismiss(syncToast)
                       setSyncResults(result)
                       
                       if (result.imported_count === 0) {
                         toast.warning('No se encontraron facturas')
                       } else {
-                        toast.success(`${result.imported_count} factura${result.imported_count > 1 ? 's' : ''} encontrada${result.imported_count > 1 ? 's' : ''}`)  
+                        // Check if any invoice was actually saved (new)
+                        const newInvoices = result.invoices?.filter((inv: any) => inv.saved).length || 0
+                        
+                        if (newInvoices > 0) {
+                          // Reload invoices in background
+                          try {
+                            const response = await invoiceService.getInvoices(companyId)
+                            setInvoices(response.data || [])
+                            toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} importada${newInvoices > 1 ? 's' : ''} correctamente`)
+                          } catch (error) {
+                            console.error('Error reloading invoices:', error)
+                            toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} encontrada${newInvoices > 1 ? 's' : ''}`)  
+                          }
+                        } else {
+                          toast.success(`${result.imported_count} factura${result.imported_count > 1 ? 's' : ''} encontrada${result.imported_count > 1 ? 's' : ''} (ya existía${result.imported_count > 1 ? 'n' : ''} en el sistema)`)
+                        }
                       }
                     } catch (error: any) {
+                      toast.dismiss(syncToast)
+                      console.error('Sync error:', error)
+                      console.error('Error response:', error.response?.data)
+                      const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Intente nuevamente'
                       toast.error('Error al sincronizar', {
-                        description: error.response?.data?.error || error.response?.data?.message || 'Intente nuevamente'
+                        description: errorMsg
                       })
                     } finally {
                       setSyncing(false)
@@ -855,19 +869,9 @@ export default function InvoicesPage() {
                 }}>
                   Nueva Consulta
                 </Button>
-                <Button onClick={async () => {
+                <Button onClick={() => {
                   setShowSyncDialog(false)
                   setSyncResults(null)
-                  // Recargar facturas
-                  setIsLoading(true)
-                  try {
-                    const response = await invoiceService.getInvoices(companyId)
-                    setInvoices(response.data || [])
-                  } catch (error: any) {
-                    toast.error('Error al recargar facturas')
-                  } finally {
-                    setIsLoading(false)
-                  }
                 }}>
                   Cerrar
                 </Button>

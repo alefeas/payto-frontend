@@ -179,7 +179,9 @@ export const invoiceService = {
     date_from?: string
     date_to?: string
   }> {
-    const response = await apiClient.post(`/companies/${companyId}/invoices/sync-from-afip`, data)
+    const response = await apiClient.post(`/companies/${companyId}/invoices/sync-from-afip`, data, {
+      timeout: 600000 // 10 minutos
+    })
     return response.data
   },
 
