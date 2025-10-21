@@ -20,7 +20,7 @@ interface SupplierFormProps {
 
 export function SupplierForm({ supplier, companyId, onClose, onSuccess }: SupplierFormProps) {
   const [formData, setFormData] = useState<{
-    documentType: "CUIT" | "CUIL"
+    documentType: "CUIT" | "CUIL" | "DNI"
     documentNumber: string
     businessName: string
     firstName: string
@@ -68,18 +68,27 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
       return
     }
     
-    // Validar CUIT/CUIL para condiciones no-CF
+    // Validar CUIT para condiciones no-CF
     if (formData.taxCondition !== 'final_consumer') {
       if (!formData.documentNumber) {
-        toast.error('CUIT/CUIL es obligatorio para esta condición fiscal')
+        toast.error('CUIT es obligatorio para esta condición fiscal')
         return
       }
       if (!['CUIT', 'CUIL'].includes(formData.documentType)) {
-        toast.error('Debe usar CUIT o CUIL para esta condición fiscal')
+        toast.error('Debe usar CUIT para esta condición fiscal')
         return
       }
       if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
-        toast.error('El CUIT/CUIL debe tener 11 dígitos')
+        toast.error('El CUIT debe tener 11 dígitos')
+        return
+      }
+    }
+    
+    // Validar DNI si se ingresó
+    if (formData.taxCondition === 'final_consumer' && formData.documentNumber) {
+      const dniLength = formData.documentNumber.length
+      if (dniLength < 7 || dniLength > 8) {
+        toast.error('El DNI debe tener 7 u 8 dígitos')
         return
       }
     }
@@ -132,42 +141,29 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
               setFormData({...formData, documentNumber: value, documentType: 'DNI'})
               setValidated(false)
             }}
-            placeholder="12345678"
+            placeholder="7-8 dígitos"
             maxLength={8}
           />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="documentType">Tipo de Documento *</Label>
-            <Select value={formData.documentType} onValueChange={(value) => setFormData({...formData, documentType: value as "CUIT" | "CUIL"})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CUIT">CUIT</SelectItem>
-                <SelectItem value="CUIL">CUIL</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="documentNumber">Número de Documento *</Label>
-            <div className="flex gap-2">
-              <Input
-                id="documentNumber"
-                value={formData.documentNumber}
-                onChange={(e) => {
-                  const value = e.target.value
-                  const numbers = value.replace(/\D/g, '').slice(0, 11)
-                  const formatted = formatCUIT(numbers)
-                  setFormData({...formData, documentNumber: formatted})
-                  setValidated(false)
-                }}
-                placeholder="20-12345678-9"
-                required
-              />
-              {(
-                <Button
+        <div className="space-y-2">
+          <Label htmlFor="documentNumber">CUIT *</Label>
+          <div className="flex gap-2">
+            <Input
+              id="documentNumber"
+              value={formData.documentNumber}
+              onChange={(e) => {
+                const value = e.target.value
+                const numbers = value.replace(/\D/g, '').slice(0, 11)
+                const formatted = formatCUIT(numbers)
+                setFormData({...formData, documentNumber: formatted, documentType: 'CUIT'})
+                setValidated(false)
+              }}
+              placeholder="20-12345678-9"
+              required
+            />
+            {(
+              <Button
                   type="button"
                   variant="outline"
                   onClick={async () => {
@@ -225,16 +221,24 @@ export function SupplierForm({ supplier, companyId, onClose, onSuccess }: Suppli
                   ) : (
                     'Buscar AFIP'
                   )}
-                </Button>
-              )}
-            </div>
+              </Button>
+            )}
           </div>
         </div>
       )}
 
       <div className="space-y-2">
         <Label htmlFor="taxCondition">Condición IVA *</Label>
-        <Select value={formData.taxCondition} onValueChange={(value) => setFormData({...formData, taxCondition: value as "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"})}>
+        <Select value={formData.taxCondition} onValueChange={(value) => {
+          const newTaxCondition = value as "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"
+          // Limpiar documento al cambiar entre CF y no-CF
+          if ((formData.taxCondition === 'final_consumer' && newTaxCondition !== 'final_consumer') ||
+              (formData.taxCondition !== 'final_consumer' && newTaxCondition === 'final_consumer')) {
+            setFormData({...formData, taxCondition: newTaxCondition, documentNumber: '', documentType: newTaxCondition === 'final_consumer' ? 'DNI' : 'CUIT'})
+          } else {
+            setFormData({...formData, taxCondition: newTaxCondition})
+          }
+        }}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
