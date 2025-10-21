@@ -58,10 +58,20 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
       return
     }
     
-    // Validar documento para condiciones no-CF
-    if (formData.taxCondition !== 'final_consumer' && !formData.documentNumber) {
-      toast.error('El documento es obligatorio para esta condición IVA')
-      return
+    // Validar CUIT/CUIL para condiciones no-CF
+    if (formData.taxCondition !== 'final_consumer') {
+      if (!formData.documentNumber) {
+        toast.error('CUIT/CUIL es obligatorio para esta condición fiscal')
+        return
+      }
+      if (!['CUIT', 'CUIL'].includes(formData.documentType)) {
+        toast.error('Debe usar CUIT o CUIL para esta condición fiscal')
+        return
+      }
+      if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
+        toast.error('El CUIT/CUIL debe tener 11 dígitos')
+        return
+      }
     }
     
     try {
@@ -97,101 +107,116 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      {formData.taxCondition === 'final_consumer' ? (
         <div className="space-y-2">
-          <Label htmlFor="documentType">Tipo de Documento *</Label>
-          <Select value={formData.documentType} onValueChange={(value) => setFormData({...formData, documentType: value as "CUIT" | "CUIL"})}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="CUIT">CUIT</SelectItem>
-              <SelectItem value="CUIL">CUIL</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="documentNumber">DNI (Opcional)</Label>
+          <Input
+            id="documentNumber"
+            value={formData.documentNumber}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '').slice(0, 8)
+              setFormData({...formData, documentNumber: value, documentType: 'DNI'})
+              setValidated(false)
+            }}
+            placeholder="12345678"
+            maxLength={8}
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="documentNumber">
-            Número de Documento {formData.taxCondition === 'final_consumer' ? '(Opcional)' : '*'}
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id="documentNumber"
-              value={formData.documentNumber}
-              onChange={(e) => {
-                const value = e.target.value
-                const numbers = value.replace(/\D/g, '').slice(0, 11)
-                const formatted = formatCUIT(numbers)
-                setFormData({...formData, documentNumber: formatted})
-                setValidated(false)
-              }}
-              placeholder="20-12345678-9"
-              required={formData.taxCondition !== 'final_consumer'}
-            />
-            {(
-              <Button
-                type="button"
-                variant="outline"
-                onClick={async () => {
-                  if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
-                    toast.error('Ingresa un CUIT/CUIL válido')
-                    return
-                  }
-                  try {
-                    setValidating(true)
-                    const result = await afipPadronService.searchByCuit(companyId, formData.documentNumber)
-                    
-                    if (result.success && result.data) {
-                      const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
-                        'responsable_inscripto': 'registered_taxpayer',
-                        'monotributo': 'monotax',
-                        'exento': 'exempt',
-                        'consumidor_final': 'final_consumer'
-                      }
-                      
-                      setFormData({
-                        ...formData,
-                        businessName: result.data.business_name || result.data.name || formData.businessName,
-                        taxCondition: taxConditionMap[result.data.tax_condition] || formData.taxCondition,
-                        address: result.data.address || formData.address
-                      })
-                      setValidated(true)
-                      
-                      const message = result.mock_mode
-                        ? 'Datos simulados cargados (modo testing)'
-                        : 'Datos obtenidos de AFIP'
-                      
-                      toast.success(message, {
-                        description: result.mock_mode
-                          ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
-                          : undefined
-                      })
-                    }
-                  } catch (error: any) {
-                    if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
-                      toast.error('Configura un certificado AFIP primero', { duration: 6000 })
-                    } else {
-                      toast.error(error.response?.data?.error || 'Error al consultar AFIP')
-                    }
-                  } finally {
-                    setValidating(false)
-                  }
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="documentType">Tipo de Documento *</Label>
+            <Select value={formData.documentType} onValueChange={(value) => setFormData({...formData, documentType: value as "CUIT" | "CUIL"})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CUIT">CUIT</SelectItem>
+                <SelectItem value="CUIL">CUIL</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentNumber">Número de Documento *</Label>
+            <div className="flex gap-2">
+              <Input
+                id="documentNumber"
+                value={formData.documentNumber}
+                onChange={(e) => {
+                  const value = e.target.value
+                  const numbers = value.replace(/\D/g, '').slice(0, 11)
+                  const formatted = formatCUIT(numbers)
+                  setFormData({...formData, documentNumber: formatted})
+                  setValidated(false)
                 }}
-                disabled={validating}
-                title="Buscar datos en AFIP"
-              >
-                {validating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : validated ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                ) : (
-                  'Buscar AFIP'
-                )}
-              </Button>
-            )}
+                placeholder="20-12345678-9"
+                required
+              />
+              {(
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
+                      toast.error('Ingresa un CUIT/CUIL válido')
+                      return
+                    }
+                    try {
+                      setValidating(true)
+                      const result = await afipPadronService.searchByCuit(companyId, formData.documentNumber)
+                      
+                      if (result.success && result.data) {
+                        const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
+                          'responsable_inscripto': 'registered_taxpayer',
+                          'monotributo': 'monotax',
+                          'exento': 'exempt',
+                          'consumidor_final': 'final_consumer'
+                        }
+                        
+                        setFormData({
+                          ...formData,
+                          businessName: result.data.business_name || result.data.name || formData.businessName,
+                          taxCondition: taxConditionMap[result.data.tax_condition] || formData.taxCondition,
+                          address: result.data.address || formData.address
+                        })
+                        setValidated(true)
+                        
+                        const message = result.mock_mode
+                          ? 'Datos simulados cargados (modo testing)'
+                          : 'Datos obtenidos de AFIP'
+                        
+                        toast.success(message, {
+                          description: result.mock_mode
+                            ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
+                            : undefined
+                        })
+                      }
+                    } catch (error: any) {
+                      if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
+                        toast.error('Configura un certificado AFIP primero', { duration: 6000 })
+                      } else {
+                        toast.error(error.response?.data?.error || 'Error al consultar AFIP')
+                      }
+                    } finally {
+                      setValidating(false)
+                    }
+                  }}
+                  disabled={validating}
+                  title="Buscar datos en AFIP"
+                >
+                  {validating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : validated ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    'Buscar AFIP'
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="taxCondition">Condición IVA *</Label>
