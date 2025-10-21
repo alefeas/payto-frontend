@@ -58,6 +58,12 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
       return
     }
     
+    // Validar documento para condiciones no-CF
+    if (formData.taxCondition !== 'final_consumer' && !formData.documentNumber) {
+      toast.error('El documento es obligatorio para esta condición IVA')
+      return
+    }
+    
     try {
       setSaving(true)
       const data = {
@@ -105,7 +111,9 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="documentNumber">Número de Documento *</Label>
+          <Label htmlFor="documentNumber">
+            Número de Documento {formData.taxCondition === 'final_consumer' ? '(Opcional)' : '*'}
+          </Label>
           <div className="flex gap-2">
             <Input
               id="documentNumber"
@@ -118,7 +126,7 @@ export function ClientForm({ client, companyId, onClose, onSuccess }: ClientForm
                 setValidated(false)
               }}
               placeholder="20-12345678-9"
-              required
+              required={formData.taxCondition !== 'final_consumer'}
             />
             {(
               <Button
