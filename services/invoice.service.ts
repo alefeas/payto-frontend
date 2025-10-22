@@ -3,21 +3,35 @@ import apiClient from '@/lib/api-client'
 export interface Invoice {
   id: string
   number: string
-  type: 'A' | 'B' | 'C' | 'E'
+  type: 'A' | 'B' | 'C' | 'E' | 'M' | 'NCA' | 'NCB' | 'NCC' | 'NCM' | 'NDA' | 'NDB' | 'NDC' | 'NDM'
   sales_point: number
   voucher_number: number
+  concept: 'products' | 'services' | 'products_services'
+  service_date_from?: string | null
+  service_date_to?: string | null
   issue_date: string
   due_date: string
   subtotal: number
   total_taxes: number
   total_perceptions: number
   total: number
+  currency: string
+  exchange_rate: number
+  notes?: string | null
   status: string
+  afip_status?: string
+  afip_cae?: string | null
+  afip_cae_due_date?: string | null
   approvals_required: number
   approvals_received: number
   approval_date: string | null
   rejection_reason: string | null
   rejected_at: string | null
+  direction?: 'issued' | 'received'
+  pdf_url?: string | null
+  afip_txt_url?: string | null
+  attachment_path?: string | null
+  attachment_original_name?: string | null
   issuerCompany?: {
     id: string
     name: string
@@ -39,6 +53,7 @@ export interface Invoice {
     last_name: string | null
     email: string | null
     phone: string | null
+    tax_condition?: string
   }
   supplier?: {
     id: string
@@ -51,8 +66,10 @@ export interface Invoice {
     phone: string | null
     bank_cbu: string | null
     bank_alias: string | null
+    tax_condition?: string
   }
   items?: InvoiceItem[]
+  perceptions?: InvoicePerception[]
   approvals?: InvoiceApproval[]
 }
 
@@ -61,9 +78,22 @@ export interface InvoiceItem {
   description: string
   quantity: number
   unit_price: number
+  discount_percentage?: number
   subtotal: number
   tax_rate: number
   tax_amount: number
+  order_index?: number
+}
+
+export interface InvoicePerception {
+  id: string
+  type: string
+  name: string
+  rate: number
+  base_type: 'net' | 'total' | 'vat'
+  base_amount: number
+  amount: number
+  jurisdiction?: string | null
 }
 
 export interface InvoiceApproval {

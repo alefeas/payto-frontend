@@ -11,7 +11,7 @@ export interface Supplier {
   email?: string
   phone?: string
   address?: string
-  taxCondition: 'registered_taxpayer' | 'monotax' | 'exempt' | 'final_consumer'
+  taxCondition: 'registered_taxpayer' | 'monotax' | 'exempt'
   bankName?: string
   bankAccountType?: 'CA' | 'CC'
   bankAccountNumber?: string

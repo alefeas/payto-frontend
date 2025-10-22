@@ -17,15 +17,13 @@ import { SupplierForm } from "@/components/suppliers/SupplierForm"
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
   monotax: "Monotributo",
-  exempt: "Exento",
-  final_consumer: "Consumidor Final"
+  exempt: "Exento"
 }
 
 const condicionIvaColors: Record<string, string> = {
   registered_taxpayer: "bg-blue-100 text-blue-800",
   monotax: "bg-green-100 text-green-800",
-  exempt: "bg-purple-100 text-purple-800",
-  final_consumer: "bg-gray-100 text-gray-800"
+  exempt: "bg-purple-100 text-purple-800"
 }
 
 export default function SuppliersPage() {
@@ -191,7 +189,6 @@ export default function SuppliersPage() {
                     <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
                     <SelectItem value="monotax">Monotributo</SelectItem>
                     <SelectItem value="exempt">Exento</SelectItem>
-                    <SelectItem value="final_consumer">Consumidor Final</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

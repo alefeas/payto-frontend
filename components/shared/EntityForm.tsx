@@ -49,7 +49,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
     email: entity?.email || "",
     phone: entity?.phone || "",
     address: entity?.address || "",
-    taxCondition: entity?.taxCondition || "final_consumer",
+    taxCondition: entity?.taxCondition || (type === "client" ? "final_consumer" : "registered_taxpayer"),
     bankName: (entity as Supplier)?.bankName || "",
     bankAccountType: (entity as Supplier)?.bankAccountType || "",
     bankAccountNumber: (entity as Supplier)?.bankAccountNumber || "",
@@ -71,25 +71,21 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         toast.error('Nombre y Apellido son obligatorios para Consumidor Final')
         return
       }
+      if (formData.documentNumber && formData.documentNumber.length < 7) {
+        toast.error('El DNI debe tener al menos 7 dígitos')
+        return
+      }
     } else {
       if (!formData.businessName && (!formData.firstName || !formData.lastName)) {
         toast.error('Debes completar Razón Social o Nombre y Apellido')
         return
       }
-    }
-    
-    if (!formData.address) {
-      toast.error('El domicilio fiscal es obligatorio')
-      return
-    }
-    
-    if (formData.taxCondition !== 'final_consumer') {
       if (!formData.documentNumber) {
-        toast.error('CUIT es obligatorio para esta condición fiscal')
+        toast.error('CUIT es obligatorio')
         return
       }
       if (!['CUIT', 'CUIL'].includes(formData.documentType)) {
-        toast.error('Debe usar CUIT para esta condición fiscal')
+        toast.error('Debe usar CUIT')
         return
       }
       if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
@@ -98,12 +94,9 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       }
     }
     
-    if (formData.taxCondition === 'final_consumer' && formData.documentNumber) {
-      const dniLength = formData.documentNumber.length
-      if (dniLength < 7 || dniLength > 8) {
-        toast.error('El DNI debe tener 7 u 8 dígitos')
-        return
-      }
+    if (!formData.address) {
+      toast.error('El domicilio fiscal es obligatorio')
+      return
     }
     
     try {
@@ -190,67 +183,65 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
               placeholder="20-12345678-9"
               required
             />
-            {(
-              <Button
-                type="button"
-                variant="outline"
-                onClick={async () => {
-                  if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
-                    toast.error('Ingresa un CUIT válido')
-                    return
-                  }
-                  try {
-                    setValidating(true)
-                    const result = await afipPadronService.searchByCuit(companyId, formData.documentNumber)
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                if (formData.documentNumber.replace(/\D/g, '').length !== 11) {
+                  toast.error('Ingresa un CUIT válido')
+                  return
+                }
+                try {
+                  setValidating(true)
+                  const result = await afipPadronService.searchByCuit(companyId, formData.documentNumber)
+                  
+                  if (result.success && result.data) {
+                    const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
+                      'responsable_inscripto': 'registered_taxpayer',
+                      'monotributo': 'monotax',
+                      'exento': 'exempt',
+                      'consumidor_final': 'final_consumer'
+                    }
                     
-                    if (result.success && result.data) {
-                      const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
-                        'responsable_inscripto': 'registered_taxpayer',
-                        'monotributo': 'monotax',
-                        'exento': 'exempt',
-                        'consumidor_final': 'final_consumer'
-                      }
-                      
-                      setFormData({
-                        ...formData,
-                        businessName: result.data.business_name || result.data.name || formData.businessName,
-                        taxCondition: taxConditionMap[result.data.tax_condition] || formData.taxCondition,
-                        address: result.data.address || formData.address
-                      })
-                      setValidated(true)
-                      
-                      const message = result.mock_mode
-                        ? 'Datos simulados cargados (modo testing)'
-                        : 'Datos obtenidos de AFIP'
-                      
-                      toast.success(message, {
-                        description: result.mock_mode
-                          ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
-                          : undefined
-                      })
-                    }
-                  } catch (error: any) {
-                    if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
-                      toast.error('Configura un certificado AFIP primero', { duration: 6000 })
-                    } else {
-                      toast.error(error.response?.data?.error || 'Error al consultar AFIP')
-                    }
-                  } finally {
-                    setValidating(false)
+                    setFormData({
+                      ...formData,
+                      businessName: result.data.business_name || result.data.name || formData.businessName,
+                      taxCondition: taxConditionMap[result.data.tax_condition] || formData.taxCondition,
+                      address: result.data.address || formData.address
+                    })
+                    setValidated(true)
+                    
+                    const message = result.mock_mode
+                      ? 'Datos simulados cargados (modo testing)'
+                      : 'Datos obtenidos de AFIP'
+                    
+                    toast.success(message, {
+                      description: result.mock_mode
+                        ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
+                        : undefined
+                    })
                   }
-                }}
-                disabled={validating}
-                title="Buscar datos en AFIP"
-              >
-                {validating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : validated ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                ) : (
-                  'Buscar AFIP'
-                )}
-              </Button>
-            )}
+                } catch (error: any) {
+                  if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
+                    toast.error('Configura un certificado AFIP primero', { duration: 6000 })
+                  } else {
+                    toast.error(error.response?.data?.error || 'Error al consultar AFIP')
+                  }
+                } finally {
+                  setValidating(false)
+                }
+              }}
+              disabled={validating}
+              title="Buscar datos en AFIP"
+            >
+              {validating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : validated ? (
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              ) : (
+                'Buscar AFIP'
+              )}
+            </Button>
           </div>
         </div>
       )}
@@ -273,7 +264,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
             <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
             <SelectItem value="monotax">Monotributo</SelectItem>
             <SelectItem value="exempt">Exento</SelectItem>
-            <SelectItem value="final_consumer">Consumidor Final</SelectItem>
+            {type === "client" && <SelectItem value="final_consumer">Consumidor Final</SelectItem>}
           </SelectContent>
         </Select>
       </div>

@@ -490,7 +490,6 @@ export default function SettingsPage() {
                             <SelectContent>
                               <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
                               <SelectItem value="monotax">Monotributo</SelectItem>
-                              <SelectItem value="final_consumer">Consumidor Final</SelectItem>
                               <SelectItem value="exempt">Exento</SelectItem>
                             </SelectContent>
                           </Select>
