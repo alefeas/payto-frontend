@@ -249,7 +249,7 @@ export default function InvoicesPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Facturas ({total} total)</span>
+              <span>Facturas {!isLoading && `(${total} total)`}</span>
               <div className="flex gap-2">
                 <Button
                   onClick={() => setShowSyncDialog(true)}

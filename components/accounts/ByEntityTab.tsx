@@ -21,7 +21,9 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, type }: 
   const byEntity = invoices.reduce((acc: any, inv) => {
     const entityId = inv[entityIdKey] || inv[companyIdKey] || 'unknown'
     const entity = inv[entityKey] || inv[type === 'receivable' ? 'receiverCompany' : 'issuerCompany']
-    const entityName = entity?.business_name || 
+    const entityName = (type === 'receivable' ? inv.receiver_name : null) ||
+                      entity?.business_name || 
+                      entity?.name ||
                       (entity?.first_name && entity?.last_name ? `${entity.first_name} ${entity.last_name}` : null) ||
                       `${entityLabel} sin nombre`
     
@@ -36,7 +38,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, type }: 
     }
     
     acc[entityId].invoice_count++
-    acc[entityId].total_pending += parseFloat(inv.total) || 0
+    acc[entityId].total_pending += parseFloat(inv.pending_amount || inv.total) || 0
     
     return acc
   }, {})

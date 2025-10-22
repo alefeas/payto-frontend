@@ -50,13 +50,13 @@ export default function ApproveInvoicesPage() {
         setCurrentUserId(user.id)
       }
       
-      const result = await invoiceService.getInvoices(id as string, 'pending_approval')
-      console.log('Raw result:', result)
-      console.log('Invoices data:', result.data)
-      if (result.data && result.data.length > 0) {
-        console.log('First invoice approvals:', result.data[0].approvals)
-      }
-      setInvoices(result.data || [])
+      const result = await invoiceService.getInvoices(id as string)
+      // Filtrar facturas que necesitan aprobación
+      const pendingInvoices = (result.data || []).filter((inv: Invoice) => {
+        const status = inv.display_status || inv.status
+        return status === 'pending_approval'
+      })
+      setInvoices(pendingInvoices)
     } catch (error: any) {
       console.error('Error loading invoices:', error)
       toast.error(error.response?.data?.message || 'Error al cargar facturas')

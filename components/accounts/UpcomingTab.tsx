@@ -44,7 +44,9 @@ export function UpcomingTab({ invoices, formatCurrency, onAction, type }: Upcomi
               dueDate.setHours(0, 0, 0, 0)
               const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
               const entity = invoice[entityKey] || invoice[companyKey]
-              const entityName = entity?.business_name || 
+              const entityName = (type === 'receivable' ? invoice.receiver_name : null) ||
+                               entity?.business_name || 
+                               entity?.name ||
                                (entity?.first_name && entity?.last_name ? `${entity.first_name} ${entity.last_name}` : null) ||
                                entityLabel
               

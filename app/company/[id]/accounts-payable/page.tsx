@@ -559,7 +559,7 @@ export default function AccountsPayablePage() {
                           }}
                         />
                         <div>
-                          <div className="font-medium">{invoice.supplier?.business_name || invoice.supplier?.first_name + ' ' + invoice.supplier?.last_name || invoice.issuerCompany?.business_name || 'Proveedor'}</div>
+                          <div className="font-medium">{invoice.supplier?.business_name || (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) || invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || 'Proveedor'}</div>
                           <div className="text-sm text-muted-foreground">
                             {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                           </div>
@@ -696,7 +696,7 @@ export default function AccountsPayablePage() {
                     <div key={payment.id} className="p-4 border rounded-lg bg-blue-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div className="font-medium text-lg">{payment.supplier?.name || payment.invoice?.supplier?.business_name || payment.invoice?.issuerCompany?.business_name || 'Proveedor'}</div>
+                          <div className="font-medium text-lg">{payment.invoice?.supplier?.business_name || (payment.invoice?.supplier?.first_name && payment.invoice?.supplier?.last_name ? `${payment.invoice.supplier.first_name} ${payment.invoice.supplier.last_name}` : null) || payment.invoice?.issuerCompany?.business_name || payment.invoice?.issuerCompany?.name || 'Proveedor'}</div>
                           <div className="text-sm text-muted-foreground mt-1">
                             Factura: {payment.invoice?.type || 'FC'} {String(payment.invoice?.sales_point || 0).padStart(4, '0')}-{String(payment.invoice?.voucher_number || payment.voucher_number || 0).padStart(8, '0')}
                           </div>
@@ -895,7 +895,13 @@ export default function AccountsPayablePage() {
                     {selectedInvoices.length === 1 ? (
                       (() => {
                         const invoice = invoices.find(inv => inv.id === selectedInvoices[0])
-                        const supplier = invoice?.supplier || invoice?.issuerCompany
+                        const supplierName = invoice?.supplier?.business_name || 
+                                           (invoice?.supplier?.first_name && invoice?.supplier?.last_name 
+                                             ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` 
+                                             : null) ||
+                                           invoice?.issuerCompany?.business_name ||
+                                           invoice?.issuerCompany?.name ||
+                                           'Sin nombre'
                         return (
                           <>
                             <div className="flex justify-between">
@@ -907,12 +913,7 @@ export default function AccountsPayablePage() {
                               </div>
                               <div className="text-right">
                                 <p className="text-sm text-muted-foreground">Proveedor</p>
-                                <p className="font-semibold">
-                                  {supplier?.business_name || 
-                                   (supplier?.first_name && supplier?.last_name 
-                                     ? `${supplier.first_name} ${supplier.last_name}` 
-                                     : 'Sin nombre')}
-                                </p>
+                                <p className="font-semibold">{supplierName}</p>
                               </div>
                             </div>
                             <Separator />
@@ -1167,17 +1168,18 @@ export default function AccountsPayablePage() {
                     <h4 className="font-semibold mb-3">Facturas Incluidas</h4>
                     <div className="space-y-2">
                       {invoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => {
-                        const supplier = invoice.supplier || invoice.issuerCompany
+                        const supplierName = invoice.supplier?.business_name || 
+                                           (invoice.supplier?.first_name && invoice.supplier?.last_name 
+                                             ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` 
+                                             : null) ||
+                                           invoice.issuerCompany?.business_name ||
+                                           invoice.issuerCompany?.name ||
+                                           'Sin nombre'
                         return (
                           <div key={invoice.id} className="p-3 bg-background rounded-lg border">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <p className="font-medium">
-                                  {supplier?.business_name || 
-                                   (supplier?.first_name && supplier?.last_name 
-                                     ? `${supplier.first_name} ${supplier.last_name}` 
-                                     : 'Sin nombre')}
-                                </p>
+                                <p className="font-medium">{supplierName}</p>
                                 <p className="text-sm text-muted-foreground">
                                   {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                                 </p>
@@ -1198,7 +1200,7 @@ export default function AccountsPayablePage() {
                   
                   {selectedInvoices.length === 1 && (() => {
                     const invoice = invoices.find(inv => inv.id === selectedInvoices[0])
-                    const supplier = invoice?.supplier || invoice?.issuerCompany
+                    const supplier = invoice?.supplier
                     return (
                       <div className="bg-muted/50 p-4 rounded-lg">
                         <h4 className="font-semibold mb-3">Datos Bancarios del Proveedor</h4>

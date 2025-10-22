@@ -37,7 +37,9 @@ export function OverdueTab({ invoices, formatCurrency, onAction, type }: Overdue
           ) : (
             overdueInvoices.map((invoice) => {
               const entity = invoice[entityKey] || invoice[companyKey]
-              const entityName = entity?.business_name || 
+              const entityName = (type === 'receivable' ? invoice.receiver_name : null) ||
+                               entity?.business_name || 
+                               entity?.name ||
                                (entity?.first_name && entity?.last_name ? `${entity.first_name} ${entity.last_name}` : null) ||
                                entityLabel
               

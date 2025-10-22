@@ -326,7 +326,7 @@ export default function AccountsReceivablePage() {
                     <div key={collection.id} className="p-4 border rounded-lg bg-green-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div className="font-medium text-lg">{collection.invoice?.client?.business_name || collection.invoice?.client?.first_name + ' ' + collection.invoice?.client?.last_name || collection.invoice?.receiverCompany?.business_name || 'Cliente'}</div>
+                          <div className="font-medium text-lg">{collection.invoice?.client?.business_name || (collection.invoice?.client?.first_name && collection.invoice?.client?.last_name ? `${collection.invoice.client.first_name} ${collection.invoice.client.last_name}` : null) || collection.invoice?.receiverCompany?.business_name || collection.invoice?.receiverCompany?.name || 'Cliente'}</div>
                           <div className="text-sm text-muted-foreground mt-1">
                             Factura: {collection.invoice?.type || 'FC'} {String(collection.invoice?.sales_point || 0).padStart(4, '0')}-{String(collection.invoice?.voucher_number || 0).padStart(8, '0')}
                           </div>
@@ -396,7 +396,7 @@ export default function AccountsReceivablePage() {
                   {invoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
                     <div key={invoice.id} className="flex justify-between items-center text-sm p-2 bg-background rounded">
                       <div>
-                        <p className="font-medium">{invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
+                        <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
                         <p className="text-xs text-muted-foreground">{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</p>
                       </div>
                       <p className="font-semibold">{formatCurrency(invoice.total)}</p>

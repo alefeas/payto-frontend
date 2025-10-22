@@ -31,13 +31,20 @@ export function InvoiceList({
 }: InvoiceListProps) {
   const getEntityName = (invoice: any) => {
     if (type === 'receivable') {
-      return invoice.client?.business_name || 
-             invoice.client?.first_name + ' ' + invoice.client?.last_name || 
+      return invoice.receiver_name ||
+             invoice.client?.business_name || 
+             (invoice.client?.first_name && invoice.client?.last_name 
+               ? `${invoice.client.first_name} ${invoice.client.last_name}` 
+               : null) ||
+             invoice.receiverCompany?.name ||
              invoice.receiverCompany?.business_name || 
              'Cliente'
     }
     return invoice.supplier?.business_name || 
-           invoice.supplier?.first_name + ' ' + invoice.supplier?.last_name || 
+           (invoice.supplier?.first_name && invoice.supplier?.last_name 
+             ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` 
+             : null) ||
+           invoice.issuerCompany?.name ||
            invoice.issuerCompany?.business_name || 
            'Proveedor'
   }
