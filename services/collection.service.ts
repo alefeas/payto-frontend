@@ -6,7 +6,7 @@ export interface InvoiceCollection {
   invoice_id: string;
   amount: number;
   collection_date: string;
-  collection_method: 'transfer' | 'check' | 'cash' | 'card';
+  collection_method: 'transfer' | 'check' | 'cash' | 'card' | 'debit_card' | 'credit_card' | 'other';
   reference_number?: string;
   attachment_url?: string;
   notes?: string;
@@ -27,7 +27,7 @@ export interface CreateCollectionData {
   invoice_id: string;
   amount: number;
   collection_date: string;
-  collection_method: 'transfer' | 'check' | 'cash' | 'card';
+  collection_method: 'transfer' | 'check' | 'cash' | 'card' | 'debit_card' | 'credit_card' | 'other';
   reference_number?: string;
   attachment_url?: string;
   notes?: string;
@@ -38,7 +38,7 @@ export interface CreateCollectionData {
 export interface UpdateCollectionData {
   amount?: number;
   collection_date?: string;
-  collection_method?: 'transfer' | 'check' | 'cash' | 'card';
+  collection_method?: 'transfer' | 'check' | 'cash' | 'card' | 'debit_card' | 'credit_card' | 'other';
   reference_number?: string;
   attachment_url?: string;
   notes?: string;

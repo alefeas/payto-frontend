@@ -63,11 +63,30 @@ export default function AccountsReceivablePage() {
   
   const loadInvoices = async () => {
     try {
-      const response = await invoiceService.getInvoices(companyId)
-      const allInvoices = response.data || response
+      // Cargar todas las páginas de facturas emitidas
+      let allInvoices: any[] = []
+      let currentPage = 1
+      let hasMore = true
+      
+      while (hasMore) {
+        const response = await invoiceService.getInvoices(companyId, currentPage)
+        const pageData = response.data || []
+        allInvoices = [...allInvoices, ...pageData]
+        
+        // Si hay más páginas, continuar
+        if (response.last_page && currentPage < response.last_page) {
+          currentPage++
+        } else {
+          hasMore = false
+        }
+      }
+      
       const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
         if (inv.issuer_company_id !== companyId) return false
-        if (inv.status !== 'issued' && inv.status !== 'approved') return false
+        // Solo facturas emitidas
+        if (inv.status !== 'issued') return false
+        // Filtrar facturas completamente cobradas
+        if (inv.pending_amount !== undefined && inv.pending_amount <= 0) return false
         
         if (filters.from_date || filters.to_date) {
           const issueDate = new Date(inv.issue_date)

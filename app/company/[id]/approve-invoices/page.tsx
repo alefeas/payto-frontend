@@ -72,14 +72,18 @@ export default function ApproveInvoicesPage() {
       setProcessing(true)
       const result = await invoiceService.approveInvoice(id as string, selectedInvoice.id, approvalNotes)
       
-      // Update local state based on approval result
-      if (result.is_approved) {
+      // Check if invoice is fully approved
+      if (result.approvals_received >= result.approvals_required) {
         // Invoice fully approved, remove from list
         setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id))
         toast.success('Factura aprobada completamente')
       } else {
-        // Invoice partially approved, reload to get updated approvals list
-        await loadData()
+        // Invoice partially approved, update local state
+        setInvoices(prev => prev.map(inv => 
+          inv.id === selectedInvoice.id 
+            ? { ...inv, approvals_received: result.approvals_received }
+            : inv
+        ))
         toast.success(`Aprobación registrada (${result.approvals_received}/${result.approvals_required})`)
       }
       

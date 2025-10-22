@@ -63,13 +63,25 @@ export default function InvoicesPage() {
     }
   }, [isAuthenticated, authLoading, router])
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
+
   useEffect(() => {
     const loadInvoices = async () => {
       if (!companyId) return
       
       setIsLoading(true)
       try {
-        const response = await invoiceService.getInvoices(companyId, currentPage)
+        const response = await invoiceService.getInvoices(companyId, currentPage, {
+          search: searchTerm,
+          status: statusFilter,
+          type: typeFilter,
+          client: clientFilter,
+          date_from: dateFromFilter,
+          date_to: dateToFilter
+        })
         setInvoices(response.data || [])
         setTotalPages(response.last_page || 1)
         setTotal(response.total || 0)
@@ -85,7 +97,7 @@ export default function InvoicesPage() {
     if (isAuthenticated && companyId) {
       loadInvoices()
     }
-  }, [isAuthenticated, companyId, currentPage])
+  }, [isAuthenticated, companyId, currentPage, searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
 
   const handleSelectInvoice = (invoiceId: string) => {
     setSelectedInvoices(prev => {
@@ -116,24 +128,7 @@ export default function InvoicesPage() {
   }
 
   const getFilteredInvoices = () => {
-    return invoices.filter(invoice => {
-      const clientName = invoice.receiver_name || invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || 'Sin cliente'
-      const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           clientName.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesStatus = statusFilter === "all" || invoice.display_status === statusFilter || invoice.status === statusFilter
-      const matchesType = typeFilter === "all" || invoice.type === typeFilter
-      const matchesClient = clientFilter === "all" || clientName === clientFilter
-      
-      let matchesDateRange = true
-      if (dateFromFilter) {
-        matchesDateRange = matchesDateRange && new Date(invoice.issue_date) >= new Date(dateFromFilter)
-      }
-      if (dateToFilter) {
-        matchesDateRange = matchesDateRange && new Date(invoice.issue_date) <= new Date(dateToFilter)
-      }
-      
-      return matchesSearch && matchesStatus && matchesType && matchesClient && matchesDateRange
-    })
+    return invoices
   }
 
   const clearFilters = () => {
@@ -191,32 +186,35 @@ export default function InvoicesPage() {
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(invoice.due_date)
     dueDate.setHours(0, 0, 0, 0)
-    const isOverdue = dueDate < today && invoice.status !== 'paid' && invoice.status !== 'cancelled'
-    const isEmitted = !invoice.supplier_id // Factura emitida (sin supplier)
+    const isOverdue = dueDate < today && invoice.payment_status !== 'paid' && invoice.status !== 'cancelled'
+    const isEmitted = !invoice.supplier_id
     
-    // 1. Vencimiento (máxima prioridad visual)
+    // 1. Vencimiento (solo si no está pagada/cobrada)
     if (isOverdue) {
       badges.push(<Badge key="overdue" className="bg-red-500 text-white">Vencida</Badge>)
     }
     
-    // 2. Estado de aprobación/workflow (usar display_status si existe)
+    // 2. Estado principal (payment_status tiene prioridad sobre status)
     const status = invoice.display_status || invoice.status
-    if (status === 'pending_approval') {
-      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">Pend. Aprobación</Badge>)
-    } else if (status === 'issued') {
-      badges.push(<Badge key="status" className="bg-blue-100 text-blue-800">Emitida</Badge>)
-    } else if (status === 'approved') {
-      badges.push(<Badge key="status" className="bg-green-100 text-green-800">Aprobada</Badge>)
-    } else if (status === 'rejected') {
-      badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
-    } else if (status === 'paid') {
-      // Diferenciar entre facturas emitidas (cobradas) y recibidas (pagadas)
+    
+    if (invoice.payment_status === 'paid') {
       const label = isEmitted ? 'Cobrada' : 'Pagada'
       badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
+    } else if (invoice.payment_status === 'partial') {
+      const label = isEmitted ? 'Cobro Parcial' : 'Pago Parcial'
+      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">{label}</Badge>)
     } else if (status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
     } else if (status === 'partially_cancelled') {
       badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)
+    } else if (status === 'pending_approval') {
+      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">Pend. Aprobación</Badge>)
+    } else if (status === 'rejected') {
+      badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
+    } else if (status === 'approved') {
+      badges.push(<Badge key="status" className="bg-green-100 text-green-800">Aprobada</Badge>)
+    } else if (status === 'issued') {
+      badges.push(<Badge key="status" className="bg-blue-100 text-blue-800">Emitida</Badge>)
     }
     
     return <div className="flex gap-1.5 flex-wrap items-center">{badges}</div>
@@ -251,6 +249,24 @@ export default function InvoicesPage() {
             <CardTitle className="flex items-center justify-between">
               <span>Facturas {!isLoading && `(${total} total)`}</span>
               <div className="flex gap-2">
+                <Button
+                  onClick={async () => {
+                    if (!confirm('⚠️ ATENCIÓN: Esto eliminará TODAS las facturas de esta empresa.\n\n¿Estás seguro? Esta acción no se puede deshacer.')) return
+                    if (!confirm('¿REALMENTE estás seguro? Se eliminarán ' + total + ' facturas.')) return
+                    try {
+                      await invoiceService.deleteAllInvoices(companyId)
+                      toast.success('Todas las facturas fueron eliminadas')
+                      window.location.reload()
+                    } catch (error: any) {
+                      toast.error(error.response?.data?.message || 'Error al eliminar facturas')
+                    }
+                  }}
+                  variant="destructive"
+                  size="sm"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar Todas
+                </Button>
                 <Button
                   onClick={() => setShowSyncDialog(true)}
                   variant="outline"
@@ -375,10 +391,10 @@ export default function InvoicesPage() {
                           <SelectItem value="issued">Emitida</SelectItem>
                           <SelectItem value="approved">Aprobada</SelectItem>
                           <SelectItem value="rejected">Rechazada</SelectItem>
-                          <SelectItem value="paid">Pagada</SelectItem>
                           <SelectItem value="overdue">Vencida</SelectItem>
+                          <SelectItem value="paid">Pagada</SelectItem>
+                          <SelectItem value="collected">Cobrada</SelectItem>
                           <SelectItem value="cancelled">Anulada</SelectItem>
-                          <SelectItem value="partially_cancelled">Parcialmente Anulada</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

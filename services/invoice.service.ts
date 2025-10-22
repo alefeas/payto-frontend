@@ -110,9 +110,21 @@ export interface InvoiceApproval {
 }
 
 export const invoiceService = {
-  async getInvoices(companyId: string, page: number = 1, status?: string): Promise<{ data: Invoice[], total: number, last_page: number, current_page: number }> {
+  async getInvoices(companyId: string, page: number = 1, filters?: {
+    status?: string
+    search?: string
+    type?: string
+    client?: string
+    date_from?: string
+    date_to?: string
+  }): Promise<{ data: Invoice[], total: number, last_page: number, current_page: number }> {
     const params: any = { page }
-    if (status) params.status = status
+    if (filters?.status && filters.status !== 'all') params.status = filters.status
+    if (filters?.search) params.search = filters.search
+    if (filters?.type && filters.type !== 'all') params.type = filters.type
+    if (filters?.client && filters.client !== 'all') params.client = filters.client
+    if (filters?.date_from) params.date_from = filters.date_from
+    if (filters?.date_to) params.date_to = filters.date_to
     const response = await apiClient.get(`/companies/${companyId}/invoices`, { params })
     return {
       data: response.data.data || response.data,
@@ -220,6 +232,10 @@ export const invoiceService = {
 
   async deleteInvoice(companyId: string, invoiceId: string): Promise<void> {
     await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}`)
+  },
+
+  async deleteAllInvoices(companyId: string): Promise<void> {
+    await apiClient.delete(`/companies/${companyId}/invoices/delete-all`)
   },
 
   async uploadAttachment(companyId: string, invoiceId: string, file: File): Promise<void> {
