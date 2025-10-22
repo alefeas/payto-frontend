@@ -117,10 +117,10 @@ export default function InvoicesPage() {
 
   const getFilteredInvoices = () => {
     return invoices.filter(invoice => {
-      const clientName = invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || 'Sin cliente'
+      const clientName = invoice.receiver_name || invoice.client?.business_name || invoice.client?.first_name + ' ' + invoice.client?.last_name || 'Sin cliente'
       const matchesSearch = invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            clientName.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesStatus = statusFilter === "all" || invoice.status === statusFilter
+      const matchesStatus = statusFilter === "all" || invoice.display_status === statusFilter || invoice.status === statusFilter
       const matchesType = typeFilter === "all" || invoice.type === typeFilter
       const matchesClient = clientFilter === "all" || clientName === clientFilter
       
@@ -146,7 +146,7 @@ export default function InvoicesPage() {
   }
 
   const uniqueClients = [...new Set(invoices.map(inv => 
-    inv.client?.business_name || inv.client?.first_name + ' ' + inv.client?.last_name || 'Sin cliente'
+    inv.receiver_name || inv.client?.business_name || inv.client?.first_name + ' ' + inv.client?.last_name || 'Sin cliente'
   ))]
 
   const downloadPDF = async (invoiceId: string) => {
@@ -199,22 +199,23 @@ export default function InvoicesPage() {
       badges.push(<Badge key="overdue" className="bg-red-500 text-white">Vencida</Badge>)
     }
     
-    // 2. Estado de aprobación/workflow
-    if (invoice.status === 'pending_approval') {
+    // 2. Estado de aprobación/workflow (usar display_status si existe)
+    const status = invoice.display_status || invoice.status
+    if (status === 'pending_approval') {
       badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">Pend. Aprobación</Badge>)
-    } else if (invoice.status === 'issued') {
+    } else if (status === 'issued') {
       badges.push(<Badge key="status" className="bg-blue-100 text-blue-800">Emitida</Badge>)
-    } else if (invoice.status === 'approved') {
+    } else if (status === 'approved') {
       badges.push(<Badge key="status" className="bg-green-100 text-green-800">Aprobada</Badge>)
-    } else if (invoice.status === 'rejected') {
+    } else if (status === 'rejected') {
       badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
-    } else if (invoice.status === 'paid') {
+    } else if (status === 'paid') {
       // Diferenciar entre facturas emitidas (cobradas) y recibidas (pagadas)
       const label = isEmitted ? 'Cobrada' : 'Pagada'
       badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
-    } else if (invoice.status === 'cancelled') {
+    } else if (status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
-    } else if (invoice.status === 'partially_cancelled') {
+    } else if (status === 'partially_cancelled') {
       badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)
     }
     
@@ -490,7 +491,7 @@ export default function InvoicesPage() {
               ) : (
                 <>
                   {filteredInvoices.map((invoice) => {
-                    const clientName = invoice.client?.business_name || 
+                    const clientName = invoice.receiver_name || invoice.client?.business_name || 
                                       (invoice.client?.first_name && invoice.client?.last_name 
                                         ? `${invoice.client.first_name} ${invoice.client.last_name}` 
                                         : 'Sin cliente')

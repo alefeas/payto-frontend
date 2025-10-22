@@ -127,11 +127,11 @@ export default function InvoiceDetailPage() {
   }
   if (!isAuthenticated || !invoice) return null
 
-  const clientName = invoice.client?.business_name || 
+  const clientName = invoice.receiver_name || invoice.client?.business_name || 
                      (invoice.client?.first_name && invoice.client?.last_name 
                        ? `${invoice.client.first_name} ${invoice.client.last_name}` 
                        : 'Sin cliente')
-  const clientDoc = invoice.client?.document_number || 'N/A'
+  const clientDoc = invoice.receiver_document || invoice.client?.document_number || 'N/A'
   const docLabel = invoice.client?.tax_condition === 'final_consumer' ? 'DNI' : 'CUIT'
 
   return (
@@ -146,7 +146,7 @@ export default function InvoiceDetailPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{invoice.number}</h1>
-                {getStatusBadge(invoice.status)}
+                {getStatusBadge(invoice.display_status || invoice.status)}
               </div>
               <p className="text-muted-foreground">Factura Tipo {invoice.type}</p>
             </div>
