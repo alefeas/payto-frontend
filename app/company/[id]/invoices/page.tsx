@@ -34,6 +34,9 @@ export default function InvoicesPage() {
 
   const [invoices, setInvoices] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -66,8 +69,10 @@ export default function InvoicesPage() {
       
       setIsLoading(true)
       try {
-        const response = await invoiceService.getInvoices(companyId)
+        const response = await invoiceService.getInvoices(companyId, currentPage)
         setInvoices(response.data || [])
+        setTotalPages(response.last_page || 1)
+        setTotal(response.total || 0)
       } catch (error: any) {
         toast.error('Error al cargar facturas', {
           description: error.response?.data?.message || 'Intente nuevamente'
@@ -80,7 +85,7 @@ export default function InvoicesPage() {
     if (isAuthenticated && companyId) {
       loadInvoices()
     }
-  }, [isAuthenticated, companyId])
+  }, [isAuthenticated, companyId, currentPage])
 
   const handleSelectInvoice = (invoiceId: string) => {
     setSelectedInvoices(prev => {
@@ -218,7 +223,7 @@ export default function InvoicesPage() {
 
   const filteredInvoices = getFilteredInvoices()
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -243,7 +248,7 @@ export default function InvoicesPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Facturas Emitidas</span>
+              <span>Facturas ({total} total)</span>
               <div className="flex gap-2">
                 <Button
                   onClick={() => setShowSyncDialog(true)}
@@ -477,85 +482,120 @@ export default function InvoicesPage() {
                 <div>Acciones</div>
               </div>
 
-              {filteredInvoices.map((invoice) => {
-                const clientName = invoice.client?.business_name || 
-                                  (invoice.client?.first_name && invoice.client?.last_name 
-                                    ? `${invoice.client.first_name} ${invoice.client.last_name}` 
-                                    : 'Sin cliente')
-                return (
-                  <div key={invoice.id} className="grid grid-cols-8 gap-4 p-4 border-b hover:bg-muted/30">
-                    <div className="flex items-center">
-                      <Checkbox
-                        checked={selectedInvoices.includes(invoice.id)}
-                        onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                      />
-                    </div>
-                    <div className="font-medium">{invoice.number}</div>
-                    <div>
-                      <Badge variant="outline">Tipo {invoice.type}</Badge>
-                    </div>
-                    <div className="truncate" title={clientName}>{clientName}</div>
-                    <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
-                    <div className="font-medium">
-                      {formatCurrency(parseFloat(invoice.total), invoice.currency)}
-                    </div>
-                    <div>{getInvoiceStatusBadges(invoice)}</div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}
-                        title="Ver detalle"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => downloadPDF(invoice.id)}
-                        title="Descargar PDF"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => downloadTXT(invoice.id)}
-                        title="Descargar TXT AFIP"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={async () => {
-                          if (confirm('¿Estás seguro de eliminar esta factura? Solo se borrará de tu sistema, no de AFIP.')) {
-                            try {
-                              await invoiceService.deleteInvoice(companyId, invoice.id)
-                              toast.success('Factura eliminada')
-                              window.location.reload()
-                            } catch (error: any) {
-                              toast.error(error.response?.data?.message || 'Error al eliminar factura')
-                            }
-                          }
-                        }}
-                        title="Eliminar (solo en homologación)"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {filteredInvoices.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No se encontraron facturas</p>
+              {isLoading ? (
+                <div className="text-center py-32">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-3">Cargando facturas...</p>
                 </div>
+              ) : (
+                <>
+                  {filteredInvoices.map((invoice) => {
+                    const clientName = invoice.client?.business_name || 
+                                      (invoice.client?.first_name && invoice.client?.last_name 
+                                        ? `${invoice.client.first_name} ${invoice.client.last_name}` 
+                                        : 'Sin cliente')
+                    return (
+                      <div key={invoice.id} className="grid grid-cols-8 gap-4 p-4 border-b hover:bg-muted/30">
+                        <div className="flex items-center">
+                          <Checkbox
+                            checked={selectedInvoices.includes(invoice.id)}
+                            onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                          />
+                        </div>
+                        <div className="font-medium">{invoice.number}</div>
+                        <div>
+                          <Badge variant="outline">Tipo {invoice.type}</Badge>
+                        </div>
+                        <div className="truncate" title={clientName}>{clientName}</div>
+                        <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
+                        <div className="font-medium">
+                          {formatCurrency(parseFloat(invoice.total), invoice.currency)}
+                        </div>
+                        <div>{getInvoiceStatusBadges(invoice)}</div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}
+                            title="Ver detalle"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => downloadPDF(invoice.id)}
+                            title="Descargar PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => downloadTXT(invoice.id)}
+                            title="Descargar TXT AFIP"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={async () => {
+                              if (confirm('¿Estás seguro de eliminar esta factura? Solo se borrará de tu sistema, no de AFIP.')) {
+                                try {
+                                  await invoiceService.deleteInvoice(companyId, invoice.id)
+                                  toast.success('Factura eliminada')
+                                  window.location.reload()
+                                } catch (error: any) {
+                                  toast.error(error.response?.data?.message || 'Error al eliminar factura')
+                                }
+                              }
+                            }}
+                            title="Eliminar (solo en homologación)"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {filteredInvoices.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No se encontraron facturas</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
+            
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

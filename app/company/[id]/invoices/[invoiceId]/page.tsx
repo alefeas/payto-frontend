@@ -132,6 +132,7 @@ export default function InvoiceDetailPage() {
                        ? `${invoice.client.first_name} ${invoice.client.last_name}` 
                        : 'Sin cliente')
   const clientDoc = invoice.client?.document_number || 'N/A'
+  const docLabel = invoice.client?.tax_condition === 'final_consumer' ? 'DNI' : 'CUIT'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
@@ -178,7 +179,7 @@ export default function InvoiceDetailPage() {
                 <p className="font-semibold">{clientName}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">CUIT</p>
+                <p className="text-sm font-medium text-muted-foreground">{docLabel}</p>
                 <p>{clientDoc}</p>
               </div>
             </CardContent>

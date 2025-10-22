@@ -110,12 +110,15 @@ export interface InvoiceApproval {
 }
 
 export const invoiceService = {
-  async getInvoices(companyId: string, status?: string): Promise<{ data: Invoice[], total: number }> {
-    const params = status ? { status } : {}
+  async getInvoices(companyId: string, page: number = 1, status?: string): Promise<{ data: Invoice[], total: number, last_page: number, current_page: number }> {
+    const params: any = { page }
+    if (status) params.status = status
     const response = await apiClient.get(`/companies/${companyId}/invoices`, { params })
     return {
       data: response.data.data || response.data,
-      total: response.data.total || response.data.length
+      total: response.data.total || response.data.length,
+      last_page: response.data.last_page || 1,
+      current_page: response.data.current_page || 1
     }
   },
 

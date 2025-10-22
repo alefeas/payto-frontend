@@ -26,7 +26,8 @@ interface CompanyData {
   id: string
   name: string
   uniqueId: string
-  tax_condition: string
+  taxCondition: string
+  cuit?: string
   default_sales_point?: number
   defaultVat?: number
   vatPerception?: number
@@ -70,6 +71,9 @@ export default function CreateInvoicePage() {
   const [associateInvoice, setAssociateInvoice] = useState(false)
   const [salesPoints, setSalesPoints] = useState<{id: string, point_number: number, name: string | null}[]>([])
 
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  
   const [formData, setFormData] = useState({
     voucherType: '',
     concept: 'products' as InvoiceConcept,
@@ -78,7 +82,7 @@ export default function CreateInvoicePage() {
     clientData: null as { client_id?: string; [key: string]: unknown } | null,
     saveClient: false,
     salesPoint: 0,
-    emissionDate: '',
+    emissionDate: todayStr,
     dueDate: '',
     paymentDueDate: '',
     serviceDateFrom: '',
@@ -224,12 +228,16 @@ export default function CreateInvoicePage() {
         try {
           const { networkService } = await import('@/services/network.service')
           const connections = await networkService.getConnections(companyId)
-          const connectedCompaniesData = connections.map(conn => ({
-            id: conn.connectedCompanyId,
-            name: conn.connectedCompanyName,
-            uniqueId: conn.connectedCompanyUniqueId,
-            tax_condition: conn.connectedCompanyTaxCondition || 'registered_taxpayer'
-          }))
+          const connectedCompaniesData = connections.map(conn => {
+            console.log('Mapping connection:', conn)
+            return {
+              id: conn.connectedCompanyId,
+              name: conn.connectedCompanyName,
+              uniqueId: conn.connectedCompanyUniqueId,
+              taxCondition: conn.connectedCompanyTaxCondition || 'registered_taxpayer',
+              cuit: conn.connectedCompanyCuit
+            }
+          })
           setConnectedCompanies(connectedCompaniesData)
         } catch (error: any) {
           // Silently fail if user doesn't have permission
@@ -381,6 +389,17 @@ export default function CreateInvoicePage() {
   useEffect(() => {
     calculateTotals()
   }, [items, perceptions, calculateTotals])
+
+  // Auto-calculate due date (30 days after emission date)
+  useEffect(() => {
+    if (formData.emissionDate) {
+      const emissionDate = new Date(formData.emissionDate)
+      const dueDate = new Date(emissionDate)
+      dueDate.setDate(dueDate.getDate() + 30)
+      const dueDateStr = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`
+      setFormData(prev => ({ ...prev, dueDate: dueDateStr }))
+    }
+  }, [formData.emissionDate])
 
   // Consultar próximo número cuando cambia tipo de factura o punto de venta
   useEffect(() => {

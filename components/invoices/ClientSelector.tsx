@@ -145,10 +145,9 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
                         <span className="font-medium">{company.name}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {company.taxCondition === 'registered_taxpayer' ? 'Responsable Inscripto' : 
+                        CUIT: {company.cuit || 'N/A'} • {company.taxCondition === 'registered_taxpayer' ? 'RI' : 
                          company.taxCondition === 'monotax' ? 'Monotributo' : 
-                         company.taxCondition === 'exempt' ? 'Exento' : 'Consumidor Final'}
-                        {company.cuit && ` • CUIT: ${company.cuit}`}
+                         company.taxCondition === 'exempt' ? 'Exento' : 'CF'}
                       </span>
                     </div>
                   </SelectItem>
