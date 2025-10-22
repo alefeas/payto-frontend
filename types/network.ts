@@ -12,6 +12,8 @@ export interface CompanyConnection {
   connectedCompanyId: string // Empresa conectada
   connectedCompanyName: string // Nombre de la empresa conectada
   connectedCompanyUniqueId: string // ID público de la empresa conectada
+  connectedCompanyCuit?: string // CUIT de la empresa conectada
+  connectedCompanyTaxCondition?: string // Condición fiscal de la empresa conectada
   status: ConnectionStatus
   requestedAt: string
   connectedAt?: string // Fecha cuando se aceptó la conexión

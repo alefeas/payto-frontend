@@ -7,7 +7,7 @@ interface ClientFormProps {
   client?: Client | null
   companyId: string
   onClose: () => void
-  onSuccess: (createdClient?: Client) => void
+  onSuccess: (createdClient?: any) => void
 }
 
 export function ClientForm({ client, companyId, onClose, onSuccess }: ClientFormProps) {

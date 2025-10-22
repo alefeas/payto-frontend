@@ -83,7 +83,7 @@ export default function SuppliersPage() {
 
   const handleRestore = async (supplierId: string) => {
     try {
-      await supplierService.restoreSupplier(companyId, supplierId)
+      await supplierService.restoreSupplier(companyId, parseInt(supplierId))
       toast.success('Proveedor restaurado')
       loadTrashedSuppliers()
       loadSuppliers()
@@ -264,7 +264,7 @@ export default function SuppliersPage() {
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => handleRestore(supplier.id)}
+                            onClick={() => handleRestore(supplier.id.toString())}
                           >
                             <RotateCcw className="h-4 w-4 mr-2" />
                             Restaurar

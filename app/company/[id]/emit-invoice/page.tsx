@@ -228,8 +228,7 @@ export default function CreateInvoicePage() {
             id: conn.connectedCompanyId,
             name: conn.connectedCompanyName,
             uniqueId: conn.connectedCompanyUniqueId,
-            cuit: conn.connectedCompanyCuit,
-            taxCondition: conn.connectedCompanyTaxCondition
+            tax_condition: conn.connectedCompanyTaxCondition || 'registered_taxpayer'
           }))
           setConnectedCompanies(connectedCompaniesData)
         } catch (error: any) {
@@ -262,14 +261,14 @@ export default function CreateInvoicePage() {
             const defaultPoint = points.find((p: any) => p.point_number === company.defaultSalesPoint) || points[0]
             setFormData(prev => ({ ...prev, salesPoint: defaultPoint.point_number }))
           } else if (company.defaultSalesPoint) {
-            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
+            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint || 1 }))
           }
         } catch (error: any) {
           console.error('Error loading sales points:', error)
           // Fallback to company default - don't block the page
           setSalesPoints([])
           if (company.defaultSalesPoint) {
-            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint }))
+            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint || 1 }))
           } else {
             setFormData(prev => ({ ...prev, salesPoint: 1 }))
           }
@@ -1413,7 +1412,7 @@ export default function CreateInvoicePage() {
               <Button 
                 type="submit" 
                 className="flex-1" 
-                disabled={isSubmitting || (cert && !cert.isActive)}
+                disabled={isSubmitting || (cert ? !cert.isActive : false)}
               >
                 {isSubmitting ? (
                   <>

@@ -171,7 +171,8 @@ export default function LoadInvoicePage() {
     setPerceptions([...perceptions, { 
       type: 'gross_income_perception', 
       name: 'Percepción IIBB', 
-      rate: companyDefaults?.grossIncomePerception || 2.5 
+      rate: companyDefaults?.grossIncomePerception || 2.5,
+      baseType: 'net'
     }])
   }
 
@@ -237,7 +238,6 @@ export default function LoadInvoicePage() {
           ...formData,
           type: validationData.invoiceType,
           invoiceNumber: validationData.invoiceNumber,
-          issuerCuit: validationData.issuerCuit,
           emissionDate: inv.issue_date,
           currency: inv.currency === 'PES' ? 'ARS' : inv.currency,
           exchangeRate: inv.exchange_rate?.toString() || ''

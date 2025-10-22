@@ -187,5 +187,24 @@ export const invoiceService = {
 
   async deleteInvoice(companyId: string, invoiceId: string): Promise<void> {
     await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}`)
+  },
+
+  async uploadAttachment(companyId: string, invoiceId: string, file: File): Promise<void> {
+    const formData = new FormData()
+    formData.append('attachment', file)
+    await apiClient.post(`/companies/${companyId}/invoices/${invoiceId}/attachment`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+
+  async deleteAttachment(companyId: string, invoiceId: string): Promise<void> {
+    await apiClient.delete(`/companies/${companyId}/invoices/${invoiceId}/attachment`)
+  },
+
+  async downloadAttachment(companyId: string, invoiceId: string): Promise<Blob> {
+    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/attachment`, {
+      responseType: 'blob'
+    })
+    return response.data
   }
 }

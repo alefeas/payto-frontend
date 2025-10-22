@@ -26,7 +26,7 @@ interface EntityFormProps {
 
 export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBankFields = false }: EntityFormProps) {
   const [formData, setFormData] = useState<{
-    documentType: "CUIT" | "CUIL" | "DNI"
+    documentType: "CUIT" | "CUIL" | "DNI" | "CDI" | "Pasaporte"
     documentNumber: string
     businessName: string
     firstName: string
@@ -130,9 +130,9 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       
       if (entity) {
         if (type === "client") {
-          await clientService.updateClient(companyId, entity.id, data)
+          await clientService.updateClient(companyId, entity.id as string, data)
         } else {
-          await supplierService.updateSupplier(companyId, entity.id, data)
+          await supplierService.updateSupplier(companyId, entity.id as number, data)
         }
         toast.success(`${entityName} actualizado`)
         onSuccess()
@@ -280,7 +280,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
 
       {formData.taxCondition !== 'final_consumer' && (
         <div className="space-y-2">
-          <Label htmlFor="businessName">Razón Social {formData.taxCondition !== 'final_consumer' ? '(Opcional si completas Nombre y Apellido)' : ''}</Label>
+          <Label htmlFor="businessName">Razón Social (Opcional si completas Nombre y Apellido)</Label>
           <Input
             id="businessName"
             value={formData.businessName}
