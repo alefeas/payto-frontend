@@ -133,6 +133,9 @@ export default function InvoiceDetailPage() {
                        : 'Sin cliente')
   const clientDoc = invoice.receiver_document || invoice.client?.document_number || 'N/A'
   const docLabel = invoice.client?.tax_condition === 'final_consumer' ? 'DNI' : 'CUIT'
+  
+  // Determinar si la empresa actual es emisor o receptor
+  const isIssuer = invoice.issuer_company_id === companyId
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
@@ -164,73 +167,101 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Información General */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Cliente */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                Información del Cliente
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Razón Social</p>
-                <p className="font-semibold">{clientName}</p>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Información del Comprobante</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <Building2 className="h-4 w-4" />
+                  <h3 className="font-semibold text-sm">Cliente</h3>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Razón Social</p>
+                  <p className="font-medium text-sm">{clientName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{docLabel}</p>
+                  <p className="font-medium text-sm">{clientDoc}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{docLabel}</p>
-                <p>{clientDoc}</p>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Fechas y Moneda */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                Fechas y Moneda
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Emisión</p>
-                  <p className="font-medium">{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <Calendar className="h-4 w-4" />
+                  <h3 className="font-semibold text-sm">Fechas</h3>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Vencimiento</p>
-                  <p className="font-medium">{new Date(invoice.due_date).toLocaleDateString('es-AR')}</p>
+                  <p className="text-xs text-muted-foreground">Emisión</p>
+                  <p className="font-medium text-sm">{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</p>
                 </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Moneda</p>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  <p className="font-medium">{invoice.currency}</p>
+                <div>
+                  <p className="text-xs text-muted-foreground">Vencimiento</p>
+                  <p className="font-medium text-sm">{new Date(invoice.due_date).toLocaleDateString('es-AR')}</p>
                 </div>
+                {invoice.service_date_from && invoice.service_date_to && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Período Servicio</p>
+                    <p className="font-medium text-xs">
+                      {new Date(invoice.service_date_from).toLocaleDateString('es-AR')} - {new Date(invoice.service_date_to).toLocaleDateString('es-AR')}
+                    </p>
+                  </div>
+                )}
               </div>
-              {invoice.afip_cae && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm font-medium text-muted-foreground">CAE (AFIP)</p>
-                  <p className="font-mono font-semibold text-green-700">{invoice.afip_cae}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Vto: {new Date(invoice.afip_cae_due_date).toLocaleDateString('es-AR')}
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <Hash className="h-4 w-4" />
+                  <h3 className="font-semibold text-sm">Datos AFIP</h3>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Punto de Venta</p>
+                  <p className="font-medium text-sm">{invoice.sales_point?.toString().padStart(4, '0')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Concepto</p>
+                  <p className="font-medium text-sm">
+                    {invoice.concept === 'products' && 'Productos'}
+                    {invoice.concept === 'services' && 'Servicios'}
+                    {invoice.concept === 'products_services' && 'Productos y Servicios'}
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Moneda</p>
+                  <p className="font-medium text-sm">{invoice.currency}{invoice.exchange_rate && invoice.exchange_rate !== '1.00' ? ` (${invoice.exchange_rate})` : ''}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-600 mb-2">
+                  <FileText className="h-4 w-4" />
+                  <h3 className="font-semibold text-sm">CAE</h3>
+                </div>
+                {invoice.afip_cae ? (
+                  <>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Número</p>
+                      <p className="font-mono text-sm font-semibold text-green-700">{invoice.afip_cae}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Vencimiento</p>
+                      <p className="font-medium text-sm">{new Date(invoice.afip_cae_due_date).toLocaleDateString('es-AR')}</p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Sin CAE</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Ítems */}
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Detalle de Ítems
-            </CardTitle>
+            <CardTitle>Detalle de Ítems</CardTitle>
             <CardDescription>Productos y servicios facturados</CardDescription>
           </CardHeader>
           <CardContent>
@@ -239,31 +270,49 @@ export default function InvoiceDetailPage() {
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr className="border-b">
-                      <th className="text-left p-4 font-semibold text-sm">Descripción</th>
-                      <th className="text-center p-4 font-semibold text-sm w-24">Cant.</th>
-                      <th className="text-right p-4 font-semibold text-sm w-32">Precio Unit.</th>
-                      <th className="text-center p-4 font-semibold text-sm w-20">IVA</th>
-                      <th className="text-right p-4 font-semibold text-sm w-32">Subtotal</th>
+                      <th className="text-left p-3 font-semibold text-xs">Descripción</th>
+                      <th className="text-center p-3 font-semibold text-xs w-16">Cant.</th>
+                      <th className="text-right p-3 font-semibold text-xs w-24">P. Unit.</th>
+                      <th className="text-center p-3 font-semibold text-xs w-16">Bonif.</th>
+                      <th className="text-center p-3 font-semibold text-xs w-16">IVA</th>
+                      <th className="text-right p-3 font-semibold text-xs w-24">IVA $</th>
+                      <th className="text-right p-3 font-semibold text-xs w-28">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {invoice.items?.map((item: any, index: number) => (
-                      <tr key={item.id} className={index !== invoice.items.length - 1 ? "border-b" : ""}>
-                        <td className="p-4">
-                          <p className="font-medium">{item.description}</p>
-                        </td>
-                        <td className="p-4 text-center">{parseFloat(item.quantity)}</td>
-                        <td className="p-4 text-right text-sm">
-                          {formatCurrency(parseFloat(item.unit_price), invoice.currency)}
-                        </td>
-                        <td className="p-4 text-center">
-                          <Badge variant="outline" className="text-xs">{parseFloat(item.tax_rate)}%</Badge>
-                        </td>
-                        <td className="p-4 text-right font-medium">
-                          {formatCurrency(parseFloat(item.subtotal), invoice.currency)}
-                        </td>
-                      </tr>
-                    ))}
+                    {invoice.items?.map((item: any, index: number) => {
+                      const qty = parseFloat(item.quantity)
+                      const unitPrice = parseFloat(item.unit_price)
+                      const discount = parseFloat(item.discount_percentage || 0)
+                      const taxRate = parseFloat(item.tax_rate)
+                      const subtotal = parseFloat(item.subtotal)
+                      const taxAmount = parseFloat(item.tax_amount || 0)
+                      const total = subtotal + taxAmount
+                      
+                      return (
+                        <tr key={item.id} className={index !== invoice.items.length - 1 ? "border-b" : ""}>
+                          <td className="p-3">
+                            <p className="font-medium text-sm">{item.description}</p>
+                          </td>
+                          <td className="p-3 text-center text-sm">{qty}</td>
+                          <td className="p-3 text-right text-xs">
+                            {formatCurrency(unitPrice, invoice.currency)}
+                          </td>
+                          <td className="p-3 text-center">
+                            {discount > 0 ? <Badge variant="secondary" className="text-xs">{discount}%</Badge> : <span className="text-xs text-muted-foreground">-</span>}
+                          </td>
+                          <td className="p-3 text-center">
+                            <Badge variant="outline" className="text-xs">{taxRate}%</Badge>
+                          </td>
+                          <td className="p-3 text-right text-xs text-muted-foreground">
+                            {formatCurrency(taxAmount, invoice.currency)}
+                          </td>
+                          <td className="p-3 text-right font-semibold text-sm">
+                            {formatCurrency(total, invoice.currency)}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -271,40 +320,37 @@ export default function InvoiceDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Totales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Totales y Estado de Pago */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
-                Resumen de Totales
-              </CardTitle>
+              <CardTitle>Resumen de Totales</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center py-1.5">
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
+                  <span className="font-medium text-sm">
                     {formatCurrency(parseFloat(invoice.subtotal), invoice.currency)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-t">
-                  <span className="text-muted-foreground">Impuestos (IVA)</span>
-                  <span className="font-medium">
+                <div className="flex justify-between items-center py-1.5 border-t">
+                  <span className="text-sm text-muted-foreground">Impuestos (IVA)</span>
+                  <span className="font-medium text-sm">
                     {formatCurrency(parseFloat(invoice.total_taxes), invoice.currency)}
                   </span>
                 </div>
                 {parseFloat(invoice.total_perceptions || 0) > 0 && (
-                  <div className="flex justify-between items-center py-2 border-t">
-                    <span className="text-orange-600">Percepciones</span>
-                    <span className="font-medium text-orange-600">
+                  <div className="flex justify-between items-center py-1.5 border-t">
+                    <span className="text-sm text-orange-600">Percepciones</span>
+                    <span className="font-medium text-sm text-orange-600">
                       {formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between items-center py-3 border-t-2 text-lg font-bold">
-                  <span>Total Factura</span>
-                  <span className="text-primary">
+                <div className="flex justify-between items-center py-2 border-t-2">
+                  <span className="font-bold">Total Factura</span>
+                  <span className="font-bold text-lg text-primary">
                     {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                   </span>
                 </div>
@@ -312,10 +358,11 @@ export default function InvoiceDetailPage() {
             </CardContent>
           </Card>
 
-          {invoice.status === 'paid' && invoice.total_retentions && parseFloat(invoice.total_retentions) > 0 && (
-            <Card className="shadow-sm">
+          {/* Estado de Pago / Retenciones */}
+          {invoice.status === 'paid' ? (
+            <Card className="shadow-sm border-green-200 bg-green-50/50">
               <CardHeader>
-                <CardTitle>Pago Recibido</CardTitle>
+                <CardTitle className="text-green-700">{isIssuer ? 'Pago Recibido' : 'Pago Realizado'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -325,23 +372,90 @@ export default function InvoiceDetailPage() {
                       {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-t">
-                    <span className="text-red-600">Retenciones</span>
-                    <span className="font-medium text-red-600">
-                      -{formatCurrency(parseFloat(invoice.total_retentions), invoice.currency)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 text-xl font-bold">
-                    <span className="text-green-700">Total Cobrado</span>
+                  {invoice.total_retentions && parseFloat(invoice.total_retentions) > 0 && (
+                    <div className="flex justify-between items-center py-2 border-t">
+                      <span className="text-red-600">Retenciones</span>
+                      <span className="font-medium text-red-600">
+                        -{formatCurrency(parseFloat(invoice.total_retentions), invoice.currency)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center py-3 border-t-2 text-lg font-bold">
+                    <span className="text-green-700">{isIssuer ? 'Total Cobrado' : 'Total Pagado'}</span>
                     <span className="text-green-700">
-                      {formatCurrency(parseFloat(invoice.total) - parseFloat(invoice.total_retentions), invoice.currency)}
+                      {formatCurrency(
+                        parseFloat(invoice.total) - parseFloat(invoice.total_retentions || 0),
+                        invoice.currency
+                      )}
                     </span>
                   </div>
+                  {invoice.retentions && invoice.retentions.length > 0 && (
+                    <div className="pt-3 border-t space-y-2">
+                      <h4 className="font-semibold text-xs text-red-700 mb-2">Detalle de Retenciones</h4>
+                      {invoice.retentions.map((retention: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center py-1">
+                          <div>
+                            <p className="font-medium text-xs">{retention.name}</p>
+                            <p className="text-xs text-muted-foreground">{retention.rate}%</p>
+                          </div>
+                          <span className="font-medium text-sm text-red-600">
+                            {formatCurrency(parseFloat(retention.amount), invoice.currency)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+              <CardHeader>
+                <CardTitle className="text-amber-700">{isIssuer ? 'Pendiente de Cobro' : 'Pendiente de Pago'}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground mb-2">
+                    {isIssuer ? 'Esta factura aún no ha sido cobrada' : 'Esta factura aún no ha sido pagada'}
+                  </p>
+                  <p className="text-2xl font-bold text-amber-700">
+                    {formatCurrency(parseFloat(invoice.total), invoice.currency)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-4">
+                    {isIssuer ? 'Las retenciones se registrarán al momento del cobro' : 'Las retenciones se registrarán al momento del pago'}
+                  </p>
                 </div>
               </CardContent>
             </Card>
           )}
         </div>
+
+        {/* Percepciones Detail */}
+        {invoice.perceptions && invoice.perceptions.length > 0 && (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Percent className="h-5 w-5 text-orange-600" />
+                Detalle de Percepciones
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {invoice.perceptions.map((perception: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{perception.name}</p>
+                      <p className="text-xs text-muted-foreground">{perception.rate}% sobre {perception.base_type === 'net' ? 'Neto' : perception.base_type === 'total' ? 'Total' : 'IVA'}</p>
+                    </div>
+                    <span className="font-medium text-orange-600">
+                      {formatCurrency(parseFloat(perception.amount), invoice.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notas */}
         {invoice.notes && (

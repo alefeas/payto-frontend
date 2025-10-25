@@ -135,7 +135,6 @@ export default function CompanyPage() {
     )
   }
 
-  const canIssueInvoices = !!company.taxCondition && company.taxCondition !== 'final_consumer'
   const userRole = company.role as CompanyRole
 
   interface MenuItem {
@@ -149,7 +148,7 @@ export default function CompanyPage() {
   }
 
   const allMenuItems: MenuItem[] = [
-    ...(canIssueInvoices && hasPermission(userRole, 'invoices.create') ? [{
+    ...(hasPermission(userRole, 'invoices.create') ? [{
       title: "Emitir Comprobante",
       description: "Facturas, NC, ND, Recibos, etc.",
       icon: FileText,
@@ -182,7 +181,7 @@ export default function CompanyPage() {
       permission: 'payments.create' as const,
       action: () => router.push(`/company/${company.id}/accounts-payable`)
     }] : []),
-    ...(canIssueInvoices && hasPermission(userRole, 'payments.view') ? [{
+    ...(hasPermission(userRole, 'payments.view') ? [{
       title: "Cuentas por Cobrar",
       description: "Gestionar cobros de clientes",
       icon: Eye,
@@ -191,7 +190,7 @@ export default function CompanyPage() {
       permission: 'payments.view' as const,
       action: () => router.push(`/company/${company.id}/accounts-receivable`)
     }] : []),
-    ...(canIssueInvoices && hasPermission(userRole, 'invoices.approve') ? [{
+    ...(hasPermission(userRole, 'invoices.approve') ? [{
       title: "Aprobar Facturas",
       description: "Revisar facturas de proveedores",
       icon: CheckSquare,
@@ -215,13 +214,13 @@ export default function CompanyPage() {
       color: "bg-indigo-500",
       action: () => router.push(`/company/${company.id}/analytics`)
     },
-    ...(company.taxCondition === 'registered_taxpayer' ? [{
+    {
       title: "Libro IVA",
       description: "Registro de operaciones con IVA",
       icon: BookOpen,
       color: "bg-emerald-500",
       action: () => router.push(`/company/${company.id}/iva-book`)
-    }] : [])
+    }
   ]
 
   const menuItems = allMenuItems
@@ -395,23 +394,7 @@ export default function CompanyPage() {
           </div>
         )}
 
-        {/* Alerta para Consumidor Final */}
-        {!canIssueInvoices && (
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-yellow-900">Cuenta de Solo Recepción</p>
-                  <p className="text-sm text-yellow-800 mt-1">
-                    Como Consumidor Final, no podés emitir facturas. Podés recibir facturas, ver historial y declarar pagos. 
-                    Si querés emitir facturas, actualizá tu perfil a Monotributo o Responsable Inscripto en Configuración.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Main Menu */}
         <Card>
