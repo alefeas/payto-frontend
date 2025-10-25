@@ -83,11 +83,9 @@ export default function AccountsReceivablePage() {
       
       const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
         if (inv.issuer_company_id !== companyId) return false
-        // Solo facturas con status issued (excluir paid, cancelled, etc)
-        if (inv.status !== 'issued') return false
-        // Excluir facturas completamente cobradas
-        const paidAmount = inv.collections?.reduce((sum: number, col: any) => sum + parseFloat(col.amount || 0), 0) || 0
-        if (paidAmount >= parseFloat(inv.total || 0)) return false
+        // Verificar company_statuses JSON para esta empresa
+        const companyStatus = inv.company_statuses?.[companyId]
+        if (companyStatus === 'paid') return false
         
         if (filters.from_date || filters.to_date) {
           const issueDate = new Date(inv.issue_date)

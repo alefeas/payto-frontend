@@ -187,7 +187,7 @@ export default function InvoicesPage() {
     const dueDate = new Date(invoice.due_date)
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.payment_status !== 'paid' && invoice.status !== 'cancelled'
-    const isEmitted = !invoice.supplier_id
+    const isIssuer = invoice.issuer_company_id === companyId
     
     // 1. Vencimiento (solo si no está pagada/cobrada)
     if (isOverdue) {
@@ -197,11 +197,14 @@ export default function InvoicesPage() {
     // 2. Estado principal (payment_status tiene prioridad sobre status)
     const status = invoice.display_status || invoice.status
     
-    if (invoice.payment_status === 'paid') {
-      const label = isEmitted ? 'Cobrada' : 'Pagada'
+    // Verificar company_statuses JSON primero
+    const companyStatus = invoice.company_statuses?.[companyId]
+    
+    if (companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'paid') {
+      const label = isIssuer ? 'Cobrada' : 'Pagada'
       badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
     } else if (invoice.payment_status === 'partial') {
-      const label = isEmitted ? 'Cobro Parcial' : 'Pago Parcial'
+      const label = isIssuer ? 'Cobro Parcial' : 'Pago Parcial'
       badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">{label}</Badge>)
     } else if (status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
