@@ -83,10 +83,8 @@ export default function AccountsReceivablePage() {
       
       const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
         if (inv.issuer_company_id !== companyId) return false
-        // Solo facturas emitidas
+        // Solo facturas con status issued
         if (inv.status !== 'issued') return false
-        // Filtrar facturas completamente cobradas
-        if (inv.pending_amount !== undefined && inv.pending_amount <= 0) return false
         
         if (filters.from_date || filters.to_date) {
           const issueDate = new Date(inv.issue_date)

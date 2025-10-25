@@ -55,7 +55,7 @@ export default function IvaBookPage() {
   }, [isAuthenticated, authLoading, router, companyId])
 
   useEffect(() => {
-    if (company && company.taxCondition === 'registered_taxpayer') {
+    if (company) {
       loadData()
     }
   }, [selectedMonth, selectedYear, company])
@@ -64,13 +64,6 @@ export default function IvaBookPage() {
     try {
       const companyData = await companyService.getCompany(companyId)
       setCompany(companyData)
-      
-      if (companyData.taxCondition !== 'registered_taxpayer') {
-        toast.error('Acceso denegado', {
-          description: 'El Libro IVA solo está disponible para Responsables Inscriptos'
-        })
-        router.push(`/company/${companyId}`)
-      }
     } catch (error) {
       toast.error('Error al cargar empresa')
       router.push('/dashboard')
@@ -119,100 +112,110 @@ export default function IvaBookPage() {
 
   if (authLoading || !company) return null
   if (!isAuthenticated) return null
-  if (company.taxCondition !== 'registered_taxpayer') return null
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <BookOpen className="h-8 w-8" />
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <BookOpen className="h-8 w-8 text-primary" />
                 Libro IVA
               </h1>
-              <p className="text-muted-foreground">Registro de operaciones con IVA</p>
+              <p className="text-muted-foreground mt-1">Registro de operaciones con IVA - {company?.name}</p>
             </div>
+          </div>
+          <div className="flex gap-3">
+            <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map(m => (
+                  <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(y => (
+                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Período</CardTitle>
-            <CardDescription>Seleccione el mes y año a consultar</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {months.map(m => (
-                      <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1">
-                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {years.map(y => (
-                      <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader className="pb-3">
+                  <div className="h-4 bg-muted rounded w-32"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-muted rounded w-40 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-28"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : summary && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Débito Fiscal (Ventas)</CardTitle>
+                <CardTitle className="text-sm font-medium text-green-900 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Débito Fiscal
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.debito_fiscal)}</div>
-                <p className="text-xs text-muted-foreground mt-1">IVA de facturas emitidas</p>
+                <div className="text-3xl font-bold text-green-700">{formatCurrency(summary.debito_fiscal)}</div>
+                <p className="text-xs text-green-600 mt-2">IVA de facturas emitidas</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Crédito Fiscal (Compras)</CardTitle>
+                <CardTitle className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4" />
+                  Crédito Fiscal
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.credito_fiscal)}</div>
-                <p className="text-xs text-muted-foreground mt-1">IVA de facturas recibidas</p>
+                <div className="text-3xl font-bold text-blue-700">{formatCurrency(summary.credito_fiscal)}</div>
+                <p className="text-xs text-blue-600 mt-2">IVA de facturas recibidas</p>
               </CardContent>
             </Card>
 
-            <Card className={summary.saldo >= 0 ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'}>
+            <Card className={summary.saldo >= 0 ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-orange-100/50' : 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100/50'}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className={`text-sm font-medium flex items-center gap-2 ${summary.saldo >= 0 ? 'text-orange-900' : 'text-emerald-900'}`}>
                   {summary.saldo >= 0 ? (
                     <>
-                      <TrendingUp className="h-4 w-4 text-orange-600" />
-                      <span className="text-orange-900">Saldo a Pagar</span>
+                      <TrendingUp className="h-4 w-4" />
+                      Saldo a Pagar
                     </>
                   ) : (
                     <>
-                      <TrendingDown className="h-4 w-4 text-green-600" />
-                      <span className="text-green-900">Saldo a Favor</span>
+                      <TrendingDown className="h-4 w-4" />
+                      Saldo a Favor
                     </>
                   )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${summary.saldo >= 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                <div className={`text-3xl font-bold ${summary.saldo >= 0 ? 'text-orange-700' : 'text-emerald-700'}`}>
                   {formatCurrency(Math.abs(summary.saldo))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className={`text-xs mt-2 ${summary.saldo >= 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
                   {summary.saldo >= 0 ? 'A pagar a AFIP' : 'A favor del contribuyente'}
                 </p>
               </CardContent>
@@ -220,19 +223,19 @@ export default function IvaBookPage() {
           </div>
         )}
 
-        <Tabs defaultValue="sales" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sales">Libro IVA Ventas</TabsTrigger>
-            <TabsTrigger value="purchases">Libro IVA Compras</TabsTrigger>
+        <Tabs defaultValue="sales" className="space-y-6">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11">
+            <TabsTrigger value="sales" className="text-base">Ventas</TabsTrigger>
+            <TabsTrigger value="purchases" className="text-base">Compras</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales" className="space-y-4">
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-transparent">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Libro IVA Ventas</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-xl">Libro IVA Ventas</CardTitle>
+                    <CardDescription className="text-base mt-1">
                       Facturas emitidas - {salesBook?.period?.month_name} {salesBook?.period?.year}
                     </CardDescription>
                   </div>
@@ -299,20 +302,31 @@ export default function IvaBookPage() {
                   </div>
                 )}
                 {loading ? (
-                  <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex gap-4 animate-pulse">
+                        <div className="h-10 bg-muted rounded w-24"></div>
+                        <div className="h-10 bg-muted rounded w-32"></div>
+                        <div className="h-10 bg-muted rounded flex-1"></div>
+                        <div className="h-10 bg-muted rounded w-32"></div>
+                        <div className="h-10 bg-muted rounded w-40"></div>
+                        <div className="h-10 bg-muted rounded w-24"></div>
+                      </div>
+                    ))}
+                  </div>
                 ) : salesBook?.records?.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No hay facturas emitidas en este período
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border">
                     <Table>
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/50">
                           <TableHead>Fecha</TableHead>
                           <TableHead>Comprobante</TableHead>
                           <TableHead>Cliente</TableHead>
-                          <TableHead>CUIT</TableHead>
+                          <TableHead>CUIT/DNI</TableHead>
                           <TableHead>Condición IVA</TableHead>
                           <TableHead className="text-right">Neto</TableHead>
                           <TableHead className="text-right">21%</TableHead>
@@ -367,12 +381,12 @@ export default function IvaBookPage() {
           </TabsContent>
 
           <TabsContent value="purchases" className="space-y-4">
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Libro IVA Compras</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-xl">Libro IVA Compras</CardTitle>
+                    <CardDescription className="text-base mt-1">
                       Facturas recibidas - {purchasesBook?.period?.month_name} {purchasesBook?.period?.year}
                     </CardDescription>
                   </div>
@@ -439,20 +453,31 @@ export default function IvaBookPage() {
                   </div>
                 )}
                 {loading ? (
-                  <div className="text-center py-8 text-muted-foreground">Cargando...</div>
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex gap-4 animate-pulse">
+                        <div className="h-10 bg-muted rounded w-24"></div>
+                        <div className="h-10 bg-muted rounded w-32"></div>
+                        <div className="h-10 bg-muted rounded flex-1"></div>
+                        <div className="h-10 bg-muted rounded w-32"></div>
+                        <div className="h-10 bg-muted rounded w-40"></div>
+                        <div className="h-10 bg-muted rounded w-24"></div>
+                      </div>
+                    ))}
+                  </div>
                 ) : purchasesBook?.records?.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No hay facturas recibidas en este período
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border">
                     <Table>
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/50">
                           <TableHead>Fecha</TableHead>
                           <TableHead>Comprobante</TableHead>
                           <TableHead>Proveedor</TableHead>
-                          <TableHead>CUIT</TableHead>
+                          <TableHead>CUIT/DNI</TableHead>
                           <TableHead>Condición IVA</TableHead>
                           <TableHead className="text-right">Neto</TableHead>
                           <TableHead className="text-right">21%</TableHead>

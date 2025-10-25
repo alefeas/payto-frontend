@@ -590,7 +590,7 @@ export default function AccountsPayablePage() {
                           }}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {invoice.status === 'approved' && (
+                          {(invoice.status === 'approved' || invoice.status === 'issued') && (
                             <Button size="sm" onClick={(e) => {
                               e.stopPropagation()
                               setSelectedInvoices([invoice.id])
