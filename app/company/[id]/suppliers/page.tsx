@@ -41,9 +41,9 @@ export default function SuppliersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [trashedSuppliers, setTrashedSuppliers] = useState<Supplier[]>([])
-  const [showTrashed, setShowTrashed] = useState(false)
-  const [loadingTrashed, setLoadingTrashed] = useState(false)
+  const [archivedSuppliers, setArchivedSuppliers] = useState<Supplier[]>([])
+  const [showArchived, setShowArchived] = useState(false)
+  const [loadingArchived, setLoadingArchived] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -66,16 +66,16 @@ export default function SuppliersPage() {
     }
   }
 
-  const loadTrashedSuppliers = async () => {
+  const loadArchivedSuppliers = async () => {
     try {
-      setLoadingTrashed(true)
-      const data = await supplierService.getTrashedSuppliers(companyId)
-      setTrashedSuppliers(data)
+      setLoadingArchived(true)
+      const data = await supplierService.getArchivedSuppliers(companyId)
+      setArchivedSuppliers(data)
     } catch (error: any) {
-      console.error('Error loading trashed suppliers:', error)
-      toast.error(error.response?.data?.message || 'Error al cargar proveedores eliminados')
+      console.error('Error loading archived suppliers:', error)
+      toast.error(error.response?.data?.message || 'Error al cargar proveedores archivados')
     } finally {
-      setLoadingTrashed(false)
+      setLoadingArchived(false)
     }
   }
 
@@ -83,7 +83,7 @@ export default function SuppliersPage() {
     try {
       await supplierService.restoreSupplier(companyId, parseInt(supplierId))
       toast.success('Proveedor restaurado')
-      loadTrashedSuppliers()
+      loadArchivedSuppliers()
       loadSuppliers()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al restaurar proveedor')
@@ -102,7 +102,7 @@ export default function SuppliersPage() {
     return matchesSearch && matchesFilter
   })
 
-  const filteredTrashedSuppliers = trashedSuppliers.filter(supplier => {
+  const filteredArchivedSuppliers = archivedSuppliers.filter(supplier => {
     const matchesSearch = 
       supplier.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supplier.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -133,18 +133,18 @@ export default function SuppliersPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              variant={showTrashed ? "outline" : "default"}
+              variant={showArchived ? "outline" : "default"}
               onClick={() => {
-                setShowTrashed(!showTrashed)
-                if (!showTrashed && trashedSuppliers.length === 0) {
-                  loadTrashedSuppliers()
+                setShowArchived(!showArchived)
+                if (!showArchived && archivedSuppliers.length === 0) {
+                  loadArchivedSuppliers()
                 }
               }}
             >
               <Archive className="h-4 w-4 mr-2" />
-              {showTrashed ? "Ver Activos" : "Ver Eliminados"}
+              {showArchived ? "Ver Activos" : "Ver Archivados"}
             </Button>
-            {!showTrashed && (
+            {!showArchived && (
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -199,31 +199,31 @@ export default function SuppliersPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {showTrashed ? `Proveedores Eliminados (${trashedSuppliers.length})` : `Proveedores (${filteredSuppliers.length})`}
+              {showArchived ? `Proveedores Archivados (${archivedSuppliers.length})` : `Proveedores (${filteredSuppliers.length})`}
             </CardTitle>
             <CardDescription>
-              {showTrashed 
-                ? "Proveedores eliminados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
+              {showArchived 
+                ? "Proveedores archivados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
                 : "Lista de proveedores externos registrados"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {(showTrashed ? loadingTrashed : loading) ? (
+            {(showArchived ? loadingArchived : loading) ? (
               <div className="text-center py-12">
                 <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
                 <h3 className="text-lg font-semibold mb-2">Cargando proveedores...</h3>
                 <p className="text-muted-foreground">Por favor espera un momento</p>
               </div>
-            ) : showTrashed ? (
-              filteredTrashedSuppliers.length === 0 ? (
+            ) : showArchived ? (
+              filteredArchivedSuppliers.length === 0 ? (
                 <div className="text-center py-12">
                   <Archive className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No hay proveedores eliminados</h3>
-                  <p className="text-muted-foreground">Los proveedores eliminados aparecerán aquí</p>
+                  <h3 className="text-lg font-semibold mb-2">No hay proveedores archivados</h3>
+                  <p className="text-muted-foreground">Los proveedores archivados aparecerán aquí</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredTrashedSuppliers.map((supplier) => (
+                  {filteredArchivedSuppliers.map((supplier) => (
                     <Card key={supplier.id} className="hover:shadow-md transition-shadow bg-muted/30">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between gap-4">
@@ -233,8 +233,8 @@ export default function SuppliersPage() {
                               <Badge className={condicionIvaColors[supplier.taxCondition]}>
                                 {condicionIvaLabels[supplier.taxCondition]}
                               </Badge>
-                              <Badge variant="outline" className="text-red-600 border-red-600">
-                                Eliminado
+                              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                Archivado
                               </Badge>
                             </div>
                             
@@ -336,13 +336,13 @@ export default function SuppliersPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                             onClick={() => {
                               setSupplierToDelete(supplier)
                               setIsDeleteDialogOpen(true)
                             }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -379,15 +379,15 @@ export default function SuppliersPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
-                Eliminar Proveedor
+                Archivar Proveedor
               </DialogTitle>
               <DialogDescription>
-                ¿Estás seguro que deseas eliminar a {supplierToDelete && getSupplierDisplayName(supplierToDelete)}?
+                ¿Estás seguro que deseas archivar a {supplierToDelete && getSupplierDisplayName(supplierToDelete)}?
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <p className="text-sm text-muted-foreground">
-                El proveedor se ocultará de tu lista pero podrás restaurarlo desde "Ver Eliminados". Los datos históricos del Libro IVA se mantendrán intactos.
+                El proveedor se ocultará de tu lista pero podrás restaurarlo desde "Ver Archivados". Los datos históricos del Libro IVA se mantendrán intactos.
               </p>
             </div>
             <DialogFooter>
@@ -401,9 +401,9 @@ export default function SuppliersPage() {
                     try {
                       await supplierService.deleteSupplier(companyId, supplierToDelete.id)
                       setSuppliers(suppliers.filter(s => s.id !== supplierToDelete.id))
-                      toast.success('Proveedor eliminado')
+                      toast.success('Proveedor archivado')
                     } catch (error: any) {
-                      toast.error(error.response?.data?.message || 'Error al eliminar proveedor')
+                      toast.error(error.response?.data?.message || 'Error al archivar proveedor')
                     } finally {
                       setIsDeleteDialogOpen(false)
                       setSupplierToDelete(null)
@@ -411,7 +411,7 @@ export default function SuppliersPage() {
                   }
                 }}
               >
-                Eliminar
+                Archivar
               </Button>
             </DialogFooter>
           </DialogContent>

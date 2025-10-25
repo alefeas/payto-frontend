@@ -71,7 +71,11 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         toast.error('Nombre y Apellido son obligatorios para Consumidor Final')
         return
       }
-      if (formData.documentNumber && formData.documentNumber.length < 7) {
+      if (!formData.documentNumber) {
+        toast.error('El DNI es obligatorio para Consumidor Final')
+        return
+      }
+      if (formData.documentNumber.length < 7) {
         toast.error('El DNI debe tener al menos 7 dígitos')
         return
       }
@@ -94,7 +98,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       }
     }
     
-    if (!formData.address) {
+    if (formData.taxCondition !== 'final_consumer' && !formData.address) {
       toast.error('El domicilio fiscal es obligatorio')
       return
     }
@@ -103,13 +107,13 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       setSaving(true)
       const data: any = {
         document_type: formData.documentType,
-        document_number: formData.documentNumber,
+        document_number: formData.documentNumber || null,
         business_name: formData.businessName || undefined,
         first_name: formData.firstName || undefined,
         last_name: formData.lastName || undefined,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
-        address: formData.address,
+        address: formData.taxCondition !== 'final_consumer' ? formData.address : undefined,
         tax_condition: formData.taxCondition
       }
 
@@ -153,7 +157,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
     <form onSubmit={handleSubmit} className={`space-y-4 ${showBankFields ? 'max-h-[70vh] overflow-y-auto pr-2' : ''}`}>
       {formData.taxCondition === 'final_consumer' ? (
         <div className="space-y-2">
-          <Label htmlFor="documentNumber">DNI (Opcional)</Label>
+          <Label htmlFor="documentNumber">DNI *</Label>
           <Input
             id="documentNumber"
             value={formData.documentNumber}
@@ -164,6 +168,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
             }}
             placeholder="7-8 dígitos"
             maxLength={8}
+            required
           />
         </div>
       ) : (
@@ -252,7 +257,13 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
           const newTaxCondition = value as "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"
           if ((formData.taxCondition === 'final_consumer' && newTaxCondition !== 'final_consumer') ||
               (formData.taxCondition !== 'final_consumer' && newTaxCondition === 'final_consumer')) {
-            setFormData({...formData, taxCondition: newTaxCondition, documentNumber: '', documentType: newTaxCondition === 'final_consumer' ? 'DNI' : 'CUIT'})
+            setFormData({
+              ...formData, 
+              taxCondition: newTaxCondition, 
+              documentNumber: '', 
+              documentType: newTaxCondition === 'final_consumer' ? 'DNI' : 'CUIT',
+              address: newTaxCondition === 'final_consumer' ? '' : formData.address
+            })
           } else {
             setFormData({...formData, taxCondition: newTaxCondition})
           }
@@ -311,17 +322,22 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="address">Domicilio Fiscal *</Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={(e) => setFormData({...formData, address: e.target.value.slice(0, 200)})}
-          maxLength={200}
-          required
-          placeholder="Requerido por AFIP"
-        />
-      </div>
+      {formData.taxCondition !== 'final_consumer' && (
+        <div className="space-y-2">
+          <Label htmlFor="address">Domicilio Fiscal *</Label>
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={(e) => setFormData({...formData, address: e.target.value.slice(0, 200)})}
+            maxLength={200}
+            required
+            placeholder="Calle y número, ciudad, provincia"
+          />
+          <p className="text-xs text-muted-foreground">
+            Requerido para registros contables. AFIP obtiene automáticamente el domicilio fiscal desde su padrón al emitir comprobantes.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>

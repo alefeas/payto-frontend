@@ -100,8 +100,8 @@ export const supplierService = {
     await apiClient.delete(`/companies/${companyId}/suppliers/${id}`)
   },
 
-  async getTrashedSuppliers(companyId: string): Promise<Supplier[]> {
-    const response = await apiClient.get(`/companies/${companyId}/suppliers/trashed`)
+  async getArchivedSuppliers(companyId: string): Promise<Supplier[]> {
+    const response = await apiClient.get(`/companies/${companyId}/suppliers/archived`)
     return response.data.map((s: any) => ({
       id: s.id,
       companyId: s.company_id,

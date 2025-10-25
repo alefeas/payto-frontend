@@ -44,9 +44,9 @@ export default function ClientsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [trashedClients, setTrashedClients] = useState<Client[]>([])
-  const [showTrashed, setShowTrashed] = useState(false)
-  const [loadingTrashed, setLoadingTrashed] = useState(false)
+  const [archivedClients, setArchivedClients] = useState<Client[]>([])
+  const [showArchived, setShowArchived] = useState(false)
+  const [loadingArchived, setLoadingArchived] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -69,16 +69,16 @@ export default function ClientsPage() {
     }
   }
 
-  const loadTrashedClients = async () => {
+  const loadArchivedClients = async () => {
     try {
-      setLoadingTrashed(true)
-      const data = await clientService.getTrashedClients(companyId)
-      setTrashedClients(data)
+      setLoadingArchived(true)
+      const data = await clientService.getArchivedClients(companyId)
+      setArchivedClients(data)
     } catch (error: any) {
-      console.error('Error loading trashed clients:', error)
-      toast.error(error.response?.data?.message || 'Error al cargar clientes eliminados')
+      console.error('Error loading archived clients:', error)
+      toast.error(error.response?.data?.message || 'Error al cargar clientes archivados')
     } finally {
-      setLoadingTrashed(false)
+      setLoadingArchived(false)
     }
   }
 
@@ -86,7 +86,7 @@ export default function ClientsPage() {
     try {
       await clientService.restoreClient(companyId, clientId)
       toast.success('Cliente restaurado')
-      loadTrashedClients()
+      loadArchivedClients()
       loadClients()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al restaurar cliente')
@@ -106,7 +106,7 @@ export default function ClientsPage() {
     return matchesSearch && matchesFilter
   })
 
-  const filteredTrashedClients = trashedClients.filter(client => {
+  const filteredArchivedClients = archivedClients.filter(client => {
     const matchesSearch = 
       client.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -138,18 +138,18 @@ export default function ClientsPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              variant={showTrashed ? "outline" : "default"}
+              variant={showArchived ? "outline" : "default"}
               onClick={() => {
-                setShowTrashed(!showTrashed)
-                if (!showTrashed && trashedClients.length === 0) {
-                  loadTrashedClients()
+                setShowArchived(!showArchived)
+                if (!showArchived && archivedClients.length === 0) {
+                  loadArchivedClients()
                 }
               }}
             >
               <Archive className="h-4 w-4 mr-2" />
-              {showTrashed ? "Ver Activos" : "Ver Eliminados"}
+              {showArchived ? "Ver Activos" : "Ver Archivados"}
             </Button>
-            {!showTrashed && (
+            {!showArchived && (
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -207,31 +207,31 @@ export default function ClientsPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {showTrashed ? `Clientes Eliminados (${trashedClients.length})` : `Clientes (${filteredClients.length})`}
+              {showArchived ? `Clientes Archivados (${archivedClients.length})` : `Clientes (${filteredClients.length})`}
             </CardTitle>
             <CardDescription>
-              {showTrashed 
-                ? "Clientes eliminados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
+              {showArchived 
+                ? "Clientes archivados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
                 : "Lista de clientes externos guardados para facturación rápida"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {(showTrashed ? loadingTrashed : loading) ? (
+            {(showArchived ? loadingArchived : loading) ? (
               <div className="text-center py-12">
                 <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
                 <h3 className="text-lg font-semibold mb-2">Cargando clientes...</h3>
                 <p className="text-muted-foreground">Por favor espera un momento</p>
               </div>
-            ) : showTrashed ? (
-              filteredTrashedClients.length === 0 ? (
+            ) : showArchived ? (
+              filteredArchivedClients.length === 0 ? (
                 <div className="text-center py-12">
                   <Archive className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No hay clientes eliminados</h3>
-                  <p className="text-muted-foreground">Los clientes eliminados aparecerán aquí</p>
+                  <h3 className="text-lg font-semibold mb-2">No hay clientes archivados</h3>
+                  <p className="text-muted-foreground">Los clientes archivados aparecerán aquí</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredTrashedClients.map((client) => (
+                  {filteredArchivedClients.map((client) => (
                     <Card key={client.id} className="hover:shadow-md transition-shadow bg-muted/30">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between gap-4">
@@ -241,8 +241,8 @@ export default function ClientsPage() {
                               <Badge className={condicionIvaColors[client.taxCondition]}>
                                 {condicionIvaLabels[client.taxCondition]}
                               </Badge>
-                              <Badge variant="outline" className="text-red-600 border-red-600">
-                                Eliminado
+                              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                Archivado
                               </Badge>
                             </div>
                             
@@ -354,13 +354,13 @@ export default function ClientsPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                             onClick={() => {
                               setClientToDelete(client)
                               setIsDeleteDialogOpen(true)
                             }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -399,15 +399,15 @@ export default function ClientsPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
-                Eliminar Cliente
+                Archivar Cliente
               </DialogTitle>
               <DialogDescription>
-                ¿Estás seguro que deseas eliminar a {clientToDelete && getClientDisplayName(clientToDelete)}?
+                ¿Estás seguro que deseas archivar a {clientToDelete && getClientDisplayName(clientToDelete)}?
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <p className="text-sm text-muted-foreground">
-                El cliente se ocultará de tu lista pero podrás restaurarlo desde "Ver Eliminados". Los datos históricos del Libro IVA se mantendrán intactos.
+                El cliente se ocultará de tu lista pero podrás restaurarlo desde "Ver Archivados". Los datos históricos del Libro IVA se mantendrán intactos.
               </p>
             </div>
             <DialogFooter>
@@ -421,9 +421,9 @@ export default function ClientsPage() {
                     try {
                       await clientService.deleteClient(companyId, clientToDelete.id)
                       setClients(clients.filter(c => c.id !== clientToDelete.id))
-                      toast.success('Cliente eliminado')
+                      toast.success('Cliente archivado')
                     } catch (error: any) {
-                      toast.error(error.response?.data?.message || 'Error al eliminar cliente')
+                      toast.error(error.response?.data?.message || 'Error al archivar cliente')
                     } finally {
                       setIsDeleteDialogOpen(false)
                       setClientToDelete(null)
@@ -431,7 +431,7 @@ export default function ClientsPage() {
                   }
                 }}
               >
-                Eliminar
+                Archivar
               </Button>
             </DialogFooter>
           </DialogContent>

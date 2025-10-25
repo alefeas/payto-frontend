@@ -76,6 +76,7 @@ export default function SettingsPage() {
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null)
   const [deleteCode, setDeleteCode] = useState("")
+  const [hasInvoices, setHasInvoices] = useState<boolean | null>(null)
   const [addingAccount, setAddingAccount] = useState(false)
   const [editingAccountLoading, setEditingAccountLoading] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -234,6 +235,17 @@ export default function SettingsPage() {
     }
   }
 
+  const checkInvoices = async () => {
+    try {
+      const apiClient = (await import('@/lib/api-client')).default
+      const response = await apiClient.get(`/companies/${companyId}/invoices?limit=1`)
+      const invoicesExist = response.data.data && response.data.data.length > 0
+      setHasInvoices(invoicesExist)
+    } catch (error) {
+      setHasInvoices(false)
+    }
+  }
+
   const deleteCompany = async () => {
     if (!deleteCode.trim()) {
       toast.error('Ingresa el código de eliminación')
@@ -241,7 +253,10 @@ export default function SettingsPage() {
     }
     try {
       await companyService.deleteCompany(companyId, deleteCode)
-      toast.success('Perfil fiscal eliminado')
+      const successMessage = hasInvoices 
+        ? 'Perfil fiscal eliminado correctamente. Las facturas y datos contables se mantuvieron para preservar la integridad del sistema.'
+        : 'Perfil fiscal eliminado correctamente.'
+      toast.success(successMessage)
       router.push('/dashboard')
     } catch (error) {
       const err = error as { response?: { data?: { message?: string } } }
@@ -1108,9 +1123,12 @@ export default function SettingsPage() {
                   <div className="border-t pt-6">
                     <Label className="text-red-600">Zona de Peligro</Label>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Eliminar permanentemente el perfil fiscal y todos sus datos asociados
+                      Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
                     </p>
-                    <Button variant="destructive" onClick={() => setShowDeleteModal(true)}>
+                    <Button variant="destructive" onClick={() => {
+                      setShowDeleteModal(true)
+                      checkInvoices()
+                    }}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar Perfil Fiscal
                     </Button>
@@ -1463,35 +1481,64 @@ export default function SettingsPage() {
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Eliminar Perfil Fiscal</DialogTitle>
+              <DialogTitle>🗑️ Eliminar Perfil Fiscal</DialogTitle>
               <DialogDescription>
-                Esta acción eliminará permanentemente el perfil fiscal y todos sus datos asociados. 
-                No se puede deshacer.
+                ⚠️ Esta acción es irreversible y eliminará permanentemente este perfil fiscal del sistema.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                <p>Se eliminarán:</p>
+                <p className="font-medium text-foreground mb-2">📋 ¿Qué se eliminará?</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Todas las facturas y pagos</li>
-                  <li>Todos los miembros y sus roles</li>
-                  <li>Configuraciones y preferencias</li>
-                  <li>Estadísticas e informes</li>
+                  <li>🏢 Configuración completa del perfil fiscal</li>
+                  <li>👥 Todos los miembros y sus permisos</li>
+                  <li>📊 Estadísticas, reportes y análisis</li>
+                  <li>🔐 Certificados AFIP y configuraciones de facturación</li>
+                  <li>🏦 Cuentas bancarias y métodos de pago</li>
+                  <li>⚙️ Todas las preferencias y personalizaciones</li>
                 </ul>
+                {hasInvoices !== null && (
+                  <div className={`mt-4 p-4 border rounded-lg ${
+                    hasInvoices 
+                      ? 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800'
+                      : 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                  }`}>
+                    <p className={`text-sm font-medium ${
+                      hasInvoices 
+                        ? 'text-amber-900 dark:text-amber-100'
+                        : 'text-green-900 dark:text-green-100'
+                    }`}>
+                      {hasInvoices ? '🛡️ Protección de Datos Contables' : '✅ Sin Datos Contables'}
+                    </p>
+                    <p className={`text-xs mt-1 ${
+                      hasInvoices 
+                        ? 'text-amber-800 dark:text-amber-200'
+                        : 'text-green-800 dark:text-green-200'
+                    }`}>
+                      {
+                        hasInvoices 
+                          ? 'Tranquilo: Todas las facturas, pagos y registros contables permanecerán intactos en el sistema. Esto garantiza el cumplimiento de las obligaciones fiscales y la integridad histórica de los datos financieros.'
+                          : 'Esta empresa no tiene facturas ni movimientos contables registrados, por lo que la eliminación será completa sin afectar datos fiscales.'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
               
               <div className="border-t pt-4">
-                <Label htmlFor="deleteCode">Código de Eliminación</Label>
+                <Label htmlFor="deleteCode" className="flex items-center gap-2">
+                  🔐 Código de Seguridad
+                </Label>
                 <Input
                   id="deleteCode"
                   type="password"
-                  placeholder="Ingresa el código de eliminación"
+                  placeholder="Ingresa tu código de eliminación secreto"
                   value={deleteCode}
                   onChange={(e) => setDeleteCode(e.target.value)}
                   className="mt-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Este código se estableció al crear la empresa
+                  💡 Este código se configuró al crear la empresa como medida de seguridad
                 </p>
               </div>
             </div>
@@ -1499,15 +1546,16 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={() => {
                 setShowDeleteModal(false)
                 setDeleteCode("")
+                setHasInvoices(null)
               }}>
-                Cancelar
+                🚫 Cancelar
               </Button>
               <Button 
                 variant="destructive" 
                 onClick={deleteCompany}
                 disabled={!deleteCode.trim()}
               >
-                Eliminar Permanentemente
+                🗑️ Confirmar Eliminación
               </Button>
             </DialogFooter>
           </DialogContent>

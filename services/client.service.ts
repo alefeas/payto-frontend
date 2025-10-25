@@ -92,8 +92,8 @@ export const clientService = {
     await apiClient.delete(`/companies/${companyId}/clients/${clientId}`)
   },
 
-  async getTrashedClients(companyId: string): Promise<Client[]> {
-    const response = await apiClient.get(`/companies/${companyId}/clients/trashed`)
+  async getArchivedClients(companyId: string): Promise<Client[]> {
+    const response = await apiClient.get(`/companies/${companyId}/clients/archived`)
     return response.data.data.map((client: any) => ({
       id: client.id,
       companyId: client.company_id,

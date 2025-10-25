@@ -198,41 +198,7 @@ export default function CreateCompanyPage() {
                 </div>
               </div>
 
-              <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-medium">Configuración Fiscal</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="defaultSalesPoint">Punto de Venta *</Label>
-                    <Input
-                      id="defaultSalesPoint"
-                      type="number"
-                      min="1"
-                      max="9999"
-                      value={formData.default_sales_point}
-                      onChange={(e) => setFormData({...formData, default_sales_point: parseInt(e.target.value) || 1})}
-                    />
-                    <p className="text-xs text-muted-foreground">Número de punto de venta asignado por AFIP</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastInvoiceNumber">Último Número de Factura</Label>
-                    <Input
-                      id="lastInvoiceNumber"
-                      type="number"
-                      min="0"
-                      value={formData.last_invoice_number || 0}
-                      onChange={(e) => setFormData({...formData, last_invoice_number: parseInt(e.target.value) || 0})}
-                    />
-                    <p className="text-xs text-muted-foreground">La próxima factura será este número + 1 (dejar en 0 para empezar desde 1)</p>
-                  </div>
-                </div>
-                <Alert className="bg-amber-50 border-amber-200">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-amber-800">
-                    <strong>Condición Fiscal:</strong> Se obtendrá automáticamente desde AFIP al subir tu certificado digital.
-                    No es necesario ingresarla manualmente.
-                  </AlertDescription>
-                </Alert>
-              </div>
+
 
               <div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-medium">Dirección</h3>
