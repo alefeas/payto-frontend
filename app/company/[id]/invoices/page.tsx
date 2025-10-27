@@ -815,7 +815,7 @@ export default function InvoicesPage() {
                 </Card>
               </div>
               
-              {syncResults.auto_created_clients > 0 && (
+              {syncResults.auto_created_clients && syncResults.auto_created_clients > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
                   <p className="text-sm font-medium text-yellow-800">
                     ⚠️ Se crearon {syncResults.auto_created_clients} clientes archivados
@@ -953,7 +953,7 @@ export default function InvoicesPage() {
                           try {
                             const response = await invoiceService.getInvoices(companyId)
                             setInvoices(response.data || [])
-                            const clientMsg = result.auto_created_clients > 0 
+                            const clientMsg = (result.auto_created_clients && result.auto_created_clients > 0) 
                               ? ` Se crearon ${result.auto_created_clients} cliente(s) archivado(s) con datos incompletos que debes completar en Clientes Archivados.`
                               : '';
                             toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} sincronizada${newInvoices > 1 ? 's' : ''} desde AFIP.${clientMsg}`)

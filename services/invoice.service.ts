@@ -19,6 +19,7 @@ export interface Invoice {
   exchange_rate: number
   notes?: string | null
   status: string
+  display_status?: string
   afip_status?: string
   afip_cae?: string | null
   afip_cae_due_date?: string | null
@@ -224,6 +225,7 @@ export const invoiceService = {
     invoices: any[]
     date_from?: string
     date_to?: string
+    auto_created_clients?: number
   }> {
     const response = await apiClient.post(`/companies/${companyId}/invoices/sync-from-afip`, data, {
       timeout: 600000 // 10 minutos

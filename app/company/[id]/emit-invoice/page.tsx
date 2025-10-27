@@ -206,7 +206,7 @@ export default function CreateInvoicePage() {
           id: company.id,
           name: company.name,
           uniqueId: company.id,
-          tax_condition: company.taxCondition || 'registered_taxpayer',
+          taxCondition: company.taxCondition || 'registered_taxpayer',
           default_sales_point: company.defaultSalesPoint || 1,
           defaultVat: company.defaultVat || 21,
           vatPerception: company.vatPerception || 0,

@@ -66,6 +66,7 @@ export interface Invoice {
   totalPerceptions: number
   total: number
   status: InvoiceStatus
+  display_status?: InvoiceStatus
   pdfUrl?: string // Generated automatically
   afipTxtUrl?: string // TXT for AFIP/ARCA
   notes?: string
