@@ -32,6 +32,7 @@ export interface Invoice {
   afip_txt_url?: string | null
   attachment_path?: string | null
   attachment_original_name?: string | null
+  synced_from_afip?: boolean
   issuerCompany?: {
     id: string
     name: string
@@ -255,5 +256,15 @@ export const invoiceService = {
       responseType: 'blob'
     })
     return response.data
+  },
+
+  async updateSyncedInvoice(companyId: string, invoiceId: string, data: {
+    concept: string
+    service_date_from?: string
+    service_date_to?: string
+    items: Array<{ description: string }>
+  }): Promise<Invoice> {
+    const response = await apiClient.put(`/companies/${companyId}/invoices/${invoiceId}/synced`, data)
+    return response.data.invoice
   }
 }

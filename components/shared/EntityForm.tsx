@@ -59,6 +59,58 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
   const [saving, setSaving] = useState(false)
   const [validating, setValidating] = useState(false)
   const [validated, setValidated] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validateField = (field: string, value: string) => {
+    const newErrors = { ...errors }
+    
+    switch (field) {
+      case 'email':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          newErrors.email = 'Email no válido'
+        } else {
+          delete newErrors.email
+        }
+        break
+      case 'documentNumber':
+        if (formData.taxCondition === 'final_consumer') {
+          if (value && value.length < 7) {
+            newErrors.documentNumber = 'DNI debe tener al menos 7 dígitos'
+          } else {
+            delete newErrors.documentNumber
+          }
+        } else {
+          if (value && value.replace(/\D/g, '').length !== 11) {
+            newErrors.documentNumber = 'CUIT debe tener 11 dígitos'
+          } else {
+            delete newErrors.documentNumber
+          }
+        }
+        break
+      case 'phone':
+        if (value && value.replace(/\D/g, '').length < 8) {
+          newErrors.phone = 'Teléfono debe tener al menos 8 dígitos'
+        } else {
+          delete newErrors.phone
+        }
+        break
+    }
+    
+    setErrors(newErrors)
+  }
+
+  const getFieldClassName = (field: string, value: string, isRequired = false) => {
+    if (errors[field]) {
+      return 'border-red-300 bg-red-50'
+    }
+    if (value && !errors[field]) {
+      return 'border-green-300 bg-green-50'
+    }
+    if (isRequired && !value) {
+      return 'border-amber-300'
+    }
+    return ''
+  }
 
   const entityName = type === "client" ? "Cliente" : "Proveedor"
   const entityNameLower = type === "client" ? "cliente" : "proveedor"
@@ -157,7 +209,10 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
     <form onSubmit={handleSubmit} className={`space-y-4 ${showBankFields ? 'max-h-[70vh] overflow-y-auto pr-2' : ''}`}>
       {formData.taxCondition === 'final_consumer' ? (
         <div className="space-y-2">
-          <Label htmlFor="documentNumber">DNI *</Label>
+          <Label htmlFor="documentNumber" className="flex items-center gap-1">
+            DNI
+            <span className="text-red-500 text-xs">*</span>
+          </Label>
           <Input
             id="documentNumber"
             value={formData.documentNumber}
@@ -165,15 +220,26 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
               const value = e.target.value.replace(/\D/g, '').slice(0, 8)
               setFormData({...formData, documentNumber: value, documentType: 'DNI'})
               setValidated(false)
+              validateField('documentNumber', value)
             }}
             placeholder="7-8 dígitos"
             maxLength={8}
             required
+            className={getFieldClassName('documentNumber', formData.documentNumber, true)}
           />
+          {errors.documentNumber && (
+            <p className="text-xs text-red-600 flex items-center gap-1">
+              <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+              {errors.documentNumber}
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="documentNumber">CUIT *</Label>
+          <Label htmlFor="documentNumber" className="flex items-center gap-1">
+            CUIT
+            <span className="text-red-500 text-xs">*</span>
+          </Label>
           <div className="flex gap-2">
             <Input
               id="documentNumber"
@@ -184,10 +250,18 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
                 const formatted = formatCUIT(numbers)
                 setFormData({...formData, documentNumber: formatted, documentType: 'CUIT'})
                 setValidated(false)
+                validateField('documentNumber', formatted)
               }}
               placeholder="20-12345678-9"
               required
+              className={getFieldClassName('documentNumber', formData.documentNumber, true)}
             />
+            {errors.documentNumber && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                {errors.documentNumber}
+              </p>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -252,7 +326,10 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="taxCondition">Condición IVA *</Label>
+        <Label htmlFor="taxCondition" className="flex items-center gap-1">
+          Condición IVA
+          <span className="text-red-500 text-xs">*</span>
+        </Label>
         <Select value={formData.taxCondition} onValueChange={(value) => {
           const newTaxCondition = value as "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"
           if ((formData.taxCondition === 'final_consumer' && newTaxCondition !== 'final_consumer') ||
@@ -280,51 +357,95 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         </Select>
       </div>
 
-      {formData.taxCondition !== 'final_consumer' && (
-        <div className="space-y-2">
-          <Label htmlFor="businessName">Razón Social (Opcional si completas Nombre y Apellido)</Label>
-          <Input
-            id="businessName"
-            value={formData.businessName}
-            onChange={(e) => setFormData({...formData, businessName: e.target.value.slice(0, 100)})}
-            maxLength={100}
-            placeholder="Ej: Empresa S.A."
-          />
+      <div className="border-t pt-4 mt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="font-semibold text-sm text-muted-foreground">Identificación</h3>
+          {formData.taxCondition !== 'final_consumer' && (
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+              Razón Social O Nombre y Apellido
+            </span>
+          )}
         </div>
-      )}
+        
+        {formData.taxCondition !== 'final_consumer' && (
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="businessName" className="flex items-center gap-1">
+              Razón Social
+              <span className="text-xs text-muted-foreground">(opcional si completas nombre y apellido)</span>
+            </Label>
+            <Input
+              id="businessName"
+              value={formData.businessName}
+              onChange={(e) => setFormData({...formData, businessName: e.target.value.slice(0, 100)})}
+              maxLength={100}
+              placeholder="Ej: Empresa S.A."
+              className={getFieldClassName('businessName', formData.businessName)}
+            />
+          </div>
+        )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">
-            Nombre {formData.taxCondition === 'final_consumer' ? '*' : '(Opcional si completas Razón Social)'}
-          </Label>
-          <Input
-            id="firstName"
-            value={formData.firstName}
-            onChange={(e) => setFormData({...formData, firstName: e.target.value.slice(0, 50)})}
-            maxLength={50}
-            placeholder="Ej: Juan"
-            required={formData.taxCondition === 'final_consumer'}
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName" className="flex items-center gap-1">
+              Nombre
+              {formData.taxCondition === 'final_consumer' ? (
+                <span className="text-red-500 text-xs">*</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">(opcional si completas razón social)</span>
+              )}
+            </Label>
+            <Input
+              id="firstName"
+              value={formData.firstName}
+              onChange={(e) => setFormData({...formData, firstName: e.target.value.slice(0, 50)})}
+              maxLength={50}
+              placeholder="Ej: Juan"
+              required={formData.taxCondition === 'final_consumer'}
+              className={getFieldClassName('firstName', formData.firstName, formData.taxCondition === 'final_consumer')}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName" className="flex items-center gap-1">
+              Apellido
+              {formData.taxCondition === 'final_consumer' ? (
+                <span className="text-red-500 text-xs">*</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">(opcional si completas razón social)</span>
+              )}
+            </Label>
+            <Input
+              id="lastName"
+              value={formData.lastName}
+              onChange={(e) => setFormData({...formData, lastName: e.target.value.slice(0, 50)})}
+              maxLength={50}
+              placeholder="Ej: Pérez"
+              required={formData.taxCondition === 'final_consumer'}
+              className={getFieldClassName('lastName', formData.lastName, formData.taxCondition === 'final_consumer')}
+            />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName">
-            Apellido {formData.taxCondition === 'final_consumer' ? '*' : '(Opcional si completas Razón Social)'}
-          </Label>
-          <Input
-            id="lastName"
-            value={formData.lastName}
-            onChange={(e) => setFormData({...formData, lastName: e.target.value.slice(0, 50)})}
-            maxLength={50}
-            placeholder="Ej: Pérez"
-            required={formData.taxCondition === 'final_consumer'}
-          />
-        </div>
+        
+        {formData.taxCondition !== 'final_consumer' && !formData.businessName && !formData.firstName && !formData.lastName && (
+          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+            <span className="w-1 h-1 bg-amber-600 rounded-full"></span>
+            Completa la Razón Social o el Nombre y Apellido
+          </p>
+        )}
+        
+        {formData.taxCondition !== 'final_consumer' && (formData.businessName || (formData.firstName && formData.lastName)) && (
+          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+            <span className="w-1 h-1 bg-green-600 rounded-full"></span>
+            Identificación completada
+          </p>
+        )}
       </div>
 
       {formData.taxCondition !== 'final_consumer' && (
         <div className="space-y-2">
-          <Label htmlFor="address">Domicilio Fiscal *</Label>
+          <Label htmlFor="address" className="flex items-center gap-1">
+            Domicilio Fiscal
+            <span className="text-red-500 text-xs">*</span>
+          </Label>
           <Input
             id="address"
             value={formData.address}
@@ -332,6 +453,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
             maxLength={200}
             required
             placeholder="Calle y número, ciudad, provincia"
+            className={getFieldClassName('address', formData.address, true)}
           />
           <p className="text-xs text-muted-foreground">
             Requerido para registros contables. AFIP obtiene automáticamente el domicilio fiscal desde su padrón al emitir comprobantes.
@@ -339,26 +461,79 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value.slice(0, 100)})}
-          maxLength={100}
-          placeholder="Opcional"
-        />
-      </div>
+      <div className="border-t pt-4 mt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="font-semibold text-sm text-muted-foreground">Información de Contacto</h3>
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+            Al menos uno requerido
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="flex items-center gap-1">
+              Email
+              <span className="text-xs text-muted-foreground">(opcional)</span>
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => {
+                const value = e.target.value.slice(0, 100)
+                setFormData({...formData, email: value})
+                validateField('email', value)
+              }}
+              maxLength={100}
+              placeholder="ejemplo@correo.com"
+              className={getFieldClassName('email', formData.email)}
+            />
+            {errors.email && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                {errors.email}
+              </p>
+            )}
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Teléfono</Label>
-        <Input
-          id="phone"
-          value={formData.phone}
-          onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
-          placeholder="Opcional - 11 1234-5678"
-        />
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="flex items-center gap-1">
+              Teléfono
+              <span className="text-xs text-muted-foreground">(opcional)</span>
+            </Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => {
+                const formatted = formatPhone(e.target.value)
+                setFormData({...formData, phone: formatted})
+                validateField('phone', formatted)
+              }}
+              placeholder="11 1234-5678"
+              className={getFieldClassName('phone', formData.phone)}
+            />
+            {errors.phone && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                {errors.phone}
+              </p>
+            )}
+          </div>
+        </div>
+        
+        {!formData.email && !formData.phone && (
+          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+            <span className="w-1 h-1 bg-amber-600 rounded-full"></span>
+            Debes completar al menos email o teléfono para poder contactar al {entityNameLower}
+          </p>
+        )}
+        
+        {(formData.email || formData.phone) && (
+          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+            <span className="w-1 h-1 bg-green-600 rounded-full"></span>
+            Información de contacto completada
+          </p>
+        )}
       </div>
 
       {showBankFields && (

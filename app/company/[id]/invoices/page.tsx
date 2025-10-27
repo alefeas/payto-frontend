@@ -56,6 +56,7 @@ export default function InvoicesPage() {
     date_to: ''
   })
   const [syncResults, setSyncResults] = useState<any>(null)
+  const [syncProgress, setSyncProgress] = useState<string>('')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -523,8 +524,11 @@ export default function InvoicesPage() {
                           />
                         </div>
                         <div className="font-medium">{invoice.number}</div>
-                        <div>
+                        <div className="flex gap-1 flex-wrap">
                           <Badge variant="outline">Tipo {invoice.type}</Badge>
+                          {invoice.synced_from_afip ? (
+                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>
+                          ) : null}
                         </div>
                         <div className="truncate" title={clientName}>{clientName}</div>
                         <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
@@ -632,6 +636,20 @@ export default function InvoicesPage() {
           
           {!syncResults ? (
             <div className="space-y-4">
+              {syncing && syncProgress && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                    <div>
+                      <p className="font-medium text-blue-900">Sincronizando con AFIP</p>
+                      <p className="text-sm text-blue-700">{syncProgress}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 bg-blue-100 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -721,9 +739,17 @@ export default function InvoicesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
-                    <p className="mb-1">ℹ️ Se consultará la factura específica en AFIP</p>
-                    <p className="text-xs">📅 La fecha de vencimiento se calculará automáticamente como 30 días desde la fecha de emisión</p>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
+                    <p className="font-medium">Qué hace la sincronización:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>Consulta la factura específica en AFIP</li>
+                      <li>Busca el cliente por CUIT en tu sistema (empresas conectadas primero, luego clientes externos)</li>
+                      <li>Si no existe, crea un cliente archivado con datos incompletos que deberás completar</li>
+                      <li>Importa: número, fecha, totales, CAE y datos fiscales</li>
+                      <li>NO importa: concepto (productos/servicios), fechas de servicio, ni descripción de items</li>
+                      <li>Podrás editar estos datos faltantes después desde el detalle de la factura</li>
+                      <li>La factura se marca como "Sincronizada AFIP" para identificarla</li>
+                    </ul>
                   </div>
                 </div>
               ) : (
@@ -750,14 +776,20 @@ export default function InvoicesPage() {
                   <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-800">
                     <p><strong>⚠️ Límite:</strong> El rango máximo permitido es de 90 días (3 meses).</p>
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
-                    <p className="font-medium mb-1">ℹ️ Se consultarán:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Facturas, Notas de Crédito y Notas de Débito (A, B, C, M)</li>
-                      <li>Todos los puntos de venta autorizados en AFIP (incluso no consecutivos)</li>
-                      <li>Solo comprobantes dentro del rango de fechas</li>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
+                    <p className="font-medium">Qué hace la sincronización masiva:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>Consulta todos los puntos de venta autorizados en AFIP</li>
+                      <li>Busca Facturas, Notas de Crédito y Notas de Débito (A, B, C, M)</li>
+                      <li>Solo importa comprobantes dentro del rango de fechas</li>
+                      <li>Busca cada cliente por CUIT (empresas conectadas primero, luego externos)</li>
+                      <li>Crea clientes archivados con datos incompletos si no existen</li>
+                      <li>Importa: número, fecha, totales, CAE y datos fiscales</li>
+                      <li>NO importa: concepto, fechas de servicio, ni descripción de items</li>
+                      <li>Podrás editar los datos faltantes desde el detalle de cada factura</li>
+                      <li>Las facturas se marcan como "Sincronizada AFIP"</li>
                     </ul>
-                    <p className="text-xs mt-2">📅 La fecha de vencimiento se calculará automáticamente como 30 días desde la fecha de emisión de cada factura</p>
+                    <p className="text-xs mt-2 font-medium text-blue-800">Nota: Este proceso puede tardar varios minutos según la cantidad de comprobantes.</p>
                   </div>
                 </div>
               )}
@@ -782,6 +814,17 @@ export default function InvoicesPage() {
                   </p>
                 </Card>
               </div>
+              
+              {syncResults.auto_created_clients > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
+                  <p className="text-sm font-medium text-yellow-800">
+                    ⚠️ Se crearon {syncResults.auto_created_clients} clientes archivados
+                  </p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Estos clientes requieren revisión en la sección de Clientes para completar sus datos.
+                  </p>
+                </div>
+              )}
               
               {syncResults.invoices && syncResults.invoices.length > 0 && (
                 <div className="space-y-2">
@@ -850,7 +893,11 @@ export default function InvoicesPage() {
                     }
                     
                     setSyncing(true)
-                    const syncToast = toast.loading(syncMode === 'date_range' ? 'Sincronizando facturas desde AFIP... Puede tardar varios minutos' : 'Consultando factura en AFIP...')
+                    setSyncProgress(syncMode === 'date_range' ? 'Iniciando sincronización masiva...' : 'Consultando factura en AFIP...')
+                    
+                    const syncToast = syncMode === 'date_range' 
+                      ? toast.loading('🔄 Sincronizando con AFIP... Consultando todos los puntos de venta y tipos de comprobante. Esto puede tardar varios minutos.')
+                      : null
                     
                     try {
                       let payload: any
@@ -870,12 +917,33 @@ export default function InvoicesPage() {
                         }
                       }
                       
+                      if (syncMode === 'date_range') {
+                        setSyncProgress('🔍 Consultando puntos de venta autorizados...')
+                        await new Promise(resolve => setTimeout(resolve, 500))
+                        setSyncProgress('📄 Consultando comprobantes por tipo y punto de venta...')
+                        await new Promise(resolve => setTimeout(resolve, 500))
+                        setSyncProgress('💾 Guardando facturas encontradas...')
+                      }
+                      
                       const result = await invoiceService.syncFromAfip(companyId, payload)
-                      toast.dismiss(syncToast)
+                      if (syncToast) toast.dismiss(syncToast)
+                      
+                      // Mostrar información detallada del proceso
+                      if (syncMode === 'date_range' && result.summary) {
+                        console.log('📊 Resumen de sincronización:', result.summary)
+                        toast.info(`📊 Consultados ${result.summary.length} puntos de venta en AFIP`, {
+                          description: `Se encontraron ${result.imported_count} comprobantes en total`
+                        })
+                      }
+                      
                       setSyncResults(result)
                       
                       if (result.imported_count === 0) {
-                        toast.warning('No se encontraron facturas')
+                        toast.warning('❌ No se encontraron facturas en AFIP', {
+                          description: syncMode === 'single' 
+                            ? 'Verifica que el número, tipo y punto de venta sean correctos'
+                            : 'No hay comprobantes emitidos en el rango de fechas seleccionado'
+                        })
                       } else {
                         // Check if any invoice was actually saved (new)
                         const newInvoices = result.invoices?.filter((inv: any) => inv.saved).length || 0
@@ -885,26 +953,52 @@ export default function InvoicesPage() {
                           try {
                             const response = await invoiceService.getInvoices(companyId)
                             setInvoices(response.data || [])
-                            toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} importada${newInvoices > 1 ? 's' : ''} correctamente`)
+                            const clientMsg = result.auto_created_clients > 0 
+                              ? ` Se crearon ${result.auto_created_clients} cliente(s) archivado(s) con datos incompletos que debes completar en Clientes Archivados.`
+                              : '';
+                            toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} sincronizada${newInvoices > 1 ? 's' : ''} desde AFIP.${clientMsg}`)
                           } catch (error) {
                             console.error('Error reloading invoices:', error)
                             toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} encontrada${newInvoices > 1 ? 's' : ''}`)  
                           }
                         } else {
-                          toast.success(`${result.imported_count} factura${result.imported_count > 1 ? 's' : ''} encontrada${result.imported_count > 1 ? 's' : ''} (ya existía${result.imported_count > 1 ? 'n' : ''} en el sistema)`)
+                          toast.success(`ℹ️ ${result.imported_count} factura${result.imported_count > 1 ? 's' : ''} encontrada${result.imported_count > 1 ? 's' : ''} en AFIP`, {
+                            description: 'Ya existía' + (result.imported_count > 1 ? 'n' : '') + ' en tu sistema'
+                          })
                         }
                       }
                     } catch (error: any) {
-                      toast.dismiss(syncToast)
-                      console.error('Sync error:', error)
+                      if (syncToast) toast.dismiss(syncToast)
+                      console.error('❌ Error de sincronización:', error)
                       const errorData = error.response?.data
-                      console.error('Error response:', errorData)
-                      const errorMsg = errorData?.message || errorData?.error || error.message || 'Intente nuevamente'
-                      toast.error('Error al sincronizar', {
-                        description: errorMsg
+                      console.error('Respuesta del servidor:', errorData)
+                      
+                      let errorMsg = 'Error desconocido. Intente nuevamente'
+                      let errorDescription = ''
+                      
+                      if (errorData?.message) {
+                        errorMsg = errorData.message
+                      } else if (errorData?.error) {
+                        errorMsg = errorData.error
+                      } else if (error.message) {
+                        errorMsg = error.message
+                      }
+                      
+                      // Mensajes específicos para errores comunes
+                      if (errorMsg.includes('certificate') || errorMsg.includes('certificado')) {
+                        errorDescription = 'Verifica tu certificado AFIP en Configuración → Verificar Perfil Fiscal'
+                      } else if (errorMsg.includes('connection') || errorMsg.includes('conexión')) {
+                        errorDescription = 'Problema de conexión con AFIP. Intenta nuevamente en unos minutos'
+                      } else if (errorMsg.includes('not found') || errorMsg.includes('no encontrada')) {
+                        errorDescription = 'La factura no existe en AFIP o los datos son incorrectos'
+                      }
+                      
+                      toast.error('❌ Error al sincronizar con AFIP', {
+                        description: errorDescription || errorMsg
                       })
                     } finally {
                       setSyncing(false)
+                      setSyncProgress('')
                     }
                   }}
                   disabled={syncing}
@@ -912,7 +1006,7 @@ export default function InvoicesPage() {
                   {syncing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {syncMode === 'date_range' ? 'Sincronizando... Puede tardar varios minutos' : 'Consultando...'}
+                      {syncProgress || (syncMode === 'date_range' ? 'Sincronizando...' : 'Consultando...')}
                     </>
                   ) : (
                     <>
@@ -926,6 +1020,7 @@ export default function InvoicesPage() {
               <>
                 <Button variant="outline" onClick={() => {
                   setSyncResults(null)
+                  setSyncProgress('')
                   setSyncForm({
                     sales_point: 1,
                     invoice_type: 'B',
@@ -939,6 +1034,7 @@ export default function InvoicesPage() {
                 <Button onClick={() => {
                   setShowSyncDialog(false)
                   setSyncResults(null)
+                  setSyncProgress('')
                 }}>
                   Cerrar
                 </Button>

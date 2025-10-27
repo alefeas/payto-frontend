@@ -61,6 +61,9 @@ export default function ClientsPage() {
       setLoading(true)
       const data = await clientService.getClients(companyId)
       setClients(data)
+      if (showArchived) {
+        loadArchivedClients()
+      }
     } catch (error: any) {
       console.error('Error loading clients:', error)
       toast.error(error.response?.data?.message || 'Error al cargar clientes')
@@ -244,6 +247,11 @@ export default function ClientsPage() {
                               <Badge variant="outline" className="text-orange-600 border-orange-600">
                                 Archivado
                               </Badge>
+                              {client.incompleteData && (
+                                <Badge variant="outline" className="text-red-600 border-red-600">
+                                  Datos Incompletos
+                                </Badge>
+                              )}
                             </div>
                             
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -266,14 +274,47 @@ export default function ClientsPage() {
                             </div>
                           </div>
 
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleRestore(client.id)}
-                          >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Restaurar
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedClient(client)
+                                setIsEditDialogOpen(true)
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleRestore(client.id)}
+                              disabled={client.incompleteData}
+                              title={client.incompleteData ? 'Debes completar los datos del cliente antes de restaurarlo' : 'Restaurar cliente'}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Restaurar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm(`¿Eliminar permanentemente a ${getClientDisplayName(client)}? Esta acción NO se puede deshacer.`)) {
+                                  try {
+                                    await clientService.forceDeleteClient(companyId, client.id, true)
+                                    toast.success('Cliente eliminado permanentemente')
+                                    loadArchivedClients()
+                                  } catch (error: any) {
+                                    toast.error(error.response?.data?.message || 'Error al eliminar')
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

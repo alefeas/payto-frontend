@@ -12,6 +12,7 @@ export interface Client {
   phone?: string
   address?: string
   taxCondition: 'registered_taxpayer' | 'monotax' | 'exempt' | 'final_consumer'
+  incompleteData?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -43,6 +44,7 @@ export const clientService = {
       phone: client.phone,
       address: client.address,
       taxCondition: client.tax_condition,
+      incompleteData: client.incomplete_data,
       createdAt: client.created_at,
       updatedAt: client.updated_at
     }))
@@ -63,6 +65,7 @@ export const clientService = {
       phone: client.phone,
       address: client.address,
       taxCondition: client.tax_condition,
+      incompleteData: client.incomplete_data,
       createdAt: client.created_at,
       updatedAt: client.updated_at
     }
@@ -83,6 +86,7 @@ export const clientService = {
       phone: client.phone,
       address: client.address,
       taxCondition: client.tax_condition,
+      incompleteData: client.incomplete_data,
       createdAt: client.created_at,
       updatedAt: client.updated_at
     }
@@ -106,6 +110,7 @@ export const clientService = {
       phone: client.phone,
       address: client.address,
       taxCondition: client.tax_condition,
+      incompleteData: client.incomplete_data,
       createdAt: client.created_at,
       updatedAt: client.updated_at
     }))
@@ -113,5 +118,10 @@ export const clientService = {
 
   async restoreClient(companyId: string, clientId: string): Promise<void> {
     await apiClient.post(`/companies/${companyId}/clients/${clientId}/restore`)
+  },
+
+  async forceDeleteClient(companyId: string, clientId: string, force: boolean = false): Promise<void> {
+    const params = force ? '?force=true' : ''
+    await apiClient.delete(`/companies/${companyId}/clients/${clientId}/force${params}`)
   }
 }

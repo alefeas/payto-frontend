@@ -150,11 +150,23 @@ export default function InvoiceDetailPage() {
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{invoice.number}</h1>
                 {getStatusBadge(invoice.display_status || invoice.status)}
+                {invoice.synced_from_afip ? (
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sincronizada AFIP</Badge>
+                ) : null}
               </div>
               <p className="text-muted-foreground">Factura Tipo {invoice.type}</p>
             </div>
           </div>
           <div className="flex gap-2">
+            {invoice.synced_from_afip ? (
+              <Button 
+                onClick={() => router.push(`/company/${companyId}/invoices/${invoiceId}/edit`)}
+                variant="outline" 
+                className="shadow-sm"
+              >
+                Editar Datos
+              </Button>
+            ) : null}
             <Button onClick={downloadPDF} className="shadow-sm">
               <Download className="h-4 w-4 mr-2" />
               PDF
