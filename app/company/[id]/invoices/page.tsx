@@ -939,7 +939,7 @@ export default function InvoicesPage() {
                       setSyncResults(result)
                       
                       if (result.imported_count === 0) {
-                        toast.warning('❌ No se encontraron facturas en AFIP', {
+                        toast.warning('No se encontraron facturas en AFIP', {
                           description: syncMode === 'single' 
                             ? 'Verifica que el número, tipo y punto de venta sean correctos'
                             : 'No hay comprobantes emitidos en el rango de fechas seleccionado'
@@ -969,8 +969,8 @@ export default function InvoicesPage() {
                       }
                     } catch (error: any) {
                       if (syncToast) toast.dismiss(syncToast)
-                      console.error('❌ Error de sincronización:', error)
-                      const errorData = error.response?.data
+                      console.error('Error de sincronización:', error)
+                      const errorData = error.response?.data || {}
                       console.error('Respuesta del servidor:', errorData)
                       
                       let errorMsg = 'Error desconocido. Intente nuevamente'
@@ -993,7 +993,7 @@ export default function InvoicesPage() {
                         errorDescription = 'La factura no existe en AFIP o los datos son incorrectos'
                       }
                       
-                      toast.error('❌ Error al sincronizar con AFIP', {
+                      toast.error('Error al sincronizar con AFIP', {
                         description: errorDescription || errorMsg
                       })
                     } finally {
