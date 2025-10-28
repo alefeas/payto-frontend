@@ -27,4 +27,5 @@ export interface AuthContextType {
   register: (data: Record<string, unknown>) => Promise<boolean>
   updateProfile: (profileData: Partial<User>) => Promise<boolean>
   logout: () => void
+  setAuthToken: (token: string) => Promise<void>
 }

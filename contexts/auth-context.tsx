@@ -85,6 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const setAuthToken = async (token: string) => {
+    localStorage.setItem('auth_token', token)
+    try {
+      const userData = await authService.getCurrentUser()
+      setUser(userData)
+      setIsAuthenticated(true)
+    } catch (error) {
+      localStorage.removeItem('auth_token')
+      throw error
+    }
+  }
+
   const logout = async () => {
     try {
       await authService.logout()
@@ -104,7 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       updateProfile,
-      logout
+      logout,
+      setAuthToken
     }}>
       {children}
     </AuthContext.Provider>

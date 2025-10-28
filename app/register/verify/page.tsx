@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
 
 function VerifyForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { setAuthToken } = useAuth()
   const [email, setEmail] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [resendTimer, setResendTimer] = useState(60) // Iniciar con 60 segundos
@@ -71,11 +73,11 @@ function VerifyForm() {
     
     try {
       const result = await authService.verifyCode(email, verificationCode)
-      localStorage.setItem('auth_token', result.data.token)
+      await setAuthToken(result.data.token)
       sessionStorage.removeItem('pendingEmail')
       sessionStorage.removeItem('codeTimestamp')
       toast.success('¡Cuenta creada exitosamente!')
-      window.location.href = '/dashboard'
+      router.push('/dashboard')
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Código incorrecto')
       setIsLoading(false)
