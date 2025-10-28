@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
+import { authService } from "@/services/auth.service"
 import { toast } from "sonner"
 import { formatPhone } from "@/lib/input-formatters"
 
@@ -98,9 +99,10 @@ export default function RegisterPage() {
     }
     
     try {
-      await registerUser(registerData)
-      toast.success('¡Cuenta creada exitosamente!')
-      router.push('/dashboard')
+      const response = await authService.register(registerData)
+      sessionStorage.setItem('pendingEmail', registerData.email)
+      toast.success('Código enviado a tu email')
+      router.push(`/register/verify?email=${encodeURIComponent(registerData.email)}`)
     } catch (error: any) {
       const backendErrors = error.response?.data?.errors
       if (backendErrors) {
@@ -117,6 +119,8 @@ export default function RegisterPage() {
       setIsLoading(false)
     }
   }
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">

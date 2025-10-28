@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +16,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('reset') === 'success') {
+      toast.success('Contraseña restablecida correctamente. Podés iniciar sesión.')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -103,12 +110,19 @@ export default function LoginPage() {
             </Button>
           </form>
           
-          <div className="text-center mt-4">
-            <Link href="/register">
-              <Button variant="ghost" className="text-sm">
-                ¿No tienes cuenta? Regístrate
+          <div className="text-center mt-4 space-y-2">
+            <Link href="/forgot-password">
+              <Button variant="link" className="text-sm">
+                ¿Olvidaste tu contraseña?
               </Button>
             </Link>
+            <div>
+              <Link href="/register">
+                <Button variant="ghost" className="text-sm">
+                  ¿No tienes cuenta? Regístrate
+                </Button>
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>

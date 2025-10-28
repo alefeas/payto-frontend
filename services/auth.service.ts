@@ -33,8 +33,8 @@ export const authService = {
     return response.data;
   },
 
-  async register(data: RegisterData): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/register', data);
+  async register(data: RegisterData): Promise<{ success: boolean; data: { message: string; email: string } }> {
+    const response = await apiClient.post('/auth/register', data);
     return response.data;
   },
 
@@ -50,5 +50,22 @@ export const authService = {
   async updateProfile(data: Partial<RegisterData>): Promise<User> {
     const response = await apiClient.put<{ success: boolean; data: User }>('/auth/profile', data);
     return response.data.data;
+  },
+
+  async verifyCode(email: string, code: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>('/auth/verify-code', { email, code });
+    return response.data;
+  },
+
+  async resendCode(email: string): Promise<void> {
+    await apiClient.post('/auth/resend-code', { email });
+  },
+
+  async requestPasswordReset(email: string): Promise<void> {
+    await apiClient.post('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    await apiClient.post('/auth/reset-password', { token, password });
   }
 };
