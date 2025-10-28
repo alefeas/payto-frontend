@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { authService } from "@/services/auth.service"
 import { toast } from "sonner"
 
-export default function VerifyPage() {
+function VerifyForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
@@ -114,7 +114,7 @@ export default function VerifyPage() {
   }
 
   if (!email) {
-    return null // Evitar renderizar mientras redirige
+    return null
   }
 
   return (
@@ -209,5 +209,13 @@ export default function VerifyPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+      <VerifyForm />
+    </Suspense>
   )
 }

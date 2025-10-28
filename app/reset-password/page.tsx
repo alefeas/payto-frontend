@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [token, setToken] = useState('');
@@ -73,8 +73,7 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">Token inválido</CardTitle>
             <CardDescription>
@@ -87,13 +86,11 @@ export default function ResetPasswordPage() {
             </Button>
           </CardContent>
         </Card>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Nueva contraseña</CardTitle>
           <CardDescription>
@@ -161,6 +158,15 @@ export default function ResetPasswordPage() {
           </form>
         </CardContent>
       </Card>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <Suspense fallback={<div>Cargando...</div>}>
+        <ResetPasswordForm />
+      </Suspense>
     </div>
   );
 }

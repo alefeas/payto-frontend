@@ -44,10 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: any): Promise<boolean> => {
     try {
-      const response = await authService.register(data)
-      localStorage.setItem('auth_token', response.data.token)
-      setUser(response.data.user)
-      setIsAuthenticated(true)
+      await authService.register(data)
       return true
     } catch (error) {
       throw error

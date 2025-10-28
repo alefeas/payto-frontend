@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
-export default function LoginPage() {
+function LoginForm() {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({ email: '', password: '' })
   const [isLoading, setIsLoading] = useState(false)
@@ -64,8 +64,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">PayTo</CardTitle>
           <CardDescription>Inicia sesión en tu cuenta</CardDescription>
@@ -126,6 +125,15 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
+      <Suspense fallback={<Card className="w-full max-w-md"><CardContent className="p-6">Cargando...</CardContent></Card>}>
+        <LoginForm />
+      </Suspense>
     </div>
   )
 }
