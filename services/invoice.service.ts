@@ -196,7 +196,8 @@ export const invoiceService = {
 
   async downloadPDF(companyId: string, invoiceId: string): Promise<Blob> {
     const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/pdf`, {
-      responseType: 'blob'
+      responseType: 'blob',
+      timeout: 120000 // 2 minutes for PDF generation
     })
     return response.data
   },

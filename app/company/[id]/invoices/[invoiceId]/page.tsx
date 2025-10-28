@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Loader2 } from "lucide-react"
+import { ArrowLeft, Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Loader2, Edit2, Save, X, AlertCircle } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
@@ -30,6 +32,14 @@ export default function InvoiceDetailPage() {
 
   const [invoice, setInvoice] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [editForm, setEditForm] = useState({
+    concept: '',
+    service_date_from: '',
+    service_date_to: '',
+    items: [] as Array<{ description: string }>
+  })
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -68,20 +78,68 @@ export default function InvoiceDetailPage() {
     }
   }, [isAuthenticated, companyId, invoiceId, router])
 
+  const startEditing = () => {
+    setEditForm({
+      concept: invoice.concept || 'products',
+      service_date_from: invoice.service_date_from ? new Date(invoice.service_date_from).toISOString().split('T')[0] : '',
+      service_date_to: invoice.service_date_to ? new Date(invoice.service_date_to).toISOString().split('T')[0] : '',
+      items: invoice.items?.map((item: any) => ({ description: item.description })) || []
+    })
+    setIsEditing(true)
+  }
+
+  const cancelEditing = () => {
+    setIsEditing(false)
+  }
+
+  const saveChanges = async () => {
+    if (editForm.concept === 'services' || editForm.concept === 'products_services') {
+      if (!editForm.service_date_from || !editForm.service_date_to) {
+        toast.error('Las fechas de servicio son obligatorias para servicios')
+        return
+      }
+      if (editForm.service_date_to < editForm.service_date_from) {
+        toast.error('La fecha de fin del servicio debe ser igual o posterior a la fecha de inicio')
+        return
+      }
+    }
+
+    if (editForm.items.some(item => !item.description.trim())) {
+      toast.error('Todos los items deben tener descripción')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await invoiceService.updateSyncedInvoice(companyId, invoiceId, editForm)
+      const updatedInvoice = await invoiceService.getInvoice(companyId, invoiceId)
+      setInvoice(updatedInvoice)
+      setIsEditing(false)
+      toast.success('Factura actualizada correctamente')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al actualizar factura')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const downloadPDF = async () => {
     try {
       const blob = await invoiceService.downloadPDF(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${invoice.number}.pdf`
+      a.download = `factura-${invoice.number}.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       toast.success('PDF descargado')
-    } catch (error) {
-      toast.error('Error al descargar PDF')
+    } catch (error: any) {
+      console.error('PDF download error:', error)
+      toast.error('Error al descargar PDF', {
+        description: error.response?.data?.error || error.message || 'Intente nuevamente'
+      })
     }
   }
 
@@ -91,14 +149,17 @@ export default function InvoiceDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${invoice.number}.txt`
+      a.download = `factura-${invoice.number}.txt`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       toast.success('TXT descargado')
-    } catch (error) {
-      toast.error('Error al descargar TXT')
+    } catch (error: any) {
+      console.error('TXT download error:', error)
+      toast.error('Error al descargar TXT', {
+        description: error.response?.data?.error || error.message || 'Intente nuevamente'
+      })
     }
   }
 
@@ -158,25 +219,64 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {invoice.synced_from_afip ? (
+            {invoice.synced_from_afip && !isEditing ? (
               <Button 
-                onClick={() => router.push(`/company/${companyId}/invoices/${invoiceId}/edit`)}
+                onClick={startEditing}
                 variant="outline" 
                 className="shadow-sm"
               >
-                Editar Datos
+                <Edit2 className="h-4 w-4 mr-2" />
+                Editar
               </Button>
             ) : null}
-            <Button onClick={downloadPDF} className="shadow-sm">
-              <Download className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
-            <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
-              <FileText className="h-4 w-4 mr-2" />
-              TXT
-            </Button>
+            {isEditing ? (
+              <>
+                <Button 
+                  onClick={saveChanges}
+                  disabled={isSaving}
+                  className="shadow-sm"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Guardando...' : 'Guardar'}
+                </Button>
+                <Button 
+                  onClick={cancelEditing}
+                  variant="outline"
+                  disabled={isSaving}
+                  className="shadow-sm"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={downloadPDF} className="shadow-sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+                <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  TXT
+                </Button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Alert for editing mode */}
+        {isEditing && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <strong>Limitación de AFIP:</strong> AFIP no proporciona el detalle de ítems, solo totales. 
+                Podés editar la descripción del ítem genérico, el concepto y las fechas de servicio para tu organización interna, 
+                pero los montos, cantidades y precios no se pueden modificar ya que deben coincidir con AFIP.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Información General */}
         <Card className="shadow-sm">
@@ -213,14 +313,31 @@ export default function InvoiceDetailPage() {
                   <p className="text-xs text-muted-foreground">Vencimiento</p>
                   <p className="font-medium text-sm">{new Date(invoice.due_date).toLocaleDateString('es-AR')}</p>
                 </div>
-                {invoice.service_date_from && invoice.service_date_to && (
+                {(isEditing && (editForm.concept === 'services' || editForm.concept === 'products_services')) || (!isEditing && invoice.service_date_from && invoice.service_date_to) ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">Período Servicio</p>
-                    <p className="font-medium text-xs">
-                      {new Date(invoice.service_date_from).toLocaleDateString('es-AR')} - {new Date(invoice.service_date_to).toLocaleDateString('es-AR')}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Período Servicio {isEditing && '*'}</p>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <Input
+                          type="date"
+                          value={editForm.service_date_from}
+                          onChange={(e) => setEditForm({...editForm, service_date_from: e.target.value})}
+                          className="h-8 text-xs bg-slate-50 border-slate-300 focus:ring-slate-500"
+                        />
+                        <Input
+                          type="date"
+                          value={editForm.service_date_to}
+                          onChange={(e) => setEditForm({...editForm, service_date_to: e.target.value})}
+                          className="h-8 text-xs bg-slate-50 border-slate-300 focus:ring-slate-500"
+                        />
+                      </div>
+                    ) : (
+                      <p className="font-medium text-xs">
+                        {new Date(invoice.service_date_from).toLocaleDateString('es-AR')} - {new Date(invoice.service_date_to).toLocaleDateString('es-AR')}
+                      </p>
+                    )}
                   </div>
-                )}
+                ) : null}
               </div>
 
               <div className="space-y-3">
@@ -234,11 +351,27 @@ export default function InvoiceDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Concepto</p>
-                  <p className="font-medium text-sm">
-                    {invoice.concept === 'products' && 'Productos'}
-                    {invoice.concept === 'services' && 'Servicios'}
-                    {invoice.concept === 'products_services' && 'Productos y Servicios'}
-                  </p>
+                  {isEditing ? (
+                    <Select 
+                      value={editForm.concept}
+                      onValueChange={(value) => setEditForm({...editForm, concept: value})}
+                    >
+                      <SelectTrigger className="h-8 text-sm bg-slate-50 border-slate-300 focus:ring-slate-500">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="products">Productos</SelectItem>
+                        <SelectItem value="services">Servicios</SelectItem>
+                        <SelectItem value="products_services">Productos y Servicios</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="font-medium text-sm">
+                      {invoice.concept === 'products' && 'Productos'}
+                      {invoice.concept === 'services' && 'Servicios'}
+                      {invoice.concept === 'products_services' && 'Productos y Servicios'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Moneda</p>
@@ -304,7 +437,21 @@ export default function InvoiceDetailPage() {
                       return (
                         <tr key={item.id} className={index !== invoice.items.length - 1 ? "border-b" : ""}>
                           <td className="p-3">
-                            <p className="font-medium text-sm">{item.description}</p>
+                            {isEditing ? (
+                              <Input
+                                type="text"
+                                value={editForm.items[index]?.description || ''}
+                                onChange={(e) => {
+                                  const newItems = [...editForm.items]
+                                  newItems[index] = { description: e.target.value }
+                                  setEditForm({...editForm, items: newItems})
+                                }}
+                                className="h-9 text-sm bg-slate-50 border-slate-300 focus:ring-slate-500"
+                                placeholder="Descripción del ítem"
+                              />
+                            ) : (
+                              <p className="font-medium text-sm">{item.description}</p>
+                            )}
                           </td>
                           <td className="p-3 text-center text-sm">{qty}</td>
                           <td className="p-3 text-right text-xs">

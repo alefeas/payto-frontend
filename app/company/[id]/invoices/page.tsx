@@ -746,8 +746,9 @@ export default function InvoicesPage() {
                       <li>Busca el cliente por CUIT en tu sistema (empresas conectadas primero, luego clientes externos)</li>
                       <li>Si no existe, crea un cliente archivado con datos incompletos que deberás completar</li>
                       <li>Importa: número, fecha, totales, CAE y datos fiscales</li>
-                      <li>NO importa: concepto (productos/servicios), fechas de servicio, ni descripción de items</li>
-                      <li>Podrás editar estos datos faltantes después desde el detalle de la factura</li>
+                      <li>NO importa: concepto (productos/servicios), fechas de servicio, ni detalle de ítems (AFIP no los proporciona)</li>
+                      <li>Podrás editar después: concepto, fechas de servicio y descripción del ítem genérico</li>
+                      <li>NO podrás editar: montos, cantidades ni precios (deben coincidir con AFIP)</li>
                       <li>La factura se marca como "Sincronizada AFIP" para identificarla</li>
                     </ul>
                   </div>
@@ -785,8 +786,9 @@ export default function InvoicesPage() {
                       <li>Busca cada cliente por CUIT (empresas conectadas primero, luego externos)</li>
                       <li>Crea clientes archivados con datos incompletos si no existen</li>
                       <li>Importa: número, fecha, totales, CAE y datos fiscales</li>
-                      <li>NO importa: concepto, fechas de servicio, ni descripción de items</li>
-                      <li>Podrás editar los datos faltantes desde el detalle de cada factura</li>
+                      <li>NO importa: concepto, fechas de servicio, ni detalle de ítems (AFIP no los proporciona)</li>
+                      <li>Podrás editar después: concepto, fechas de servicio y descripción del ítem genérico</li>
+                      <li>NO podrás editar: montos, cantidades ni precios (deben coincidir con AFIP)</li>
                       <li>Las facturas se marcan como "Sincronizada AFIP"</li>
                     </ul>
                     <p className="text-xs mt-2 font-medium text-blue-800">Nota: Este proceso puede tardar varios minutos según la cantidad de comprobantes.</p>
