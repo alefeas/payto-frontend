@@ -348,13 +348,28 @@ export default function VerifyCompanyPage() {
                       <div className="border-t pt-4 space-y-4">
                         <div className="space-y-2">
                           <Label>Certificado de AFIP (.crt) *</Label>
-                          <Textarea
-                            placeholder="Pega aquí el contenido del certificado..."
-                            value={assistedCert}
-                            onChange={(e) => setAssistedCert(e.target.value)}
-                            rows={6}
-                            className="font-mono text-xs"
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              type="file"
+                              accept=".crt,.pem,.cer"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  const text = await file.text()
+                                  setAssistedCert(text)
+                                  toast.success('Archivo cargado')
+                                }
+                              }}
+                            />
+                            <p className="text-xs text-muted-foreground">O pega el contenido manualmente:</p>
+                            <Textarea
+                              placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                              value={assistedCert}
+                              onChange={(e) => setAssistedCert(e.target.value)}
+                              rows={6}
+                              className="font-mono text-xs"
+                            />
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -404,24 +419,54 @@ export default function VerifyCompanyPage() {
 
                   <div className="space-y-2">
                     <Label>Certificado (.crt) *</Label>
-                    <Textarea
-                      placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                      value={manualCert}
-                      onChange={(e) => setManualCert(e.target.value)}
-                      rows={6}
-                      className="font-mono text-xs"
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept=".crt,.pem,.cer"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const text = await file.text()
+                            setManualCert(text)
+                            toast.success('Certificado cargado')
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">O pega el contenido:</p>
+                      <Textarea
+                        placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                        value={manualCert}
+                        onChange={(e) => setManualCert(e.target.value)}
+                        rows={6}
+                        className="font-mono text-xs"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label>Clave Privada (.key) *</Label>
-                    <Textarea
-                      placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
-                      value={manualKey}
-                      onChange={(e) => setManualKey(e.target.value)}
-                      rows={6}
-                      className="font-mono text-xs"
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept=".key,.pem"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const text = await file.text()
+                            setManualKey(text)
+                            toast.success('Clave privada cargada')
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">O pega el contenido:</p>
+                      <Textarea
+                        placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                        value={manualKey}
+                        onChange={(e) => setManualKey(e.target.value)}
+                        rows={6}
+                        className="font-mono text-xs"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
