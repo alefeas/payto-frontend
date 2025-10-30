@@ -67,7 +67,7 @@ export default function InvoiceDetailPage() {
         const data = await invoiceService.getInvoice(companyId, invoiceId)
         setInvoice(data)
       } catch (error: any) {
-        toast.error('Error al cargar factura', {
+        toast.error('Error al cargar comprobante', {
           description: error.response?.data?.message || 'Intente nuevamente'
         })
         router.push(`/company/${companyId}/invoices`)
@@ -118,9 +118,9 @@ export default function InvoiceDetailPage() {
       const updatedInvoice = await invoiceService.getInvoice(companyId, invoiceId)
       setInvoice(updatedInvoice)
       setIsEditing(false)
-      toast.success('Factura actualizada correctamente')
+      toast.success('Comprobante actualizado correctamente')
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al actualizar factura')
+      toast.error(error.response?.data?.message || 'Error al actualizar comprobante')
     } finally {
       setIsSaving(false)
     }
@@ -132,7 +132,7 @@ export default function InvoiceDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `factura-${invoice.number}.pdf`
+      a.download = `comprobante-${invoice.number}.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -152,7 +152,7 @@ export default function InvoiceDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `factura-${invoice.number}.txt`
+      a.download = `comprobante-${invoice.number}.txt`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -172,7 +172,7 @@ export default function InvoiceDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = invoice.attachment_original_name || `factura-${invoice.number}-original.pdf`
+      a.download = invoice.attachment_original_name || `comprobante-${invoice.number}-original.pdf`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -190,10 +190,10 @@ export default function InvoiceDetailPage() {
     setIsDeleting(true)
     try {
       await invoiceService.deleteInvoice(companyId, invoiceId)
-      toast.success('Factura eliminada correctamente')
+      toast.success('Comprobante eliminado correctamente')
       router.push(`/company/${companyId}/invoices`)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al eliminar factura')
+      toast.error(error.response?.data?.message || 'Error al eliminar comprobante')
     } finally {
       setIsDeleting(false)
       setShowDeleteDialog(false)
@@ -302,7 +302,7 @@ export default function InvoiceDetailPage() {
                   <Badge className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>
                 ) : null}
               </div>
-              <p className="text-muted-foreground">Factura Tipo {invoice.type}</p>
+              <p className="text-muted-foreground">Comprobante Tipo {invoice.type}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -510,7 +510,7 @@ export default function InvoiceDetailPage() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Detalle de Ítems</CardTitle>
-            <CardDescription>Productos y servicios facturados</CardDescription>
+            <CardDescription>Productos y servicios del comprobante</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="border rounded-lg overflow-hidden">
@@ -611,7 +611,7 @@ export default function InvoiceDetailPage() {
                   </div>
                 )}
                 <div className="flex justify-between items-center py-2 border-t-2">
-                  <span className="font-bold">Total Factura</span>
+                  <span className="font-bold">Total Comprobante</span>
                   <span className="font-bold text-lg text-primary">
                     {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                   </span>
@@ -629,7 +629,7 @@ export default function InvoiceDetailPage() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">Total Factura</span>
+                    <span className="text-muted-foreground">Total Comprobante</span>
                     <span className="font-medium">
                       {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                     </span>
@@ -689,7 +689,7 @@ export default function InvoiceDetailPage() {
               <CardContent>
                 <div className="text-center py-6">
                   <p className="text-muted-foreground mb-2">
-                    {isIssuer ? 'Esta factura aún no ha sido cobrada' : 'Esta factura aún no ha sido pagada'}
+                    {isIssuer ? 'Este comprobante aún no ha sido cobrado' : 'Este comprobante aún no ha sido pagado'}
                   </p>
                   <p className="text-2xl font-bold text-amber-700">
                     {formatCurrency(parseFloat(invoice.total), invoice.currency)}
@@ -747,9 +747,9 @@ export default function InvoiceDetailPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar factura manual?</DialogTitle>
+            <DialogTitle>¿Eliminar comprobante manual?</DialogTitle>
             <DialogDescription>
-              Esta acción no se puede deshacer. La factura {invoice?.number} será eliminada permanentemente del sistema.
+              Esta acción no se puede deshacer. El comprobante {invoice?.number} será eliminado permanentemente del sistema.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
@@ -773,7 +773,7 @@ export default function InvoiceDetailPage() {
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar Factura
+                  Eliminar Comprobante
                 </>
               )}
             </Button>

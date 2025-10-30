@@ -87,7 +87,7 @@ export default function InvoicesPage() {
         setTotalPages(response.last_page || 1)
         setTotal(response.total || 0)
       } catch (error: any) {
-        toast.error('Error al cargar facturas', {
+        toast.error('Error al cargar comprobantes', {
           description: error.response?.data?.message || 'Intente nuevamente'
         })
       } finally {
@@ -105,8 +105,8 @@ export default function InvoicesPage() {
       if (prev.includes(invoiceId)) {
         return prev.filter(id => id !== invoiceId)
       } else if (prev.length >= 50) {
-        toast.error('Máximo 50 facturas seleccionadas', {
-          description: 'Deselecciona algunas facturas para continuar'
+        toast.error('Máximo 50 comprobantes seleccionados', {
+          description: 'Deselecciona algunos comprobantes para continuar'
         })
         return prev
       } else {
@@ -122,7 +122,7 @@ export default function InvoicesPage() {
     } else {
       const toSelect = filteredInvoices.slice(0, 50).map(inv => inv.id)
       if (filteredInvoices.length > 50) {
-        toast.warning('Solo se seleccionaron las primeras 50 facturas')
+        toast.warning('Solo se seleccionaron los primeros 50 comprobantes')
       }
       setSelectedInvoices(toSelect)
     }
@@ -243,26 +243,26 @@ export default function InvoicesPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Ver Facturas</h1>
-            <p className="text-muted-foreground">Gestionar todas las facturas de la empresa</p>
+            <h1 className="text-3xl font-bold">Ver Comprobantes</h1>
+            <p className="text-muted-foreground">Gestionar todos los comprobantes de la empresa</p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Facturas {!isLoading && `(${total} total)`}</span>
+              <span>Comprobantes {!isLoading && `(${total} total)`}</span>
               <div className="flex gap-2">
                 <Button
                   onClick={async () => {
-                    if (!confirm('⚠️ ATENCIÓN: Esto eliminará TODAS las facturas de esta empresa.\n\n¿Estás seguro? Esta acción no se puede deshacer.')) return
-                    if (!confirm('¿REALMENTE estás seguro? Se eliminarán ' + total + ' facturas.')) return
+                    if (!confirm('⚠️ ATENCIÓN: Esto eliminará TODOS los comprobantes de esta empresa.\n\n¿Estás seguro? Esta acción no se puede deshacer.')) return
+                    if (!confirm('¿REALMENTE estás seguro? Se eliminarán ' + total + ' comprobantes.')) return
                     try {
                       await invoiceService.deleteAllInvoices(companyId)
-                      toast.success('Todas las facturas fueron eliminadas')
+                      toast.success('Todos los comprobantes fueron eliminados')
                       window.location.reload()
                     } catch (error: any) {
-                      toast.error(error.response?.data?.message || 'Error al eliminar facturas')
+                      toast.error(error.response?.data?.message || 'Error al eliminar comprobantes')
                     }
                   }}
                   variant="destructive"
@@ -282,7 +282,7 @@ export default function InvoicesPage() {
                 <Button 
                   onClick={async () => {
                     if (selectedInvoices.length === 0) {
-                      toast.error('Selecciona al menos una factura')
+                      toast.error('Selecciona al menos un comprobante')
                       return
                     }
                     
@@ -312,7 +312,7 @@ export default function InvoicesPage() {
                 <Button 
                   onClick={async () => {
                     if (selectedInvoices.length === 0) {
-                      toast.error('Selecciona al menos una factura')
+                      toast.error('Selecciona al menos un comprobante')
                       return
                     }
                     
@@ -345,7 +345,7 @@ export default function InvoicesPage() {
             <CardDescription>
               {selectedInvoices.length > 0 && (
                 <span className="text-blue-600">
-                  {selectedInvoices.length}/50 facturas seleccionadas
+                  {selectedInvoices.length}/50 comprobantes seleccionados
                 </span>
               )}
             </CardDescription>
@@ -506,7 +506,7 @@ export default function InvoicesPage() {
               {isLoading ? (
                 <div className="text-center py-32">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mt-3">Cargando facturas...</p>
+                  <p className="text-sm text-muted-foreground mt-3">Cargando comprobantes...</p>
                 </div>
               ) : (
                 <>
@@ -569,13 +569,13 @@ export default function InvoicesPage() {
                             size="sm"
                             variant="ghost"
                             onClick={async () => {
-                              if (confirm('¿Estás seguro de eliminar esta factura? Solo se borrará de tu sistema, no de AFIP.')) {
+                              if (confirm('¿Estás seguro de eliminar este comprobante? Solo se borrará de tu sistema, no de AFIP.')) {
                                 try {
                                   await invoiceService.deleteInvoice(companyId, invoice.id)
-                                  toast.success('Factura eliminada')
+                                  toast.success('Comprobante eliminado')
                                   window.location.reload()
                                 } catch (error: any) {
-                                  toast.error(error.response?.data?.message || 'Error al eliminar factura')
+                                  toast.error(error.response?.data?.message || 'Error al eliminar comprobante')
                                 }
                               }
                             }}
@@ -592,7 +592,7 @@ export default function InvoicesPage() {
                   {filteredInvoices.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No se encontraron facturas</p>
+                      <p>No se encontraron comprobantes</p>
                     </div>
                   )}
                 </>
@@ -632,9 +632,9 @@ export default function InvoicesPage() {
       <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Sincronizar Facturas desde AFIP</DialogTitle>
+            <DialogTitle>Sincronizar Comprobantes desde AFIP</DialogTitle>
             <DialogDescription>
-              Importa facturas emitidas directamente desde los registros de AFIP
+              Importa comprobantes emitidos directamente desde los registros de AFIP
             </DialogDescription>
           </DialogHeader>
           
@@ -664,7 +664,7 @@ export default function InvoicesPage() {
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className="font-medium mb-1">Una factura específica</div>
+                  <div className="font-medium mb-1">Un comprobante específico</div>
                   <div className="text-sm text-muted-foreground">Consultar por número de comprobante</div>
                 </button>
                 <button
@@ -677,7 +677,7 @@ export default function InvoicesPage() {
                   }`}
                 >
                   <div className="font-medium mb-1">Rango de fechas</div>
-                  <div className="text-sm text-muted-foreground">Traer todas las facturas de un período</div>
+                  <div className="text-sm text-muted-foreground">Traer todos los comprobantes de un período</div>
                 </button>
               </div>
 
@@ -746,14 +746,14 @@ export default function InvoicesPage() {
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
                     <p className="font-medium">Qué hace la sincronización:</p>
                     <ul className="list-disc list-inside space-y-1 text-xs">
-                      <li>Consulta la factura específica en AFIP</li>
+                      <li>Consulta el comprobante específico en AFIP</li>
                       <li>Busca el cliente por CUIT en tu sistema (empresas conectadas primero, luego clientes externos)</li>
                       <li>Si no existe, crea un cliente archivado con datos incompletos que deberás completar</li>
                       <li>Importa: número, fecha, totales, CAE y datos fiscales</li>
                       <li>NO importa: concepto (productos/servicios), fechas de servicio, ni detalle de ítems (AFIP no los proporciona)</li>
                       <li>Podrás editar después: concepto, fechas de servicio y descripción del ítem genérico</li>
                       <li>NO podrás editar: montos, cantidades ni precios (deben coincidir con AFIP)</li>
-                      <li>La factura se marca como "Sincronizada AFIP" para identificarla</li>
+                      <li>El comprobante se marca como "Sincronizado AFIP" para identificarlo</li>
                     </ul>
                   </div>
                 </div>
@@ -793,7 +793,7 @@ export default function InvoicesPage() {
                       <li>NO importa: concepto, fechas de servicio, ni detalle de ítems (AFIP no los proporciona)</li>
                       <li>Podrás editar después: concepto, fechas de servicio y descripción del ítem genérico</li>
                       <li>NO podrás editar: montos, cantidades ni precios (deben coincidir con AFIP)</li>
-                      <li>Las facturas se marcan como "Sincronizada AFIP"</li>
+                      <li>Los comprobantes se marcan como "Sincronizado AFIP"</li>
                     </ul>
                     <p className="text-xs mt-2 font-medium text-blue-800">Nota: Este proceso puede tardar varios minutos según la cantidad de comprobantes.</p>
                   </div>
@@ -808,7 +808,7 @@ export default function InvoicesPage() {
                   <p className="text-3xl font-bold text-blue-600">{syncResults.imported_count}</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Nuevas Importadas</p>
+                  <p className="text-sm text-muted-foreground">Nuevos Importados</p>
                   <p className="text-3xl font-bold text-green-600">
                     {syncResults.invoices?.filter((inv: any) => inv.saved).length || 0}
                   </p>
@@ -834,7 +834,7 @@ export default function InvoicesPage() {
               
               {syncResults.invoices && syncResults.invoices.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Facturas Encontradas ({syncResults.invoices.length})</Label>
+                  <Label>Comprobantes Encontrados ({syncResults.invoices.length})</Label>
                   <div className="max-h-60 overflow-y-auto border rounded-lg">
                     {syncResults.invoices.map((inv: any, idx: number) => (
                       <div key={idx} className="p-3 border-b last:border-b-0 hover:bg-muted/50">
@@ -848,7 +848,7 @@ export default function InvoicesPage() {
                             )}
                             {!inv.saved && (
                               <p className="text-xs text-orange-600 mt-1">
-                                ⚠️ Esta factura ya se encuentra en tu sistema
+                                ⚠️ Este comprobante ya se encuentra en tu sistema
                               </p>
                             )}
                           </div>
@@ -864,7 +864,7 @@ export default function InvoicesPage() {
               
               {syncResults.imported_count === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>No se encontraron facturas en AFIP</p>
+                  <p>No se encontraron comprobantes en AFIP</p>
                 </div>
               )}
             </div>
@@ -879,7 +879,7 @@ export default function InvoicesPage() {
                 <Button 
                   onClick={async () => {
                     if (syncMode === 'single' && !syncForm.invoice_number) {
-                      toast.error('Ingresá el número de factura')
+                      toast.error('Ingresá el número de comprobante')
                       return
                     }
                     if (syncMode === 'date_range') {
@@ -899,7 +899,7 @@ export default function InvoicesPage() {
                     }
                     
                     setSyncing(true)
-                    setSyncProgress(syncMode === 'date_range' ? 'Iniciando sincronización masiva...' : 'Consultando factura en AFIP...')
+                    setSyncProgress(syncMode === 'date_range' ? 'Iniciando sincronización masiva...' : 'Consultando comprobante en AFIP...')
                     
                     const syncToast = syncMode === 'date_range' 
                       ? toast.loading('🔄 Sincronizando con AFIP... Consultando todos los puntos de venta y tipos de comprobante. Esto puede tardar varios minutos.')
@@ -945,7 +945,7 @@ export default function InvoicesPage() {
                       setSyncResults(result)
                       
                       if (result.imported_count === 0) {
-                        toast.warning('No se encontraron facturas en AFIP', {
+                        toast.warning('No se encontraron comprobantes en AFIP', {
                           description: syncMode === 'single' 
                             ? 'Verifica que el número, tipo y punto de venta sean correctos'
                             : 'No hay comprobantes emitidos en el rango de fechas seleccionado'
@@ -962,13 +962,13 @@ export default function InvoicesPage() {
                             const clientMsg = (result.auto_created_clients && result.auto_created_clients > 0) 
                               ? ` Se crearon ${result.auto_created_clients} cliente(s) archivado(s) con datos incompletos que debes completar en Clientes Archivados.`
                               : '';
-                            toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} sincronizada${newInvoices > 1 ? 's' : ''} desde AFIP.${clientMsg}`)
+                            toast.success(`${newInvoices} comprobante${newInvoices > 1 ? 's' : ''} sincronizado${newInvoices > 1 ? 's' : ''} desde AFIP.${clientMsg}`)
                           } catch (error) {
                             console.error('Error reloading invoices:', error)
-                            toast.success(`${newInvoices} factura${newInvoices > 1 ? 's' : ''} encontrada${newInvoices > 1 ? 's' : ''}`)  
+                            toast.success(`${newInvoices} comprobante${newInvoices > 1 ? 's' : ''} encontrado${newInvoices > 1 ? 's' : ''}`)  
                           }
                         } else {
-                          toast.success(`ℹ️ ${result.imported_count} factura${result.imported_count > 1 ? 's' : ''} encontrada${result.imported_count > 1 ? 's' : ''} en AFIP`, {
+                          toast.success(`ℹ️ ${result.imported_count} comprobante${result.imported_count > 1 ? 's' : ''} encontrado${result.imported_count > 1 ? 's' : ''} en AFIP`, {
                             description: 'Ya existía' + (result.imported_count > 1 ? 'n' : '') + ' en tu sistema'
                           })
                         }
@@ -996,7 +996,7 @@ export default function InvoicesPage() {
                       } else if (errorMsg.includes('connection') || errorMsg.includes('conexión')) {
                         errorDescription = 'Problema de conexión con AFIP. Intenta nuevamente en unos minutos'
                       } else if (errorMsg.includes('not found') || errorMsg.includes('no encontrada')) {
-                        errorDescription = 'La factura no existe en AFIP o los datos son incorrectos'
+                        errorDescription = 'El comprobante no existe en AFIP o los datos son incorrectos'
                       }
                       
                       toast.error('Error al sincronizar con AFIP', {
@@ -1017,7 +1017,7 @@ export default function InvoicesPage() {
                   ) : (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      {syncMode === 'single' ? 'Consultar Factura' : 'Sincronizar por Fechas'}
+                      {syncMode === 'single' ? 'Consultar Comprobante' : 'Sincronizar por Fechas'}
                     </>
                   )}
                 </Button>

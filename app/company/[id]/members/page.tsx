@@ -229,17 +229,45 @@ export default function MembersPage() {
 
         {/* Stats */}
         <div className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Miembros</p>
-                  <p className="text-2xl font-bold">{members.length}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Miembros</p>
+                    <p className="text-2xl font-bold">{members.length}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-500" />
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Código de Invitación</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm">
+                      {company?.uniqueId || 'Cargando...'}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(company?.uniqueId || '')
+                        toast.success('Código copiado al portapapeles')
+                      }}
+                    >
+                      Copiar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Comparte este código para invitar nuevos miembros
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
           
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">

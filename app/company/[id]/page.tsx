@@ -144,8 +144,8 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company.id}/load-invoice`)
     }] : []),
     ...(hasPermission(userRole, 'invoices.view') ? [{
-      title: "Ver Facturas",
-      description: "Gestionar todas las facturas",
+      title: "Ver Comprobantes",
+      description: "Gestionar todos los comprobantes",
       icon: FileText,
       color: "bg-purple-500",
       permission: 'invoices.view' as const,
@@ -168,8 +168,8 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company.id}/accounts-receivable`)
     }] : []),
     ...(hasPermission(userRole, 'invoices.approve') ? [{
-      title: "Aprobar Facturas",
-      description: "Revisar facturas de proveedores",
+      title: "Aprobar Comprobantes",
+      description: "Revisar comprobantes de proveedores",
       icon: CheckSquare,
       color: "bg-green-500",
       permission: 'invoices.approve' as const,
@@ -283,7 +283,7 @@ export default function CompanyPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Facturas</p>
+                  <p className="text-sm text-muted-foreground">Total Comprobantes</p>
                   <p className="text-2xl font-bold">0</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500" />
@@ -375,9 +375,9 @@ export default function CompanyPage() {
         {/* Main Menu */}
         <Card>
           <CardHeader>
-            <CardTitle>Gestión de Facturas</CardTitle>
+            <CardTitle>Gestión de Comprobantes</CardTitle>
             <CardDescription>
-              Selecciona una opción para gestionar las facturas de {company.name}
+              Selecciona una opción para gestionar los comprobantes de {company.name}
             </CardDescription>
           </CardHeader>
           <CardContent>

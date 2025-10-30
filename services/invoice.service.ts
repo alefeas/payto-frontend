@@ -196,11 +196,16 @@ export const invoiceService = {
   },
 
   async downloadPDF(companyId: string, invoiceId: string): Promise<Blob> {
-    const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/pdf`, {
-      responseType: 'blob',
-      timeout: 120000 // 2 minutes for PDF generation
-    })
-    return response.data
+    try {
+      const response = await apiClient.get(`/companies/${companyId}/invoices/${invoiceId}/pdf`, {
+        responseType: 'blob',
+        timeout: 120000 // 2 minutes for PDF generation
+      })
+      return response.data
+    } catch (error: any) {
+      console.error('PDF download error:', error)
+      throw new Error(error.response?.data?.message || 'Error al generar el PDF. Verifica que el comprobante tenga todos los datos necesarios.')
+    }
   },
 
   async downloadTXT(companyId: string, invoiceId: string): Promise<Blob> {
@@ -278,7 +283,13 @@ export const invoiceService = {
   },
 
   async createManualReceived(companyId: string, data: any): Promise<any> {
-    const response = await apiClient.post(`/companies/${companyId}/invoices/manual-received`, data)
+    const response = await apiClient.post(`/companies/${companyId}/invoices/manual-received`, data, {
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    })
     return response.data
   }
 }
