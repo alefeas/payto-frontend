@@ -215,14 +215,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
     }
   }
 
-  useEffect(() => {
-    (window as any).reloadSuppliers = loadSuppliers
-    (window as any).reloadClients = loadClients
-    return () => {
-      delete (window as any).reloadSuppliers
-      delete (window as any).reloadClients
-    }
-  }, [companyId])
+  // Removed window reload functions to fix TypeScript compilation
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
