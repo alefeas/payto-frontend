@@ -57,13 +57,11 @@ export function InvoiceList({
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.payment_status !== 'paid'
     
-    // Badge para origen de la factura
-    if (invoice.is_manual_load) {
-      badges.push(<Badge key="manual" variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">Carga Manual</Badge>)
-    } else if (invoice.synced_from_afip) {
-      badges.push(<Badge key="synced" className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>)
-    } else if (invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip) {
-      badges.push(<Badge key="emitted" className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>)
+    // Badge para estado de la factura
+    if (type === 'receivable' && invoice.status === 'issued') {
+      badges.push(<Badge key="status" className="bg-green-50 text-green-700 border-green-200">Emitida</Badge>)
+    } else if (type === 'payable' && invoice.status === 'approved') {
+      badges.push(<Badge key="status" className="bg-blue-50 text-blue-700 border-blue-200">Aprobada</Badge>)
     }
     
     if (isOverdue) {
@@ -79,7 +77,7 @@ export function InvoiceList({
         badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Pago</Badge>)
       }
     } else {
-      badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Pendiente Cobro</Badge>)
+      badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Cobro</Badge>)
     }
     
     return <div className="flex gap-1 flex-wrap">{badges}</div>

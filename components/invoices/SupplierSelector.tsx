@@ -82,23 +82,21 @@ export function SupplierSelector({ companyId, savedSuppliers = [], connectedComp
   return (
     <div className="space-y-4">
       <RadioGroup value={supplierType} onValueChange={(v) => setSupplierType(v as SupplierType)}>
-        {connectedCompanies.length > 0 && (
-          <Label 
-            htmlFor="connected-company" 
-            className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-          >
-            <RadioGroupItem value="connected" id="connected-company" />
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">
-                Empresa en mi red PayTo
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Facturación directa entre empresas conectadas. Notificaciones automáticas y confirmación de pago en tiempo real.
-              </p>
+        <Label 
+          htmlFor="connected-company" 
+          className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+        >
+          <RadioGroupItem value="connected" id="connected-company" />
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <div className="flex-1">
+            <div className="font-medium">
+              Empresa en mi red PayTo
             </div>
-          </Label>
-        )}
+            <p className="text-xs text-muted-foreground">
+              Facturación directa entre empresas conectadas. Notificaciones automáticas y confirmación de pago en tiempo real.
+            </p>
+          </div>
+        </Label>
         
         <Label 
           htmlFor="saved-supplier" 
@@ -153,9 +151,9 @@ export function SupplierSelector({ companyId, savedSuppliers = [], connectedComp
           ) : (
             <Select value={selectedCompany} onValueChange={handleCompanySelect}>
               <SelectTrigger>
-                <SelectValue placeholder="Buscar empresa en tu red..." />
+                <SelectValue placeholder="Seleccionar empresa..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 {connectedCompanies.map(company => (
                   <SelectItem key={company.id} value={company.id}>
                     <div className="flex flex-col">
@@ -195,9 +193,9 @@ export function SupplierSelector({ companyId, savedSuppliers = [], connectedComp
           ) : (
             <Select value={selectedSupplier} onValueChange={handleSupplierSelect}>
               <SelectTrigger>
-                <SelectValue placeholder="Buscar proveedor guardado..." />
+                <SelectValue placeholder="Seleccionar proveedor..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 {savedSuppliers.map(supplier => {
                   const displayName = supplier.businessName || `${supplier.firstName} ${supplier.lastName}` || supplier.documentNumber
                   const taxConditionLabel = {

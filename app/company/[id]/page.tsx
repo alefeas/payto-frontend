@@ -40,8 +40,8 @@ export default function CompanyPage() {
   const [loading, setLoading] = useState(true)
   const [isAfipVerified, setIsAfipVerified] = useState(false)
   const [certificate, setCertificate] = useState<any>(null)
-  const [badges, setBadges] = useState<Record<string, number>>({})
-  const [badgesLoading, setBadgesLoading] = useState(true)
+  const [invoices, setInvoices] = useState<any[]>([])
+  const [loadingInvoices, setLoadingInvoices] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -55,20 +55,95 @@ export default function CompanyPage() {
     }
   }, [isAuthenticated, companyId])
 
-  const loadBadges = async () => {
+  // Recargar invoices cuando el usuario vuelve a la página
+  useEffect(() => {
+    if (!isAuthenticated || !companyId) return
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadInvoices()
+      }
+    }
+
+    const handleFocus = () => {
+      loadInvoices()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [isAuthenticated, companyId])
+
+  // Calcular badges desde las facturas
+  const calculateBadges = () => {
+    if (!invoices || invoices.length === 0) return { pending_payments: 0, pending_collections: 0, pending_approvals: 0 }
+
+    // Cuentas por Pagar: facturas YA APROBADAS del servicio accountsPayableService
+    // (tienen supplier como objeto con id - vienen del backend ya filtradas por approvals_received >= required_approvals)
+    const pending_payments = invoices.filter(inv => 
+      inv.supplier && typeof inv.supplier === 'object' && inv.supplier.id
+    ).length
+
+    // Cuentas por Cobrar: facturas emitidas pendientes
+    const pending_collections = invoices.filter(inv => {
+      if (inv.issuer_company_id !== companyId) return false
+      if (inv.supplier_id) return false
+      const companyStatus = inv.company_statuses?.[companyId]
+      if (companyStatus === 'paid' || companyStatus === 'collected') return false
+      return true
+    }).length
+
+    // Aprobar Facturas: facturas recibidas PENDIENTES de aprobación
+    // (tienen supplier_id pero NO tienen supplier como objeto - no vienen del servicio accountsPayableService)
+    const pending_approvals = invoices.filter(inv => {
+      if (!inv.supplier_id) return false
+      // Si tiene supplier como objeto, ya fue aprobada (viene de accountsPayableService)
+      if (inv.supplier && typeof inv.supplier === 'object' && inv.supplier.id) return false
+      const status = inv.display_status || inv.status
+      return status === 'pending_approval'
+    }).length
+
+    return { pending_payments, pending_collections, pending_approvals }
+  }
+
+  const badges = calculateBadges()
+
+  const loadInvoices = async () => {
     try {
-      setBadgesLoading(true)
-      const { analyticsService } = await import('@/services/analytics.service')
-      const data = await analyticsService.getPendingInvoices(companyId)
-      setBadges({
-        pending_payments: data.to_pay || 0,
-        pending_collections: data.to_collect || 0,
-        pending_approvals: data.pending_approvals || 0
-      })
+      setLoadingInvoices(true)
+      const { invoiceService } = await import('@/services/invoice.service')
+      const { accountsPayableService } = await import('@/services/accounts-payable.service')
+      
+      // Cargar TODAS las facturas (sin filtrar) para calcular badges correctamente
+      let allInvoices: any[] = []
+      let currentPage = 1
+      let hasMore = true
+      
+      while (hasMore) {
+        const response = await invoiceService.getInvoices(companyId, currentPage)
+        const pageData = response.data || []
+        allInvoices = [...allInvoices, ...pageData]
+        
+        if (response.last_page && currentPage < response.last_page) {
+          currentPage++
+        } else {
+          hasMore = false
+        }
+      }
+      
+      // Cargar facturas recibidas (cuentas por pagar)
+      const payableResponse = await accountsPayableService.getInvoices(companyId, {})
+      const payableInvoices = payableResponse.data || []
+      
+      setInvoices([...allInvoices, ...payableInvoices])
     } catch (error) {
-      console.error('Error loading badges:', error)
+      console.error('Error loading invoices:', error)
     } finally {
-      setBadgesLoading(false)
+      setLoadingInvoices(false)
     }
   }
 
@@ -80,8 +155,8 @@ export default function CompanyPage() {
       setCompany(found || null)
       
       if (found) {
-        // Load badges
-        loadBadges()
+        // Load invoices for badges
+        loadInvoices()
         
         // Try to get certificate details if user has permission
         if (['owner', 'administrator'].includes(found.role || '')) {
@@ -412,16 +487,10 @@ export default function CompanyPage() {
                   className="cursor-pointer hover:shadow-md transition-shadow relative"
                   onClick={item.action}
                 >
-                  {typeof item.badge === 'string' && (
-                    badgesLoading ? (
-                      <div className="absolute -top-2 -right-2 bg-gray-300 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[24px] h-[24px] flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                      </div>
-                    ) : badges[item.badge] !== undefined && badges[item.badge] > 0 ? (
-                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[20px] flex items-center justify-center">
-                        {badges[item.badge]}
-                      </div>
-                    ) : null
+                  {typeof item.badge === 'string' && badges[item.badge] > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[20px] flex items-center justify-center">
+                      {badges[item.badge]}
+                    </div>
                   )}
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
@@ -431,7 +500,7 @@ export default function CompanyPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold mb-1">{item.title}</h3>
                         <p className="text-sm text-muted-foreground">{item.description}</p>
-                        {typeof item.badge === 'string' && !badgesLoading && badges[item.badge] !== undefined && badges[item.badge] === 0 && (
+                        {typeof item.badge === 'string' && !loadingInvoices && badges[item.badge] === 0 && (
                           <div className="text-xs text-green-600 font-medium mt-2">
                             ✓ Todo al día
                           </div>

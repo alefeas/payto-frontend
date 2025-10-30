@@ -579,22 +579,20 @@ export default function AccountsPayablePage() {
                           </div>
                         </div>
                         {getInvoiceStatusBadges(invoice)}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-shrink-0">
                           <Button size="sm" variant="outline" onClick={(e) => {
                             e.stopPropagation()
                             router.push(`/company/${companyId}/invoices/${invoice.id}`)
                           }}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          {(invoice.status === 'approved' || invoice.status === 'issued') && (
-                            <Button size="sm" onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedInvoices([invoice.id])
-                              handlePayInvoices([invoice.id])
-                            }}>
-                              Pagar
-                            </Button>
-                          )}
+                          <Button size="sm" onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedInvoices([invoice.id])
+                            handlePayInvoices([invoice.id])
+                          }}>
+                            Pagar
+                          </Button>
                         </div>
                       </div>
                     </div>
