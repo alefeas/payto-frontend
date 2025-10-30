@@ -76,7 +76,7 @@ export default function FloatingBlobs({
       return customPosition;
     }
 
-    const positions = {
+    const positions: Record<Exclude<typeof position, "custom">, React.CSSProperties> = {
       center: {
         top: "50%",
         left: "50%",
@@ -100,7 +100,7 @@ export default function FloatingBlobs({
       },
     };
 
-    return positions[position];
+    return positions[position as Exclude<typeof position, "custom">];
   };
 
   const blobs = Array.from({ length: count }, (_, index) => {
