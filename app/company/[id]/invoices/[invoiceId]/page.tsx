@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Loader2, Edit2, Save, X, AlertCircle } from "lucide-react"
+import { ArrowLeft, Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Loader2, Edit2, Save, X, AlertCircle, Trash2 } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 
@@ -34,6 +35,8 @@ export default function InvoiceDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [editForm, setEditForm] = useState({
     concept: '',
     service_date_from: '',
@@ -163,6 +166,40 @@ export default function InvoiceDetailPage() {
     }
   }
 
+  const downloadAttachment = async () => {
+    try {
+      const blob = await invoiceService.downloadAttachment(companyId, invoiceId)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = invoice.attachment_original_name || `factura-${invoice.number}-original.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast.success('PDF original descargado')
+    } catch (error: any) {
+      console.error('Attachment download error:', error)
+      toast.error('Error al descargar PDF original', {
+        description: error.response?.data?.error || error.message || 'Intente nuevamente'
+      })
+    }
+  }
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await invoiceService.deleteInvoice(companyId, invoiceId)
+      toast.success('Factura eliminada correctamente')
+      router.push(`/company/${companyId}/invoices`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al eliminar factura')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     const variants = {
       emitida: "bg-blue-500 text-white hover:bg-blue-600",
@@ -211,14 +248,28 @@ export default function InvoiceDetailPage() {
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{invoice.number}</h1>
                 {getStatusBadge(invoice.display_status || invoice.status)}
-                {invoice.synced_from_afip ? (
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sincronizada AFIP</Badge>
+                {invoice.is_manual_load ? (
+                  <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">Carga Manual</Badge>
+                ) : invoice.synced_from_afip ? (
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>
+                ) : invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip ? (
+                  <Badge className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>
                 ) : null}
               </div>
               <p className="text-muted-foreground">Factura Tipo {invoice.type}</p>
             </div>
           </div>
           <div className="flex gap-2">
+            {invoice.is_manual_load && !isEditing ? (
+              <Button 
+                onClick={() => setShowDeleteDialog(true)}
+                variant="destructive" 
+                className="shadow-sm"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar
+              </Button>
+            ) : null}
             {invoice.synced_from_afip && !isEditing ? (
               <Button 
                 onClick={startEditing}
@@ -253,8 +304,14 @@ export default function InvoiceDetailPage() {
               <>
                 <Button onClick={downloadPDF} className="shadow-sm">
                   <Download className="h-4 w-4 mr-2" />
-                  PDF
+                  PDF Sistema
                 </Button>
+                {invoice.attachment_path && (
+                  <Button onClick={downloadAttachment} variant="outline" className="shadow-sm border-blue-300 text-blue-700 hover:bg-blue-50">
+                    <FileText className="h-4 w-4 mr-2" />
+                    PDF Original
+                  </Button>
+                )}
                 <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
                   <FileText className="h-4 w-4 mr-2" />
                   TXT
@@ -628,6 +685,44 @@ export default function InvoiceDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar factura manual?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. La factura {invoice?.number} será eliminada permanentemente del sistema.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar Factura
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

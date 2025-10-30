@@ -157,8 +157,8 @@ export default function CompanyPage() {
       action: () => router.push(`/company/${company.id}/emit-invoice`)
     }] : []),
     ...(hasPermission(userRole, 'invoices.create') ? [{
-      title: "Cargar Factura Recibida",
-      description: "Registrar factura de empresa externa",
+      title: "Cargar Comprobante Manual",
+      description: "Registrar comprobantes históricos",
       icon: Plus,
       color: "bg-teal-500",
       permission: 'invoices.create' as const,
@@ -405,7 +405,7 @@ export default function CompanyPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {menuItems.map((item: MenuItem, index) => (
                 <Card 
                   key={index} 

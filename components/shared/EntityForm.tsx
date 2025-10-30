@@ -117,6 +117,7 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     
     if (formData.taxCondition === 'final_consumer') {
       if (!formData.firstName || !formData.lastName) {
@@ -193,8 +194,8 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
           onSuccess(createdEntity)
         } else {
           createdEntity = await supplierService.createSupplier(companyId, data)
-          toast.success('Proveedor creado')
-          onSuccess()
+          toast.success('Proveedor creado y seleccionado')
+          onSuccess(createdEntity)
         }
       }
       onClose()

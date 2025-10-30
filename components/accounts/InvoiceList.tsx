@@ -57,6 +57,15 @@ export function InvoiceList({
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.payment_status !== 'paid'
     
+    // Badge para origen de la factura
+    if (invoice.is_manual_load) {
+      badges.push(<Badge key="manual" variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">Carga Manual</Badge>)
+    } else if (invoice.synced_from_afip) {
+      badges.push(<Badge key="synced" className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>)
+    } else if (invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip) {
+      badges.push(<Badge key="emitted" className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>)
+    }
+    
     if (isOverdue) {
       badges.push(<Badge key="overdue" className="bg-red-500 text-white font-semibold">Vencida</Badge>)
     }

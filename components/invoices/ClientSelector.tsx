@@ -12,11 +12,12 @@ import { ClientForm } from "@/components/clients/ClientForm"
 
 type ClientType = 'registered' | 'saved' | 'new'
 
-export function ClientSelector({ connectedCompanies, savedClients = [], onSelect, companyId, isLoading }: ClientSelectorProps & { companyId: string; isLoading?: boolean }) {
+export function ClientSelector({ connectedCompanies, savedClients = [], onSelect, companyId, isLoading, onClientCreated }: ClientSelectorProps & { companyId: string; isLoading?: boolean; onClientCreated?: () => void }) {
   const [clientType, setClientType] = useState<ClientType>('registered')
   const [selectedCompany, setSelectedCompany] = useState('')
   const [selectedClient, setSelectedClient] = useState('')
   const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false)
+  const [isCreatingClient, setIsCreatingClient] = useState(false)
 
   const handleCompanySelect = (companyId: string) => {
     setSelectedCompany(companyId)
@@ -39,27 +40,34 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
   }
 
   const handleNewClientSuccess = (createdClient?: any) => {
-    setIsNewClientDialogOpen(false)
     if (createdClient) {
-      // Auto-select the newly created client
-      setClientType('saved')
-      setSelectedClient(createdClient.id)
-      onSelect({ 
-        client_id: createdClient.id,
-        client_data: {
-          document_type: createdClient.documentType,
-          document_number: createdClient.documentNumber,
-          business_name: createdClient.businessName || `${createdClient.firstName} ${createdClient.lastName}`,
-          email: createdClient.email,
-          tax_condition: createdClient.taxCondition
-        }
-      })
+      setIsCreatingClient(true)
       
-      // Trigger parent reload if callback exists
-      if (typeof (window as any).reloadClients === 'function') {
-        (window as any).reloadClients()
-      }
+      // Smooth transition: first switch type, then select after a brief moment
+      setClientType('saved')
+      
+      setTimeout(() => {
+        setSelectedClient(createdClient.id)
+        onSelect({ 
+          client_id: createdClient.id,
+          client_data: {
+            document_type: createdClient.documentType,
+            document_number: createdClient.documentNumber,
+            business_name: createdClient.businessName || `${createdClient.firstName} ${createdClient.lastName}`,
+            email: createdClient.email,
+            tax_condition: createdClient.taxCondition
+          }
+        })
+        
+        // Reload clients list in background
+        if (onClientCreated) {
+          onClientCreated()
+        }
+        
+        setIsCreatingClient(false)
+      }, 300)
     }
+    setIsNewClientDialogOpen(false)
   }
 
   return (
@@ -161,10 +169,10 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
       {clientType === 'saved' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Cliente</Label>
-          {isLoading ? (
+          {(isLoading || isCreatingClient) ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Cargando clientes guardados...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{isCreatingClient ? 'Agregando cliente...' : 'Cargando clientes guardados...'}</span>
             </div>
           ) : savedClients.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">

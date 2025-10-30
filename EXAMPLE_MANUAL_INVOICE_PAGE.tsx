@@ -1,28 +1,18 @@
+// Ejemplo de cómo usar el componente ManualInvoiceForm en una página
+
 "use client"
 
-import { useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Info, Receipt, FileText } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useAuth } from "@/contexts/auth-context"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { ManualInvoiceForm } from "@/components/invoices/ManualInvoiceForm"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, FileText, Receipt, Info } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-export default function LoadInvoicePage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+export default function ManualInvoicePage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const params = useParams()
-  const companyId = params.id as string
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login')
-    }
-  }, [isAuthenticated, authLoading, router])
-
-  if (authLoading) return null
-  if (!isAuthenticated) return null
+  const companyId = params.id
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
@@ -33,7 +23,7 @@ export default function LoadInvoicePage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.push(`/company/${companyId}`)}
+              onClick={() => router.back()}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -83,7 +73,7 @@ export default function LoadInvoicePage() {
                 router.push(`/company/${companyId}/invoices`)
               }}
               onCancel={() => {
-                router.push(`/company/${companyId}`)
+                router.back()
               }}
             />
           </CardContent>
@@ -110,13 +100,6 @@ export default function LoadInvoicePage() {
               </p>
             </div>
             <div>
-              <strong>¿Puedo emitir a empresas conectadas?</strong>
-              <p className="text-muted-foreground">
-                Sí. Podés registrar facturas históricas emitidas a empresas que ahora están 
-                conectadas en PayTo. Esto es útil para importar historial previo.
-              </p>
-            </div>
-            <div>
               <strong>¿Puedo modificar la factura después?</strong>
               <p className="text-muted-foreground">
                 No. Las facturas manuales no se pueden modificar después de creadas. 
@@ -129,3 +112,38 @@ export default function LoadInvoicePage() {
     </div>
   )
 }
+
+// ALTERNATIVA: Modal en lugar de página completa
+// Podés usar el componente dentro de un Dialog/Modal:
+
+/*
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+function InvoicesPage() {
+  const [showManualForm, setShowManualForm] = useState(false)
+
+  return (
+    <>
+      <Button onClick={() => setShowManualForm(true)}>
+        Cargar Factura Manual
+      </Button>
+
+      <Dialog open={showManualForm} onOpenChange={setShowManualForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Carga Manual de Factura</DialogTitle>
+          </DialogHeader>
+          <ManualInvoiceForm
+            companyId={companyId}
+            onSuccess={() => {
+              setShowManualForm(false)
+              loadInvoices()
+            }}
+            onCancel={() => setShowManualForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+*/

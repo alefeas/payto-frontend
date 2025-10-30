@@ -526,8 +526,12 @@ export default function InvoicesPage() {
                         <div className="font-medium">{invoice.number}</div>
                         <div className="flex gap-1 flex-wrap">
                           <Badge variant="outline">Tipo {invoice.type}</Badge>
-                          {invoice.synced_from_afip ? (
+                          {invoice.is_manual_load ? (
+                            <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">Carga Manual</Badge>
+                          ) : invoice.synced_from_afip ? (
                             <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>
+                          ) : invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip ? (
+                            <Badge className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>
                           ) : null}
                         </div>
                         <div className="truncate" title={clientName}>{clientName}</div>

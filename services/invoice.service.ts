@@ -34,6 +34,7 @@ export interface Invoice {
   attachment_path?: string | null
   attachment_original_name?: string | null
   synced_from_afip?: boolean
+  is_manual_load?: boolean
   issuerCompany?: {
     id: string
     name: string
@@ -269,5 +270,15 @@ export const invoiceService = {
   }): Promise<Invoice> {
     const response = await apiClient.put(`/companies/${companyId}/invoices/${invoiceId}/synced`, data)
     return response.data.invoice
+  },
+
+  async createManualIssued(companyId: string, data: any): Promise<any> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/manual-issued`, data)
+    return response.data
+  },
+
+  async createManualReceived(companyId: string, data: any): Promise<any> {
+    const response = await apiClient.post(`/companies/${companyId}/invoices/manual-received`, data)
+    return response.data
   }
 }

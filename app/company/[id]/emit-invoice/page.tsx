@@ -1117,10 +1117,14 @@ export default function CreateInvoicePage() {
                         <Label>Cantidad *</Label>
                         <Input
                           type="number"
-                          min="1"
+                          min="0.01"
+                          max="999999.99"
                           step="0.01"
                           value={item.quantity ?? 1}
-                          onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0
+                            updateItem(index, 'quantity', Math.min(Math.max(val, 0.01), 999999.99))
+                          }}
                         />
                       </div>
                       
@@ -1129,9 +1133,13 @@ export default function CreateInvoicePage() {
                         <Input
                           type="number"
                           min="0"
+                          max="999999999.99"
                           step="0.01"
                           value={item.unitPrice ?? 0}
-                          onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0
+                            updateItem(index, 'unitPrice', Math.min(Math.max(val, 0), 999999999.99))
+                          }}
                         />
                       </div>
                       
@@ -1317,7 +1325,10 @@ export default function CreateInvoicePage() {
                             step="0.01"
                             placeholder="Ej: 3.5"
                             value={perception.rate ?? ''}
-                            onChange={(e) => updatePerception(index, 'rate', parseFloat(e.target.value) || 0)}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0
+                              updatePerception(index, 'rate', Math.min(val, 100))
+                            }}
                           />
                         </div>
                         
