@@ -95,6 +95,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
       }
     } else {
       loadSuppliers()
+      loadConnectedCompanies() // También cargar para recibidas
       // Limpiar percepciones cuando se cambia a recibidas
       setPerceptions([])
     }
@@ -242,8 +243,8 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
       return
     }
 
-    if (mode === "received" && !selectedSupplier) {
-      toast.error("Debe seleccionar el proveedor emisor")
+    if (mode === "received" && !selectedSupplier && !selectedCompany) {
+      toast.error("Debe seleccionar el proveedor o empresa emisora")
       return
     }
 
@@ -311,7 +312,11 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
         createdInvoice = response.invoice
         toast.success("Factura emitida registrada exitosamente")
       } else {
-        payload.supplier_id = selectedSupplier
+        if (selectedSupplier) {
+          payload.supplier_id = selectedSupplier
+        } else if (selectedCompany) {
+          payload.issuer_company_id = selectedCompany
+        }
         const response = await invoiceService.createManualReceived(companyId, payload)
         createdInvoice = response.invoice
         toast.success("Factura recibida registrada exitosamente")
@@ -369,10 +374,20 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
               <SupplierSelector
                 companyId={companyId}
                 savedSuppliers={suppliers}
+                connectedCompanies={connectedCompanies.map(c => ({
+                  id: c.id,
+                  name: c.name,
+                  cuit: c.national_id,
+                  taxCondition: c.tax_condition
+                }))}
                 isLoading={loadingSuppliers}
                 onSelect={(data) => {
                   if (data.supplier_id) {
                     setSelectedSupplier(data.supplier_id)
+                    setSelectedCompany('')
+                  } else if (data.issuer_company_id) {
+                    setSelectedCompany(data.issuer_company_id)
+                    setSelectedSupplier('')
                   }
                 }}
                 onSupplierCreated={loadSuppliers}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Plus } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import { invoiceService } from "@/services/invoice.service"
 import collectionService from "@/services/collection.service"
 import { AccountsLayout } from "@/components/accounts/AccountsLayout"
@@ -41,6 +42,7 @@ export default function AccountsReceivablePage() {
     reference_number: '',
     notes: '',
   })
+  const [withholdings, setWithholdings] = useState<Array<{type: string, description: string, rate: number, baseType: string}>>([])
   const [filters, setFilters] = useState({
     search: '',
     from_date: '',
@@ -82,10 +84,13 @@ export default function AccountsReceivablePage() {
       }
       
       const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
+        // SOLO facturas donde esta empresa es el EMISOR (facturas emitidas)
         if (inv.issuer_company_id !== companyId) return false
+        // NO mostrar facturas RECIBIDAS (tienen supplier_id)
+        if (inv.supplier_id) return false
         // Verificar company_statuses JSON para esta empresa
         const companyStatus = inv.company_statuses?.[companyId]
-        if (companyStatus === 'paid') return false
+        if (companyStatus === 'paid' || companyStatus === 'collected') return false
         
         if (filters.from_date || filters.to_date) {
           const issueDate = new Date(inv.issue_date)
@@ -94,10 +99,8 @@ export default function AccountsReceivablePage() {
         }
         
         if (filters.search) {
-          const cuit = inv.client?.document_number || inv.receiverCompany?.national_id || ''
-          const searchClean = filters.search.replace(/[^0-9]/g, '')
-          const cuitClean = cuit.replace(/[^0-9]/g, '')
-          if (!cuitClean.includes(searchClean)) return false
+          const invoiceNumber = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`
+          if (!invoiceNumber.toLowerCase().includes(filters.search.toLowerCase())) return false
         }
         
         return true
@@ -139,6 +142,14 @@ export default function AccountsReceivablePage() {
   }
 
   const handleSubmitCollection = async () => {
+    // Validar retenciones
+    for (const wh of withholdings) {
+      if (!wh.type || !wh.description || !wh.description.trim() || wh.rate <= 0) {
+        toast.error('Todas las retenciones deben tener tipo, descripción y alícuota mayor a 0')
+        return
+      }
+    }
+    
     setSubmitting(true)
     try {
       for (const invoiceId of selectedInvoices) {
@@ -151,13 +162,40 @@ export default function AccountsReceivablePage() {
           method = 'card'
         }
         
+        // Calcular montos de retenciones
+        const invoiceAmount = parseFloat(invoice.total)
+        const withholdingsData: any = {}
+        
+        withholdings.forEach(wh => {
+          const base = wh.baseType === 'total' ? invoiceAmount : invoiceAmount
+          const amount = base * wh.rate / 100
+          
+          if (wh.type === 'iibb' || wh.type.startsWith('gross_income_')) {
+            withholdingsData.withholding_iibb = amount
+            withholdingsData.withholding_iibb_notes = wh.description
+          } else if (wh.type === 'iva' || wh.type === 'vat_retention') {
+            withholdingsData.withholding_iva = amount
+            withholdingsData.withholding_iva_notes = wh.description
+          } else if (wh.type === 'ganancias' || wh.type === 'income_tax_retention') {
+            withholdingsData.withholding_ganancias = amount
+            withholdingsData.withholding_ganancias_notes = wh.description
+          } else if (wh.type === 'suss' || wh.type === 'suss_retention') {
+            withholdingsData.withholding_suss = amount
+            withholdingsData.withholding_suss_notes = wh.description
+          } else if (wh.type === 'other') {
+            withholdingsData.withholding_other = amount
+            withholdingsData.withholding_other_notes = wh.description
+          }
+        })
+        
         await collectionService.createCollection(companyId, {
           invoice_id: invoiceId,
-          amount: invoice.total,
+          amount: invoiceAmount,
           collection_date: collectionForm.collection_date,
           collection_method: method as 'transfer' | 'check' | 'cash' | 'card',
           reference_number: collectionForm.reference_number || undefined,
           notes: collectionForm.notes || undefined,
+          ...withholdingsData,
           status: 'confirmed'
         })
       }
@@ -165,6 +203,7 @@ export default function AccountsReceivablePage() {
       toast.success(`${selectedInvoices.length} cobro(s) registrado(s) exitosamente`)
       setShowCollectionDialog(false)
       setSelectedInvoices([])
+      setWithholdings([])
       
       // Recargar datos con loader
       setLoading(true)
@@ -392,6 +431,11 @@ export default function AccountsReceivablePage() {
                 setActiveTab('invoices')
                 setFilters({...filters, search: cuit})
               }}
+              onViewInvoice={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+              onActionInvoice={(id) => {
+                setSelectedInvoices([id])
+                handleCollectInvoices([id])
+              }}
               type="receivable"
             />
           )
@@ -466,6 +510,209 @@ export default function AccountsReceivablePage() {
                   rows={3}
                 />
               </div>
+              
+              {/* Retenciones */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Retenciones del Cliente</Label>
+                  <Button 
+                    type="button" 
+                    onClick={() => setWithholdings([...withholdings, { type: 'vat_retention', description: '', rate: 0, baseType: 'net' }])} 
+                    size="sm" 
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Agregar
+                  </Button>
+                </div>
+                
+                {withholdings.length === 0 ? (
+                  <div className="text-center py-4 text-sm text-muted-foreground bg-muted/30 rounded-lg">
+                    Sin retenciones
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {withholdings.map((wh, idx) => {
+                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0)
+                      const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
+                      const amount = base * (wh.rate || 0) / 100
+                      
+                      const getRetentionLabel = (type: string) => {
+                        const labels: Record<string, string> = {
+                          'vat_retention': 'Retención IVA',
+                          'income_tax_retention': 'Retención Ganancias',
+                          'suss_retention': 'Retención SUSS',
+                          'gross_income_buenosaires': 'IIBB Buenos Aires',
+                          'gross_income_caba': 'IIBB CABA',
+                          'gross_income_catamarca': 'IIBB Catamarca',
+                          'gross_income_chaco': 'IIBB Chaco',
+                          'gross_income_chubut': 'IIBB Chubut',
+                          'gross_income_cordoba': 'IIBB Córdoba',
+                          'gross_income_corrientes': 'IIBB Corrientes',
+                          'gross_income_entrerios': 'IIBB Entre Ríos',
+                          'gross_income_formosa': 'IIBB Formosa',
+                          'gross_income_jujuy': 'IIBB Jujuy',
+                          'gross_income_lapampa': 'IIBB La Pampa',
+                          'gross_income_larioja': 'IIBB La Rioja',
+                          'gross_income_mendoza': 'IIBB Mendoza',
+                          'gross_income_misiones': 'IIBB Misiones',
+                          'gross_income_neuquen': 'IIBB Neuquén',
+                          'gross_income_rionegro': 'IIBB Río Negro',
+                          'gross_income_salta': 'IIBB Salta',
+                          'gross_income_sanjuan': 'IIBB San Juan',
+                          'gross_income_sanluis': 'IIBB San Luis',
+                          'gross_income_santacruz': 'IIBB Santa Cruz',
+                          'gross_income_santafe': 'IIBB Santa Fe',
+                          'gross_income_santiagodelestero': 'IIBB Santiago del Estero',
+                          'gross_income_tierradelfuego': 'IIBB Tierra del Fuego',
+                          'gross_income_tucuman': 'IIBB Tucumán',
+                          'other': 'Otra Retención'
+                        }
+                        return labels[type] || type
+                      }
+                      
+                      return (
+                      <div key={idx} className="border rounded-lg p-3 bg-muted/30">
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-12 gap-2 items-end">
+                            <div className="col-span-5">
+                              <Label className="text-xs mb-1 block">Tipo *</Label>
+                              <Select value={wh.type || ''} onValueChange={(value) => {
+                                const newWithholdings = [...withholdings]
+                                newWithholdings[idx] = { ...wh, type: value }
+                                setWithholdings(newWithholdings)
+                              }}>
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Tipo">{wh.type ? getRetentionLabel(wh.type) : 'Tipo'}</SelectValue>
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[280px]">
+                                  <SelectItem value="vat_retention">Retención IVA</SelectItem>
+                                  <SelectItem value="income_tax_retention">Retención Ganancias</SelectItem>
+                                  <SelectItem value="suss_retention">Retención SUSS</SelectItem>
+                                  <SelectItem value="gross_income_buenosaires">IIBB Buenos Aires</SelectItem>
+                                  <SelectItem value="gross_income_caba">IIBB CABA</SelectItem>
+                                  <SelectItem value="gross_income_catamarca">IIBB Catamarca</SelectItem>
+                                  <SelectItem value="gross_income_chaco">IIBB Chaco</SelectItem>
+                                  <SelectItem value="gross_income_chubut">IIBB Chubut</SelectItem>
+                                  <SelectItem value="gross_income_cordoba">IIBB Córdoba</SelectItem>
+                                  <SelectItem value="gross_income_corrientes">IIBB Corrientes</SelectItem>
+                                  <SelectItem value="gross_income_entrerios">IIBB Entre Ríos</SelectItem>
+                                  <SelectItem value="gross_income_formosa">IIBB Formosa</SelectItem>
+                                  <SelectItem value="gross_income_jujuy">IIBB Jujuy</SelectItem>
+                                  <SelectItem value="gross_income_lapampa">IIBB La Pampa</SelectItem>
+                                  <SelectItem value="gross_income_larioja">IIBB La Rioja</SelectItem>
+                                  <SelectItem value="gross_income_mendoza">IIBB Mendoza</SelectItem>
+                                  <SelectItem value="gross_income_misiones">IIBB Misiones</SelectItem>
+                                  <SelectItem value="gross_income_neuquen">IIBB Neuquén</SelectItem>
+                                  <SelectItem value="gross_income_rionegro">IIBB Río Negro</SelectItem>
+                                  <SelectItem value="gross_income_salta">IIBB Salta</SelectItem>
+                                  <SelectItem value="gross_income_sanjuan">IIBB San Juan</SelectItem>
+                                  <SelectItem value="gross_income_sanluis">IIBB San Luis</SelectItem>
+                                  <SelectItem value="gross_income_santacruz">IIBB Santa Cruz</SelectItem>
+                                  <SelectItem value="gross_income_santafe">IIBB Santa Fe</SelectItem>
+                                  <SelectItem value="gross_income_santiagodelestero">IIBB Santiago del Estero</SelectItem>
+                                  <SelectItem value="gross_income_tierradelfuego">IIBB Tierra del Fuego</SelectItem>
+                                  <SelectItem value="gross_income_tucuman">IIBB Tucumán</SelectItem>
+                                  <SelectItem value="other">Otra Retención</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-2">
+                              <Label className="text-xs mb-1 block">Alícuota % *</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                value={wh.rate}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0
+                                  const newWithholdings = [...withholdings]
+                                  newWithholdings[idx] = { ...wh, rate: Math.min(Math.max(value, 0), 100) }
+                                  setWithholdings(newWithholdings)
+                                }}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <Label className="text-xs mb-1 block">Base *</Label>
+                              <Select value={wh.baseType || 'net'} onValueChange={(value) => {
+                                const newWithholdings = [...withholdings]
+                                newWithholdings[idx] = { ...wh, baseType: value }
+                                setWithholdings(newWithholdings)
+                              }}>
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="net">Neto</SelectItem>
+                                  <SelectItem value="total">Total</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-2">
+                              <Label className="text-xs mb-1 block">Monto</Label>
+                              <div className="text-sm font-semibold text-orange-600">${amount.toFixed(2)}</div>
+                            </div>
+                            <div className="col-span-1 flex justify-end">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setWithholdings(withholdings.filter((_, i) => i !== idx))}
+                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1 block">Descripción *</Label>
+                            <Input
+                              value={wh.description}
+                              onChange={(e) => {
+                                const newWithholdings = [...withholdings]
+                                newWithholdings[idx] = { ...wh, description: e.target.value }
+                                setWithholdings(newWithholdings)
+                              }}
+                              className="h-8 text-xs"
+                              placeholder="Ej: Retención IVA - Certificado 123"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              {/* Resumen Final */}
+              {withholdings.length > 0 && (
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span className="font-semibold">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0))}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-orange-600">
+                    <span>Retenciones:</span>
+                    <span className="font-semibold">-{formatCurrency(withholdings.reduce((sum, wh) => {
+                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.total), 0)
+                      const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
+                      return sum + (base * (wh.rate || 0) / 100)
+                    }, 0))}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="font-bold">Neto a Cobrar:</span>
+                    <span className="text-xl font-bold text-green-600">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0) - withholdings.reduce((sum, wh) => {
+                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.total), 0)
+                      const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
+                      return sum + (base * (wh.rate || 0) / 100)
+                    }, 0))}</span>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCollectionDialog(false)} disabled={submitting}>Cancelar</Button>

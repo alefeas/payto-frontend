@@ -234,6 +234,52 @@ export default function InvoiceDetailPage() {
   
   // Determinar si la empresa actual es emisor o receptor
   const isIssuer = invoice.issuer_company_id === companyId
+  
+  // Obtener el estado para esta empresa específica
+  const companyStatus = invoice.company_statuses?.[companyId] || invoice.status
+  const isPaid = companyStatus === 'paid' || companyStatus === 'collected'
+  
+  // Calcular total de retenciones
+  const totalWithholdings = (
+    parseFloat(invoice.withholding_iibb || 0) +
+    parseFloat(invoice.withholding_iva || 0) +
+    parseFloat(invoice.withholding_ganancias || 0) +
+    parseFloat(invoice.withholding_suss || 0) +
+    parseFloat(invoice.withholding_other || 0)
+  )
+  
+  // Preparar array de retenciones para mostrar
+  const withholdingsArray = []
+  if (parseFloat(invoice.withholding_iibb || 0) > 0) {
+    withholdingsArray.push({
+      name: invoice.withholding_iibb_notes || 'Retención IIBB',
+      amount: invoice.withholding_iibb
+    })
+  }
+  if (parseFloat(invoice.withholding_iva || 0) > 0) {
+    withholdingsArray.push({
+      name: invoice.withholding_iva_notes || 'Retención IVA',
+      amount: invoice.withholding_iva
+    })
+  }
+  if (parseFloat(invoice.withholding_ganancias || 0) > 0) {
+    withholdingsArray.push({
+      name: invoice.withholding_ganancias_notes || 'Retención Ganancias',
+      amount: invoice.withholding_ganancias
+    })
+  }
+  if (parseFloat(invoice.withholding_suss || 0) > 0) {
+    withholdingsArray.push({
+      name: invoice.withholding_suss_notes || 'Retención SUSS',
+      amount: invoice.withholding_suss
+    })
+  }
+  if (parseFloat(invoice.withholding_other || 0) > 0) {
+    withholdingsArray.push({
+      name: invoice.withholding_other_notes || 'Otra Retención',
+      amount: invoice.withholding_other
+    })
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
@@ -575,7 +621,7 @@ export default function InvoiceDetailPage() {
           </Card>
 
           {/* Estado de Pago / Retenciones */}
-          {invoice.status === 'paid' ? (
+          {isPaid ? (
             <Card className="shadow-sm border-green-200 bg-green-50/50">
               <CardHeader>
                 <CardTitle className="text-green-700">{isIssuer ? 'Pago Recibido' : 'Pago Realizado'}</CardTitle>
@@ -588,11 +634,11 @@ export default function InvoiceDetailPage() {
                       {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                     </span>
                   </div>
-                  {invoice.total_retentions && parseFloat(invoice.total_retentions) > 0 && (
+                  {totalWithholdings > 0 && (
                     <div className="flex justify-between items-center py-2 border-t">
-                      <span className="text-red-600">Retenciones</span>
-                      <span className="font-medium text-red-600">
-                        -{formatCurrency(parseFloat(invoice.total_retentions), invoice.currency)}
+                      <span className="text-orange-600">Retenciones</span>
+                      <span className="font-medium text-orange-600">
+                        -{formatCurrency(totalWithholdings, invoice.currency)}
                       </span>
                     </div>
                   )}
@@ -600,25 +646,36 @@ export default function InvoiceDetailPage() {
                     <span className="text-green-700">{isIssuer ? 'Total Cobrado' : 'Total Pagado'}</span>
                     <span className="text-green-700">
                       {formatCurrency(
-                        parseFloat(invoice.total) - parseFloat(invoice.total_retentions || 0),
+                        parseFloat(invoice.total) - totalWithholdings,
                         invoice.currency
                       )}
                     </span>
                   </div>
-                  {invoice.retentions && invoice.retentions.length > 0 && (
+                  {withholdingsArray.length > 0 ? (
                     <div className="pt-3 border-t space-y-2">
-                      <h4 className="font-semibold text-xs text-red-700 mb-2">Detalle de Retenciones</h4>
-                      {invoice.retentions.map((retention: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center py-1">
-                          <div>
-                            <p className="font-medium text-xs">{retention.name}</p>
-                            <p className="text-xs text-muted-foreground">{retention.rate}%</p>
+                      <h4 className="font-semibold text-sm text-orange-700 mb-3 flex items-center gap-2">
+                        <Percent className="h-4 w-4" />
+                        Detalle de Retenciones
+                      </h4>
+                      <div className="space-y-2">
+                        {withholdingsArray.map((withholding: any, index: number) => (
+                          <div key={index} className="flex justify-between items-center py-2.5 px-3 bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-8 bg-orange-500 rounded-full"></div>
+                              <p className="font-medium text-sm text-gray-800">{withholding.name}</p>
+                            </div>
+                            <span className="font-bold text-sm text-orange-700 bg-white px-3 py-1 rounded-md shadow-sm">
+                              {formatCurrency(parseFloat(withholding.amount), invoice.currency)}
+                            </span>
                           </div>
-                          <span className="font-medium text-sm text-red-600">
-                            {formatCurrency(parseFloat(retention.amount), invoice.currency)}
-                          </span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-3 border-t">
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        {isIssuer ? 'No se aplicaron retenciones en este cobro' : 'No se aplicaron retenciones en este pago'}
+                      </p>
                     </div>
                   )}
                 </div>

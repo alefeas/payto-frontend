@@ -34,6 +34,9 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
     email: string
     phone: string
     address: string
+    postalCode: string
+    city: string
+    province: string
     taxCondition: "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"
     bankName: string
     bankAccountType: "CA" | "CC" | ""
@@ -49,6 +52,9 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
     email: entity?.email || "",
     phone: entity?.phone || "",
     address: entity?.address || "",
+    postalCode: (entity as any)?.postalCode || "",
+    city: (entity as any)?.city || "",
+    province: (entity as any)?.province || "",
     taxCondition: entity?.taxCondition || (type === "client" ? "final_consumer" : "registered_taxpayer"),
     bankName: (entity as Supplier)?.bankName || "",
     bankAccountType: (entity as Supplier)?.bankAccountType || "",
@@ -167,6 +173,9 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         email: formData.email || undefined,
         phone: formData.phone || undefined,
         address: formData.taxCondition !== 'final_consumer' ? formData.address : undefined,
+        postal_code: formData.postalCode || undefined,
+        city: formData.city || undefined,
+        province: formData.province || undefined,
         tax_condition: formData.taxCondition
       }
 
@@ -442,24 +451,71 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       </div>
 
       {formData.taxCondition !== 'final_consumer' && (
-        <div className="space-y-2">
-          <Label htmlFor="address" className="flex items-center gap-1">
-            Domicilio Fiscal
-            <span className="text-red-500 text-xs">*</span>
-          </Label>
-          <Input
-            id="address"
-            value={formData.address}
-            onChange={(e) => setFormData({...formData, address: e.target.value.slice(0, 200)})}
-            maxLength={200}
-            required
-            placeholder="Calle y número, ciudad, provincia"
-            className={getFieldClassName('address', formData.address, true)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Requerido para registros contables. AFIP obtiene automáticamente el domicilio fiscal desde su padrón al emitir comprobantes.
-          </p>
-        </div>
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="address" className="flex items-center gap-1">
+              Domicilio Fiscal
+              <span className="text-red-500 text-xs">*</span>
+            </Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({...formData, address: e.target.value.slice(0, 200)})}
+              maxLength={200}
+              required
+              placeholder="Calle y número"
+              className={getFieldClassName('address', formData.address, true)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Requerido para registros contables. AFIP obtiene automáticamente el domicilio fiscal desde su padrón al emitir comprobantes.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="postalCode" className="flex items-center gap-1">
+                Código Postal
+                <span className="text-xs text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                id="postalCode"
+                value={formData.postalCode}
+                onChange={(e) => setFormData({...formData, postalCode: e.target.value.slice(0, 20)})}
+                maxLength={20}
+                placeholder="Ej: 1425"
+                className={getFieldClassName('postalCode', formData.postalCode)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city" className="flex items-center gap-1">
+                Ciudad
+                <span className="text-xs text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) => setFormData({...formData, city: e.target.value.slice(0, 100)})}
+                maxLength={100}
+                placeholder="Ej: Buenos Aires"
+                className={getFieldClassName('city', formData.city)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="province" className="flex items-center gap-1">
+                Provincia
+                <span className="text-xs text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                id="province"
+                value={formData.province}
+                onChange={(e) => setFormData({...formData, province: e.target.value.slice(0, 100)})}
+                maxLength={100}
+                placeholder="Ej: CABA"
+                className={getFieldClassName('province', formData.province)}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       <div className="border-t pt-4 mt-4">

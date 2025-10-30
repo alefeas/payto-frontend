@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, AlertCircle, Calendar, DollarSign, FileText, Download, Plus, Filter, Search, Trash2 } from "lucide-react"
-import { Eye } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, AlertCircle, Calendar, DollarSign, FileText, Download, Plus, Filter, Search, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ByEntityTab } from "@/components/accounts/ByEntityTab"
 
 export default function AccountsPayablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -282,10 +282,10 @@ export default function AccountsPayablePage() {
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
         if (filters.to_date && issueDate > new Date(filters.to_date)) return false
       }
-      // Filtrar por CUIT
+      // Filtrar por número de factura
       if (filters.search) {
-        const cuit = inv.supplier?.document_number || inv.issuerCompany?.national_id || ''
-        if (!cuit.includes(filters.search)) return false
+        const invoiceNumber = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`
+        if (!invoiceNumber.toLowerCase().includes(filters.search.toLowerCase())) return false
       }
       return true
     })
@@ -465,24 +465,20 @@ export default function AccountsPayablePage() {
                 placeholder="Hasta"
               />
               <Input
-                placeholder="Buscar por CUIT (XX-XXXXXXXX-X)..."
+                placeholder="Buscar por número de factura..."
                 value={filters.search}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/[^0-9]/g, '')
-                  if (value.length > 11) value = value.slice(0, 11)
-                  if (value.length > 2) value = value.slice(0, 2) + '-' + value.slice(2)
-                  if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11)
-                  setFilters({...filters, search: value})
-                }}
-                maxLength={13}
+                onChange={(e) => setFilters({...filters, search: e.target.value})}
                 className="flex-1"
               />
               {(filters.from_date || filters.to_date || filters.search) && (
                 <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: ''})}>
-                  Limpiar Filtros
+                  Limpiar
                 </Button>
               )}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Tip: Usa la pestaña "Por Proveedor" para ver facturas agrupadas
+            </p>
           </CardContent>
         </Card>
 
@@ -806,72 +802,20 @@ export default function AccountsPayablePage() {
 
           {/* Por Proveedor */}
           <TabsContent value="suppliers" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumen por Proveedor</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {!dashboard?.by_supplier || dashboard.by_supplier.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay datos por proveedor</p>
-                    </div>
-                  ) : (
-                    dashboard.by_supplier
-                      .filter((supplier: any) => {
-                        if (!filters.search) return true
-                        const supplierInvoices = invoices.filter(inv => 
-                          (inv.supplier_id || inv.issuer_company_id) === supplier.supplier_id
-                        )
-                        if (supplierInvoices.length === 0) return false
-                        const cuit = supplierInvoices[0]?.supplier?.document_number || supplierInvoices[0]?.issuerCompany?.national_id || ''
-                        return cuit.includes(filters.search)
-                      })
-                      .map((supplier: any) => {
-                        const firstInvoice = invoices.find(inv => 
-                          (inv.supplier_id || inv.issuer_company_id) === supplier.supplier_id
-                        )
-                        const cuit = firstInvoice?.supplier?.document_number || firstInvoice?.issuerCompany?.national_id || ''
-                        return (
-                    <div key={supplier.supplier_id} className="p-4 border border-violet-200 bg-violet-50 rounded-lg">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="w-2 h-2 rounded-full bg-violet-500"></div>
-                            <div className="font-semibold text-gray-900">{supplier.supplier_name}</div>
-                          </div>
-                          {cuit && (
-                            <div className="text-sm text-gray-500 ml-4">{cuit}</div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Pendiente</div>
-                          <div className="font-bold text-lg text-violet-600">{formatCurrency(supplier.total_pending)}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-violet-200">
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium text-gray-900">{supplier.invoice_count}</span> factura{supplier.invoice_count !== 1 ? 's' : ''}
-                        </div>
-                        <Button 
-                          size="sm" 
-                          className="bg-violet-500 hover:bg-violet-600 text-white"
-                          onClick={() => {
-                            setActiveTab('invoices')
-                            setFilters({...filters, search: cuit})
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Facturas
-                        </Button>
-                      </div>
-                    </div>
-                        )
-                      })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <ByEntityTab
+              invoices={getFilteredInvoices()}
+              formatCurrency={formatCurrency}
+              onViewInvoices={(cuit) => {
+                setActiveTab('invoices')
+                setFilters({...filters, search: cuit})
+              }}
+              onViewInvoice={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+              onActionInvoice={(id) => {
+                setSelectedInvoices([id])
+                handlePayInvoices([id])
+              }}
+              type="payable"
+            />
           </TabsContent>
         </Tabs>
 

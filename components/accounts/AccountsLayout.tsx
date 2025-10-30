@@ -19,6 +19,7 @@ interface AccountsLayoutProps {
     from_date: string
     to_date: string
   }
+  searchPlaceholder?: string
   onFiltersChange: (filters: any) => void
   activeTab: string
   onTabChange: (tab: string) => void
@@ -36,6 +37,7 @@ export function AccountsLayout({
   activeTab,
   onTabChange,
   tabs,
+  searchPlaceholder = 'Buscar por número de factura...'
 }: AccountsLayoutProps) {
   const router = useRouter()
 
@@ -75,16 +77,9 @@ export function AccountsLayout({
                 placeholder="Hasta"
               />
               <Input
-                placeholder="Buscar por CUIT (XX-XXXXXXXX-X)..."
+                placeholder={searchPlaceholder}
                 value={filters.search}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/[^0-9]/g, '')
-                  if (value.length > 11) value = value.slice(0, 11)
-                  if (value.length > 2) value = value.slice(0, 2) + '-' + value.slice(2)
-                  if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11)
-                  onFiltersChange({ ...filters, search: value })
-                }}
-                maxLength={13}
+                onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
                 className="flex-1"
               />
               {(filters.from_date || filters.to_date || filters.search) && (
@@ -92,10 +87,13 @@ export function AccountsLayout({
                   variant="outline"
                   onClick={() => onFiltersChange({ ...filters, from_date: '', to_date: '', search: '' })}
                 >
-                  Limpiar Filtros
+                  Limpiar
                 </Button>
               )}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Tip: Usa la pestaña "Por Cliente/Proveedor" para ver facturas agrupadas
+            </p>
           </CardContent>
         </Card>
 

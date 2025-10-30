@@ -20,25 +20,41 @@ interface Supplier {
   taxCondition?: string
 }
 
+interface ConnectedCompany {
+  id: string
+  name: string
+  cuit: string
+  taxCondition?: string
+}
+
 interface SupplierSelectorProps {
   companyId: string
   savedSuppliers: Supplier[]
+  connectedCompanies?: ConnectedCompany[]
   isLoading?: boolean
-  onSelect: (data: { supplier_id?: string }) => void
+  onSelect: (data: { supplier_id?: string, issuer_company_id?: string }) => void
   onSupplierCreated?: () => void
 }
 
-type SupplierType = 'saved' | 'new'
+type SupplierType = 'saved' | 'connected' | 'new'
 
-export function SupplierSelector({ companyId, savedSuppliers = [], isLoading, onSelect, onSupplierCreated }: SupplierSelectorProps) {
+export function SupplierSelector({ companyId, savedSuppliers = [], connectedCompanies = [], isLoading, onSelect, onSupplierCreated }: SupplierSelectorProps) {
   const [supplierType, setSupplierType] = useState<SupplierType>('saved')
   const [selectedSupplier, setSelectedSupplier] = useState('')
+  const [selectedCompany, setSelectedCompany] = useState('')
   const [isNewSupplierDialogOpen, setIsNewSupplierDialogOpen] = useState(false)
   const [isCreatingSupplier, setIsCreatingSupplier] = useState(false)
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplier(supplierId)
+    setSelectedCompany('')
     onSelect({ supplier_id: supplierId })
+  }
+
+  const handleCompanySelect = (companyId: string) => {
+    setSelectedCompany(companyId)
+    setSelectedSupplier('')
+    onSelect({ issuer_company_id: companyId })
   }
 
   const handleNewSupplierSuccess = (createdSupplier?: any) => {
@@ -66,6 +82,24 @@ export function SupplierSelector({ companyId, savedSuppliers = [], isLoading, on
   return (
     <div className="space-y-4">
       <RadioGroup value={supplierType} onValueChange={(v) => setSupplierType(v as SupplierType)}>
+        {connectedCompanies.length > 0 && (
+          <Label 
+            htmlFor="connected-company" 
+            className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+          >
+            <RadioGroupItem value="connected" id="connected-company" />
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="font-medium">
+                Empresa en mi red PayTo
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Facturación directa entre empresas conectadas. Notificaciones automáticas y confirmación de pago en tiempo real.
+              </p>
+            </div>
+          </Label>
+        )}
+        
         <Label 
           htmlFor="saved-supplier" 
           className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
@@ -74,7 +108,7 @@ export function SupplierSelector({ companyId, savedSuppliers = [], isLoading, on
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
             <div className="font-medium">
-              Proveedor guardado
+              Proveedor externo guardado
             </div>
             <p className="text-xs text-muted-foreground">
               {savedSuppliers.length > 0 
@@ -92,14 +126,56 @@ export function SupplierSelector({ companyId, savedSuppliers = [], isLoading, on
           <UserPlus className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
             <div className="font-medium">
-              Nuevo proveedor
+              Nuevo proveedor externo
             </div>
             <p className="text-xs text-muted-foreground">
-              Agregar un nuevo proveedor externo
+              Consumidor final, monotributista o empresa sin registro
             </p>
           </div>
         </Label>
       </RadioGroup>
+
+      {supplierType === 'connected' && (
+        <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
+          <Label>Seleccionar Empresa</Label>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Cargando empresas conectadas...</span>
+            </div>
+          ) : connectedCompanies.length === 0 ? (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900 font-medium">No tienes empresas conectadas</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Invita a otras empresas a tu red PayTo para registrar sus facturas directamente
+              </p>
+            </div>
+          ) : (
+            <Select value={selectedCompany} onValueChange={handleCompanySelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Buscar empresa en tu red..." />
+              </SelectTrigger>
+              <SelectContent>
+                {connectedCompanies.map(company => (
+                  <SelectItem key={company.id} value={company.id}>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span className="font-medium">{company.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        CUIT: {company.cuit || 'N/A'} • {company.taxCondition === 'registered_taxpayer' ? 'RI' : 
+                         company.taxCondition === 'monotax' ? 'Monotributo' : 
+                         company.taxCondition === 'exempt' ? 'Exento' : 'CF'}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
 
       {supplierType === 'saved' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
