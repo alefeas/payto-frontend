@@ -20,6 +20,7 @@ function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isTokenLoaded, setIsTokenLoaded] = useState(false);
 
   useEffect(() => {
     const tokenParam = searchParams.get('token');
@@ -28,6 +29,7 @@ function ResetPasswordForm() {
     } else {
       setToken(tokenParam);
     }
+    setIsTokenLoaded(true);
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +72,19 @@ function ResetPasswordForm() {
       setLoading(false);
     }
   };
+
+  if (!isTokenLoaded) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6 pb-6">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="text-sm text-gray-500">Verificando enlace...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!token) {
     return (
