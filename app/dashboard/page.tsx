@@ -51,7 +51,7 @@ export default function DashboardPage() {
       const data = await companyService.getCompanies()
       setCompanies(data)
     } catch (error: any) {
-      // Solo mostrar error si el usuario está autenticado
+      // Solo mostrar error si el usuario estÃ¡ autenticado
       if (isAuthenticated) {
         toast.error('Error al cargar perfiles')
       }
@@ -130,7 +130,7 @@ export default function DashboardPage() {
   }
 
   const currentHour = new Date().getHours()
-  const greeting = currentHour < 12 ? 'Buenos días' : currentHour < 18 ? 'Buenas tardes' : 'Buenas noches'
+  const greeting = currentHour < 12 ? 'Buenos dÃ­as' : currentHour < 18 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 space-y-8">
@@ -184,29 +184,29 @@ export default function DashboardPage() {
                       <div className="h-2 w-2 bg-white rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Factura creada</p>
-                        <p className="text-xs text-muted-foreground">TechCorp SA • hace 2h</p>
+                        <p className="text-xs text-muted-foreground">TechCorp SA â€¢ hace 2h</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
                       <div className="h-2 w-2 bg-white rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Nuevo miembro</p>
-                        <p className="text-xs text-muted-foreground">StartupXYZ • hace 1d</p>
+                        <p className="text-xs text-muted-foreground">StartupXYZ â€¢ hace 1d</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
                       <div className="h-2 w-2 bg-white rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Pago pendiente</p>
-                        <p className="text-xs text-muted-foreground">Consulting LLC • hace 2d</p>
+                        <p className="text-xs text-muted-foreground">Consulting LLC â€¢ hace 2d</p>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                <div className="p-3 bg-white rounded-lg">
                   <p className="text-sm text-center">
-                    ?? <strong>¡Buen trabajo!</strong> Has gestionado {companies.length} perfiles exitosamente
+                    ðŸŽ‰ <strong>Â¡Buen trabajo!</strong> Has gestionado {companies.length} perfiles exitosamente
                   </p>
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Resumen Rápido
+                Resumen RÃ¡pido
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                       {tasks.filter(t => !t.is_completed).length > 5 && (
                         <div className="pt-2 text-center">
                           <Button variant="link" size="sm" onClick={() => router.push('/tasks')}>
-                            Ver {tasks.filter(t => !t.is_completed).length - 5} más
+                            Ver {tasks.filter(t => !t.is_completed).length - 5} mÃ¡s
                           </Button>
                         </div>
                       )}
