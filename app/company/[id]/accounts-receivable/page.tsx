@@ -341,7 +341,7 @@ export default function AccountsReceivablePage() {
                           other: 'Otro'
                         }
                         return (
-                    <div key={collection.id} className="p-4 border rounded-lg bg-green-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div key={collection.id} className="p-4 border rounded-lg bg-white/50 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="font-medium text-lg">{collection.invoice?.client?.business_name || (collection.invoice?.client?.first_name && collection.invoice?.client?.last_name ? `${collection.invoice.client.first_name} ${collection.invoice.client.last_name}` : null) || collection.invoice?.receiverCompany?.business_name || collection.invoice?.receiverCompany?.name || 'Cliente'}</div>
@@ -351,7 +351,7 @@ export default function AccountsReceivablePage() {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(collection.amount) || 0)}</div>
-                          <Badge className="bg-green-600 text-white mt-1">Cobrado</Badge>
+                          <Badge className="bg-white text-white mt-1">Cobrado</Badge>
                         </div>
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">

@@ -151,8 +151,8 @@ function VerifyForm() {
               
               <div className={`flex items-center justify-center gap-2 text-sm font-medium py-2 px-4 rounded-lg ${
                 expirationTimer === 0 ? 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400' :
-                expirationTimer < 60 ? 'bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400' :
-                'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+                expirationTimer < 60 ? 'bg-white text-orange-600 dark:bg-white dark:text-orange-400' :
+                'bg-white text-blue-600 dark:bg-white dark:text-blue-400'
               }`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

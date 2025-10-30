@@ -21,9 +21,9 @@ const condicionIvaLabels: Record<string, string> = {
 }
 
 const condicionIvaColors: Record<string, string> = {
-  registered_taxpayer: "bg-blue-100 text-blue-800",
-  monotax: "bg-green-100 text-green-800",
-  exempt: "bg-purple-100 text-purple-800"
+  registered_taxpayer: "bg-white text-blue-800",
+  monotax: "bg-white text-green-800",
+  exempt: "bg-white text-purple-800"
 }
 
 export default function SuppliersPage() {
@@ -336,7 +336,7 @@ export default function SuppliersPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-white"
                             onClick={() => {
                               setSupplierToDelete(supplier)
                               setIsDeleteDialogOpen(true)

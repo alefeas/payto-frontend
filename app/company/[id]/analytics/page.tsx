@@ -417,7 +417,7 @@ export default function AnalyticsPage() {
           <CardContent>
             {pendingInvoices && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-yellow-50 rounded-lg">
+                <div className="p-4 bg-white rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium text-yellow-800">Facturas a Cobrar</p>
@@ -431,7 +431,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-orange-50 rounded-lg">
+                <div className="p-4 bg-white rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium text-orange-800">Facturas a Pagar</p>
@@ -445,7 +445,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-green-50 rounded-lg">
+                <div className="p-4 bg-white rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium text-green-800">Pendientes de Aprobar</p>

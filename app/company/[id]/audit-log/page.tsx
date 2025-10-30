@@ -76,9 +76,9 @@ export default function AuditLogPage() {
   }
 
   const getActionColor = (action: string): string => {
-    if (action.includes('created') || action.includes('joined')) return 'bg-green-100 text-green-800'
-    if (action.includes('updated') || action.includes('regenerated')) return 'bg-blue-100 text-blue-800'
-    if (action.includes('deleted') || action.includes('removed')) return 'bg-red-100 text-red-800'
+    if (action.includes('created') || action.includes('joined')) return 'bg-white text-green-800'
+    if (action.includes('updated') || action.includes('regenerated')) return 'bg-white text-blue-800'
+    if (action.includes('deleted') || action.includes('removed')) return 'bg-white text-red-800'
     return 'bg-gray-100 text-gray-800'
   }
 

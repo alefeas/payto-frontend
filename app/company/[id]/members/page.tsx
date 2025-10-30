@@ -81,15 +81,15 @@ export default function MembersPage() {
     const label = translateRole(role)
     switch (role) {
       case "owner":
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-300">{label}</Badge>
+        return <Badge className="bg-white text-amber-800 border-amber-300">{label}</Badge>
       case "administrator":
-        return <Badge className="bg-yellow-100 text-yellow-800">{label}</Badge>
+        return <Badge className="bg-white text-yellow-800">{label}</Badge>
       case "financial_director":
-        return <Badge className="bg-purple-100 text-purple-800">{label}</Badge>
+        return <Badge className="bg-white text-purple-800">{label}</Badge>
       case "accountant":
-        return <Badge className="bg-blue-100 text-blue-800">{label}</Badge>
+        return <Badge className="bg-white text-blue-800">{label}</Badge>
       case "approver":
-        return <Badge className="bg-green-100 text-green-800">{label}</Badge>
+        return <Badge className="bg-white text-green-800">{label}</Badge>
       case "operator":
         return <Badge variant="secondary">{label}</Badge>
     }
@@ -242,31 +242,31 @@ export default function MembersPage() {
           </Card>
           
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+            <div className="bg-white border border-amber-200 rounded-lg p-3 text-center">
               <Crown className="h-5 w-5 text-amber-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-amber-800">{members.filter(m => m.role === "owner").length}</p>
               <p className="text-xs text-amber-600">Propietario</p>
             </div>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+            <div className="bg-white border border-yellow-200 rounded-lg p-3 text-center">
               <Crown className="h-5 w-5 text-yellow-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-yellow-800">{members.filter(m => m.role === "administrator").length}</p>
               <p className="text-xs text-yellow-600">Administradores</p>
             </div>
             
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+            <div className="bg-white border border-purple-200 rounded-lg p-3 text-center">
               <TrendingUp className="h-5 w-5 text-purple-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-purple-800">{members.filter(m => m.role === "financial_director").length}</p>
               <p className="text-xs text-purple-600">Dir. Financiero</p>
             </div>
             
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+            <div className="bg-white border border-blue-200 rounded-lg p-3 text-center">
               <Calculator className="h-5 w-5 text-blue-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-blue-800">{members.filter(m => m.role === "accountant").length}</p>
               <p className="text-xs text-blue-600">Contadores</p>
             </div>
             
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+            <div className="bg-white border border-green-200 rounded-lg p-3 text-center">
               <Check className="h-5 w-5 text-green-600 mx-auto mb-1" />
               <p className="text-lg font-bold text-green-800">{members.filter(m => m.role === "approver").length}</p>
               <p className="text-xs text-green-600">Aprobadores</p>
@@ -420,7 +420,7 @@ export default function MembersPage() {
             </DialogHeader>
             
             <div className="space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="bg-white border border-yellow-200 rounded-lg p-4">
                 <h4 className="font-medium text-yellow-900 mb-2">Permisos que se otorgarán:</h4>
                 <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
                   <li>Control total de la empresa</li>
@@ -430,7 +430,7 @@ export default function MembersPage() {
                 </ul>
               </div>
               
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="bg-white border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-900">
                   <strong>Importante:</strong> Los administradores tienen casi los mismos permisos que el propietario, excepto transferir la propiedad.
                 </p>
@@ -447,7 +447,7 @@ export default function MembersPage() {
                   await executeRoleChange()
                 }} 
                 disabled={updating}
-                className="bg-yellow-600 hover:bg-yellow-700"
+                className="bg-white hover:bg-white"
               >
                 Sí, Otorgar Permisos
               </Button>
@@ -469,7 +469,7 @@ export default function MembersPage() {
             </DialogHeader>
             
             <div className="space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-white border border-red-200 rounded-lg p-4">
                 <h4 className="font-medium text-red-900 mb-2">⚠️ Acción Crítica</h4>
                 <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
                   <li>Perderás el rol de propietario</li>
@@ -504,7 +504,7 @@ export default function MembersPage() {
               <Button 
                 onClick={() => executeRoleChange(confirmationCode)} 
                 disabled={updating || !confirmationCode}
-                className="bg-amber-600 hover:bg-amber-700"
+                className="bg-white hover:bg-white"
               >
                 {updating ? 'Transfiriendo...' : 'Transferir Propiedad'}
               </Button>

@@ -153,7 +153,7 @@ export default function ApproveInvoicesPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-3 bg-white border border-blue-200 rounded-lg px-4 py-3">
           <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
           <p className="text-sm text-blue-900">
             {requiredApprovals === 0 ? (
@@ -222,7 +222,7 @@ export default function ApproveInvoicesPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         {invoice.approvals?.some(a => a.user?.id === currentUserId) ? (
-                          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-white border border-green-200 rounded-md">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <span className="text-sm font-medium text-green-700">Ya aprobaste</span>
                           </div>
@@ -231,7 +231,7 @@ export default function ApproveInvoicesPage() {
                             <Button 
                               size="sm" 
                               onClick={() => openApproveDialog(invoice)}
-                              className="bg-green-600 hover:bg-green-700"
+                              className="bg-white hover:bg-white"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Aprobar
@@ -299,7 +299,7 @@ export default function ApproveInvoicesPage() {
             <Button variant="outline" onClick={() => setShowApproveDialog(false)} disabled={processing}>
               Cancelar
             </Button>
-            <Button onClick={handleApprove} disabled={processing} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleApprove} disabled={processing} className="bg-white hover:bg-white">
               {processing ? 'Aprobando...' : 'Aprobar'}
             </Button>
           </DialogFooter>

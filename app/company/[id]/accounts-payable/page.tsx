@@ -331,14 +331,14 @@ export default function AccountsPayablePage() {
     
     // Estado de vencimiento
     if (isOverdue) {
-      badges.push(<Badge key="overdue" className="bg-red-500 text-white font-semibold">Vencida</Badge>)
+      badges.push(<Badge key="overdue" className="bg-white text-white font-semibold">Vencida</Badge>)
     }
     
     // Estado de pago
     if (invoice.payment_status === 'paid') {
-      badges.push(<Badge key="payment" className="bg-green-100 text-green-800">Pagada</Badge>)
+      badges.push(<Badge key="payment" className="bg-white text-green-800">Pagada</Badge>)
     } else if (invoice.payment_status === 'partial') {
-      badges.push(<Badge key="payment" className="bg-yellow-100 text-yellow-800">Pago Parcial</Badge>)
+      badges.push(<Badge key="payment" className="bg-white text-yellow-800">Pago Parcial</Badge>)
     } else {
       badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Pago</Badge>)
     }
@@ -623,7 +623,7 @@ export default function AccountsPayablePage() {
                     </div>
                   ) : (
                     dashboard.upcoming_invoices.map((invoice: any) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-yellow-200 rounded-lg bg-white">
                       <div>
                         <div className="font-medium">{invoice.supplier}</div>
                         <div className="text-sm text-muted-foreground">
@@ -693,7 +693,7 @@ export default function AccountsPayablePage() {
                         const netAmount = (parseFloat(payment.amount) || 0) - totalRetentions
                         
                         return (
-                    <div key={payment.id} className="p-4 border rounded-lg bg-blue-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div key={payment.id} className="p-4 border rounded-lg bg-white/50 animate-in fade-in slide-in-from-top-2 duration-300">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="font-medium text-lg">{payment.invoice?.supplier?.business_name || (payment.invoice?.supplier?.first_name && payment.invoice?.supplier?.last_name ? `${payment.invoice.supplier.first_name} ${payment.invoice.supplier.last_name}` : null) || payment.invoice?.issuerCompany?.business_name || payment.invoice?.issuerCompany?.name || 'Proveedor'}</div>
@@ -703,7 +703,7 @@ export default function AccountsPayablePage() {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-lg text-blue-600">{formatCurrency(parseFloat(payment.amount) || 0)}</div>
-                          <Badge className="bg-blue-600 text-white mt-1">Pagado</Badge>
+                          <Badge className="bg-white text-white mt-1">Pagado</Badge>
                         </div>
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
@@ -777,7 +777,7 @@ export default function AccountsPayablePage() {
                         return true
                       })
                       .map((invoice: any) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-white">
                       <div>
                         <div className="font-medium">{invoice.supplier}</div>
                         <div className="text-sm text-muted-foreground">
@@ -833,11 +833,11 @@ export default function AccountsPayablePage() {
                         )
                         const cuit = firstInvoice?.supplier?.document_number || firstInvoice?.issuerCompany?.national_id || ''
                         return (
-                    <div key={supplier.supplier_id} className="p-4 border border-violet-200 bg-violet-50 rounded-lg">
+                    <div key={supplier.supplier_id} className="p-4 border border-violet-200 bg-white rounded-lg">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <div className="w-2 h-2 rounded-full bg-violet-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
                             <div className="font-semibold text-gray-900">{supplier.supplier_name}</div>
                           </div>
                           {cuit && (
@@ -855,7 +855,7 @@ export default function AccountsPayablePage() {
                         </div>
                         <Button 
                           size="sm" 
-                          className="bg-violet-500 hover:bg-violet-600 text-white"
+                          className="bg-white hover:bg-white text-white"
                           onClick={() => {
                             setActiveTab('invoices')
                             setFilters({...filters, search: cuit})

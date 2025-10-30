@@ -85,7 +85,7 @@ export default function JoinCompanyPage() {
               {isJoining ? 'Uniéndose...' : 'Unirse a Empresa'}
             </Button>
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="p-3 bg-white border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-800">
                 <strong>💡 Info:</strong> El administrador de la empresa debe proporcionarte el código de invitación.
               </p>

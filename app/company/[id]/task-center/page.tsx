@@ -130,7 +130,7 @@ export default function TaskCenterPage() {
             <CardContent>
               <div className="space-y-3">
                 {mockPendingTasks.rejectedInvoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div key={invoice.id} className="flex items-center justify-between p-3 bg-white border border-red-200 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Badge variant="destructive">URGENTE</Badge>
                       <div>
@@ -164,9 +164,9 @@ export default function TaskCenterPage() {
             <CardContent>
               <div className="space-y-3">
                 {mockPendingTasks.expiringSoon.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div key={invoice.id} className="flex items-center justify-between p-3 bg-white border border-orange-200 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className={invoice.daysToExpire <= 1 ? "bg-red-100 text-red-800" : "bg-orange-100 text-orange-800"}>
+                      <Badge variant="secondary" className={invoice.daysToExpire <= 1 ? "bg-white text-red-800" : "bg-white text-orange-800"}>
                         {invoice.daysToExpire} día{invoice.daysToExpire !== 1 ? 's' : ''}
                       </Badge>
                       <div>
@@ -203,7 +203,7 @@ export default function TaskCenterPage() {
                 {mockPendingTasks.pendingApprovals.map((invoice) => (
                   <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge variant="secondary" className="bg-white text-blue-800">
                         {invoice.daysWaiting} día{invoice.daysWaiting !== 1 ? 's' : ''} esperando
                       </Badge>
                       <div>
@@ -239,7 +239,7 @@ export default function TaskCenterPage() {
                 {mockPendingTasks.pendingPayments.map((payment) => (
                   <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <Badge variant="secondary" className="bg-white text-green-800">
                         {payment.method}
                       </Badge>
                       <div>

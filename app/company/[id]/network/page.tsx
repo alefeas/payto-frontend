@@ -243,7 +243,7 @@ export default function NetworkPage() {
                     <Card key={connection.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-blue-100 rounded-lg">
+                          <div className="p-2 bg-white rounded-lg">
                             <Building2 className="h-6 w-6 text-blue-600" />
                           </div>
                           <div>
@@ -314,7 +314,7 @@ export default function NetworkPage() {
                     <Card key={request.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-orange-100 rounded-lg">
+                          <div className="p-2 bg-white rounded-lg">
                             <Building2 className="h-6 w-6 text-orange-600" />
                           </div>
                           <div className="flex-1">
@@ -383,7 +383,7 @@ export default function NetworkPage() {
                     <Card key={request.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-blue-100 rounded-lg">
+                          <div className="p-2 bg-white rounded-lg">
                             <Building2 className="h-6 w-6 text-blue-600" />
                           </div>
                           <div className="flex-1">
@@ -437,7 +437,7 @@ export default function NetworkPage() {
             </DialogHeader>
             
             <div className="space-y-3 py-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="bg-white border border-amber-200 rounded-lg p-4">
                 <div className="flex gap-3">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
@@ -455,7 +455,7 @@ export default function NetworkPage() {
                 </div>
               </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-white border border-blue-200 rounded-lg p-4">
                 <div className="flex gap-3">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">

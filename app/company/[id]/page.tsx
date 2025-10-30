@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { FeatureCard } from "@/components/company/feature-card"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { afipCertificateService } from "@/services/afip-certificate.service"
@@ -141,7 +142,6 @@ export default function CompanyPage() {
     title: string
     description: string
     icon: any
-    color: string
     badge?: number | string
     permission?: string
     action: () => void
@@ -152,7 +152,6 @@ export default function CompanyPage() {
       title: "Emitir Comprobante",
       description: "Facturas, NC, ND, Recibos, etc.",
       icon: FileText,
-      color: "bg-blue-500",
       permission: 'invoices.create' as const,
       action: () => router.push(`/company/${company.id}/emit-invoice`)
     }] : []),
@@ -160,7 +159,6 @@ export default function CompanyPage() {
       title: "Cargar Factura Recibida",
       description: "Registrar factura de empresa externa",
       icon: Plus,
-      color: "bg-teal-500",
       permission: 'invoices.create' as const,
       action: () => router.push(`/company/${company.id}/load-invoice`)
     }] : []),
@@ -168,7 +166,6 @@ export default function CompanyPage() {
       title: "Ver Facturas",
       description: "Gestionar todas las facturas",
       icon: FileText,
-      color: "bg-purple-500",
       permission: 'invoices.view' as const,
       action: () => router.push(`/company/${company.id}/invoices`)
     }] : []),
@@ -176,7 +173,6 @@ export default function CompanyPage() {
       title: "Cuentas por Pagar",
       description: "Gestionar pagos a proveedores",
       icon: CreditCard,
-      color: "bg-orange-500",
       badge: 'pending_payments',
       permission: 'payments.create' as const,
       action: () => router.push(`/company/${company.id}/accounts-payable`)
@@ -185,7 +181,6 @@ export default function CompanyPage() {
       title: "Cuentas por Cobrar",
       description: "Gestionar cobros de clientes",
       icon: Eye,
-      color: "bg-yellow-500",
       badge: 'pending_collections',
       permission: 'payments.view' as const,
       action: () => router.push(`/company/${company.id}/accounts-receivable`)
@@ -194,7 +189,6 @@ export default function CompanyPage() {
       title: "Aprobar Facturas",
       description: "Revisar facturas de proveedores",
       icon: CheckSquare,
-      color: "bg-green-500",
       badge: 'pending_approvals',
       permission: 'invoices.approve' as const,
       action: () => router.push(`/company/${company.id}/approve-invoices`)
@@ -203,7 +197,6 @@ export default function CompanyPage() {
       title: "Registro de Auditoría",
       description: "Historial de actividades del sistema",
       icon: Activity,
-      color: "bg-gray-600",
       permission: 'audit.view' as const,
       action: () => router.push(`/company/${company.id}/audit-log`)
     }] : []),
@@ -211,14 +204,12 @@ export default function CompanyPage() {
       title: "Estadísticas",
       description: "Reportes y análisis financiero",
       icon: BarChart3,
-      color: "bg-indigo-500",
       action: () => router.push(`/company/${company.id}/analytics`)
     },
     {
       title: "Libro IVA",
       description: "Registro de operaciones con IVA",
       icon: BookOpen,
-      color: "bg-emerald-500",
       action: () => router.push(`/company/${company.id}/iva-book`)
     }
   ]
@@ -230,21 +221,18 @@ export default function CompanyPage() {
       title: "Mis Clientes",
       description: "Gestionar clientes externos",
       icon: Users,
-      color: "bg-blue-500",
       action: () => router.push(`/company/${company.id}/clients`)
     },
     {
       title: "Mis Proveedores",
       description: "Gestionar proveedores externos",
       icon: Users,
-      color: "bg-teal-500",
       action: () => router.push(`/company/${company.id}/suppliers`)
     },
     {
       title: "Red Empresarial",
       description: "Conectar con otras empresas",
       icon: Users,
-      color: "bg-pink-500",
       action: () => router.push(`/company/${company.id}/network`)
     }
   ]
@@ -283,7 +271,7 @@ export default function CompanyPage() {
                   variant="outline" 
                   size="sm"
                   onClick={() => router.push(`/company/${company.id}/verify`)}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  className="border-[#eeeeee] text-foreground hover:bg-accent"
                 >
                   <Shield className="h-4 w-4 mr-2" />
                   Verificar AFIP
@@ -351,13 +339,13 @@ export default function CompanyPage() {
 
         {/* Banner de Estado de Verificación AFIP - Visible para todos */}
         {isAfipVerified ? (
-          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-3 bg-white border border-[#eeeeee] rounded-lg">
+            <CheckCircle2 className="h-5 w-5 text-[#002bff] flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-green-900 text-sm">
+              <p className="font-medium text-foreground text-sm">
                 ✓ Cuenta Verificada con AFIP
               </p>
-              <p className="text-xs text-green-800 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Todas las funciones están habilitadas. Podés emitir facturas electrónicas oficiales y consultar datos fiscales automáticamente.
               </p>
             </div>
@@ -365,7 +353,7 @@ export default function CompanyPage() {
               <Button 
                 size="sm" 
                 variant="outline"
-                className="border-green-600 text-green-700 hover:bg-green-100 flex-shrink-0"
+                className="border-[#002bff] text-[#002bff] hover:bg-accent flex-shrink-0"
                 onClick={() => router.push(`/company/${company.id}/verify`)}
               >
                 Ver Detalles
@@ -373,20 +361,20 @@ export default function CompanyPage() {
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <Eye className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-4 bg-white border border-[#eeeeee] rounded-lg">
+            <Eye className="h-5 w-5 text-[#002bff] flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-blue-900 text-sm">🔓 Modo Vista Previa Activo</p>
-              <p className="text-xs text-blue-800 mt-1">
+              <p className="font-medium text-foreground text-sm">🔓 Modo Vista Previa Activo</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Podés explorar el sistema y ver cómo funciona cada sección, pero todas las acciones están bloqueadas hasta que verifiques tu cuenta con AFIP.
               </p>
-              <p className="text-xs text-blue-700 mt-2 font-medium">
+              <p className="text-xs text-muted-foreground mt-2 font-medium">
                 La verificación con AFIP garantiza la seguridad y legalidad de todas las operaciones en el sistema.
               </p>
             </div>
             <Button 
               size="sm" 
-              className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+              className="flex-shrink-0"
               onClick={() => router.push(`/company/${company.id}/verify`)}
             >
               Verificar Ahora
@@ -407,39 +395,18 @@ export default function CompanyPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {menuItems.map((item: MenuItem, index) => (
-                <Card 
-                  key={index} 
-                  className="cursor-pointer hover:shadow-md transition-shadow relative"
+                <FeatureCard
+                  key={index}
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
                   onClick={item.action}
-                >
-                  {typeof item.badge === 'string' && (
-                    badgesLoading ? (
-                      <div className="absolute -top-2 -right-2 bg-gray-300 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[24px] h-[24px] flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                      </div>
-                    ) : badges[item.badge] !== undefined && badges[item.badge] > 0 ? (
-                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-md z-10 min-w-[20px] flex items-center justify-center">
-                        {badges[item.badge]}
-                      </div>
-                    ) : null
-                  )}
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className={`p-3 rounded-lg ${item.color}`}>
-                        <item.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                        {typeof item.badge === 'string' && !badgesLoading && badges[item.badge] !== undefined && badges[item.badge] === 0 && (
-                          <div className="text-xs text-green-600 font-medium mt-2">
-                            ✓ Todo al día
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  badge={
+                    typeof item.badge === 'string' && !badgesLoading && badges[item.badge] !== undefined
+                      ? badges[item.badge]
+                      : undefined
+                  }
+                />
               ))}
             </div>
           </CardContent>
@@ -456,23 +423,14 @@ export default function CompanyPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {additionalItems.map((item, index) => (
-                <Card 
-                  key={index} 
-                  className="cursor-pointer hover:shadow-sm transition-shadow"
+                <FeatureCard
+                  key={index}
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
                   onClick={item.action}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center text-center space-y-3">
-                      <div className={`p-2 rounded-lg ${item.color}`}>
-                        <item.icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm">{item.title}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  size="small"
+                />
               ))}
             </div>
           </CardContent>

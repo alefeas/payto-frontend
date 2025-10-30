@@ -64,9 +64,9 @@ const statusLabels = {
 }
 
 const statusColors = {
-  paid: "bg-green-100 text-green-800",
-  pending: "bg-yellow-100 text-yellow-800",
-  overdue: "bg-red-100 text-red-800",
+  paid: "bg-white text-green-800",
+  pending: "bg-white text-yellow-800",
+  overdue: "bg-white text-red-800",
   rejected: "bg-gray-100 text-gray-800"
 }
 
@@ -191,7 +191,7 @@ export default function ClientDetailPage() {
                     <div className="flex items-center justify-between gap-4">
                       {/* Invoice Info */}
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="bg-blue-100 text-blue-800 font-bold px-3 py-2 rounded">
+                        <div className="bg-white text-blue-800 font-bold px-3 py-2 rounded">
                           {invoice.type}
                         </div>
                         <div className="flex-1 min-w-0">

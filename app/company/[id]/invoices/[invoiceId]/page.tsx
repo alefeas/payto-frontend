@@ -165,10 +165,10 @@ export default function InvoiceDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      emitida: "bg-blue-500 text-white hover:bg-blue-600",
-      pagada: "bg-green-500 text-white hover:bg-green-600", 
-      vencida: "bg-red-500 text-white hover:bg-red-600",
-      pendiente: "bg-yellow-500 text-white hover:bg-yellow-600"
+      emitida: "bg-white text-white hover:bg-white",
+      pagada: "bg-white text-white hover:bg-white", 
+      vencida: "bg-white text-white hover:bg-white",
+      pendiente: "bg-white text-white hover:bg-white"
     }
     const labels = {
       emitida: "Emitida",
@@ -212,7 +212,7 @@ export default function InvoiceDetailPage() {
                 <h1 className="text-3xl font-bold">{invoice.number}</h1>
                 {getStatusBadge(invoice.display_status || invoice.status)}
                 {invoice.synced_from_afip ? (
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sincronizada AFIP</Badge>
+                  <Badge className="bg-white text-blue-700 border-blue-200">Sincronizada AFIP</Badge>
                 ) : null}
               </div>
               <p className="text-muted-foreground">Factura Tipo {invoice.type}</p>
@@ -266,7 +266,7 @@ export default function InvoiceDetailPage() {
 
         {/* Alert for editing mode */}
         {isEditing && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="bg-white border border-amber-200 rounded-lg p-4">
             <div className="flex gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-amber-800">
@@ -519,7 +519,7 @@ export default function InvoiceDetailPage() {
 
           {/* Estado de Pago / Retenciones */}
           {invoice.status === 'paid' ? (
-            <Card className="shadow-sm border-green-200 bg-green-50/50">
+            <Card className="shadow-sm border-green-200 bg-white/50">
               <CardHeader>
                 <CardTitle className="text-green-700">{isIssuer ? 'Pago Recibido' : 'Pago Realizado'}</CardTitle>
               </CardHeader>
@@ -568,7 +568,7 @@ export default function InvoiceDetailPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+            <Card className="shadow-sm border-amber-200 bg-white/50">
               <CardHeader>
                 <CardTitle className="text-amber-700">{isIssuer ? 'Pendiente de Cobro' : 'Pendiente de Pago'}</CardTitle>
               </CardHeader>

@@ -649,7 +649,7 @@ export default function SettingsPage() {
                     <p className="text-xs text-muted-foreground">
                       {maxApprovals === 1 ? 'Hay 1 miembro' : `Hay ${maxApprovals} miembros`} con permiso para aprobar facturas.
                     </p>
-                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-3">
+                    <div className="bg-white dark:bg-white border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-3">
                       <p className="text-xs text-amber-900 dark:text-amber-100">
                         <strong>Importante:</strong> Al reducir el número de aprobaciones requeridas, las facturas pendientes que ya cumplan con el nuevo número se aprobarán automáticamente.
                       </p>
@@ -713,7 +713,7 @@ export default function SettingsPage() {
                               const newPerceptions = formData.auto_perceptions.filter((_: any, i: number) => i !== index)
                               setFormData({...formData, auto_perceptions: newPerceptions})
                             }}
-                            className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-white"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -865,7 +865,7 @@ export default function SettingsPage() {
                               const newRetentions = formData.auto_retentions.filter((_: any, i: number) => i !== index)
                               setFormData({...formData, auto_retentions: newRetentions})
                             }}
-                            className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-white"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1081,7 +1081,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="bg-white dark:bg-white border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <p className="text-sm text-blue-900 dark:text-blue-100">
                     <strong>Nota:</strong> Las opciones de notificaciones están deshabilitadas temporalmente. Próximamente podrás configurar todas las alertas y recordatorios.
                   </p>
@@ -1500,8 +1500,8 @@ export default function SettingsPage() {
                 {hasInvoices !== null && (
                   <div className={`mt-4 p-4 border rounded-lg ${
                     hasInvoices 
-                      ? 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800'
-                      : 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                      ? 'bg-white dark:bg-white border-amber-200 dark:border-amber-800'
+                      : 'bg-white dark:bg-white border-green-200 dark:border-green-800'
                   }`}>
                     <p className={`text-sm font-medium ${
                       hasInvoices 

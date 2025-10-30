@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -51,7 +51,7 @@ export default function DashboardPage() {
       const data = await companyService.getCompanies()
       setCompanies(data)
     } catch (error: any) {
-      // Solo mostrar error si el usuario estÃ¡ autenticado
+      // Solo mostrar error si el usuario está autenticado
       if (isAuthenticated) {
         toast.error('Error al cargar perfiles')
       }
@@ -130,7 +130,7 @@ export default function DashboardPage() {
   }
 
   const currentHour = new Date().getHours()
-  const greeting = currentHour < 12 ? 'Buenos dÃ­as' : currentHour < 18 ? 'Buenas tardes' : 'Buenas noches'
+  const greeting = currentHour < 12 ? 'Buenos días' : currentHour < 18 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 space-y-8">
@@ -166,11 +166,11 @@ export default function DashboardPage() {
               <div className="space-y-6">
                 {/* Total Stats */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-center p-3 bg-white rounded-lg">
                     <p className="text-2xl font-bold text-blue-600">156</p>
                     <p className="text-xs text-muted-foreground">Facturas Totales</p>
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="text-center p-3 bg-white rounded-lg">
                     <p className="text-2xl font-bold text-green-600">89</p>
                     <p className="text-xs text-muted-foreground">Pagos Procesados</p>
                   </div>
@@ -181,24 +181,24 @@ export default function DashboardPage() {
                   <h4 className="font-medium mb-3 text-sm">Actividad Reciente</h4>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <div className="h-2 w-2 bg-white rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Factura creada</p>
-                        <p className="text-xs text-muted-foreground">TechCorp SA â€¢ hace 2h</p>
+                        <p className="text-xs text-muted-foreground">TechCorp SA • hace 2h</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                      <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                      <div className="h-2 w-2 bg-white rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Nuevo miembro</p>
-                        <p className="text-xs text-muted-foreground">StartupXYZ â€¢ hace 1d</p>
+                        <p className="text-xs text-muted-foreground">StartupXYZ • hace 1d</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                      <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+                      <div className="h-2 w-2 bg-white rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Pago pendiente</p>
-                        <p className="text-xs text-muted-foreground">Consulting LLC â€¢ hace 2d</p>
+                        <p className="text-xs text-muted-foreground">Consulting LLC • hace 2d</p>
                       </div>
                     </div>
                   </div>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
                 
                 <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
                   <p className="text-sm text-center">
-                    ðŸ“ˆ <strong>Â¡Buen trabajo!</strong> Has gestionado {companies.length} perfiles exitosamente
+                    ?? <strong>¡Buen trabajo!</strong> Has gestionado {companies.length} perfiles exitosamente
                   </p>
                 </div>
               </div>
@@ -223,11 +223,11 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Resumen RÃ¡pido
+                Resumen Rápido
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">Perfiles</span>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                 <span className="text-lg font-bold text-blue-600">{companies.length}</span>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Como Admin</span>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                 </span>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                 <div className="flex items-center gap-2">
                   <Bell className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium">Activos</span>
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                       {tasks.filter(t => !t.is_completed).length > 5 && (
                         <div className="pt-2 text-center">
                           <Button variant="link" size="sm" onClick={() => router.push('/tasks')}>
-                            Ver {tasks.filter(t => !t.is_completed).length - 5} mÃ¡s
+                            Ver {tasks.filter(t => !t.is_completed).length - 5} más
                           </Button>
                         </div>
                       )}

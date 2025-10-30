@@ -379,7 +379,7 @@ export default function CreateCompanyPage() {
                 </div>
               </div>
 
-              <Alert className="bg-blue-50 border-blue-200">
+              <Alert className="bg-white border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
                   <strong className="block mb-1">📋 Próximo paso: Subir certificado AFIP (OBLIGATORIO)</strong>

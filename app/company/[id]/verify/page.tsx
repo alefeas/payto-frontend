@@ -230,7 +230,7 @@ export default function VerifyCompanyPage() {
             <p className="text-muted-foreground">{companyName}</p>
           </div>
           {isVerified && (
-            <Badge className="bg-green-500">
+            <Badge className="bg-white">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               Verificado
             </Badge>
@@ -248,7 +248,7 @@ export default function VerifyCompanyPage() {
           <CardContent>
             {isVerified ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start gap-3 p-4 bg-white border border-green-200 rounded-lg">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium text-green-900">Certificado Activo</p>
@@ -286,7 +286,7 @@ export default function VerifyCompanyPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-3 p-4 bg-white border border-amber-200 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-amber-900">Sin Certificado AFIP</p>

@@ -192,7 +192,7 @@ export default function InvoicesPage() {
     
     // 1. Vencimiento (solo si no está pagada/cobrada)
     if (isOverdue) {
-      badges.push(<Badge key="overdue" className="bg-red-500 text-white">Vencida</Badge>)
+      badges.push(<Badge key="overdue" className="bg-white text-white">Vencida</Badge>)
     }
     
     // 2. Estado principal (payment_status tiene prioridad sobre status)
@@ -203,22 +203,22 @@ export default function InvoicesPage() {
     
     if (companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'paid') {
       const label = isIssuer ? 'Cobrada' : 'Pagada'
-      badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-white">{label}</Badge>)
     } else if (invoice.payment_status === 'partial') {
       const label = isIssuer ? 'Cobro Parcial' : 'Pago Parcial'
-      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">{label}</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-yellow-800">{label}</Badge>)
     } else if (status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
     } else if (status === 'partially_cancelled') {
-      badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-orange-800">Parc. Anulada</Badge>)
     } else if (status === 'pending_approval') {
-      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">Pend. Aprobación</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-yellow-800">Pend. Aprobación</Badge>)
     } else if (status === 'rejected') {
-      badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-red-800">Rechazada</Badge>)
     } else if (status === 'approved') {
-      badges.push(<Badge key="status" className="bg-green-100 text-green-800">Aprobada</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-green-800">Aprobada</Badge>)
     } else if (status === 'issued') {
-      badges.push(<Badge key="status" className="bg-blue-100 text-blue-800">Emitida</Badge>)
+      badges.push(<Badge key="status" className="bg-white text-blue-800">Emitida</Badge>)
     }
     
     return <div className="flex gap-1.5 flex-wrap items-center">{badges}</div>
@@ -527,7 +527,7 @@ export default function InvoicesPage() {
                         <div className="flex gap-1 flex-wrap">
                           <Badge variant="outline">Tipo {invoice.type}</Badge>
                           {invoice.synced_from_afip ? (
-                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>
+                            <Badge className="bg-white text-blue-700 border-blue-200">Sinc. AFIP</Badge>
                           ) : null}
                         </div>
                         <div className="truncate" title={clientName}>{clientName}</div>
@@ -576,7 +576,7 @@ export default function InvoicesPage() {
                               }
                             }}
                             title="Eliminar (solo en homologación)"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-white"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -637,7 +637,7 @@ export default function InvoicesPage() {
           {!syncResults ? (
             <div className="space-y-4">
               {syncing && syncProgress && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <div className="bg-white border border-blue-200 p-4 rounded-lg">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                     <div>
@@ -645,8 +645,8 @@ export default function InvoicesPage() {
                       <p className="text-sm text-blue-700">{syncProgress}</p>
                     </div>
                   </div>
-                  <div className="mt-3 bg-blue-100 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                  <div className="mt-3 bg-white rounded-full h-2">
+                    <div className="bg-white h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
                   </div>
                 </div>
               )}
@@ -656,7 +656,7 @@ export default function InvoicesPage() {
                   onClick={() => setSyncMode('single')}
                   className={`p-4 border-2 rounded-lg text-left transition-all ${
                     syncMode === 'single' 
-                      ? 'border-blue-500 bg-blue-50' 
+                      ? 'border-blue-500 bg-white' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -668,7 +668,7 @@ export default function InvoicesPage() {
                   onClick={() => setSyncMode('date_range')}
                   className={`p-4 border-2 rounded-lg text-left transition-all ${
                     syncMode === 'date_range' 
-                      ? 'border-blue-500 bg-blue-50' 
+                      ? 'border-blue-500 bg-white' 
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -739,7 +739,7 @@ export default function InvoicesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
+                  <div className="bg-white border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
                     <p className="font-medium">Qué hace la sincronización:</p>
                     <ul className="list-disc list-inside space-y-1 text-xs">
                       <li>Consulta la factura específica en AFIP</li>
@@ -774,10 +774,10 @@ export default function InvoicesPage() {
                       />
                     </div>
                   </div>
-                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-800">
+                  <div className="bg-white border border-red-200 p-3 rounded-lg text-sm text-red-800">
                     <p><strong>⚠️ Límite:</strong> El rango máximo permitido es de 90 días (3 meses).</p>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
+                  <div className="bg-white border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
                     <p className="font-medium">Qué hace la sincronización masiva:</p>
                     <ul className="list-disc list-inside space-y-1 text-xs">
                       <li>Consulta todos los puntos de venta autorizados en AFIP</li>
@@ -818,7 +818,7 @@ export default function InvoicesPage() {
               </div>
               
               {syncResults.auto_created_clients && syncResults.auto_created_clients > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
+                <div className="bg-white border border-yellow-200 p-3 rounded-lg mb-4">
                   <p className="text-sm font-medium text-yellow-800">
                     ⚠️ Se crearon {syncResults.auto_created_clients} clientes archivados
                   </p>
@@ -848,7 +848,7 @@ export default function InvoicesPage() {
                               </p>
                             )}
                           </div>
-                          <Badge className={inv.saved ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}>
+                          <Badge className={inv.saved ? "bg-white text-green-800" : "bg-white text-orange-800"}>
                             {inv.saved ? 'Importada' : 'Ya existe'}
                           </Badge>
                         </div>

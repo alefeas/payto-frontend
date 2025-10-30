@@ -653,14 +653,14 @@ export default function CreateInvoicePage() {
         </div>
 
         {isLoadingCert ? (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+          <div className="bg-white border-l-4 border-blue-400 p-4 rounded-lg">
             <div className="flex items-center gap-3">
               <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
               <p className="text-sm text-blue-700">Verificando certificado AFIP...</p>
             </div>
           </div>
         ) : cert && !cert.isActive && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+          <div className="bg-white border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-red-600 mt-0.5" />
               <div className="flex-1">
@@ -672,7 +672,7 @@ export default function CreateInvoicePage() {
                   type="button"
                   variant="default" 
                   size="sm" 
-                  className="mt-2 bg-red-600 hover:bg-red-700"
+                  className="mt-2 bg-white hover:bg-white"
                   onClick={() => router.push(`/company/${companyId}/verify`)}
                 >
                   Configurar Certificado AFIP Ahora
@@ -894,7 +894,7 @@ export default function CreateInvoicePage() {
               </div>
 
               {isNoteType && (
-                <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="space-y-2 p-3 bg-white border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -1095,7 +1095,7 @@ export default function CreateInvoicePage() {
                     size="icon"
                     onClick={() => removeItem(index)}
                     disabled={items.length === 1}
-                    className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+                    className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-white disabled:opacity-30"
                     title="Eliminar ítem"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -1218,7 +1218,7 @@ export default function CreateInvoicePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {formData.clientData?.tax_condition === 'final_consumer' ? (
-                <div className="text-center py-6 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="text-center py-6 bg-white border border-amber-200 rounded-lg">
                   <p className="text-sm text-amber-800 font-medium">No se pueden aplicar percepciones a Consumidores Finales</p>
                   <p className="text-xs text-amber-600 mt-1">Según normativa AFIP, las percepciones no aplican para esta condición fiscal</p>
                 </div>
@@ -1245,7 +1245,7 @@ export default function CreateInvoicePage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => removePerception(index)}
-                      className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-white"
                       title="Eliminar percepción"
                     >
                       <Trash2 className="h-4 w-4" />
