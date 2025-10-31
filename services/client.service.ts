@@ -11,6 +11,9 @@ export interface Client {
   email?: string
   phone?: string
   address?: string
+  postalCode?: string
+  city?: string
+  province?: string
   taxCondition: 'registered_taxpayer' | 'monotax' | 'exempt' | 'final_consumer'
   incompleteData?: boolean
   createdAt: string
@@ -43,6 +46,9 @@ export const clientService = {
       email: client.email,
       phone: client.phone,
       address: client.address,
+      postalCode: client.postal_code,
+      city: client.city,
+      province: client.province,
       taxCondition: client.tax_condition,
       incompleteData: client.incomplete_data,
       createdAt: client.created_at,
@@ -64,6 +70,9 @@ export const clientService = {
       email: client.email,
       phone: client.phone,
       address: client.address,
+      postalCode: client.postal_code,
+      city: client.city,
+      province: client.province,
       taxCondition: client.tax_condition,
       incompleteData: client.incomplete_data,
       createdAt: client.created_at,
@@ -85,6 +94,9 @@ export const clientService = {
       email: client.email,
       phone: client.phone,
       address: client.address,
+      postalCode: client.postal_code,
+      city: client.city,
+      province: client.province,
       taxCondition: client.tax_condition,
       incompleteData: client.incomplete_data,
       createdAt: client.created_at,
@@ -109,6 +121,9 @@ export const clientService = {
       email: client.email,
       phone: client.phone,
       address: client.address,
+      postalCode: client.postal_code,
+      city: client.city,
+      province: client.province,
       taxCondition: client.tax_condition,
       incompleteData: client.incomplete_data,
       createdAt: client.created_at,

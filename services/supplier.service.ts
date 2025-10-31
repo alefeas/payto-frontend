@@ -11,6 +11,9 @@ export interface Supplier {
   email?: string
   phone?: string
   address?: string
+  postalCode?: string
+  city?: string
+  province?: string
   taxCondition: 'registered_taxpayer' | 'monotax' | 'exempt'
   bankName?: string
   bankAccountType?: 'CA' | 'CC'
@@ -35,6 +38,9 @@ export const supplierService = {
       email: s.email,
       phone: s.phone,
       address: s.address,
+      postalCode: s.postal_code,
+      city: s.city,
+      province: s.province,
       taxCondition: s.tax_condition,
       bankName: s.bank_name,
       bankAccountType: s.bank_account_type,
@@ -60,6 +66,9 @@ export const supplierService = {
       email: s.email,
       phone: s.phone,
       address: s.address,
+      postalCode: s.postal_code,
+      city: s.city,
+      province: s.province,
       taxCondition: s.tax_condition,
       bankName: s.bank_name,
       bankAccountType: s.bank_account_type,
@@ -85,6 +94,9 @@ export const supplierService = {
       email: s.email,
       phone: s.phone,
       address: s.address,
+      postalCode: s.postal_code,
+      city: s.city,
+      province: s.province,
       taxCondition: s.tax_condition,
       bankName: s.bank_name,
       bankAccountType: s.bank_account_type,
@@ -113,6 +125,9 @@ export const supplierService = {
       email: s.email,
       phone: s.phone,
       address: s.address,
+      postalCode: s.postal_code,
+      city: s.city,
+      province: s.province,
       taxCondition: s.tax_condition,
       bankName: s.bank_name,
       bankAccountType: s.bank_account_type,

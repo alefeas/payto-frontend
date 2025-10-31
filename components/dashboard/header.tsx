@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Bell, Settings, LogOut, Trash2 } from "lucide-react"
+import { useRouter, useParams } from "next/navigation"
+import { Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -14,21 +13,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
-import { Notification } from "@/types"
-
-// Mock notifications data
-const mockNotifications: Notification[] = [
-  { id: 1, message: "Nueva factura recibida de Empresa ABC", time: "Hace 5 min" },
-  { id: 2, message: "Solicitud de conexión empresarial", time: "Hace 1 hora" },
-  { id: 3, message: "Factura #001 ha sido procesada", time: "Hace 2 horas" },
-]
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 export function DashboardHeader() {
-  const [notifications, setNotifications] = useState(mockNotifications)
   const [mounted, setMounted] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const { user, logout } = useAuth()
   const router = useRouter()
+  const params = useParams()
+  const companyId = params?.id as string
 
   useEffect(() => {
     setMounted(true)
@@ -54,14 +47,6 @@ export function DashboardHeader() {
     router.push('/')
   }
 
-  const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id))
-  }
-
-  const clearAllNotifications = () => {
-    setNotifications([])
-  }
-
   return (
     <header className="border-b bg-background px-6 py-4">
       <div className="flex items-center justify-between">
@@ -71,59 +56,7 @@ export function DashboardHeader() {
 
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
-                  >
-                    {notifications.length}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <div className="flex items-center justify-between p-2">
-                <span className="font-semibold">Notificaciones</span>
-                {notifications.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={clearAllNotifications}
-                    className="text-xs"
-                  >
-                    Eliminar todas
-                  </Button>
-                )}
-              </div>
-              <DropdownMenuSeparator />
-              {notifications.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  No hay notificaciones
-                </div>
-              ) : (
-                notifications.map((notification) => (
-                  <div key={notification.id} className="flex items-start justify-between p-3 hover:bg-muted">
-                    <div className="flex-1">
-                      <p className="text-sm">{notification.message}</p>
-                      <p className="text-xs text-muted-foreground">{notification.time}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => deleteNotification(notification.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {companyId && <NotificationBell companyId={companyId} />}
 
           {/* User Menu */}
           <DropdownMenu>
