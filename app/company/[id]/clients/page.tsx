@@ -47,6 +47,8 @@ export default function ClientsPage() {
   const [archivedClients, setArchivedClients] = useState<Client[]>([])
   const [showArchived, setShowArchived] = useState(false)
   const [loadingArchived, setLoadingArchived] = useState(false)
+  const [archivingId, setArchivingId] = useState<string | null>(null)
+  const [restoringId, setRestoringId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -87,12 +89,15 @@ export default function ClientsPage() {
 
   const handleRestore = async (clientId: string) => {
     try {
+      setRestoringId(clientId)
       await clientService.restoreClient(companyId, clientId)
       toast.success('Cliente restaurado')
       loadArchivedClients()
       loadClients()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al restaurar cliente')
+    } finally {
+      setRestoringId(null)
     }
   }
 
@@ -290,11 +295,15 @@ export default function ClientsPage() {
                               variant="default"
                               size="sm"
                               onClick={() => handleRestore(client.id)}
-                              disabled={client.incompleteData}
+                              disabled={client.incompleteData || restoringId === client.id}
                               title={client.incompleteData ? 'Debes completar los datos del cliente antes de restaurarlo' : 'Restaurar cliente'}
                             >
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                              Restaurar
+                              {restoringId === client.id ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                              )}
+                              {restoringId === client.id ? 'Restaurando...' : 'Restaurar'}
                             </Button>
                             <Button
                               variant="destructive"
@@ -460,19 +469,29 @@ export default function ClientsPage() {
                 onClick={async () => {
                   if (clientToDelete) {
                     try {
+                      setArchivingId(clientToDelete.id)
                       await clientService.deleteClient(companyId, clientToDelete.id)
                       setClients(clients.filter(c => c.id !== clientToDelete.id))
                       toast.success('Cliente archivado')
                     } catch (error: any) {
                       toast.error(error.response?.data?.message || 'Error al archivar cliente')
                     } finally {
+                      setArchivingId(null)
                       setIsDeleteDialogOpen(false)
                       setClientToDelete(null)
                     }
                   }
                 }}
+                disabled={archivingId !== null}
               >
-                Archivar
+                {archivingId ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Archivando...
+                  </>
+                ) : (
+                  'Archivar'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

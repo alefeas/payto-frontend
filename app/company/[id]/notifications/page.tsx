@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { notificationService, Notification } from '@/services/notification.service';
 import { NotificationItem } from '@/components/notifications/notification-item';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
-export default function NotificationsPage({ params }: { params: { id: string } }) {
+export default function NotificationsPage() {
+  const params = useParams();
+  const companyId = params.id as string;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export default function NotificationsPage({ params }: { params: { id: string } }
     try {
       setLoading(true);
       const data = await notificationService.getNotifications(
-        params.id,
+        companyId,
         filter === 'unread'
       );
       setNotifications(data);
@@ -29,7 +31,7 @@ export default function NotificationsPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     fetchNotifications();
-  }, [params.id, filter]);
+  }, [companyId, filter]);
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
@@ -39,11 +41,11 @@ export default function NotificationsPage({ params }: { params: { id: string } }
 
     const { entityType, entityId } = notification.data;
     if (entityType === 'invoice' && entityId) {
-      router.push(`/company/${params.id}/invoices/${entityId}`);
+      router.push(`/company/${companyId}/invoices/${entityId}`);
     } else if (entityType === 'payment' && entityId) {
-      router.push(`/company/${params.id}/payments/${entityId}`);
+      router.push(`/company/${companyId}/payments/${entityId}`);
     } else if (entityType === 'connection' && entityId) {
-      router.push(`/company/${params.id}/network`);
+      router.push(`/company/${companyId}/network`);
     }
   };
 

@@ -44,6 +44,8 @@ export default function SuppliersPage() {
   const [archivedSuppliers, setArchivedSuppliers] = useState<Supplier[]>([])
   const [showArchived, setShowArchived] = useState(false)
   const [loadingArchived, setLoadingArchived] = useState(false)
+  const [archivingId, setArchivingId] = useState<number | null>(null)
+  const [restoringId, setRestoringId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -81,12 +83,16 @@ export default function SuppliersPage() {
 
   const handleRestore = async (supplierId: string) => {
     try {
-      await supplierService.restoreSupplier(companyId, parseInt(supplierId))
+      const id = parseInt(supplierId)
+      setRestoringId(id)
+      await supplierService.restoreSupplier(companyId, id)
       toast.success('Proveedor restaurado')
       loadArchivedSuppliers()
       loadSuppliers()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al restaurar proveedor')
+    } finally {
+      setRestoringId(null)
     }
   }
 
@@ -262,9 +268,14 @@ export default function SuppliersPage() {
                             variant="default"
                             size="sm"
                             onClick={() => handleRestore(supplier.id.toString())}
+                            disabled={restoringId === supplier.id}
                           >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Restaurar
+                            {restoringId === supplier.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                            )}
+                            {restoringId === supplier.id ? 'Restaurando...' : 'Restaurar'}
                           </Button>
                         </div>
                       </CardContent>
@@ -399,19 +410,29 @@ export default function SuppliersPage() {
                 onClick={async () => {
                   if (supplierToDelete) {
                     try {
+                      setArchivingId(supplierToDelete.id)
                       await supplierService.deleteSupplier(companyId, supplierToDelete.id)
                       setSuppliers(suppliers.filter(s => s.id !== supplierToDelete.id))
                       toast.success('Proveedor archivado')
                     } catch (error: any) {
                       toast.error(error.response?.data?.message || 'Error al archivar proveedor')
                     } finally {
+                      setArchivingId(null)
                       setIsDeleteDialogOpen(false)
                       setSupplierToDelete(null)
                     }
                   }
                 }}
+                disabled={archivingId !== null}
               >
-                Archivar
+                {archivingId ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Archivando...
+                  </>
+                ) : (
+                  'Archivar'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
