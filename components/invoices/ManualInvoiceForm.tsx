@@ -248,8 +248,13 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
       return
     }
 
-    if (items.some(item => !item.description || item.quantity <= 0 || item.unit_price < 0)) {
-      toast.error("Verifique que todos los ítems tengan descripción, cantidad mayor a 0 y precio válido")
+    if (items.some(item => !item.description || item.quantity <= 0 || item.unit_price <= 0)) {
+      toast.error("Verifique que todos los ítems tengan descripción, cantidad mayor a 0 y precio mayor a 0")
+      return
+    }
+
+    if (perceptions.some(p => !p.rate || p.rate <= 0)) {
+      toast.error("Las percepciones deben tener una alícuota mayor a 0")
       return
     }
 

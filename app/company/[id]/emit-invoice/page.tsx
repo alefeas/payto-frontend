@@ -530,13 +530,28 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (items.some(item => !item.description || item.quantity <= 0 || item.unitPrice <= 0)) {
-      toast.error('Complete todos los ítems correctamente')
+    if (items.some(item => !item.description)) {
+      toast.error('Todos los ítems deben tener una descripción')
+      return
+    }
+
+    if (items.some(item => item.quantity <= 0)) {
+      toast.error('La cantidad de todos los ítems debe ser mayor a 0')
+      return
+    }
+
+    if (items.some(item => item.unitPrice <= 0)) {
+      toast.error('El precio unitario de todos los ítems debe ser mayor a 0')
       return
     }
 
     if (perceptions.some(p => !p.name || !p.name.trim())) {
       toast.error('Complete el nombre/descripción de todas las percepciones')
+      return
+    }
+
+    if (perceptions.some(p => !p.rate || p.rate <= 0)) {
+      toast.error('Las percepciones deben tener una alícuota mayor a 0')
       return
     }
 
@@ -769,25 +784,19 @@ export default function CreateInvoicePage() {
                   ) : (
                     <>
                       <Select 
-                        value={formData.salesPoint.toString()} 
+                        value={formData.salesPoint > 0 ? formData.salesPoint.toString() : undefined} 
                         onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
-                        disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                        disabled={salesPoints.length === 0 || (isNoteType && associateInvoice && !!selectedInvoice)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccione punto de venta" />
+                          <SelectValue placeholder={salesPoints.length === 0 ? "No hay puntos de venta" : "Seleccione punto de venta"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {salesPoints.length > 0 ? (
-                            salesPoints.map((sp) => (
-                              <SelectItem key={sp.id} value={sp.point_number.toString()}>
-                                {sp.point_number.toString().padStart(4, '0')}{sp.name ? ` - ${sp.name}` : ''}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value={currentCompany?.default_sales_point?.toString() || '1'}>
-                              {(currentCompany?.default_sales_point || 1).toString().padStart(4, '0')}
+                          {[...salesPoints].sort((a, b) => a.point_number - b.point_number).map((sp) => (
+                            <SelectItem key={sp.id} value={sp.point_number.toString()}>
+                              {sp.point_number.toString().padStart(4, '0')}{sp.name ? ` - ${sp.name}` : ''}
                             </SelectItem>
-                          )}
+                          ))}
                         </SelectContent>
                       </Select>
                       {salesPoints.length === 0 && (
@@ -806,29 +815,27 @@ export default function CreateInvoicePage() {
               </div>
 
               {/* Número de Comprobante (readonly) */}
-              <div className="space-y-2 transition-all duration-300 ease-in-out" style={{ 
-                opacity: nextVoucherNumber ? 1 : 0,
-                maxHeight: nextVoucherNumber ? '200px' : '0px',
-                overflow: 'hidden'
-              }}>
-                <Label>Número de Comprobante</Label>
-                <div className="relative">
-                  <Input
-                    value={nextVoucherNumber}
-                    readOnly
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800 font-mono"
-                  />
-                  {isLoadingNumber && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              {(nextVoucherNumber || isLoadingNumber) && (
+                <div className="space-y-2">
+                  <Label>Número de Comprobante</Label>
+                  {isLoadingNumber ? (
+                    <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <span className="text-sm text-muted-foreground">Consultando AFIP...</span>
                     </div>
+                  ) : (
+                    <Input
+                      value={nextVoucherNumber}
+                      readOnly
+                      disabled
+                      className="bg-gray-100 dark:bg-gray-800 font-mono"
+                    />
                   )}
+                  <p className="text-xs text-muted-foreground">
+                    Próximo número disponible según AFIP
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Próximo número disponible según AFIP
-                </p>
-              </div>
+              )}
 
               {/* Concepto y Moneda */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1513,9 +1520,9 @@ export default function CreateInvoicePage() {
                       name: salesPointFormData.name || null
                     })
                     const newSalesPoint = response.data.data
-                    setSalesPoints([...salesPoints, newSalesPoint])
-                    setFormData({...formData, salesPoint: newSalesPoint.point_number})
-                    toast.success('Punto de venta agregado')
+                    setSalesPoints(prev => [...prev, newSalesPoint])
+                    setFormData(prev => ({...prev, salesPoint: newSalesPoint.point_number}))
+                    toast.success('Punto de venta agregado y seleccionado')
                     setShowAddSalesPointDialog(false)
                     setSalesPointFormData({ point_number: '', name: '' })
                   } catch (error: any) {

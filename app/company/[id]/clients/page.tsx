@@ -461,7 +461,11 @@ export default function ClientsPage() {
               </p>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDeleteDialogOpen(false)}
+                disabled={archivingId !== null}
+              >
                 Cancelar
               </Button>
               <Button 
