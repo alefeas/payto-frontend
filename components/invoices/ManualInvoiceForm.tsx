@@ -345,10 +345,9 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
 
       onSuccess?.()
     } catch (error: any) {
+      setIsSubmitting(false)
       const errorMsg = error.response?.data?.error || error.response?.data?.message || "Error al registrar el comprobante"
       toast.error(errorMsg)
-    } finally {
-      setIsSubmitting(false)
     }
   }
 

@@ -98,48 +98,18 @@ export default function CreateInvoicePage() {
     { code: '006', name: 'Factura B', category: 'invoice' },
     { code: '011', name: 'Factura C', category: 'invoice' },
     { code: '051', name: 'Factura M', category: 'invoice' },
-    { code: '019', name: 'Factura E (Exportación)', category: 'invoice' },
     
     // NOTAS DE CRÉDITO
     { code: '003', name: 'Nota de Crédito A', category: 'credit_note' },
     { code: '008', name: 'Nota de Crédito B', category: 'credit_note' },
     { code: '013', name: 'Nota de Crédito C', category: 'credit_note' },
     { code: '053', name: 'Nota de Crédito M', category: 'credit_note' },
-    { code: '021', name: 'Nota de Crédito E', category: 'credit_note' },
     
     // NOTAS DE DÉBITO
     { code: '002', name: 'Nota de Débito A', category: 'debit_note' },
     { code: '007', name: 'Nota de Débito B', category: 'debit_note' },
     { code: '012', name: 'Nota de Débito C', category: 'debit_note' },
-    { code: '052', name: 'Nota de Débito M', category: 'debit_note' },
-    { code: '020', name: 'Nota de Débito E', category: 'debit_note' },
-    
-    // RECIBOS
-    { code: '004', name: 'Recibo A', category: 'receipt' },
-    { code: '009', name: 'Recibo B', category: 'receipt' },
-    { code: '015', name: 'Recibo C', category: 'receipt' },
-    { code: '049', name: 'Recibo M', category: 'receipt' },
-    
-    // FACTURA DE CRÉDITO ELECTRÓNICA MiPyME
-    { code: '201', name: 'Factura de Crédito Electrónica MiPyME A', category: 'fce_mipyme' },
-    { code: '206', name: 'Factura de Crédito Electrónica MiPyME B', category: 'fce_mipyme' },
-    { code: '211', name: 'Factura de Crédito Electrónica MiPyME C', category: 'fce_mipyme' },
-    
-    { code: '203', name: 'Nota de Crédito FCE MiPyME A', category: 'credit_note' },
-    { code: '208', name: 'Nota de Crédito FCE MiPyME B', category: 'credit_note' },
-    { code: '213', name: 'Nota de Crédito FCE MiPyME C', category: 'credit_note' },
-    
-    { code: '207', name: 'Nota de Débito FCE MiPyME A', category: 'debit_note' },
-    { code: '212', name: 'Nota de Débito FCE MiPyME B', category: 'debit_note' },
-    { code: '217', name: 'Nota de Débito FCE MiPyME C', category: 'debit_note' },
-    
-    // REMITO ELECTRÓNICO
-    { code: '995', name: 'Remito Electrónico', category: 'remito' },
-    
-    // BIENES USADOS
-    { code: '027', name: 'Liquidación Bienes Usados A', category: 'used_goods' },
-    { code: '028', name: 'Liquidación Bienes Usados B', category: 'used_goods' },
-    { code: '030', name: 'Comprobante Compra Bienes Usados', category: 'used_goods_purchase' }
+    { code: '052', name: 'Nota de Débito M', category: 'debit_note' }
   ]
 
 
@@ -633,12 +603,11 @@ export default function CreateInvoicePage() {
       
       router.push(`/company/${companyId}/invoices`)
     } catch (error: any) {
+      setIsSubmitting(false)
       const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Error desconocido'
       toast.error('Error al crear el comprobante', {
         description: errorMessage
       })
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
