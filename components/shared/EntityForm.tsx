@@ -167,24 +167,24 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       const data: any = {
         document_type: formData.documentType,
         document_number: formData.documentNumber || null,
-        business_name: formData.businessName || undefined,
-        first_name: formData.firstName || undefined,
-        last_name: formData.lastName || undefined,
-        email: formData.email || undefined,
-        phone: formData.phone || undefined,
-        address: formData.taxCondition !== 'final_consumer' ? formData.address : undefined,
-        postal_code: formData.postalCode || undefined,
-        city: formData.city || undefined,
-        province: formData.province || undefined,
+        business_name: formData.businessName || null,
+        first_name: formData.firstName || null,
+        last_name: formData.lastName || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        address: formData.taxCondition !== 'final_consumer' ? (formData.address || null) : null,
+        postal_code: formData.postalCode || null,
+        city: formData.city || null,
+        province: formData.province || null,
         tax_condition: formData.taxCondition
       }
 
       if (showBankFields) {
-        data.bank_name = formData.bankName || undefined
-        data.bank_account_type = formData.bankAccountType || undefined
-        data.bank_account_number = formData.bankAccountNumber || undefined
-        data.bank_cbu = formData.bankCbu || undefined
-        data.bank_alias = formData.bankAlias || undefined
+        data.bank_name = formData.bankName || null
+        data.bank_account_type = formData.bankAccountType || null
+        data.bank_account_number = formData.bankAccountNumber || null
+        data.bank_cbu = formData.bankCbu || null
+        data.bank_alias = formData.bankAlias || null
       }
       
       if (entity) {
