@@ -49,6 +49,22 @@ export default function NotificationsPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="space-y-6">
+          <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
+          <div className="h-12 bg-muted rounded animate-pulse"></div>
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-muted rounded animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Notificaciones</h1>
@@ -60,13 +76,7 @@ export default function NotificationsPage() {
         </TabsList>
 
         <TabsContent value={filter} className="mt-6">
-          {loading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-muted rounded animate-pulse" />
-              ))}
-            </div>
-          ) : notifications.length === 0 ? (
+          {notifications.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               No hay notificaciones
             </div>

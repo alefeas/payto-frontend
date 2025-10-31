@@ -52,7 +52,28 @@ export default function TaskCenterPage() {
            mockPendingTasks.expiringSoon.filter(task => task.daysToExpire <= 1).length
   }
 
-  if (authLoading) return null
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
+
   if (!isAuthenticated) return null
 
   return (

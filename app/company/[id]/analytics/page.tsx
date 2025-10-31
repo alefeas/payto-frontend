@@ -77,43 +77,29 @@ export default function AnalyticsPage() {
     }
   }
 
-  if (authLoading) {
+  if (authLoading || (loading && !summary)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-64"></div>
-            <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-muted rounded"></div>
-              ))}
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
             </div>
           </div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
         </div>
       </div>
     )
   }
 
-  if (!isAuthenticated) return null
-  
-  if (loading && !summary) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-64"></div>
-            <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-muted rounded"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  
-  if (!summary) return null
+  if (!isAuthenticated || !summary) return null
 
   const netBalance = summary.balance
   const profitMargin = summary.sales.total > 0 
@@ -250,97 +236,73 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
-              {loading ? (
-                <div className="flex items-center justify-center h-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Ventas {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
+                  </p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${summary.sales.total.toLocaleString('es-AR')}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {summary.sales.count} facturas
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Ventas {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">
-                      ${summary.sales.total.toLocaleString('es-AR')}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {summary.sales.count} facturas
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-green-500" />
-                </div>
-              )}
+                <TrendingUp className="h-8 w-8 text-green-500" />
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              {loading ? (
-                <div className="flex items-center justify-center h-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Compras {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    ${summary.purchases.total.toLocaleString('es-AR')}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {summary.purchases.count} facturas
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Compras {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
-                    </p>
-                    <p className="text-2xl font-bold text-red-600">
-                      ${summary.purchases.total.toLocaleString('es-AR')}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {summary.purchases.count} facturas
-                    </p>
-                  </div>
-                  <TrendingDown className="h-8 w-8 text-red-500" />
-                </div>
-              )}
+                <TrendingDown className="h-8 w-8 text-red-500" />
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              {loading ? (
-                <div className="flex items-center justify-center h-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Balance Neto</p>
+                  <p className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${netBalance.toLocaleString('es-AR')}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ventas - Compras
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Balance Neto</p>
-                    <p className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${netBalance.toLocaleString('es-AR')}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Ventas - Compras
-                    </p>
-                  </div>
-                  <DollarSign className={`h-8 w-8 ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-                </div>
-              )}
+                <DollarSign className={`h-8 w-8 ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
-              {loading ? (
-                <div className="flex items-center justify-center h-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Margen</p>
+                  <p className={`text-2xl font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {profitMargin.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Rentabilidad
+                  </p>
                 </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Margen</p>
-                    <p className={`text-2xl font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {profitMargin.toFixed(1)}%
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Rentabilidad
-                    </p>
-                  </div>
-                  <BarChart3 className={`h-8 w-8 ${profitMargin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-                </div>
-              )}
+                <BarChart3 className={`h-8 w-8 ${profitMargin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -353,23 +315,17 @@ export default function AnalyticsPage() {
               <CardDescription>Últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center h-[200px]">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={revenueTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
-                    <Legend />
-                    <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
-                    <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={revenueTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
+                  <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
@@ -380,28 +336,22 @@ export default function AnalyticsPage() {
               <CardDescription>Balance mes a mes</CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center h-[200px]">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={revenueTrend.map((item, index, arr) => {
-                    const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => acc + (curr.sales - curr.purchases), 0)
-                    return {
-                      month: item.month,
-                      balance: accumulated
-                    }
-                  })}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
-                    <Legend />
-                    <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={revenueTrend.map((item, index, arr) => {
+                  const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => acc + (curr.sales - curr.purchases), 0)
+                  return {
+                    month: item.month,
+                    balance: accumulated
+                  }
+                })}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>

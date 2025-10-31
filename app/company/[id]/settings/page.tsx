@@ -355,7 +355,23 @@ export default function SettingsPage() {
     })
   }
 
-  if (authLoading || loading) return null
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="h-12 bg-muted rounded animate-pulse"></div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
   if (!isAuthenticated || !company) return null
   if (company.role !== 'administrator' && company.role !== 'owner') return null
 
@@ -549,11 +565,10 @@ export default function SettingsPage() {
                         <Button size="sm" variant="outline" onClick={async () => {
                           try {
                             const apiClient = (await import('@/lib/api-client')).default
-                            const response = await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
-                            toast.success(`Sincronizados: ${response.data.created} nuevos, ${response.data.synced} actualizados`)
-                            // Reload only sales points without full page reload
+                            await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
                             const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
                             setSalesPoints(spResponse.data.data || [])
+                            toast.success('Puntos de venta sincronizados con AFIP')
                           } catch (error: any) {
                             toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
                           }

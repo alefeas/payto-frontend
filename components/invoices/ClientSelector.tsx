@@ -127,12 +127,7 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
       {clientType === 'registered' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Empresa</Label>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Cargando empresas conectadas...</span>
-            </div>
-          ) : connectedCompanies.length === 0 ? (
+          {connectedCompanies.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-900 font-medium">No tienes empresas conectadas</p>
               <p className="text-xs text-amber-700 mt-1">
@@ -169,12 +164,7 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
       {clientType === 'saved' && (
         <div className="space-y-2 p-4 border rounded-lg bg-accent/50">
           <Label>Seleccionar Cliente</Label>
-          {(isLoading || isCreatingClient) ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">{isCreatingClient ? 'Agregando cliente...' : 'Cargando clientes guardados...'}</span>
-            </div>
-          ) : savedClients.length === 0 ? (
+          {savedClients.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-900 font-medium">No tienes clientes guardados</p>
               <p className="text-xs text-amber-700 mt-1">

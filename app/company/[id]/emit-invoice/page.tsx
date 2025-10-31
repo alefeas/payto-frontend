@@ -62,10 +62,9 @@ export default function CreateInvoicePage() {
   const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
   const [savedClients, setSavedClients] = useState<Client[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
-  const [isLoadingSalesPoints, setIsLoadingSalesPoints] = useState(true)
   const [isSyncingSalesPoints, setIsSyncingSalesPoints] = useState(false)
   const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
-  const [isLoadingCert, setIsLoadingCert] = useState(true)
+  const [certLoaded, setCertLoaded] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [associateInvoice, setAssociateInvoice] = useState(false)
@@ -157,6 +156,7 @@ export default function CreateInvoicePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [nextVoucherNumber, setNextVoucherNumber] = useState<string>('')
   const [isLoadingNumber, setIsLoadingNumber] = useState(false)
+  const [isLoadingSalesPoints, setIsLoadingSalesPoints] = useState(false)
   const [showAddSalesPointDialog, setShowAddSalesPointDialog] = useState(false)
   const [salesPointFormData, setSalesPointFormData] = useState({ point_number: '', name: '' })
   const [addingSalesPoint, setAddingSalesPoint] = useState(false)
@@ -195,6 +195,7 @@ export default function CreateInvoicePage() {
       
       try {
         setIsLoadingData(true)
+        const apiClient = (await import('@/lib/api-client')).default
         
         // Load current company
         const company = await companyService.getCompany(companyId)
@@ -240,75 +241,65 @@ export default function CreateInvoicePage() {
           })
           setConnectedCompanies(connectedCompaniesData)
         } catch (error: any) {
-          // Silently fail if user doesn't have permission
-          if (error.response?.status !== 403) {
-            console.error('Error loading connections:', error)
-          }
+          console.error('Error loading connections:', error)
+          console.error('Error details:', error.response?.data)
           setConnectedCompanies([])
+          // Don't show error toast for 403 (no permission) or 500 (server error)
+          if (error.response?.status !== 403 && error.response?.status !== 500) {
+            toast.error('Error al cargar empresas conectadas')
+          }
         }
         
-        // Load saved clients
-        try {
-          const { clientService } = await import('@/services/client.service')
-          const clients = await clientService.getClients(companyId)
-          setSavedClients(clients)
-        } catch (error) {
-          console.error('Error loading clients:', error)
-        }
+        // Load saved clients (async, non-blocking)
+        import('@/services/client.service')
+          .then(({ clientService }) => clientService.getClients(companyId))
+          .then(clients => setSavedClients(clients))
+          .catch(error => console.error('Error loading clients:', error))
         
-        // Load sales points
+        // Load sales points and certificate in parallel before showing page
         setIsLoadingSalesPoints(true)
-        try {
-          const apiClient = (await import('@/lib/api-client')).default
-          const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
-          const points = spResponse.data.data || []
-          setSalesPoints(points)
-          
-          // Set default sales point
-          if (points.length > 0) {
-            const defaultPoint = points.find((p: any) => p.point_number === company.defaultSalesPoint) || points[0]
-            setFormData(prev => ({ ...prev, salesPoint: defaultPoint.point_number }))
-          } else if (company.defaultSalesPoint) {
-            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint || 1 }))
-          }
-        } catch (error: any) {
-          console.error('Error loading sales points:', error)
-          // Fallback to company default - don't block the page
-          setSalesPoints([])
-          if (company.defaultSalesPoint) {
-            setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint || 1 }))
-          } else {
-            setFormData(prev => ({ ...prev, salesPoint: 1 }))
-          }
-          // Only show error if it's not a 404 (no sales points yet)
-          if (error.response?.status !== 404) {
-            toast.error('Error al cargar puntos de venta. Usando punto de venta por defecto.')
-          }
-        } finally {
-          setIsLoadingSalesPoints(false)
-        }
+        const salesPointsPromise = apiClient.get(`/companies/${companyId}/sales-points`)
+          .then(spResponse => {
+            const points = spResponse.data.data || []
+            setSalesPoints(points)
+            setIsLoadingSalesPoints(false)
+            if (points.length > 0) {
+              const defaultPoint = points.find((p: any) => p.point_number === company.defaultSalesPoint) || points[0]
+              setFormData(prev => ({ ...prev, salesPoint: defaultPoint.point_number }))
+            } else if (company.defaultSalesPoint) {
+              setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint || 1 }))
+            }
+          })
+          .catch((error: any) => {
+            console.error('Error loading sales points:', error)
+            setSalesPoints([])
+            setIsLoadingSalesPoints(false)
+            if (company.defaultSalesPoint) {
+              setFormData(prev => ({ ...prev, salesPoint: company.defaultSalesPoint || 1 }))
+            } else {
+              setFormData(prev => ({ ...prev, salesPoint: 1 }))
+            }
+          })
         
-        // Load AFIP certificate status
-        setIsLoadingCert(true)
-        try {
-          const apiClient = (await import('@/lib/api-client')).default
-          const certResponse = await apiClient.get(`/companies/${companyId}/afip/certificate`)
-          setCert(certResponse.data.data)
-        } catch (error: any) {
-          if (error.response?.status === 404) {
-            setCert({ isActive: false })
-          } else {
-            console.error('Error loading certificate:', error)
-            setCert({ isActive: false })
-          }
-        } finally {
-          setIsLoadingCert(false)
-        }
+        const certPromise = apiClient.get(`/companies/${companyId}/afip/certificate`)
+          .then(certResponse => setCert(certResponse.data.data))
+          .catch((error: any) => {
+            if (error.response?.status === 404) {
+              setCert({ isActive: false })
+            } else {
+              console.error('Error loading certificate:', error)
+              setCert({ isActive: false })
+            }
+          })
+        
+        // Wait for both critical data before showing page
+        await Promise.all([salesPointsPromise, certPromise])
+        setCertLoaded(true)
+        setIsLoadingData(false)
         
       } catch (error) {
         console.error('Error loading data:', error)
         toast.error('Error al cargar datos de la empresa')
-      } finally {
         setIsLoadingData(false)
       }
     }
@@ -654,6 +645,25 @@ export default function CreateInvoicePage() {
   if (authLoading) return null
   if (!isAuthenticated) return null
 
+  // Show loading skeleton while initial data loads
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="h-32 bg-muted rounded animate-pulse" />
+          <div className="h-96 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -667,14 +677,7 @@ export default function CreateInvoicePage() {
           </div>
         </div>
 
-        {isLoadingCert ? (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-              <p className="text-sm text-blue-700">Verificando certificado AFIP...</p>
-            </div>
-          </div>
-        ) : cert && !cert.isActive && (
+        {cert && !cert.isActive && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-red-600 mt-0.5" />
@@ -697,7 +700,7 @@ export default function CreateInvoicePage() {
           </div>
         )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datos Básicos */}
           <Card>
             <CardHeader>
@@ -758,7 +761,7 @@ export default function CreateInvoicePage() {
                             setIsSyncingSalesPoints(false)
                           }
                         }}
-                        disabled={isLoadingSalesPoints || isSyncingSalesPoints}
+                        disabled={isSyncingSalesPoints}
                         title="Sincronizar con AFIP"
                       >
                         {isSyncingSalesPoints ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
@@ -769,21 +772,14 @@ export default function CreateInvoicePage() {
                         variant="ghost"
                         className="h-4 w-4 p-0 shrink-0"
                         onClick={() => setShowAddSalesPointDialog(true)}
-                        disabled={isLoadingSalesPoints}
+                        disabled={false}
                         title="Agregar punto de venta"
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
-                  {isLoadingSalesPoints ? (
-                    <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      <span className="text-sm text-muted-foreground">Cargando...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Select 
+                  <Select 
                         value={formData.salesPoint > 0 ? formData.salesPoint.toString() : undefined} 
                         onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
                         disabled={salesPoints.length === 0 || (isNoteType && associateInvoice && !!selectedInvoice)}
@@ -799,7 +795,7 @@ export default function CreateInvoicePage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {salesPoints.length === 0 && (
+                      {salesPoints.length === 0 && !isLoadingSalesPoints && (
                         <p className="text-xs text-amber-600">
                           No hay puntos de venta. Sincronizá desde AFIP o agregá uno manualmente.
                         </p>
@@ -809,8 +805,6 @@ export default function CreateInvoicePage() {
                           Heredado de la factura asociada (requerido por AFIP)
                         </p>
                       )}
-                    </>
-                  )}
                 </div>
               </div>
 

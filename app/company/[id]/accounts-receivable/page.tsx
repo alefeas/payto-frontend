@@ -84,11 +84,8 @@ export default function AccountsReceivablePage() {
       }
       
       const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
-        // SOLO facturas donde esta empresa es el EMISOR (facturas emitidas)
         if (inv.issuer_company_id !== companyId) return false
-        // NO mostrar facturas RECIBIDAS (tienen supplier_id)
         if (inv.supplier_id) return false
-        // Verificar company_statuses JSON para esta empresa
         const companyStatus = inv.company_statuses?.[companyId]
         if (companyStatus === 'paid' || companyStatus === 'collected') return false
         
@@ -100,7 +97,12 @@ export default function AccountsReceivablePage() {
         
         if (filters.search) {
           const invoiceNumber = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`
-          if (!invoiceNumber.toLowerCase().includes(filters.search.toLowerCase())) return false
+          const clientName = inv.receiver_name || inv.client?.business_name || (inv.client?.first_name && inv.client?.last_name ? `${inv.client.first_name} ${inv.client.last_name}` : null) || inv.receiverCompany?.name || inv.receiverCompany?.business_name || ''
+          const clientCuit = inv.client?.document_number || inv.client?.national_id || inv.receiverCompany?.national_id || ''
+          const searchLower = filters.search.toLowerCase()
+          if (!invoiceNumber.toLowerCase().includes(searchLower) && 
+              !clientName.toLowerCase().includes(searchLower) && 
+              !clientCuit.includes(filters.search)) return false
         }
         
         return true
@@ -253,7 +255,27 @@ export default function AccountsReceivablePage() {
     }
   }
 
-  if (authLoading) return null
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
   if (!isAuthenticated) return null
 
   const summary = getFilteredSummary()

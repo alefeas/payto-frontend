@@ -213,7 +213,23 @@ export default function VerifyCompanyPage() {
     }
   }
 
-  if (authLoading || isLoading) return null
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="h-32 bg-muted rounded animate-pulse"></div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
   if (!isAuthenticated) return null
 
   const isVerified = verificationStatus?.verification_status === 'verified' || (certificate && certificate.isActive)

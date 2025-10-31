@@ -73,9 +73,15 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
   const [serviceDateTo, setServiceDateTo] = useState("")
   const [currentCompany, setCurrentCompany] = useState<any>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   useEffect(() => {
-    loadCompanyData()
+    const initializeData = async () => {
+      setIsLoadingData(true)
+      await loadCompanyData()
+      setIsLoadingData(false)
+    }
+    initializeData()
   }, [])
 
   useEffect(() => {
@@ -147,9 +153,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
         tax_condition: conn.connectedCompanyTaxCondition
       })))
     } catch (error: any) {
-      if (error.response?.status !== 403) {
-        console.error("Error loading connected companies:", error)
-      }
+      console.error("Error loading connected companies:", error)
       setConnectedCompanies([])
     }
   }
@@ -353,6 +357,17 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
   const getCurrencySymbol = (curr: string): string => {
     const formats = { ARS: 'ARS $', USD: 'USD $', EUR: 'EUR €' }
     return formats[curr as keyof typeof formats] || 'ARS $'
+  }
+
+  if (isLoadingData) {
+    return (
+      <div className="space-y-6">
+        <div className="h-32 bg-muted rounded-lg animate-pulse" />
+        <div className="h-64 bg-muted rounded-lg animate-pulse" />
+        <div className="h-48 bg-muted rounded-lg animate-pulse" />
+        <div className="h-32 bg-muted rounded-lg animate-pulse" />
+      </div>
+    )
   }
 
   return (

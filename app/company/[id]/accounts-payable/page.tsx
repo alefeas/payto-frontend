@@ -69,8 +69,23 @@ export default function AccountsPayablePage() {
   
   const loadInvoices = async () => {
     try {
-      const invoicesData = await accountsPayableService.getInvoices(companyId, {})
-      setInvoices(invoicesData.data || [])
+      let allInvoices: any[] = []
+      let currentPage = 1
+      let hasMore = true
+      
+      while (hasMore) {
+        const response = await accountsPayableService.getInvoices(companyId, { page: currentPage })
+        const pageData = response.data || []
+        allInvoices = [...allInvoices, ...pageData]
+        
+        if (response.pagination?.last_page && currentPage < response.pagination.last_page) {
+          currentPage++
+        } else {
+          hasMore = false
+        }
+      }
+      
+      setInvoices(allInvoices)
     } catch (error: any) {
       console.error('Error loading invoices:', error)
       toast.error('Error al cargar facturas')
@@ -85,9 +100,6 @@ export default function AccountsPayablePage() {
         accountsPayableService.getDashboard(companyId),
         accountsPayableService.getPayments(companyId),
       ])
-      
-      console.log('Dashboard data:', dashboardData)
-      console.log('Payments data:', paymentsData)
       
       setDashboard(dashboardData)
       setPayments(paymentsData.data || [])
@@ -275,20 +287,24 @@ export default function AccountsPayablePage() {
   }
 
   const getFilteredInvoices = () => {
-    return invoices.filter(inv => {
-      // Filtrar por fecha solo si hay filtros activos
+    const filtered = invoices.filter(inv => {
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
         if (filters.to_date && issueDate > new Date(filters.to_date)) return false
       }
-      // Filtrar por número de factura
       if (filters.search) {
         const invoiceNumber = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`
-        if (!invoiceNumber.toLowerCase().includes(filters.search.toLowerCase())) return false
+        const supplierName = inv.supplier?.business_name || (inv.supplier?.first_name && inv.supplier?.last_name ? `${inv.supplier.first_name} ${inv.supplier.last_name}` : null) || inv.issuerCompany?.business_name || inv.issuerCompany?.name || ''
+        const supplierCuit = inv.supplier?.document_number || inv.supplier?.national_id || inv.issuerCompany?.national_id || ''
+        const searchLower = filters.search.toLowerCase()
+        if (!invoiceNumber.toLowerCase().includes(searchLower) && 
+            !supplierName.toLowerCase().includes(searchLower) && 
+            !supplierCuit.includes(filters.search)) return false
       }
       return true
     })
+    return filtered
   }
 
   const getFilteredSummary = () => {
@@ -346,7 +362,27 @@ export default function AccountsPayablePage() {
     return <div className="flex gap-1 flex-wrap">{badges}</div>
   }
 
-  if (authLoading || loading) return null
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
   if (!isAuthenticated) return null
 
   return (
@@ -465,7 +501,7 @@ export default function AccountsPayablePage() {
                 placeholder="Hasta"
               />
               <Input
-                placeholder="Buscar por número de factura..."
+                placeholder="Buscar por factura, proveedor o CUIT..."
                 value={filters.search}
                 onChange={(e) => setFilters({...filters, search: e.target.value})}
                 className="flex-1"

@@ -26,13 +26,19 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
   const colorScheme = type === 'receivable' ? 'emerald' : 'violet'
 
   const byEntity = invoices.reduce((acc: any, inv) => {
-    const entityId = inv[entityIdKey] || inv[companyIdKey] || 'unknown'
-    const entity = inv[entityKey] || inv[type === 'receivable' ? 'receiverCompany' : 'issuerCompany']
+    let entityId = inv[entityIdKey] || inv[companyIdKey]
+    let entity = inv[entityKey] || inv[type === 'receivable' ? 'receiverCompany' : 'issuerCompany']
+    
+    if (!entityId && !entity) {
+      entityId = 'sin-identificar'
+    }
+    
     const entityName = (type === 'receivable' ? inv.receiver_name : null) ||
                       entity?.business_name || 
                       entity?.name ||
                       (entity?.first_name && entity?.last_name ? `${entity.first_name} ${entity.last_name}` : null) ||
-                      `${entityLabel} sin nombre`
+                      (entityId === 'sin-identificar' ? `${entityLabel} sin identificar` : `${entityLabel} sin nombre`)
+    const entityCuit = entity?.document_number || entity?.national_id || ''
     
     if (!acc[entityId]) {
       acc[entityId] = {
@@ -40,7 +46,8 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
         entity_name: entityName,
         invoice_count: 0,
         total_pending: 0,
-        entity_cuit: entity?.document_number || entity?.national_id || ''
+        entity_cuit: entityCuit,
+        entity_search_key: entityCuit || entityName
       }
     }
     
@@ -66,7 +73,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
           ) : (
             entitiesArray.map((entity: any) => {
               const entityInvoices = invoices.filter(inv => {
-                const entityId = inv[entityIdKey] || inv[companyIdKey]
+                const entityId = inv[entityIdKey] || inv[companyIdKey] || 'sin-identificar'
                 return entityId === entity.entity_id
               })
               

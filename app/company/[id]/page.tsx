@@ -29,6 +29,7 @@ import { CompanyRole } from "@/types"
 import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import { hasPermission } from "@/lib/permissions"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -242,7 +243,8 @@ export default function CompanyPage() {
               ID de Conexión: <span className="font-mono font-semibold">{company.uniqueId}</span>
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <NotificationBell companyId={company.id} />
             {hasPermission(userRole, 'members.view') && (
               <Button 
                 variant="outline" 

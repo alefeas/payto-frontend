@@ -110,7 +110,28 @@ export default function IvaBookPage() {
     }).format(value)
   }
 
-  if (authLoading || !company) return null
+  if (authLoading || loading || !company) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+        <div className="max-w-[1600px] mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
+
   if (!isAuthenticated) return null
 
   return (
@@ -153,21 +174,7 @@ export default function IvaBookPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="pb-3">
-                  <div className="h-4 bg-muted rounded w-32"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 bg-muted rounded w-40 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-28"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : summary && (
+        {summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100/50">
               <CardHeader className="pb-3">
@@ -301,20 +308,7 @@ export default function IvaBookPage() {
                     </div>
                   </div>
                 )}
-                {loading ? (
-                  <div className="space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex gap-4 animate-pulse">
-                        <div className="h-10 bg-muted rounded w-24"></div>
-                        <div className="h-10 bg-muted rounded w-32"></div>
-                        <div className="h-10 bg-muted rounded flex-1"></div>
-                        <div className="h-10 bg-muted rounded w-32"></div>
-                        <div className="h-10 bg-muted rounded w-40"></div>
-                        <div className="h-10 bg-muted rounded w-24"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : salesBook?.records?.length === 0 ? (
+                {salesBook?.records?.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No hay facturas emitidas en este período
                   </div>
@@ -452,20 +446,7 @@ export default function IvaBookPage() {
                     </div>
                   </div>
                 )}
-                {loading ? (
-                  <div className="space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex gap-4 animate-pulse">
-                        <div className="h-10 bg-muted rounded w-24"></div>
-                        <div className="h-10 bg-muted rounded w-32"></div>
-                        <div className="h-10 bg-muted rounded flex-1"></div>
-                        <div className="h-10 bg-muted rounded w-32"></div>
-                        <div className="h-10 bg-muted rounded w-40"></div>
-                        <div className="h-10 bg-muted rounded w-24"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : purchasesBook?.records?.length === 0 ? (
+                {purchasesBook?.records?.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No hay facturas recibidas en este período
                   </div>

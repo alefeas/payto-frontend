@@ -34,6 +34,7 @@ export default function InvoicesPage() {
 
   const [invoices, setInvoices] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
@@ -44,6 +45,7 @@ export default function InvoicesPage() {
   const [dateFromFilter, setDateFromFilter] = useState("")
   const [dateToFilter, setDateToFilter] = useState("")
   const [clientFilter, setClientFilter] = useState("all")
+  const [allClients, setAllClients] = useState<any[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showSyncDialog, setShowSyncDialog] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -69,6 +71,53 @@ export default function InvoicesPage() {
     setCurrentPage(1)
   }, [searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
 
+  // Cargar todos los clientes únicos al inicio
+  useEffect(() => {
+    const loadAllClients = async () => {
+      if (!companyId) return
+      try {
+        const response = await invoiceService.getInvoices(companyId, 1, {})
+        const clientsMap = new Map()
+        let hasInvoicesWithoutClient = false
+        
+        for (let page = 1; page <= response.last_page; page++) {
+          const pageResponse = await invoiceService.getInvoices(companyId, page, {})
+          pageResponse.data.forEach((inv: any) => {
+            const clientName = inv.receiver_name || inv.client?.business_name || 
+                              inv.receiverCompany?.name ||
+                              (inv.client?.first_name && inv.client?.last_name 
+                                ? `${inv.client.first_name} ${inv.client.last_name}` 
+                                : null)
+            
+            if (clientName && !clientsMap.has(clientName)) {
+              // Prioridad: receiver_company_id > client_id > nombre
+              const id = inv.receiver_company_id || inv.client_id || clientName
+              clientsMap.set(clientName, {
+                id: id,
+                name: clientName,
+                isCompany: !!inv.receiver_company_id
+              })
+            } else if (!clientName) {
+              hasInvoicesWithoutClient = true
+            }
+          })
+        }
+        
+        const clients = Array.from(clientsMap.values())
+        if (hasInvoicesWithoutClient) {
+          clients.push({ id: 'sin_cliente', name: 'Sin cliente', isCompany: false })
+        }
+        setAllClients(clients)
+      } catch (error) {
+        console.error('Error loading clients:', error)
+      }
+    }
+
+    if (isAuthenticated && companyId) {
+      loadAllClients()
+    }
+  }, [isAuthenticated, companyId])
+
   useEffect(() => {
     const loadInvoices = async () => {
       if (!companyId) return
@@ -87,11 +136,14 @@ export default function InvoicesPage() {
         setTotalPages(response.last_page || 1)
         setTotal(response.total || 0)
       } catch (error: any) {
+        console.error('Error loading invoices:', error)
+        setInvoices([])
         toast.error('Error al cargar comprobantes', {
           description: error.response?.data?.message || 'Intente nuevamente'
         })
       } finally {
         setIsLoading(false)
+        setInitialLoad(false)
       }
     }
 
@@ -141,9 +193,7 @@ export default function InvoicesPage() {
     setClientFilter("all")
   }
 
-  const uniqueClients = [...new Set(invoices.map(inv => 
-    inv.receiver_name || inv.client?.business_name || inv.client?.first_name + ' ' + inv.client?.last_name || 'Sin cliente'
-  ))]
+
 
   const downloadPDF = async (invoiceId: string) => {
     const invoice = invoices.find(inv => inv.id === invoiceId)
@@ -226,10 +276,20 @@ export default function InvoicesPage() {
 
   const filteredInvoices = getFilteredInvoices()
 
-  if (authLoading) {
+  if (authLoading || initialLoad) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="h-32 bg-muted rounded animate-pulse"></div>
+          <div className="h-96 bg-muted rounded animate-pulse"></div>
+        </div>
       </div>
     )
   }
@@ -353,13 +413,19 @@ export default function InvoicesPage() {
           <CardContent>
             <div className="space-y-4 mb-6">
               <div className="flex gap-4">
-                <div className="flex-1">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por número o empresa..."
+                    placeholder="Buscar por número de factura..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full"
+                    className="w-full pl-10"
                   />
+                  {isLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
                 <Button
                   variant="outline"
@@ -369,7 +435,7 @@ export default function InvoicesPage() {
                   <Filter className="h-4 w-4" />
                   Filtros
                 </Button>
-                {(statusFilter !== "all" || typeFilter !== "all" || dateFromFilter || dateToFilter || clientFilter !== "all") && (
+                {(statusFilter !== "all" || typeFilter !== "all" || dateFromFilter || dateToFilter || clientFilter !== "all" || searchTerm) && (
                   <Button
                     variant="ghost"
                     onClick={clearFilters}
@@ -395,10 +461,13 @@ export default function InvoicesPage() {
                           <SelectItem value="issued">Emitida</SelectItem>
                           <SelectItem value="approved">Aprobada</SelectItem>
                           <SelectItem value="rejected">Rechazada</SelectItem>
-                          <SelectItem value="overdue">Vencida</SelectItem>
                           <SelectItem value="paid">Pagada</SelectItem>
                           <SelectItem value="collected">Cobrada</SelectItem>
+                          <SelectItem value="overdue">Vencida</SelectItem>
                           <SelectItem value="cancelled">Anulada</SelectItem>
+                          <SelectItem value="partially_cancelled">Parcialmente Anulada</SelectItem>
+                          <SelectItem value="in_dispute">En Disputa</SelectItem>
+                          <SelectItem value="correcting">En Corrección</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -415,34 +484,14 @@ export default function InvoicesPage() {
                           <SelectItem value="B">Factura B</SelectItem>
                           <SelectItem value="C">Factura C</SelectItem>
                           <SelectItem value="M">Factura M</SelectItem>
-                          <SelectItem value="E">Factura E (Exportación)</SelectItem>
                           <SelectItem value="NCA">Nota de Crédito A</SelectItem>
                           <SelectItem value="NCB">Nota de Crédito B</SelectItem>
                           <SelectItem value="NCC">Nota de Crédito C</SelectItem>
                           <SelectItem value="NCM">Nota de Crédito M</SelectItem>
-                          <SelectItem value="NCE">Nota de Crédito E</SelectItem>
                           <SelectItem value="NDA">Nota de Débito A</SelectItem>
                           <SelectItem value="NDB">Nota de Débito B</SelectItem>
                           <SelectItem value="NDC">Nota de Débito C</SelectItem>
                           <SelectItem value="NDM">Nota de Débito M</SelectItem>
-                          <SelectItem value="NDE">Nota de Débito E</SelectItem>
-                          <SelectItem value="RA">Recibo A</SelectItem>
-                          <SelectItem value="RB">Recibo B</SelectItem>
-                          <SelectItem value="RC">Recibo C</SelectItem>
-                          <SelectItem value="RM">Recibo M</SelectItem>
-                          <SelectItem value="FCEA">FCE MiPyME A</SelectItem>
-                          <SelectItem value="FCEB">FCE MiPyME B</SelectItem>
-                          <SelectItem value="FCEC">FCE MiPyME C</SelectItem>
-                          <SelectItem value="NCFCEA">NC FCE MiPyME A</SelectItem>
-                          <SelectItem value="NCFCEB">NC FCE MiPyME B</SelectItem>
-                          <SelectItem value="NCFCEC">NC FCE MiPyME C</SelectItem>
-                          <SelectItem value="NDFCEA">ND FCE MiPyME A</SelectItem>
-                          <SelectItem value="NDFCEB">ND FCE MiPyME B</SelectItem>
-                          <SelectItem value="NDFCEC">ND FCE MiPyME C</SelectItem>
-                          <SelectItem value="R">Remito Electrónico</SelectItem>
-                          <SelectItem value="LBUA">Liquidación Bienes Usados A</SelectItem>
-                          <SelectItem value="LBUB">Liquidación Bienes Usados B</SelectItem>
-                          <SelectItem value="CBUCF">Comprobante Compra Bienes Usados</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -455,8 +504,8 @@ export default function InvoicesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Todos</SelectItem>
-                          {uniqueClients.map(client => (
-                            <SelectItem key={client} value={client}>{client}</SelectItem>
+                          {allClients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -503,14 +552,26 @@ export default function InvoicesPage() {
                 <div>Acciones</div>
               </div>
 
-              {isLoading ? (
-                <div className="text-center py-32">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mt-3">Cargando comprobantes...</p>
-                </div>
-              ) : (
-                <>
-                  {filteredInvoices.map((invoice) => {
+              {isLoading && !initialLoad ? (
+                // Skeleton para búsquedas, filtros y paginación
+                Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="grid grid-cols-8 gap-4 p-4 border-b">
+                    <div className="h-5 w-5 bg-muted rounded animate-pulse"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse"></div>
+                    <div className="h-5 bg-muted rounded animate-pulse"></div>
+                    <div className="flex gap-1">
+                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                ))
+              ) : filteredInvoices.map((invoice) => {
                     const clientName = invoice.receiver_name || invoice.client?.business_name || 
                                       (invoice.client?.first_name && invoice.client?.last_name 
                                         ? `${invoice.client.first_name} ${invoice.client.last_name}` 
@@ -587,15 +648,13 @@ export default function InvoicesPage() {
                         </div>
                       </div>
                     )
-                  })}
+              })}
 
-                  {filteredInvoices.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No se encontraron comprobantes</p>
-                    </div>
-                  )}
-                </>
+              {!isLoading && filteredInvoices.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No se encontraron comprobantes</p>
+                </div>
               )}
             </div>
             
