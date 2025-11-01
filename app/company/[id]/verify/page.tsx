@@ -522,6 +522,61 @@ export default function VerifyCompanyPage() {
           </Card>
         )}
 
+        {/* Autorizaciones AFIP */}
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+              <Shield className="h-5 w-5" />
+              Autorizaciones Requeridas en AFIP
+            </CardTitle>
+            <CardDescription className="text-blue-700 dark:text-blue-300">
+              Tu certificado debe tener estas autorizaciones para que PayTo funcione correctamente
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border">
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">WSFE - Facturación Electrónica</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Servicio principal para emitir facturas, notas de crédito y débito electrónicas
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border">
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">WS SR PADRON A5 - Padrón de Contribuyentes</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Permite consultar automáticamente la condición IVA, domicilio fiscal y actividades de clientes/proveedores
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-3">
+              <p className="font-semibold text-sm text-blue-900 dark:text-blue-100">📋 Cómo autorizar los servicios:</p>
+              <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
+                <li>Ingresá a <strong>AFIP con Clave Fiscal</strong></li>
+                <li>Buscá <strong>"Administrador de Relaciones de Clave Fiscal"</strong></li>
+                <li>Seleccioná <strong>"Nueva Relación"</strong></li>
+                <li>Buscá el servicio <strong>"WSFE"</strong> y autorizá tu certificado</li>
+                <li>Repetí el proceso para <strong>"WS SR PADRON A5"</strong> o <strong>"Padrón Alcance 5"</strong></li>
+                <li>Confirmá las autorizaciones</li>
+              </ol>
+            </div>
+
+            <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
+                <strong>Importante:</strong> Sin estas autorizaciones, el certificado no funcionará correctamente. El servicio de Padrón (WS SR PADRON A5) solo funciona en ambiente de producción, no en homologación.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
         {/* Información */}
         <Card>
           <CardHeader>

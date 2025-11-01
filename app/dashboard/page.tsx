@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
   if (isLoading || !isAuthenticated || loadingCompanies) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="animate-pulse space-y-4">
             <div className="h-12 bg-muted rounded w-64"></div>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
   const greeting = currentHour < 12 ? 'Buenos días' : currentHour < 18 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6 space-y-8">
+    <div className="min-h-screen p-6 space-y-8">
       {/* Personal Welcome */}
       <div className="text-center space-y-4">
         <div>

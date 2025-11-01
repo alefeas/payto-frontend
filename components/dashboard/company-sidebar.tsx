@@ -66,6 +66,13 @@ export function CompanySidebar() {
     }
   }, [isAuthenticated])
 
+  useEffect(() => {
+    const match = pathname.match(/\/company\/([^/]+)/)
+    if (match && match[1]) {
+      setSelectedCompanyId(match[1])
+    }
+  }, [pathname])
+
   const loadCompanies = async () => {
     try {
       setLoading(true)
@@ -149,7 +156,8 @@ export function CompanySidebar() {
 
   const filteredCompanies = companies.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.uniqueId?.toLowerCase().includes(searchTerm.toLowerCase())
+    c.nationalId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.national_id?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleLogout = async () => {
@@ -256,9 +264,14 @@ export function CompanySidebar() {
                   ) : (
                     filteredCompanies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          <span className="truncate">{company.name}</span>
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            <span className="truncate font-medium">{company.name}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-6">
+                            CUIT: {company.nationalId || company.national_id}
+                          </span>
                         </div>
                       </SelectItem>
                     ))

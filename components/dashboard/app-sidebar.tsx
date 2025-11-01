@@ -26,7 +26,8 @@ import {
   ChevronsUpDown,
   Check,
   ChevronRight,
-  Search
+  Search,
+  CheckSquare
 } from "lucide-react"
 import {
   Sidebar,
@@ -124,6 +125,7 @@ export function AppSidebar() {
       label: "General",
       items: [
         { title: "Inicio", icon: Home, url: `/company/${selectedCompanyId}` },
+        { title: "Mis Tareas", icon: CheckSquare, url: `/tasks` },
         { title: "Notificaciones", icon: Bell, url: `/company/${selectedCompanyId}/notifications` },
       ]
     },
@@ -232,6 +234,7 @@ export function AppSidebar() {
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:!bg-accent/50 transition-all duration-200 relative before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-full before:w-1 before:bg-blue-600 dark:before:bg-blue-400 before:rounded-r-full before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left"
                   disabled={loading}
+                  tooltip={selectedCompany?.name || "Seleccionar perfil"}
                 >
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <Building2 className="size-4" />
@@ -390,6 +393,7 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:!bg-accent/50 transition-all duration-200 relative before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-full before:w-1 before:bg-blue-600 dark:before:bg-blue-400 before:rounded-r-full before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left"
+                  tooltip={user?.name || "Menú de usuario"}
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarFallback className="rounded-lg bg-primary/10 text-primary">

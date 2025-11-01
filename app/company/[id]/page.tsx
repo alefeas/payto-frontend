@@ -327,6 +327,27 @@ export default function CompanyPage() {
           </Card>
         </div>
 
+        {/* Recordatorio para sincronizar condición IVA - Solo si tiene certificado pero aún no sincronizó */}
+        {isAfipVerified && certificate?.environment === 'production' && (!company.taxCondition || !['registered_taxpayer', 'monotax', 'exempt', 'final_consumer'].includes(company.taxCondition)) && hasPermission(userRole, 'company.update') && (
+          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-amber-900 text-sm">📊 Sincronizá tu Condición IVA desde AFIP
+              </p>
+              <p className="text-xs text-amber-800 mt-1">
+                Tu condición fiscal actual fue inferida del CUIT. Para obtener la condición oficial desde el padrón de AFIP, andá a <strong>Configuración → Facturación</strong> y presioná el botón de sincronización.
+              </p>
+            </div>
+            <Button 
+              size="sm" 
+              className="bg-amber-600 hover:bg-amber-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${company.id}/settings`)}
+            >
+              Ir a Configuración
+            </Button>
+          </div>
+        )}
+
         {/* Banner de Estado de Verificación AFIP - Visible para todos */}
         {isAfipVerified ? (
           <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">

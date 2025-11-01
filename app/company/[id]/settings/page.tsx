@@ -81,6 +81,7 @@ export default function SettingsPage() {
   const [editingAccountLoading, setEditingAccountLoading] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [maxApprovals, setMaxApprovals] = useState(10)
+  const [hasCertificate, setHasCertificate] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     business_name: '',
@@ -135,6 +136,15 @@ export default function SettingsPage() {
       ])
       setCompany(companyData)
       setBankAccounts(accounts)
+      
+      // Check if has AFIP certificate
+      try {
+        const { afipCertificateService } = await import('@/services/afip-certificate.service')
+        const cert = await afipCertificateService.getCertificate(companyId)
+        setHasCertificate(cert?.isActive || false)
+      } catch {
+        setHasCertificate(false)
+      }
       
       // Load sales points
       try {
@@ -516,14 +526,18 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <Label>Condición Fiscal</Label>
                         <div className="flex gap-2">
-                          <Select value={formData.tax_condition} onValueChange={(value) => setFormData({...formData, tax_condition: value})}>
-                            <SelectTrigger><SelectValue placeholder="No configurada" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
-                              <SelectItem value="monotax">Monotributo</SelectItem>
-                              <SelectItem value="exempt">Exento</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Input 
+                            value={
+                              formData.tax_condition === 'registered_taxpayer' ? 'Responsable Inscripto' :
+                              formData.tax_condition === 'monotax' ? 'Monotributo' :
+                              formData.tax_condition === 'exempt' ? 'Exento' :
+                              formData.tax_condition === 'final_consumer' ? 'Consumidor Final' :
+                              'No configurada'
+                            }
+                            readOnly
+                            disabled
+                            className="bg-gray-100 dark:bg-gray-800"
+                          />
                           <AfipFiscalDataButton 
                             companyId={companyId}
                             onDataFetched={(taxCondition) => {
@@ -531,7 +545,11 @@ export default function SettingsPage() {
                             }}
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground">Actualiza desde AFIP o selecciona manualmente</p>
+                        {hasCertificate ? (
+                          <p className="text-xs text-amber-600 dark:text-amber-400">⚠️ Condición inferida del CUIT. Presioná el botón para sincronizar desde AFIP.</p>
+                        ) : (
+                          <p className="text-xs text-amber-600 dark:text-amber-400">⚠️ Condición inferida del CUIT. Subí tu certificado AFIP para sincronizar la condición oficial.</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label>Punto de Venta Predeterminado</Label>

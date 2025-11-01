@@ -114,7 +114,7 @@ export default function CreateCompanyPage() {
       }
       
       toast.success(`Empresa "${formData.name}" creada exitosamente`)
-      router.push('/dashboard')
+      router.push(`/company/${company.id}`)
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al crear la empresa')
     } finally {
@@ -196,6 +196,8 @@ export default function CreateCompanyPage() {
                     maxLength={150}
                   />
                 </div>
+
+
               </div>
 
 
@@ -382,16 +384,22 @@ export default function CreateCompanyPage() {
               <Alert className="bg-blue-50 border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
-                  <strong className="block mb-1">📋 Próximo paso: Subir certificado AFIP (OBLIGATORIO)</strong>
-                  Después de crear tu perfil, <strong>DEBES subir tu certificado digital de AFIP</strong> para poder emitir facturas.
-                  El certificado permite:
-                  <ul className="list-disc list-inside mt-2 ml-2">
-                    <li>Obtener automáticamente tu condición fiscal desde AFIP</li>
-                    <li>Emitir facturas electrónicas oficiales con CAE válido</li>
-                    <li>Acceder a todas las funciones del sistema</li>
-                  </ul>
-                  <br />
-                  <strong className="text-red-600">⚠️ Sin certificado AFIP no podrás emitir facturas.</strong>
+                  <strong className="block mb-2">📋 Pasos siguientes</strong>
+                  <ol className="text-sm space-y-1 list-decimal list-inside">
+                    <li>Creá tu perfil fiscal con los datos básicos</li>
+                    <li><strong>Subí tu certificado digital de AFIP</strong> en Configuración</li>
+                    <li>Tu <strong>condición IVA se sincronizará automáticamente</strong> desde el padrón de AFIP</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-900">
+                  <strong className="block mb-1">⚠️ Importante</strong>
+                  <p className="text-sm">
+                    Sin el certificado AFIP no podrás emitir facturas electrónicas oficiales ni sincronizar tu condición IVA.
+                  </p>
                 </AlertDescription>
               </Alert>
 

@@ -17,34 +17,28 @@ export function AfipFiscalDataButton({ companyId, onDataFetched }: AfipFiscalDat
   const handleFetchFiscalData = async () => {
     try {
       setLoading(true)
-      const response = await afipPadronService.getOwnFiscalData(companyId)
+      const response = await afipPadronService.syncTaxCondition(companyId)
       
-      if (response.success && response.data) {
-        const taxConditionMap: Record<string, string> = {
-          'responsable_inscripto': 'registered_taxpayer',
-          'monotributo': 'monotax',
-          'exento': 'exempt',
-          'consumidor_final': 'final_consumer'
-        }
-        
-        const mappedCondition = taxConditionMap[response.data.tax_condition] || response.data.tax_condition
-        
+      if (response.success) {
         if (onDataFetched) {
-          onDataFetched(mappedCondition)
+          onDataFetched(response.tax_condition)
         }
         
-        const message = response.mock_mode 
-          ? `Condición fiscal actualizada (modo simulación). En producción se obtendrán datos reales de AFIP.`
-          : `Condición fiscal actualizada desde AFIP: ${response.data.tax_condition}`
+        const conditionLabel = {
+          'registered_taxpayer': 'Responsable Inscripto',
+          'monotax': 'Monotributo',
+          'exempt': 'Exento',
+          'final_consumer': 'Consumidor Final'
+        }[response.tax_condition] || response.tax_condition
         
-        toast.success(message, {
+        toast.success(response.message, {
           description: response.mock_mode 
-            ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
-            : undefined
+            ? 'Datos simulados - El servicio de padrón AFIP solo funciona con certificado de producción'
+            : `Condición actualizada: ${conditionLabel}`
         })
       }
     } catch (error: any) {
-      const errorMsg = error.response?.data?.error || error.message || 'Error al consultar AFIP'
+      const errorMsg = error.response?.data?.error || error.message || 'Error al sincronizar con AFIP'
       toast.error(errorMsg)
     } finally {
       setLoading(false)

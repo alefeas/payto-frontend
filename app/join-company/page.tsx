@@ -35,7 +35,7 @@ export default function JoinCompanyPage() {
     try {
       const company = await companyService.joinCompany(inviteCode)
       toast.success(`Te has unido a "${company.name}" exitosamente`)
-      router.push('/dashboard')
+      router.push(`/company/${company.id}`)
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Código de invitación inválido')
     } finally {

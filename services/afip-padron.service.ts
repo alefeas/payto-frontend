@@ -27,9 +27,21 @@ export interface PadronResponse {
   message: string
 }
 
+export interface SyncTaxConditionResponse {
+  success: boolean
+  tax_condition: string
+  mock_mode: boolean
+  message: string
+}
+
 export const afipPadronService = {
   async getOwnFiscalData(companyId: string): Promise<PadronResponse> {
     const response = await apiClient.get(`/companies/${companyId}/afip/fiscal-data`)
+    return response.data
+  },
+
+  async syncTaxCondition(companyId: string): Promise<SyncTaxConditionResponse> {
+    const response = await apiClient.post(`/companies/${companyId}/afip/sync-tax-condition`)
     return response.data
   },
 
