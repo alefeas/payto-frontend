@@ -183,8 +183,8 @@ export default function VerifyAccountForm() {
       <div className="space-y-6">
         <div className="space-y-2 text-center">
           <h2 className="text-2xl font-semibold">Verifica tu cuenta</h2>
-          <p className="text-gray-600">
-            Ingresa el código de 6 dígitos enviado a<br />
+          <p className="text-gray-600 text-sm">
+            Ingresa el código de 6 dígitos enviado a{" "}
             <span className="font-semibold text-foreground">{email}</span>
           </p>
         </div>
@@ -237,25 +237,25 @@ export default function VerifyAccountForm() {
           </Button>
         </form>
 
-        <div className="text-center space-y-2">
-          <p className="text-sm text-gray-600">
-            ¿No recibiste el código?{" "}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleResendCode}
-              disabled={resendTimer > 0 || isResending}
-              className="w-full"
-            >
-              {isResending ? (
-                'Reenviando...'
-              ) : resendTimer > 0 ? (
-                `Reenviar en ${resendTimer}s`
-              ) : (
-                'Reenviar código'
-              )}
-            </Button>
+        <div className="space-y-3">
+          <p className="text-sm text-center text-gray-600">
+            ¿No recibiste el código?
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResendCode}
+            disabled={resendTimer > 0 || isResending}
+            className="w-full h-12"
+          >
+            {isResending ? (
+              'Reenviando...'
+            ) : resendTimer > 0 ? (
+              `Reenviar en ${resendTimer}s`
+            ) : (
+              'Reenviar código'
+            )}
+          </Button>
         </div>
       </div>
     </div>

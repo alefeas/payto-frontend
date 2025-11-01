@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormFooterLink } from "@/components/ui/form-footer-link";
 
 export default function ContactForm() {
   const [name, setName] = useState("");
@@ -96,15 +97,11 @@ export default function ContactForm() {
           </Button>
         </form>
 
-        <p className="text-sm text-center text-gray-600">
-          ¿Necesitas ayuda inmediata?{" "}
-          <Link
-            href="mailto:support@payto.com"
-            className="font-medium text-primary hover:underline transition-colors"
-          >
-            Escríbenos directamente
-          </Link>
-        </p>
+        <FormFooterLink
+          text="¿Necesitas ayuda inmediata?"
+          linkText="Escríbenos directamente"
+          href="mailto:support@payto.com"
+        />
       </div>
     </div>
   );

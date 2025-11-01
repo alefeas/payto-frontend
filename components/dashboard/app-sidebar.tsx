@@ -244,7 +244,7 @@ export function AppSidebar() {
                       {loading ? "Cargando..." : (selectedCompany?.name || "Seleccionar")}
                     </span>
                     <span className="truncate text-xs">
-                      {loading ? "" : (selectedCompany?.uniqueId || "Sin perfil")}
+                      {loading ? "" : (selectedCompany?.nationalId || selectedCompany?.national_id || "Sin CUIT")}
                     </span>
                   </div>
                   <ChevronsUpDown className="ml-auto" />
@@ -286,6 +286,8 @@ export function AppSidebar() {
                         onClick={() => {
                           setSelectedCompanyId(company.id)
                           setSearchTerm("")
+                          router.push(`/company/${company.id}`)
+                          toast.success(`Cambiaste a "${company.name}"`)
                         }}
                         className="gap-2 p-2 cursor-pointer transition-colors hover:bg-accent"
                       >
@@ -294,7 +296,7 @@ export function AppSidebar() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium truncate">{company.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">{company.uniqueId}</div>
+                          <div className="text-xs text-muted-foreground truncate">CUIT: {company.nationalId || company.national_id}</div>
                         </div>
                         {company.id === selectedCompanyId && <Check className="size-4 shrink-0" />}
                       </DropdownMenuItem>

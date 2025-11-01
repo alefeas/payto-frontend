@@ -35,7 +35,12 @@ apiClient.interceptors.response.use(
     
     // Traducir mensajes de error comunes al español
     if (error.response?.data?.message) {
-      const message = error.response.data.message;
+      let message = error.response.data.message;
+      
+      // Traducir "(and X more error)" a español
+      message = message.replace(/\(and (\d+) more errors?\)/gi, '(y $1 error$1 más)');
+      message = message.replace(/y (\d+) error1 más/g, 'y $1 error más');
+      
       const translations: Record<string, string> = {
         'This action is unauthorized.': 'No tienes permisos para realizar esta acción',
         'Unauthenticated.': 'No autenticado',
@@ -46,6 +51,8 @@ apiClient.interceptors.response.use(
       
       if (translations[message]) {
         error.response.data.message = translations[message];
+      } else {
+        error.response.data.message = message;
       }
     }
     

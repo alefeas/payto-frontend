@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const poppinsMedium = localFont({
   src: "../public/fonts/Poppins-Medium.ttf",
@@ -33,7 +33,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
-          <Toaster position="top-right" richColors />
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
