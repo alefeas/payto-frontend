@@ -1,40 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import apiClient from "@/lib/api-client";
+import { useAuth } from "@/contexts/auth-context";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('reset') === 'success') {
+      toast.success('Contraseña restablecida correctamente. Podés iniciar sesión.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!email) {
+      toast.error('El email es obligatorio');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Por favor ingresa un email válido');
+      return;
+    }
+
+    if (!password) {
+      toast.error('La contraseña es obligatoria');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post("/auth/login", {
-        email,
-        password,
-      });
-
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        toast.success("¡Bienvenido de vuelta!");
-        router.push("/dashboard");
-      }
+      await login(email, password);
+      toast.success('¡Bienvenido!');
+      router.push('/dashboard');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error al iniciar sesión");
+      if (error.response?.status === 401) {
+        toast.error('Credenciales inválidas');
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Error al iniciar sesión. Por favor, intente nuevamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -81,23 +106,32 @@ export default function LoginForm() {
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Contraseña</Label>
               <Link
-                href="#"
+                href="/forgot-password"
                 className="text-sm text-primary hover:underline transition-colors"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="h-12"
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="h-12 pr-10"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
 
           <Button type="submit" className="w-full h-12 text-base" size="lg" disabled={isLoading}>

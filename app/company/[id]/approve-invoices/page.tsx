@@ -32,7 +32,7 @@ export default function ApproveInvoicesPage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/log-in')
     } else if (isAuthenticated && id) {
       loadData()
     }

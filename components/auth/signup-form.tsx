@@ -8,41 +8,149 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
-import apiClient from "@/lib/api-client";
+import { authService } from "@/services/auth.service";
+import { formatPhone } from "@/lib/input-formatters";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignupForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
+    country: 'Argentina',
+    province: '',
+    city: '',
+    postalCode: '',
+    street: '',
+    streetNumber: '',
+    floor: '',
+    apartment: ''
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const totalSteps = 3;
+
+  const provinces = [
+    'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
+    'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+    'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan',
+    'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero',
+    'Tierra del Fuego', 'Tucumán'
+  ];
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!formData.firstName) {
+        toast.error('El nombre es obligatorio');
+        return;
+      }
+      if (!formData.lastName) {
+        toast.error('El apellido es obligatorio');
+        return;
+      }
+      if (!formData.email) {
+        toast.error('El email es obligatorio');
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast.error('Por favor ingresa un email válido');
+        return;
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.password) {
+        toast.error('La contraseña es obligatoria');
+        return;
+      }
+      if (formData.password.length < 8) {
+        toast.error('La contraseña debe tener al menos 8 caracteres');
+        return;
+      }
+      if (!/[A-Z]/.test(formData.password)) {
+        toast.error('La contraseña debe contener al menos una mayúscula');
+        return;
+      }
+      if (!/[a-z]/.test(formData.password)) {
+        toast.error('La contraseña debe contener al menos una minúscula');
+        return;
+      }
+      if (!/[0-9]/.test(formData.password)) {
+        toast.error('La contraseña debe contener al menos un número');
+        return;
+      }
+      if (!/[@$!%*#?&]/.test(formData.password)) {
+        toast.error('La contraseña debe contener al menos un carácter especial (@$!%*#?&)');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Las contraseñas no coinciden');
+        return;
+      }
+    }
+
+    setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden");
-      return;
-    }
 
     setIsLoading(true);
 
+    const genderMap: Record<string, string> = {
+      'masculino': 'male',
+      'femenino': 'female',
+      'otro': 'other',
+      'prefiero_no_decir': 'prefer_not_to_say'
+    };
+
     try {
-      const response = await apiClient.post("/auth/register", {
-        email,
-        password,
-        password_confirmation: confirmPassword,
+      const response = await authService.register({
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone || undefined,
+        date_of_birth: formData.dateOfBirth || undefined,
+        gender: formData.gender ? genderMap[formData.gender] : undefined,
+        country: formData.country || undefined,
+        province: formData.province || undefined,
+        city: formData.city || undefined,
+        postal_code: formData.postalCode || undefined,
+        street: formData.street || undefined,
+        street_number: formData.streetNumber || undefined,
+        floor: formData.floor || undefined,
+        apartment: formData.apartment || undefined,
       });
 
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        toast.success("¡Cuenta creada exitosamente!");
-        router.push("/dashboard");
-      }
+      sessionStorage.setItem('pendingEmail', formData.email);
+      toast.success('Código enviado a tu email');
+      router.push(`/verify-account?email=${encodeURIComponent(formData.email)}`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error al crear la cuenta");
+      const backendErrors = error.response?.data?.errors;
+      if (backendErrors) {
+        const firstError = Object.values(backendErrors)[0];
+        toast.error(Array.isArray(firstError) ? firstError[0] : firstError);
+      } else {
+        toast.error(error.response?.data?.message || "Error al registrarse");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,57 +175,293 @@ export default function SignupForm() {
         </Link>
       </div>
 
+      {/* Progress Indicator */}
+      <div className="flex items-center justify-center gap-2 mb-6">
+        {[1, 2, 3].map((s) => (
+          <div key={s} className="flex items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+              s === step ? 'bg-primary text-white' :
+              s < step ? 'bg-primary/20 text-primary' :
+              'bg-gray-200 text-gray-400'
+            }`}>
+              {s}
+            </div>
+            {s < 3 && <div className={`w-12 h-0.5 transition-colors ${
+              s < step ? 'bg-primary' : 'bg-gray-200'
+            }`} />}
+          </div>
+        ))}
+      </div>
+
+      {/* Step Title */}
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold">
+          {step === 1 && 'Información Personal'}
+          {step === 2 && 'Seguridad'}
+          {step === 3 && 'Información Adicional (Opcional)'}
+        </h2>
+      </div>
+
       {/* Form */}
       <div className="space-y-6">
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="email">Correo electrónico</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="tu@ejemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className="h-12"
-              disabled={isLoading}
-            />
-          </div>
+        <form className="space-y-6" onSubmit={step === totalSteps ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}>
+          {/* Step 1: Información Personal */}
+          {step === 1 && (
+            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Nombre *</Label>
+                <Input
+                  id="firstName"
+                  placeholder="Tu nombre"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Apellido *</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Tu apellido"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              className="h-12"
-              disabled={isLoading}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="tu@ejemplo.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  placeholder="11 1234-5678"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
+                  maxLength={15}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              className="h-12"
-              disabled={isLoading}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Fecha de Nacimiento</Label>
+                <DatePicker
+                  date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
+                  onSelect={(date) => setFormData({...formData, dateOfBirth: date ? date.toISOString().split('T')[0] : ''})}
+                  placeholder="Seleccionar fecha"
+                  maxDate={new Date()}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gender">Género</Label>
+                <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="femenino">Femenino</SelectItem>
+                    <SelectItem value="otro">Otro</SelectItem>
+                    <SelectItem value="prefiero_no_decir">Prefiero no decir</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            </div>
+          )}
 
-          <Button type="submit" className="w-full h-12 text-base" size="lg" disabled={isLoading}>
-            {isLoading ? "Creando cuenta..." : "Registrarse"}
-          </Button>
+          {/* Step 2: Seguridad */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña *</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className="h-12 pr-10"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">Mínimo 8 caracteres, incluye mayúscula, minúscula, número y carácter especial (@$!%*#?&)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar contraseña *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    className="h-12 pr-10"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Dirección */}
+          {step === 3 && (
+            <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="country">País</Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  readOnly
+                  className="h-12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="province">Provincia</Label>
+                <Select value={formData.province} onValueChange={(value) => setFormData({...formData, province: value})}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {provinces.map((prov) => (
+                      <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">Ciudad</Label>
+                <Input
+                  id="city"
+                  placeholder="La Plata"
+                  value={formData.city}
+                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="street">Calle</Label>
+                <Input
+                  id="street"
+                  placeholder="Av. Corrientes"
+                  value={formData.street}
+                  onChange={(e) => setFormData({...formData, street: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="streetNumber">Número</Label>
+                <Input
+                  id="streetNumber"
+                  placeholder="1234"
+                  value={formData.streetNumber}
+                  onChange={(e) => setFormData({...formData, streetNumber: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="postalCode">Código Postal</Label>
+                <Input
+                  id="postalCode"
+                  placeholder="1414"
+                  value={formData.postalCode}
+                  onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="floor">Piso</Label>
+                <Input
+                  id="floor"
+                  placeholder="Opcional"
+                  value={formData.floor}
+                  onChange={(e) => setFormData({...formData, floor: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="apartment">Departamento</Label>
+                <Input
+                  id="apartment"
+                  placeholder="Opcional"
+                  value={formData.apartment}
+                  onChange={(e) => setFormData({...formData, apartment: e.target.value})}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-4">
+            {step > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                className="flex-1 h-12 text-base"
+                disabled={isLoading}
+              >
+                Atrás
+              </Button>
+            )}
+            <Button
+              type="submit"
+              className="flex-1 h-12 text-base"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? "Creando cuenta..." : step === totalSteps ? "Registrarse" : "Siguiente"}
+            </Button>
+          </div>
         </form>
 
         <div className="relative">

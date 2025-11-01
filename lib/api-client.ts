@@ -28,8 +28,8 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
       // Solo redirigir si no estamos ya en la página de login
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (!window.location.pathname.includes('/log-in')) {
+        window.location.href = '/log-in';
       }
     }
     

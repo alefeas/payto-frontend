@@ -25,7 +25,7 @@ export default function AuditLogPage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/log-in')
     } else if (isAuthenticated) {
       loadLogs()
     }

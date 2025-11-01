@@ -62,7 +62,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/log-in')
     }
   }, [isAuthenticated, authLoading, router])
 

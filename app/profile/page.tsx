@@ -69,7 +69,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/log-in')
     } else if (user) {
       setFormData({
         firstName: user.firstName || '',

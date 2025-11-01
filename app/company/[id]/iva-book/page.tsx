@@ -48,7 +48,7 @@ export default function IvaBookPage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/log-in')
     } else if (isAuthenticated && companyId) {
       loadCompany()
     }
