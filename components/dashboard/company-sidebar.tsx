@@ -35,6 +35,7 @@ import { companyService, Company } from "@/services/company.service"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface NavItem {
   label: string
@@ -161,10 +162,11 @@ export function CompanySidebar() {
 
   return (
     <aside className={cn(
-      "border-r bg-background h-screen overflow-y-auto flex flex-col transition-all duration-300",
+      "border-r bg-background h-screen flex flex-col transition-all duration-300",
       isCollapsed ? "w-16" : "w-72"
     )}>
-      <div className="p-4 space-y-4 flex-1">
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
         {/* Logo & Toggle */}
         <div className="flex items-center justify-between">
           {!isCollapsed && (
@@ -333,7 +335,8 @@ export function CompanySidebar() {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* User Menu */}
       <div className="p-4 border-t">

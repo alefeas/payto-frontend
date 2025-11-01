@@ -1,6 +1,6 @@
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout"
 
-export default function DashboardLayout({
+export default function CreateCompanyLayout({
   children,
 }: {
   children: React.ReactNode
