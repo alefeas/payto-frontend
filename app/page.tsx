@@ -1,26 +1,24 @@
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import Navbar from "@/components/global/navbar";
+import Hero from "@/components/landing/hero";
+import HoldingPhone from "@/components/landing/holding-phone";
+import Footer from "@/components/landing/footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <div className="text-center space-y-8 p-8">
-        <div className="space-y-4">
-          <h1 className="text-6xl font-bold text-primary">PayTo</h1>
-          <p className="text-xl text-muted-foreground max-w-md mx-auto">
-            Sistema de gestión de workspaces empresariales y facturación
-          </p>
-        </div>
-        
-        <div className="flex gap-4 justify-center">
-          <Link href="/login">
-            <Button size="lg">Iniciar Sesión</Button>
-          </Link>
-          <Link href="/register">
-            <Button variant="outline" size="lg">Registrarse</Button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
+    <>
+      <Navbar />
+      <main className="min-h-screen overflow-x-hidden flex flex-col">
+        <section className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center">
+          <div className="w-full max-w-6xl mx-auto px-6 py-16">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <Hero />
+              <HoldingPhone />
+            </div>
+          </div>
+        </section>
+
+        <Footer />
+      </main>
+    </>
+  );
 }
