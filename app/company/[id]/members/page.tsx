@@ -34,6 +34,7 @@ export default function MembersPage() {
   const [confirmationCode, setConfirmationCode] = useState("")
   const [newRole, setNewRole] = useState<CompanyRole>("operator")
   const [updating, setUpdating] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -256,18 +257,39 @@ export default function MembersPage() {
                   <p className="text-sm text-muted-foreground mb-2">Código de Invitación</p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm">
-                      {company?.uniqueId || 'Cargando...'}
+                      {company?.inviteCode || 'Cargando...'}
                     </code>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        navigator.clipboard.writeText(company?.uniqueId || '')
+                        navigator.clipboard.writeText(company?.inviteCode || '')
                         toast.success('Código copiado al portapapeles')
                       }}
                     >
                       Copiar
                     </Button>
+                    {canManageMembers && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={regenerating}
+                        onClick={async () => {
+                          try {
+                            setRegenerating(true)
+                            const result = await companyService.regenerateInviteCode(companyId)
+                            setCompany(prev => prev ? { ...prev, inviteCode: result.inviteCode } : null)
+                            toast.success('Código regenerado exitosamente')
+                          } catch (error: any) {
+                            toast.error(error.response?.data?.message || 'Error al regenerar código')
+                          } finally {
+                            setRegenerating(false)
+                          }
+                        }}
+                      >
+                        {regenerating ? 'Regenerando...' : 'Regenerar'}
+                      </Button>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     Comparte este código para invitar nuevos miembros
