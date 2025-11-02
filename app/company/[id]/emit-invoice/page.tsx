@@ -487,7 +487,7 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if ((formData.concept === 'services' || formData.concept === 'products_services') && (!formData.serviceDateFrom || !formData.serviceDateTo)) {
+    if (!associateInvoice && (formData.concept === 'services' || formData.concept === 'products_services') && (!formData.serviceDateFrom || !formData.serviceDateTo)) {
       toast.error('Complete las fechas de servicio (requeridas para servicios)')
       return
     }
@@ -545,7 +545,13 @@ export default function CreateInvoicePage() {
         unit_price: item.unitPrice,
         discount_percentage: item.discountPercentage || 0,
         tax_rate: (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
-      }))
+      })),
+      perceptions: perceptions.length > 0 ? perceptions.map(p => ({
+        type: p.type,
+        name: p.name,
+        rate: p.rate,
+        base_type: p.baseType || 'net'
+      })) : undefined
     } : {
       client_id: isExistingClient ? formData.clientData?.client_id : undefined,
       receiver_company_id: formData.receiverCompanyId || undefined,
@@ -845,43 +851,47 @@ export default function CreateInvoicePage() {
                   )}
                 </div>
 
-                {!selectedInvoice && (
-                  <div className="space-y-2">
-                    <Label>Moneda *</Label>
-                    <div className="flex gap-2">
-                      <Select 
-                        value={formData.currency} 
-                        onValueChange={(value: Currency) => 
-                          setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '1' : formData.exchangeRate})}
-                      >
-                        <SelectTrigger className="flex-1 h-10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ARS">ARS</SelectItem>
-                          <SelectItem value="USD">USD</SelectItem>
-                          <SelectItem value="EUR">EUR</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="9999.9999"
-                        placeholder="Cotización"
-                        value={formData.exchangeRate || ''}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          if (value.length <= 10) {
-                            setFormData({...formData, exchangeRate: value})
-                          }
-                        }}
-                        disabled={formData.currency === 'ARS'}
-                        className="flex-1 h-10"
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                <Label>Moneda *</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={formData.currency} 
+                    onValueChange={(value: Currency) => 
+                      setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '1' : formData.exchangeRate})}
+                    disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                  >
+                    <SelectTrigger className="flex-1 h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ARS">ARS</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="9999.9999"
+                    placeholder="Cotización"
+                    value={formData.exchangeRate || ''}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value.length <= 10) {
+                        setFormData({...formData, exchangeRate: value})
+                      }
+                    }}
+                    disabled={formData.currency === 'ARS' || (isNoteType && associateInvoice && !!selectedInvoice)}
+                    className="flex-1 h-10"
+                  />
+                </div>
+                {isNoteType && associateInvoice && selectedInvoice && (
+                  <p className="text-xs text-blue-600">
+                    Heredado de la factura asociada
+                  </p>
                 )}
+              </div>
               </div>
 
               {isNoteType && (
@@ -933,7 +943,9 @@ export default function CreateInvoicePage() {
                         salesPoint: invoice.sales_point || currentCompany?.default_sales_point || 1,
                         concept: (invoice.concept || 'products') as InvoiceConcept,
                         serviceDateFrom: invoice.service_date_from || '',
-                        serviceDateTo: invoice.service_date_to || ''
+                        serviceDateTo: invoice.service_date_to || '',
+                        currency: (invoice.currency || 'ARS') as Currency,
+                        exchangeRate: invoice.exchange_rate?.toString() || '1'
                       })
                     } else {
                       setFormData({ ...formData, relatedInvoiceId: '' })

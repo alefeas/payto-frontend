@@ -23,6 +23,8 @@ interface Invoice {
   concept?: string
   service_date_from?: string
   service_date_to?: string
+  currency?: string
+  exchange_rate?: number
 }
 
 interface InvoiceSelectorProps {
@@ -85,9 +87,9 @@ export function InvoiceSelector({
     setSearchTerm("")
   }
 
-  const filteredInvoices = invoices.filter(inv =>
-    inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInvoices = invoices.filter((inv: any) =>
+    (inv.number || inv.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (inv.receiver_name || inv.issuer_name || inv.client_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const selectedInvoice = invoices.find(inv => inv.id === selectedInvoiceId)
@@ -105,8 +107,11 @@ export function InvoiceSelector({
             >
               {selectedInvoiceId
                 ? (() => {
-                    const invoice = invoices.find(inv => inv.id === selectedInvoiceId)
-                    return invoice ? `${invoice.invoice_type} ${invoice.invoice_number} - ${invoice.client_name}` : "Seleccione una factura"
+                    const invoice: any = invoices.find(inv => inv.id === selectedInvoiceId)
+                    const number = invoice?.number || invoice?.invoice_number || ''
+                    const type = invoice?.type || invoice?.invoice_type || ''
+                    const name = invoice?.receiver_name || invoice?.issuer_name || invoice?.client_name || ''
+                    return invoice ? `${type} ${number} - ${name}` : "Seleccione una factura"
                   })()
                 : isLoading ? "Cargando facturas..." : 
                   invoices.length === 0 ? "No hay facturas disponibles" :
@@ -139,9 +144,15 @@ export function InvoiceSelector({
                   No se encontraron facturas
                 </div>
               ) : (
-                filteredInvoices.map((invoice) => {
+                filteredInvoices.map((invoice: any) => {
                   const conceptLabel = invoice.concept === 'services' ? 'Servicios' : 
                                        invoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'
+                  const number = invoice.number || invoice.invoice_number || ''
+                  const type = invoice.type || invoice.invoice_type || ''
+                  const name = invoice.receiver_name || invoice.issuer_name || invoice.client_name || ''
+                  const total = invoice.total || invoice.total_amount || 0
+                  const balance = invoice.balance_pending || invoice.available_balance || 0
+                  
                   return (
                     <DropdownMenuItem
                       key={invoice.id}
@@ -152,16 +163,22 @@ export function InvoiceSelector({
                         <div className="flex items-center gap-2">
                           <FileText className="h-3 w-3" />
                           <span className="font-medium">
-                            {invoice.invoice_type} {invoice.invoice_number}
+                            {type} {number}
                           </span>
                           <Badge variant="outline" className="text-xs">
-                            {invoice.client_name}
+                            {name}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <span>Concepto: {conceptLabel}</span>
-                          <span>•</span>
-                          <span>Saldo: ${invoice.available_balance.toLocaleString('es-AR')} de ${invoice.total_amount.toLocaleString('es-AR')}</span>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1.5">
+                            {invoice.origin && <span className="text-blue-600">{invoice.origin}</span>}
+                            {invoice.origin && <span>•</span>}
+                            {invoice.status_label && <span className="text-green-600">{invoice.status_label}</span>}
+                            {(invoice.origin || invoice.status_label) && <span>•</span>}
+                            <span>Concepto: {conceptLabel}</span>
+                            <span>•</span>
+                            <span>Saldo: {invoice.currency || 'ARS'} ${balance.toLocaleString('es-AR')} de {invoice.currency || 'ARS'} ${total.toLocaleString('es-AR')}</span>
+                          </div>
                         </div>
                       </div>
                       {invoice.id === selectedInvoiceId && <Check className="h-4 w-4 shrink-0" />}
@@ -193,50 +210,69 @@ export function InvoiceSelector({
         </div>
       )}
 
-      {selectedInvoice && (
+      {selectedInvoice && (() => {
+        const inv: any = selectedInvoice
+        const number = inv.number || inv.invoice_number || ''
+        const type = inv.type || inv.invoice_type || ''
+        const name = inv.receiver_name || inv.issuer_name || inv.client_name || ''
+        const total = inv.total || inv.total_amount || 0
+        const balance = inv.balance_pending || inv.available_balance || 0
+        
+        return (
         <Card>
           <CardContent className="pt-4">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Factura:</span>
-                <span className="font-medium">{selectedInvoice.invoice_type} {selectedInvoice.invoice_number}</span>
+                <span className="font-medium">{type} {number}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cliente:</span>
-                <span className="font-medium">{selectedInvoice.client_name}</span>
+                <span className="font-medium">{name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Concepto:</span>
                 <span className="font-medium">
-                  {selectedInvoice.concept === 'services' ? 'Servicios' : 
-                   selectedInvoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'}
+                  {inv.concept === 'services' ? 'Servicios' : 
+                   inv.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha Emisión:</span>
-                <span>{new Date(selectedInvoice.issue_date).toLocaleDateString('es-AR')}</span>
+                <span>{new Date(inv.issue_date).toLocaleDateString('es-AR')}</span>
               </div>
-              {(selectedInvoice.concept === 'services' || selectedInvoice.concept === 'products_services') && 
-               selectedInvoice.service_date_from && selectedInvoice.service_date_to && (
+              {(inv.concept === 'services' || inv.concept === 'products_services') && 
+               inv.service_date_from && inv.service_date_to && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Período Servicio:</span>
                   <span>
-                    {new Date(selectedInvoice.service_date_from).toLocaleDateString('es-AR')} - {new Date(selectedInvoice.service_date_to).toLocaleDateString('es-AR')}
+                    {new Date(inv.service_date_from).toLocaleDateString('es-AR')} - {new Date(inv.service_date_to).toLocaleDateString('es-AR')}
                   </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Moneda:</span>
+                <span className="font-medium">{inv.currency || 'ARS'}</span>
+              </div>
+              {inv.currency && inv.currency !== 'ARS' && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cotización:</span>
+                  <span className="font-medium">${typeof inv.exchange_rate === 'number' ? inv.exchange_rate.toFixed(2) : (parseFloat(inv.exchange_rate) || 1).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between border-t pt-2">
                 <span className="text-muted-foreground">Total Original:</span>
-                <span className="font-medium">${selectedInvoice.total_amount.toLocaleString('es-AR')}</span>
+                <span className="font-medium">{inv.currency || 'ARS'} ${total.toLocaleString('es-AR')}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Saldo Disponible:</span>
-                <span className="font-bold text-green-600">${selectedInvoice.available_balance.toLocaleString('es-AR')}</span>
+                <span className="font-bold text-green-600">{inv.currency || 'ARS'} ${balance.toLocaleString('es-AR')}</span>
               </div>
             </div>
           </CardContent>
         </Card>
-      )}
+        )
+      })()}
     </div>
   )
 }

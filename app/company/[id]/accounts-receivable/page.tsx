@@ -91,9 +91,6 @@ export default function AccountsReceivablePage() {
         // Excluir facturas anuladas (no se pueden cobrar)
         if (inv.status === 'cancelled') return false
         
-        // Excluir NC/ND (no se cobran directamente, solo ajustan facturas)
-        if (inv.type?.startsWith('NC') || inv.type?.startsWith('ND')) return false
-        
         const companyStatus = inv.company_statuses?.[companyId]
         if (companyStatus === 'paid' || companyStatus === 'collected') return false
         

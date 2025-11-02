@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, FileText, Receipt, Calculator, Loader2, Upload } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Plus, Trash2, FileText, Receipt, Calculator, Loader2, Upload, Info } from "lucide-react"
 import { toast } from "sonner"
 import { invoiceService } from "@/services/invoice.service"
 import { clientService } from "@/services/client.service"
@@ -246,19 +247,22 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
       return
     }
 
-    if ((concept === "services" || concept === "products_services") && (!serviceDateFrom || !serviceDateTo)) {
+    if (!associateInvoice && (concept === "services" || concept === "products_services") && (!serviceDateFrom || !serviceDateTo)) {
       toast.error("Complete las fechas de servicio (desde y hasta)")
       return
     }
 
-    if (mode === "issued" && !selectedClient && !selectedCompany) {
-      toast.error("Debe seleccionar un cliente o empresa receptora")
-      return
-    }
+    // Solo validar cliente/proveedor si NO hay factura asociada
+    if (!associateInvoice || !relatedInvoiceId) {
+      if (mode === "issued" && !selectedClient && !selectedCompany) {
+        toast.error("Debe seleccionar un cliente o empresa receptora")
+        return
+      }
 
-    if (mode === "received" && !selectedSupplier && !selectedCompany) {
-      toast.error("Debe seleccionar el proveedor o empresa emisora")
-      return
+      if (mode === "received" && !selectedSupplier && !selectedCompany) {
+        toast.error("Debe seleccionar el proveedor o empresa emisora")
+        return
+      }
     }
 
     if (items.some(item => !item.description || item.quantity <= 0 || item.unit_price <= 0)) {
@@ -328,19 +332,25 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
 
       let createdInvoice: any
       if (mode === "issued") {
-        if (selectedClient) {
-          payload.client_id = selectedClient
-        } else if (selectedCompany) {
-          payload.receiver_company_id = selectedCompany
+        // Solo enviar cliente/empresa si NO hay factura asociada (el backend lo hereda)
+        if (!associateInvoice || !relatedInvoiceId) {
+          if (selectedClient) {
+            payload.client_id = selectedClient
+          } else if (selectedCompany) {
+            payload.receiver_company_id = selectedCompany
+          }
         }
         const response = await invoiceService.createManualIssued(companyId, payload)
         createdInvoice = response.invoice
         toast.success("Factura emitida registrada exitosamente")
       } else {
-        if (selectedSupplier) {
-          payload.supplier_id = selectedSupplier
-        } else if (selectedCompany) {
-          payload.issuer_company_id = selectedCompany
+        // Solo enviar proveedor/empresa si NO hay factura asociada (el backend lo hereda)
+        if (!associateInvoice || !relatedInvoiceId) {
+          if (selectedSupplier) {
+            payload.supplier_id = selectedSupplier
+          } else if (selectedCompany) {
+            payload.issuer_company_id = selectedCompany
+          }
         }
         const response = await invoiceService.createManualReceived(companyId, payload)
         createdInvoice = response.invoice
@@ -406,7 +416,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 <CardTitle>Datos del Proveedor</CardTitle>
                 <CardDescription>Seleccioná el proveedor que emitió la factura</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <SupplierSelector
                 companyId={companyId}
                 savedSuppliers={suppliers}
@@ -428,6 +438,16 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 }}
                 onSupplierCreated={loadSuppliers}
                 />
+                {selectedCompany && (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Proveedor automático</AlertTitle>
+                    <AlertDescription>
+                      Se creará automáticamente un proveedor externo con los datos de esta empresa conectada. 
+                      Podrás editarlo después en la sección de Proveedores.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
           )}
@@ -440,7 +460,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 <CardTitle>Datos del Receptor</CardTitle>
                 <CardDescription>Seleccioná el cliente o empresa a la que se emitió la factura</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <ClientSelector
                 companyId={companyId}
                 connectedCompanies={connectedCompanies.map(c => ({
@@ -466,6 +486,15 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 }}
                 onClientCreated={loadClients}
                 />
+                {selectedCompany && (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Se creará automáticamente un cliente externo con los datos de esta empresa conectada. 
+                      Podrás editarlo después en la sección de Clientes.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
           )}
@@ -626,7 +655,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 } else {
                   setExchangeRate("")
                 }
-              }}>
+              }} disabled={associateInvoice && !!selectedInvoice}>
                 <SelectTrigger className={currency ? "border-green-200" : ""}>
                   <SelectValue />
                 </SelectTrigger>
@@ -636,6 +665,11 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   <SelectItem value="EUR">EUR - Euro</SelectItem>
                 </SelectContent>
               </Select>
+              {associateInvoice && selectedInvoice && (
+                <p className="text-xs text-blue-600">
+                  Heredado de la factura asociada
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -655,9 +689,14 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   }
                 }}
                 placeholder="1.00" 
-                disabled={currency === "ARS"}
+                disabled={currency === "ARS" || (associateInvoice && !!selectedInvoice)}
                 className={currency !== "ARS" && exchangeRate && parseFloat(exchangeRate) > 0 ? "border-green-200" : ""}
               />
+              {associateInvoice && selectedInvoice && (
+                <p className="text-xs text-blue-600">
+                  Heredado de la factura asociada
+                </p>
+              )}
             </div>
           </div>
 
@@ -778,23 +817,37 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
             </div>
 
             {associateInvoice && (
-              <InvoiceSelector
-                companyId={companyId}
-                voucherType={invoiceType}
-                mode={mode}
-                onSelect={(invoice) => {
-                  setSelectedInvoice(invoice)
-                  if (invoice) {
-                    setRelatedInvoiceId(invoice.id)
-                    setSalesPoint(invoice.sales_point?.toString() || salesPoint)
-                    setConcept((invoice.concept || 'products') as any)
-                    setServiceDateFrom(invoice.service_date_from || '')
-                    setServiceDateTo(invoice.service_date_to || '')
-                  } else {
-                    setRelatedInvoiceId('')
-                  }
-                }}
-              />
+              <>
+                <InvoiceSelector
+                  companyId={companyId}
+                  voucherType={invoiceType}
+                  mode={mode}
+                  onSelect={(invoice) => {
+                    setSelectedInvoice(invoice)
+                    if (invoice) {
+                      setRelatedInvoiceId(invoice.id)
+                      setSalesPoint(invoice.sales_point?.toString() || salesPoint)
+                      setConcept((invoice.concept || 'products') as any)
+                      setServiceDateFrom(invoice.service_date_from || '')
+                      setServiceDateTo(invoice.service_date_to || '')
+                      setCurrency(invoice.currency || 'ARS')
+                      setExchangeRate(invoice.exchange_rate?.toString() || '1')
+                    } else {
+                      setRelatedInvoiceId('')
+                    }
+                  }}
+                />
+                {selectedInvoice && (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      {mode === "issued" 
+                        ? "El cliente se heredará automáticamente de la factura asociada."
+                        : "El proveedor se heredará automáticamente de la factura asociada."}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

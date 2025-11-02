@@ -28,6 +28,7 @@ export default function CreateCompanyForm() {
     deletion_code: '',
     province: '',
     postal_code: '',
+    city: '',
     street: '',
     street_number: '',
     floor: '',
@@ -71,7 +72,7 @@ export default function CreateCompanyForm() {
     }
 
     if (step === 2) {
-      if (!formData.province || !formData.postal_code || !formData.street || !formData.street_number) {
+      if (!formData.province || !formData.city || !formData.postal_code || !formData.street || !formData.street_number) {
         toast.error('Completa todos los campos de dirección obligatorios')
         return
       }
@@ -246,7 +247,7 @@ export default function CreateCompanyForm() {
           {/* Step 2: Dirección */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="province">Provincia *</Label>
                   <Select value={formData.province} onValueChange={(value) => setFormData({...formData, province: value})}>
@@ -259,6 +260,17 @@ export default function CreateCompanyForm() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Ciudad *</Label>
+                  <Input
+                    id="city"
+                    placeholder="Buenos Aires"
+                    value={formData.city || ''}
+                    onChange={(e) => setFormData({...formData, city: e.target.value.slice(0, 100)})}
+                    maxLength={100}
+                    className="h-12"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="postalCode">Código Postal *</Label>

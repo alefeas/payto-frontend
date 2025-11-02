@@ -19,6 +19,13 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
   const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false)
   const [isCreatingClient, setIsCreatingClient] = useState(false)
 
+  const handleClientTypeChange = (newType: ClientType) => {
+    setClientType(newType)
+    setSelectedCompany('')
+    setSelectedClient('')
+    onSelect({})
+  }
+
   const handleCompanySelect = (companyId: string) => {
     setSelectedCompany(companyId)
     onSelect({ receiver_company_id: companyId })
@@ -72,7 +79,7 @@ export function ClientSelector({ connectedCompanies, savedClients = [], onSelect
 
   return (
     <div className="space-y-4">
-      <RadioGroup value={clientType} onValueChange={(v) => setClientType(v as ClientType)}>
+      <RadioGroup value={clientType} onValueChange={(v) => handleClientTypeChange(v as ClientType)}>
         <Label 
           htmlFor="registered" 
           className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"

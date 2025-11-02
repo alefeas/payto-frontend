@@ -92,6 +92,7 @@ export default function SettingsPage() {
     street_number: '',
     floor: '',
     apartment: '',
+    city: '',
     postal_code: '',
     province: '',
     tax_condition: '',
@@ -180,6 +181,7 @@ export default function SettingsPage() {
         street_number: addr.streetNumber || '',
         floor: addr.floor || '',
         apartment: addr.apartment || '',
+        city: addr.city || '',
         postal_code: addr.postalCode || '',
         province: addr.province || '',
         tax_condition: companyData.taxCondition || '',
@@ -488,16 +490,22 @@ export default function SettingsPage() {
                         <Input placeholder="1043" value={formData.postal_code} onChange={(e) => setFormData({...formData, postal_code: e.target.value})} />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Provincia</Label>
-                      <Select value={formData.province} onValueChange={(value) => setFormData({...formData, province: value})}>
-                        <SelectTrigger><SelectValue placeholder="Selecciona una provincia" /></SelectTrigger>
-                        <SelectContent>
-                          {PROVINCIAS.map(prov => (
-                            <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Ciudad</Label>
+                        <Input placeholder="Buenos Aires" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Provincia</Label>
+                        <Select value={formData.province} onValueChange={(value) => setFormData({...formData, province: value})}>
+                          <SelectTrigger><SelectValue placeholder="Selecciona una provincia" /></SelectTrigger>
+                          <SelectContent>
+                            {PROVINCIAS.map(prov => (
+                              <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -32,24 +32,24 @@ export const voucherService = {
 
   getCompatibleInvoices: async (companyId: string, voucherType: string) => {
     const response = await apiClient.get(
-      `/companies/${companyId}/vouchers/compatible-invoices`,
-      { params: { voucher_type: voucherType } }
+      `/companies/${companyId}/invoices/associable-for-emit`,
+      { params: { invoice_type: voucherType } }
     )
     return response.data.invoices
   },
 
   getCompatibleInvoicesForManualIssued: async (companyId: string, voucherType: string) => {
     const response = await apiClient.get(
-      `/companies/${companyId}/vouchers/compatible-invoices-issued`,
-      { params: { voucher_type: voucherType } }
+      `/companies/${companyId}/invoices/associable-for-issued`,
+      { params: { invoice_type: voucherType } }
     )
     return response.data.invoices
   },
 
   getCompatibleInvoicesForManualReceived: async (companyId: string, voucherType: string) => {
     const response = await apiClient.get(
-      `/companies/${companyId}/vouchers/compatible-invoices-received`,
-      { params: { voucher_type: voucherType } }
+      `/companies/${companyId}/invoices/associable-for-received`,
+      { params: { invoice_type: voucherType } }
     )
     return response.data.invoices
   },

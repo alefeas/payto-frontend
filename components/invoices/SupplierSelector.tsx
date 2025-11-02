@@ -45,6 +45,13 @@ export function SupplierSelector({ companyId, savedSuppliers = [], connectedComp
   const [isNewSupplierDialogOpen, setIsNewSupplierDialogOpen] = useState(false)
   const [isCreatingSupplier, setIsCreatingSupplier] = useState(false)
 
+  const handleSupplierTypeChange = (newType: SupplierType) => {
+    setSupplierType(newType)
+    setSelectedSupplier('')
+    setSelectedCompany('')
+    onSelect({})
+  }
+
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSupplier(supplierId)
     setSelectedCompany('')
@@ -81,7 +88,7 @@ export function SupplierSelector({ companyId, savedSuppliers = [], connectedComp
 
   return (
     <div className="space-y-4">
-      <RadioGroup value={supplierType} onValueChange={(v) => setSupplierType(v as SupplierType)}>
+      <RadioGroup value={supplierType} onValueChange={(v) => handleSupplierTypeChange(v as SupplierType)}>
         <Label 
           htmlFor="connected-company" 
           className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"

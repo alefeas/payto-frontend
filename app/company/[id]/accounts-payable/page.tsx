@@ -296,9 +296,6 @@ export default function AccountsPayablePage() {
       // Excluir facturas anuladas (no se pueden pagar)
       if (inv.status === 'cancelled') return false
       
-      // Excluir NC/ND (no se pagan directamente, solo ajustan facturas)
-      if (inv.type?.startsWith('NC') || inv.type?.startsWith('ND')) return false
-      
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
