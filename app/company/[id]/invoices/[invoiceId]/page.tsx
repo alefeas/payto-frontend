@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2 } from "lucide-react"
+import { Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2 } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -218,7 +219,7 @@ export default function InvoiceDetailPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
@@ -302,14 +303,12 @@ export default function InvoiceDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <Button variant="outline" size="icon" onClick={handleBack} className="mt-1">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton onClick={handleBack} className="mt-1" />
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{invoice.number}</h1>

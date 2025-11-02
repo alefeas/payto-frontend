@@ -21,6 +21,7 @@ import { InvoiceList } from "@/components/accounts/InvoiceList"
 import { UpcomingTab } from "@/components/accounts/UpcomingTab"
 import { OverdueTab } from "@/components/accounts/OverdueTab"
 import { ByEntityTab } from "@/components/accounts/ByEntityTab"
+import { CollectionsTab } from "@/components/accounts/CollectionsTab"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function AccountsReceivablePage() {
@@ -86,6 +87,13 @@ export default function AccountsReceivablePage() {
       const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
         if (inv.issuer_company_id !== companyId) return false
         if (inv.supplier_id) return false
+        
+        // Excluir facturas anuladas (no se pueden cobrar)
+        if (inv.status === 'cancelled') return false
+        
+        // Excluir NC/ND (no se cobran directamente, solo ajustan facturas)
+        if (inv.type?.startsWith('NC') || inv.type?.startsWith('ND')) return false
+        
         const companyStatus = inv.company_statuses?.[companyId]
         if (companyStatus === 'paid' || companyStatus === 'collected') return false
         
@@ -165,7 +173,7 @@ export default function AccountsReceivablePage() {
         }
         
         // Calcular montos de retenciones
-        const invoiceAmount = parseFloat(invoice.total)
+        const invoiceAmount = parseFloat(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total)
         const withholdingsData: any = {}
         
         withholdings.forEach(wh => {
@@ -237,7 +245,7 @@ export default function AccountsReceivablePage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
-    const totalReceivable = filtered.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+    const totalReceivable = filtered.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total) || 0), 0)
     const totalCollected = collections.reduce((sum, col) => sum + (parseFloat(col.amount) || 0), 0)
     
     const overdue = filtered.filter(inv => {
@@ -251,7 +259,7 @@ export default function AccountsReceivablePage() {
       total_collected: totalCollected,
       total_pending: totalReceivable,
       overdue_count: overdue.length,
-      overdue_amount: overdue.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+      overdue_amount: overdue.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total) || 0), 0)
     }
   }
 
@@ -259,19 +267,36 @@ export default function AccountsReceivablePage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
+              <div className="space-y-2">
+                <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+              </div>
             </div>
+            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+              <div key={i} className="h-32 bg-muted rounded-xl animate-pulse"></div>
             ))}
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          <div className="flex gap-2">
+            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
+          </div>
+          <div className="flex gap-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-11 w-32 bg-muted rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse"></div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -310,6 +335,71 @@ export default function AccountsReceivablePage() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[
+        {
+          value: 'credits',
+          label: 'Saldos a Favor',
+          content: (
+            <Card>
+              <CardHeader>
+                <CardTitle>Saldos a Favor del Cliente</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Facturas con NC/ND que generan crédito a favor del cliente
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {(() => {
+                    const creditsInvoices = filtered.filter(inv => (parseFloat(inv.balance_pending) || 0) < 0)
+                    return loading ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Cargando...</p>
+                      </div>
+                    ) : creditsInvoices.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No hay saldos a favor</p>
+                        <p className="text-xs mt-2">Los saldos a favor aparecen cuando se aplica una NC a una factura ya cobrada</p>
+                      </div>
+                    ) : (
+                      creditsInvoices.map((invoice) => {
+                        const creditAmount = Math.abs(parseFloat(invoice.balance_pending) || 0)
+                        const clientName = invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'
+                        return (
+                          <div key={invoice.id} className="p-4 border rounded-lg bg-blue-50/50">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-medium text-lg">{clientName}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Factura: {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-lg text-blue-600">{formatCurrency(creditAmount)}</div>
+                                <Badge className="bg-blue-600 text-white mt-1">Saldo a Favor</Badge>
+                              </div>
+                            </div>
+                            <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
+                              <div>
+                                <span className="font-medium">Total Original:</span> {formatCurrency(parseFloat(invoice.total) || 0)}
+                              </div>
+                              <div>
+                                <span className="font-medium">Cobrado:</span> {formatCurrency((parseFloat(invoice.total) || 0) - (parseFloat(invoice.pending_amount) || 0))}
+                              </div>
+                            </div>
+                            <div className="mt-2 pt-2 border-t">
+                              <Button size="sm" variant="outline" onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}>
+                                Ver Detalle
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        },
         {
           value: 'invoices',
           label: 'Facturas Pendientes',
@@ -364,82 +454,12 @@ export default function AccountsReceivablePage() {
           value: 'collections',
           label: 'Cobros Realizados',
           content: (
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de Cobros</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {collections.length} cobro{collections.length !== 1 ? 's' : ''} registrado{collections.length !== 1 ? 's' : ''}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {loading ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Cargando cobros...</p>
-                    </div>
-                  ) : collections.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay cobros registrados</p>
-                      <p className="text-xs mt-2">Los cobros aparecerán aquí una vez que registres pagos de facturas emitidas</p>
-                    </div>
-                  ) : (
-                    collections
-                      .filter((collection) => {
-                        if (!filters.from_date && !filters.to_date) return true
-                        const collectionDate = new Date(collection.collection_date)
-                        if (filters.from_date && collectionDate < new Date(filters.from_date)) return false
-                        if (filters.to_date && collectionDate > new Date(filters.to_date)) return false
-                        return true
-                      })
-                      .map((collection) => {
-                        const methodLabels: Record<string, string> = {
-                          transfer: 'Transferencia',
-                          check: 'Cheque',
-                          cash: 'Efectivo',
-                          debit_card: 'Débito',
-                          credit_card: 'Crédito',
-                          card: 'Tarjeta',
-                          other: 'Otro'
-                        }
-                        return (
-                    <div key={collection.id} className="p-4 border rounded-lg bg-green-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="font-medium text-lg">{collection.invoice?.client?.business_name || (collection.invoice?.client?.first_name && collection.invoice?.client?.last_name ? `${collection.invoice.client.first_name} ${collection.invoice.client.last_name}` : null) || collection.invoice?.receiverCompany?.business_name || collection.invoice?.receiverCompany?.name || 'Cliente'}</div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Factura: {collection.invoice?.type || 'FC'} {String(collection.invoice?.sales_point || 0).padStart(4, '0')}-{String(collection.invoice?.voucher_number || 0).padStart(8, '0')}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(collection.amount) || 0)}</div>
-                          <Badge className="bg-green-600 text-white mt-1">Cobrado</Badge>
-                        </div>
-                      </div>
-                      <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
-                        <div>
-                          <span className="font-medium">Fecha:</span> {new Date(collection.collection_date).toLocaleDateString('es-AR')}
-                        </div>
-                        <div>
-                          <span className="font-medium">Método:</span> {methodLabels[collection.collection_method] || collection.collection_method}
-                        </div>
-                        {collection.reference_number && (
-                          <div>
-                            <span className="font-medium">Ref:</span> {collection.reference_number}
-                          </div>
-                        )}
-                      </div>
-                      {collection.notes && (
-                        <div className="text-sm text-muted-foreground mt-2 pt-2 border-t">
-                          <span className="font-medium">Notas:</span> {collection.notes}
-                        </div>
-                      )}
-                    </div>
-                        )
-                      })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <CollectionsTab
+              collections={collections}
+              formatCurrency={formatCurrency}
+              filters={filters}
+              type="receivable"
+            />
           )
         },
         {
@@ -470,7 +490,7 @@ export default function AccountsReceivablePage() {
             <DialogHeader>
               <DialogTitle>Registrar Cobro</DialogTitle>
               <DialogDescription>
-                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0))}
+                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -483,7 +503,7 @@ export default function AccountsReceivablePage() {
                         <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
                         <p className="text-xs text-muted-foreground">{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</p>
                       </div>
-                      <p className="font-semibold">{formatCurrency(invoice.total)}</p>
+                      <p className="font-semibold">{formatCurrency(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total)}</p>
                     </div>
                   ))}
                 </div>
@@ -555,7 +575,7 @@ export default function AccountsReceivablePage() {
                 ) : (
                   <div className="space-y-2">
                     {withholdings.map((wh, idx) => {
-                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0)
+                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
                       const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
                       const amount = base * (wh.rate || 0) / 100
                       
@@ -714,12 +734,12 @@ export default function AccountsReceivablePage() {
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span className="font-semibold">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0))}</span>
+                    <span className="font-semibold">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}</span>
                   </div>
                   <div className="flex justify-between text-sm text-orange-600">
                     <span>Retenciones:</span>
                     <span className="font-semibold">-{formatCurrency(withholdings.reduce((sum, wh) => {
-                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.total), 0)
+                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
                       const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
                       return sum + (base * (wh.rate || 0) / 100)
                     }, 0))}</span>
@@ -727,8 +747,8 @@ export default function AccountsReceivablePage() {
                   <Separator />
                   <div className="flex justify-between">
                     <span className="font-bold">Neto a Cobrar:</span>
-                    <span className="text-xl font-bold text-green-600">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.total), 0) - withholdings.reduce((sum, wh) => {
-                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.total), 0)
+                    <span className="text-xl font-bold text-green-600">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0) - withholdings.reduce((sum, wh) => {
+                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
                       const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
                       return sum + (base * (wh.rate || 0) / 100)
                     }, 0))}</span>

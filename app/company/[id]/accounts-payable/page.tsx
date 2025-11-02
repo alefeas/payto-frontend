@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, AlertCircle, Calendar, DollarSign, FileText, Download, Plus, Filter, Search, Trash2, Eye } from "lucide-react"
+import { TrendingUp, TrendingDown, AlertCircle, Calendar, DollarSign, FileText, Download, Plus, Filter, Search, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,6 +19,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ByEntityTab } from "@/components/accounts/ByEntityTab"
+import { InvoiceList } from "@/components/accounts/InvoiceList"
+import { CollectionsTab } from "@/components/accounts/CollectionsTab"
+import { UpcomingTab } from "@/components/accounts/UpcomingTab"
+import { OverdueTab } from "@/components/accounts/OverdueTab"
 
 export default function AccountsPayablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -288,6 +293,12 @@ export default function AccountsPayablePage() {
 
   const getFilteredInvoices = () => {
     const filtered = invoices.filter(inv => {
+      // Excluir facturas anuladas (no se pueden pagar)
+      if (inv.status === 'cancelled') return false
+      
+      // Excluir NC/ND (no se pagan directamente, solo ajustan facturas)
+      if (inv.type?.startsWith('NC') || inv.type?.startsWith('ND')) return false
+      
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
@@ -366,19 +377,39 @@ export default function AccountsPayablePage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
+              <div className="space-y-2">
+                <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="h-10 w-48 bg-muted rounded animate-pulse"></div>
+              <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+              <div key={i} className="h-32 bg-muted rounded-xl animate-pulse"></div>
             ))}
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          <div className="flex gap-2">
+            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
+          </div>
+          <div className="flex gap-2">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-11 w-32 bg-muted rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse"></div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -391,9 +422,7 @@ export default function AccountsPayablePage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton href={`/company/${companyId}`} />
             <div>
               <h1 className="text-3xl font-bold">Cuentas por Pagar</h1>
               <p className="text-muted-foreground">Gestión de facturas de proveedores y pagos</p>
@@ -521,6 +550,7 @@ export default function AccountsPayablePage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
+            <TabsTrigger value="credits">Saldos a Favor Nuestros</TabsTrigger>
             <TabsTrigger value="invoices">Facturas Pendientes</TabsTrigger>
             <TabsTrigger value="upcoming">Próximas a Vencer</TabsTrigger>
             <TabsTrigger value="overdue">Vencidas</TabsTrigger>
@@ -528,115 +558,85 @@ export default function AccountsPayablePage() {
             <TabsTrigger value="suppliers">Por Proveedor</TabsTrigger>
           </TabsList>
 
-          {/* Facturas por Pagar */}
-          <TabsContent value="invoices" className="space-y-4">
+          {/* Saldos a Favor Nuestros */}
+          <TabsContent value="credits" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Facturas Pendientes</CardTitle>
-                    {selectedInvoices.length > 0 && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} seleccionada{selectedInvoices.length !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                  {getFilteredInvoices().length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        const filtered = getFilteredInvoices()
-                        if (selectedInvoices.length === filtered.length) {
-                          setSelectedInvoices([])
-                        } else {
-                          setSelectedInvoices(filtered.map(inv => inv.id))
-                        }
-                      }}
-                    >
-                      {selectedInvoices.length === getFilteredInvoices().length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Saldos a Favor Nuestros</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Facturas con NC/ND que generan crédito a nuestro favor
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {loading ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Cargando facturas...</p>
-                    </div>
-                  ) : invoices.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay facturas pendientes</p>
-                      <p className="text-xs mt-2">Total facturas cargadas: {invoices.length}</p>
-                    </div>
-                  ) : (
-                    getFilteredInvoices().map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer" onClick={() => {
-                      if (selectedInvoices.includes(invoice.id)) {
-                        setSelectedInvoices(selectedInvoices.filter(id => id !== invoice.id))
-                      } else {
-                        setSelectedInvoices([...selectedInvoices, invoice.id])
-                      }
-                    }}>
-                      <div className="flex items-center gap-4">
-                        <Checkbox
-                          checked={selectedInvoices.includes(invoice.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedInvoices([...selectedInvoices, invoice.id])
-                            } else {
-                              setSelectedInvoices(selectedInvoices.filter(id => id !== invoice.id))
-                            }
-                          }}
-                        />
-                        <div>
-                          <div className="font-medium">{invoice.supplier?.business_name || (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) || invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || 'Proveedor'}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                          </div>
-                          {invoice.supplier && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {invoice.has_bank_data ? (
-                                <span className="text-green-600">✓ Datos bancarios</span>
-                              ) : (
-                                <span className="text-orange-600">⚠ Sin datos bancarios</span>
-                              )}
-                              {invoice.supplier.bank_cbu && ` • CBU: ${invoice.supplier.bank_cbu.slice(0, 6)}...`}
+                  {(() => {
+                    const creditsInvoices = getFilteredInvoices().filter(inv => (parseFloat(inv.balance_pending) || 0) < 0)
+                    return loading ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>Cargando...</p>
+                      </div>
+                    ) : creditsInvoices.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No hay saldos a favor</p>
+                        <p className="text-xs mt-2">Los saldos a favor aparecen cuando se aplica una NC a una factura ya pagada</p>
+                      </div>
+                    ) : (
+                      creditsInvoices.map((invoice) => {
+                        const creditAmount = Math.abs(parseFloat(invoice.balance_pending) || 0)
+                        const supplierName = invoice.supplier?.business_name || (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) || invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || 'Proveedor'
+                        return (
+                          <div key={invoice.id} className="p-4 border rounded-lg bg-green-50/50">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-medium text-lg">{supplierName}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Factura: {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-lg text-green-600">{formatCurrency(creditAmount)}</div>
+                                <Badge className="bg-green-600 text-white mt-1">Saldo a Favor</Badge>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="font-medium">{formatCurrency(invoice.pending_amount || invoice.total)}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Vence: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
+                            <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
+                              <div>
+                                <span className="font-medium">Total Original:</span> {formatCurrency(parseFloat(invoice.total) || 0)}
+                              </div>
+                              <div>
+                                <span className="font-medium">Pagado:</span> {formatCurrency((parseFloat(invoice.total) || 0) - (parseFloat(invoice.pending_amount) || 0))}
+                              </div>
+                            </div>
+                            <div className="mt-2 pt-2 border-t">
+                              <Button size="sm" variant="outline" onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}>
+                                Ver Detalle
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        {getInvoiceStatusBadges(invoice)}
-                        <div className="flex gap-2 flex-shrink-0">
-                          <Button size="sm" variant="outline" onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/company/${companyId}/invoices/${invoice.id}`)
-                          }}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedInvoices([invoice.id])
-                            handlePayInvoices([invoice.id])
-                          }}>
-                            Pagar
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    ))
-                  )}
+                        )
+                      })
+                    )
+                  })()}
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Facturas por Pagar */}
+          <TabsContent value="invoices" className="space-y-4">
+            <InvoiceList
+              invoices={getFilteredInvoices()}
+              selectedInvoices={selectedInvoices}
+              onSelectionChange={setSelectedInvoices}
+              onAction={(id) => {
+                setSelectedInvoices([id])
+                handlePayInvoices([id])
+              }}
+              onView={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+              formatCurrency={formatCurrency}
+              actionLabel="Pagar"
+              type="payable"
+              loading={loading}
+            />
           </TabsContent>
 
           {/* Próximas a Vencer */}
@@ -682,107 +682,12 @@ export default function AccountsPayablePage() {
 
           {/* Pagos Realizados */}
           <TabsContent value="payments" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de Pagos</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {payments.length} pago{payments.length !== 1 ? 's' : ''} registrado{payments.length !== 1 ? 's' : ''}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {refreshing ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Cargando pagos...</p>
-                    </div>
-                  ) : payments.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay pagos registrados</p>
-                      <p className="text-xs mt-2">Los pagos aparecerán aquí una vez que registres pagos de facturas</p>
-                    </div>
-                  ) : (
-                    payments
-                      .filter((payment) => {
-                        if (!filters.from_date && !filters.to_date) return true
-                        const paymentDate = new Date(payment.payment_date)
-                        if (filters.from_date && paymentDate < new Date(filters.from_date)) return false
-                        if (filters.to_date && paymentDate > new Date(filters.to_date)) return false
-                        return true
-                      })
-                      .map((payment) => {
-                        const methodLabels: Record<string, string> = {
-                          transfer: 'Transferencia',
-                          check: 'Cheque',
-                          cash: 'Efectivo',
-                          debit_card: 'Débito',
-                          credit_card: 'Crédito',
-                          card: 'Tarjeta',
-                          other: 'Otro'
-                        }
-                        const totalRetentions = Array.isArray(payment.retentions) ? payment.retentions.reduce((sum: number, r: any) => sum + (parseFloat(r.amount) || 0), 0) : 0
-                        const netAmount = (parseFloat(payment.amount) || 0) - totalRetentions
-                        
-                        return (
-                    <div key={payment.id} className="p-4 border rounded-lg bg-blue-50/50 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="font-medium text-lg">{payment.invoice?.supplier?.business_name || (payment.invoice?.supplier?.first_name && payment.invoice?.supplier?.last_name ? `${payment.invoice.supplier.first_name} ${payment.invoice.supplier.last_name}` : null) || payment.invoice?.issuerCompany?.business_name || payment.invoice?.issuerCompany?.name || 'Proveedor'}</div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Factura: {payment.invoice?.type || 'FC'} {String(payment.invoice?.sales_point || 0).padStart(4, '0')}-{String(payment.invoice?.voucher_number || payment.voucher_number || 0).padStart(8, '0')}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg text-blue-600">{formatCurrency(parseFloat(payment.amount) || 0)}</div>
-                          <Badge className="bg-blue-600 text-white mt-1">Pagado</Badge>
-                        </div>
-                      </div>
-                      <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
-                        <div>
-                          <span className="font-medium">Fecha:</span> {new Date(payment.payment_date).toLocaleDateString('es-AR')}
-                        </div>
-                        <div>
-                          <span className="font-medium">Método:</span> {methodLabels[payment.payment_method] || payment.payment_method}
-                        </div>
-                        {payment.reference_number && (
-                          <div>
-                            <span className="font-medium">Ref:</span> {payment.reference_number}
-                          </div>
-                        )}
-                      </div>
-                      {totalRetentions > 0 && (
-                        <div className="mt-2 pt-2 border-t">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Retenciones aplicadas:</span>
-                            <span className="font-medium text-orange-600">{formatCurrency(totalRetentions)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm font-semibold">
-                            <span>Neto pagado:</span>
-                            <span className="text-green-600">{formatCurrency(netAmount)}</span>
-                          </div>
-                          {Array.isArray(payment.retentions) && payment.retentions.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {payment.retentions.map((ret: any, idx: number) => (
-                                <div key={idx} className="text-xs text-muted-foreground flex justify-between">
-                                  <span>• {ret.name || getRetentionLabel(ret.type)}</span>
-                                  <span>{formatCurrency(parseFloat(ret.amount) || 0)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {payment.notes && (
-                        <div className="text-sm text-muted-foreground mt-2 pt-2 border-t">
-                          <span className="font-medium">Notas:</span> {payment.notes}
-                        </div>
-                      )}
-                    </div>
-                        )
-                      })
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <CollectionsTab
+              collections={payments}
+              formatCurrency={formatCurrency}
+              filters={filters}
+              type="payable"
+            />
           </TabsContent>
 
           {/* Facturas Vencidas */}
@@ -790,6 +695,7 @@ export default function AccountsPayablePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-red-600">Facturas Vencidas</CardTitle>
+
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

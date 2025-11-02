@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Upload, CheckCircle2, AlertCircle, FileText, Key, Shield, Info, Download, Trash2 } from "lucide-react"
+import { Upload, CheckCircle2, AlertCircle, FileText, Key, Shield, Info, Download, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -215,7 +216,7 @@ export default function VerifyCompanyPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
@@ -235,12 +236,10 @@ export default function VerifyCompanyPage() {
   const isVerified = verificationStatus?.verification_status === 'verified' || (certificate && certificate.isActive)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${id}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${id}`} />
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Verificar Perfil Fiscal</h1>
             <p className="text-muted-foreground">{companyName}</p>

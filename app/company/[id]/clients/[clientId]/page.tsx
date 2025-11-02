@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, FileText, Calendar, Eye, Search } from "lucide-react"
+import { FileText, Calendar, Eye, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -92,13 +93,11 @@ export default function ClientDetailPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}/clients`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${companyId}/clients`} />
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{client.businessName || `${client.firstName} ${client.lastName}`}</h1>
             <p className="text-muted-foreground">{client.documentType}: {client.documentNumber}</p>

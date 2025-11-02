@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, FileText, AlertCircle } from "lucide-react"
+import { Loader2, FileText, AlertCircle, Check, ChevronsUpDown, Search } from "lucide-react"
 import { voucherService } from "@/services/voucher.service"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 interface Invoice {
   id: string
@@ -25,13 +28,15 @@ interface Invoice {
 interface InvoiceSelectorProps {
   companyId: string
   voucherType: string
+  mode?: "issued" | "received"
   onSelect: (invoice: Invoice | null) => void
   disabled?: boolean
 }
 
 export function InvoiceSelector({ 
   companyId, 
-  voucherType, 
+  voucherType,
+  mode,
   onSelect,
   disabled = false 
 }: InvoiceSelectorProps) {
@@ -39,6 +44,7 @@ export function InvoiceSelector({
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState<string>("")
 
   useEffect(() => {
     const loadInvoices = async () => {
@@ -48,7 +54,14 @@ export function InvoiceSelector({
       setError(null)
       
       try {
-        const data = await voucherService.getCompatibleInvoices(companyId, voucherType)
+        let data
+        if (mode === "issued") {
+          data = await voucherService.getCompatibleInvoicesForManualIssued(companyId, voucherType)
+        } else if (mode === "received") {
+          data = await voucherService.getCompatibleInvoicesForManualReceived(companyId, voucherType)
+        } else {
+          data = await voucherService.getCompatibleInvoices(companyId, voucherType)
+        }
         setInvoices(data)
         
         if (data.length === 0) {
@@ -63,59 +76,102 @@ export function InvoiceSelector({
     }
     
     loadInvoices()
-  }, [companyId, voucherType])
+  }, [companyId, voucherType, mode])
 
   const handleSelect = (invoiceId: string) => {
     setSelectedInvoiceId(invoiceId)
     const invoice = invoices.find(inv => inv.id === invoiceId)
     onSelect(invoice || null)
+    setSearchTerm("")
   }
+
+  const filteredInvoices = invoices.filter(inv =>
+    inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    inv.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   const selectedInvoice = invoices.find(inv => inv.id === selectedInvoiceId)
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="invoice">Factura a Asociar *</Label>
-        <Select 
-          value={selectedInvoiceId} 
-          onValueChange={handleSelect} 
-          disabled={disabled || isLoading || invoices.length === 0}
-        >
-          <SelectTrigger id="invoice">
-            <SelectValue placeholder={
-              isLoading ? "Cargando facturas..." : 
-              invoices.length === 0 ? "No hay facturas disponibles" :
-              "Seleccione una factura"
-            } />
-          </SelectTrigger>
-          <SelectContent>
-            {invoices.map((invoice) => {
-              const conceptLabel = invoice.concept === 'services' ? 'Servicios' : 
-                                   invoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'
-              return (
-              <SelectItem key={invoice.id} value={invoice.id}>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-3 w-3" />
-                    <span className="font-medium">
-                      {invoice.invoice_type} {invoice.invoice_number}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
-                      {invoice.client_name}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>Concepto: {conceptLabel}</span>
-                    <span>•</span>
-                    <span>Saldo: ${invoice.available_balance.toLocaleString('es-AR')} de ${invoice.total_amount.toLocaleString('es-AR')}</span>
-                  </div>
+        <Label>Factura a Asociar *</Label>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              disabled={disabled || isLoading || invoices.length === 0}
+            >
+              {selectedInvoiceId
+                ? (() => {
+                    const invoice = invoices.find(inv => inv.id === selectedInvoiceId)
+                    return invoice ? `${invoice.invoice_type} ${invoice.invoice_number} - ${invoice.client_name}` : "Seleccione una factura"
+                  })()
+                : isLoading ? "Cargando facturas..." : 
+                  invoices.length === 0 ? "No hay facturas disponibles" :
+                  "Seleccione una factura"}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-96" align="start">
+            <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1.5">
+              Facturas Disponibles
+            </DropdownMenuLabel>
+            {invoices.length > 3 && (
+              <div className="px-2 pb-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por número o cliente..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-9"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </div>
-              </SelectItem>
-              )
-            })}
-          </SelectContent>
-        </Select>
+              </div>
+            )}
+            <div className="max-h-[300px] overflow-y-auto">
+              {filteredInvoices.length === 0 ? (
+                <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                  No se encontraron facturas
+                </div>
+              ) : (
+                filteredInvoices.map((invoice) => {
+                  const conceptLabel = invoice.concept === 'services' ? 'Servicios' : 
+                                       invoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'
+                  return (
+                    <DropdownMenuItem
+                      key={invoice.id}
+                      onClick={() => handleSelect(invoice.id)}
+                      className="gap-2 p-2 cursor-pointer"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-3 w-3" />
+                          <span className="font-medium">
+                            {invoice.invoice_type} {invoice.invoice_number}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {invoice.client_name}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span>Concepto: {conceptLabel}</span>
+                          <span>•</span>
+                          <span>Saldo: ${invoice.available_balance.toLocaleString('es-AR')} de ${invoice.total_amount.toLocaleString('es-AR')}</span>
+                        </div>
+                      </div>
+                      {invoice.id === selectedInvoiceId && <Check className="h-4 w-4 shrink-0" />}
+                    </DropdownMenuItem>
+                  )
+                })
+              )}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {isLoading && (

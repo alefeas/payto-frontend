@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Settings, Building2, FileText, Shield, Bell, Trash2, Download, Upload, Key, Plus, CreditCard, Edit, Save } from "lucide-react"
+import { Settings, Building2, FileText, Shield, Bell, Trash2, Download, Upload, Key, Plus, CreditCard, Edit, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -396,9 +397,7 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton href={`/company/${companyId}`} />
             <div>
               <h1 className="text-3xl font-bold">Configuración de Perfil Fiscal</h1>
               <p className="text-muted-foreground">Gestionar configuración y preferencias</p>

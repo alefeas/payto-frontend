@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Plus, Trash2, Calculator, FileText, Shield, Loader2, Download } from "lucide-react"
+import { Plus, Trash2, Calculator, FileText, Shield, Loader2, Download } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -522,13 +523,14 @@ export default function CreateInvoicePage() {
     }
 
     setIsSubmitting(true)
+    console.log('Submitting voucher with sales_point:', formData.salesPoint)
 
     const isExistingClient = formData.clientData?.client_id
     
     const payload = (isNoteType && associateInvoice) ? {
       voucher_type: formData.voucherType,
       related_invoice_id: formData.relatedInvoiceId,
-      sales_point: formData.salesPoint,
+      sales_point: formData.salesPoint || currentCompany?.default_sales_point || 1,
       concept: formData.concept,
       issue_date: formData.emissionDate,
       due_date: formData.dueDate,
@@ -604,9 +606,33 @@ export default function CreateInvoicePage() {
       router.push(`/company/${companyId}/invoices`)
     } catch (error: any) {
       setIsSubmitting(false)
-      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Error desconocido'
+      console.error('Error creating voucher:', error)
+      console.error('Error response:', error.response?.data)
+      
+      const errorData = error.response?.data
+      let errorMessage = 'Error desconocido'
+      
+      if (errorData?.errors && typeof errorData.errors === 'object') {
+        // Mostrar errores de validación
+        const errorList = Object.entries(errorData.errors)
+          .map(([field, messages]: [string, any]) => {
+            const fieldName = field.replace(/_/g, ' ').replace(/\./g, ' > ')
+            const messageList = Array.isArray(messages) ? messages : [messages]
+            return `${fieldName}: ${messageList.join(', ')}`
+          })
+          .join('\n')
+        errorMessage = errorList
+      } else if (errorData?.error) {
+        errorMessage = errorData.error
+      } else if (errorData?.message) {
+        errorMessage = errorData.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast.error('Error al crear el comprobante', {
-        description: errorMessage
+        description: errorMessage,
+        duration: 6000
       })
     }
   }
@@ -617,7 +643,7 @@ export default function CreateInvoicePage() {
   // Show loading skeleton while initial data loads
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse" />
@@ -634,38 +660,33 @@ export default function CreateInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
+          <BackButton href={`/company/${companyId}`} />
+          <div className="flex-1">
             <h1 className="text-3xl font-bold">Emitir Comprobante</h1>
             <p className="text-muted-foreground">Facturas, Notas de Crédito/Débito, Recibos</p>
           </div>
         </div>
 
         {cert && !cert.isActive && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-red-600 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-red-900">Certificado AFIP requerido</h3>
-                <p className="text-sm text-red-700 mt-1">
-                  No puedes emitir facturas electrónicas sin un certificado AFIP activo. Configura tu certificado para comenzar a facturar.
-                </p>
-                <Button 
-                  type="button"
-                  variant="default" 
-                  size="sm" 
-                  className="mt-2 bg-red-600 hover:bg-red-700"
-                  onClick={() => router.push(`/company/${companyId}/verify`)}
-                >
-                  Configurar Certificado AFIP Ahora
-                </Button>
-              </div>
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
+              <p className="text-xs text-red-700 mt-1">
+                No puedes emitir facturas electrónicas sin un certificado AFIP activo. Configura tu certificado para comenzar a facturar.
+              </p>
             </div>
+            <Button 
+              type="button"
+              size="sm" 
+              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${companyId}/verify`)}
+            >
+              Configurar Ahora
+            </Button>
           </div>
         )}
 
@@ -676,7 +697,7 @@ export default function CreateInvoicePage() {
               <CardTitle>Información General</CardTitle>
               <CardDescription>Seleccione el tipo de comprobante</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2 flex-1">
                   <Label className="h-4 flex items-center">Tipo de Comprobante *</Label>
@@ -864,7 +885,7 @@ export default function CreateInvoicePage() {
               </div>
 
               {isNoteType && (
-                <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -879,11 +900,11 @@ export default function CreateInvoicePage() {
                       }}
                       className="h-4 w-4"
                     />
-                    <Label htmlFor="associateInvoice" className="cursor-pointer">
+                    <Label htmlFor="associateInvoice" className="cursor-pointer font-medium">
                       Asociar a una factura emitida por mi empresa
                     </Label>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <p className="text-xs text-blue-700">
                       ✓ Asociá esta nota a una factura que emitiste para mejor trazabilidad
                     </p>
@@ -904,10 +925,12 @@ export default function CreateInvoicePage() {
                   onSelect={(invoice) => {
                     setSelectedInvoice(invoice)
                     if (invoice) {
+                      console.log('Invoice selected:', invoice)
+                      console.log('Sales point from invoice:', invoice.sales_point)
                       setFormData({ 
                         ...formData, 
                         relatedInvoiceId: invoice.id,
-                        salesPoint: invoice.sales_point || formData.salesPoint,
+                        salesPoint: invoice.sales_point || currentCompany?.default_sales_point || 1,
                         concept: (invoice.concept || 'products') as InvoiceConcept,
                         serviceDateFrom: invoice.service_date_from || '',
                         serviceDateTo: invoice.service_date_to || ''

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink, Loader2, RefreshCw, Trash2 } from "lucide-react"
+import { FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink, Loader2, RefreshCw, Trash2 } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -124,14 +125,26 @@ export default function InvoicesPage() {
       
       setIsLoading(true)
       try {
-        const response = await invoiceService.getInvoices(companyId, currentPage, {
-          search: searchTerm,
-          status: statusFilter,
-          type: typeFilter,
-          client: clientFilter,
-          date_from: dateFromFilter,
-          date_to: dateToFilter
-        })
+        const filters: any = {}
+        
+        if (searchTerm) filters.search = searchTerm
+        if (statusFilter && statusFilter !== 'all') filters.status = statusFilter
+        if (typeFilter && typeFilter !== 'all') filters.type = typeFilter
+        if (clientFilter && clientFilter !== 'all') filters.client = clientFilter
+        if (dateFromFilter) filters.date_from = dateFromFilter
+        if (dateToFilter) filters.date_to = dateToFilter
+        
+        const response = await invoiceService.getInvoices(companyId, currentPage, filters)
+        console.log('🔍 FILTRO APLICADO:', filters)
+        console.log('📊 FACTURAS RECIBIDAS:', response.data?.length || 0)
+        console.log('📋 DATOS:', response.data?.map(inv => ({
+          number: inv.number,
+          status: inv.status,
+          display_status: inv.display_status,
+          payment_status: inv.payment_status,
+          company_statuses: inv.company_statuses,
+          due_date: inv.due_date
+        })))
         setInvoices(response.data || [])
         setTotalPages(response.last_page || 1)
         setTotal(response.total || 0)
@@ -239,26 +252,28 @@ export default function InvoicesPage() {
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.payment_status !== 'paid' && invoice.status !== 'cancelled'
     const isIssuer = invoice.issuer_company_id === companyId
+    const isRejected = invoice.display_status === 'rejected' || invoice.status === 'rejected'
     
-    // 1. Vencimiento (solo si no está pagada/cobrada)
-    if (isOverdue) {
-      badges.push(<Badge key="overdue" className="bg-red-500 text-white">Vencida</Badge>)
+    // 1. Vencimiento (solo si no está pagada/cobrada/rechazada)
+    if (isOverdue && !isRejected) {
+      badges.push(<Badge key="overdue" className="bg-red-600 hover:bg-red-600 text-white border-red-600">Vencida</Badge>)
     }
     
-    // 2. Estado principal (payment_status tiene prioridad sobre status)
+    // 2. Estado principal (cancelled tiene prioridad absoluta)
     const status = invoice.display_status || invoice.status
     
     // Verificar company_statuses JSON primero
     const companyStatus = invoice.company_statuses?.[companyId]
     
-    if (companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'paid') {
+    // PRIORIDAD 1: Anulada (tiene prioridad sobre todo)
+    if (status === 'cancelled' || invoice.payment_status === 'cancelled') {
+      badges.push(<Badge key="status" className="bg-gray-500 text-white">Anulada</Badge>)
+    } else if (companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'paid') {
       const label = isIssuer ? 'Cobrada' : 'Pagada'
       badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
     } else if (invoice.payment_status === 'partial') {
       const label = isIssuer ? 'Cobro Parcial' : 'Pago Parcial'
       badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">{label}</Badge>)
-    } else if (status === 'cancelled') {
-      badges.push(<Badge key="status" className="bg-gray-100 text-gray-800">Anulada</Badge>)
     } else if (status === 'partially_cancelled') {
       badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)
     } else if (status === 'pending_approval') {
@@ -278,7 +293,7 @@ export default function InvoicesPage() {
 
   if (authLoading || initialLoad) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
@@ -296,21 +311,23 @@ export default function InvoicesPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${companyId}`} />
           <div>
             <h1 className="text-3xl font-bold">Ver Comprobantes</h1>
             <p className="text-muted-foreground">Gestionar todos los comprobantes de la empresa</p>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Comprobantes</h2>
+              {!isLoading && <p className="text-sm text-muted-foreground">{total} comprobantes en total</p>}
+            </div>
+            <div className="flex gap-2">
               <span>Comprobantes {!isLoading && `(${total} total)`}</span>
               <div className="flex gap-2">
                 <Button
@@ -325,7 +342,7 @@ export default function InvoicesPage() {
                       toast.error(error.response?.data?.message || 'Error al eliminar comprobantes')
                     }
                   }}
-                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white"
                   size="sm"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -401,16 +418,14 @@ export default function InvoicesPage() {
                   Descargar PDF ({selectedInvoices.length})
                 </Button>
               </div>
-            </CardTitle>
-            <CardDescription>
-              {selectedInvoices.length > 0 && (
-                <span className="text-blue-600">
-                  {selectedInvoices.length}/50 comprobantes seleccionados
-                </span>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </div>
+          </div>
+          {selectedInvoices.length > 0 && (
+            <p className="text-sm text-blue-600">
+              {selectedInvoices.length}/50 comprobantes seleccionados
+            </p>
+          )}
+          <div>
             <div className="space-y-4 mb-6">
               <div className="flex gap-4">
                 <div className="flex-1 relative">
@@ -447,7 +462,7 @@ export default function InvoicesPage() {
               </div>
               
               {showFilters && (
-                <Card className="p-4">
+                <div className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="space-y-2">
                       <Label>Estado</Label>
@@ -458,16 +473,14 @@ export default function InvoicesPage() {
                         <SelectContent>
                           <SelectItem value="all">Todos</SelectItem>
                           <SelectItem value="pending_approval">Pendiente Aprobación</SelectItem>
-                          <SelectItem value="issued">Emitida</SelectItem>
                           <SelectItem value="approved">Aprobada</SelectItem>
                           <SelectItem value="rejected">Rechazada</SelectItem>
+                          <SelectItem value="issued">Emitida</SelectItem>
                           <SelectItem value="paid">Pagada</SelectItem>
                           <SelectItem value="collected">Cobrada</SelectItem>
                           <SelectItem value="overdue">Vencida</SelectItem>
                           <SelectItem value="cancelled">Anulada</SelectItem>
                           <SelectItem value="partially_cancelled">Parcialmente Anulada</SelectItem>
-                          <SelectItem value="in_dispute">En Disputa</SelectItem>
-                          <SelectItem value="correcting">En Corrección</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -530,18 +543,17 @@ export default function InvoicesPage() {
                       />
                     </div>
                   </div>
-                </Card>
+                </div>
               )}
             </div>
 
-            <div className="border rounded-lg">
-              <div className="grid grid-cols-8 gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
-                <div className="flex items-center gap-2">
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+              <div className="grid grid-cols-[40px_120px_140px_1fr_100px_120px_180px_140px] gap-4 p-4 border-b border-gray-200 bg-gray-50 font-medium text-sm">
+                <div className="flex items-center justify-center">
                   <Checkbox
                     checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
-                  <span>Seleccionar</span>
                 </div>
                 <div>Número</div>
                 <div>Tipo</div>
@@ -555,7 +567,7 @@ export default function InvoicesPage() {
               {isLoading && !initialLoad ? (
                 // Skeleton para búsquedas, filtros y paginación
                 Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-8 gap-4 p-4 border-b">
+                  <div key={i} className="grid grid-cols-[40px_120px_140px_1fr_100px_120px_180px_140px] gap-4 p-4 border-b border-gray-200">
                     <div className="h-5 w-5 bg-muted rounded animate-pulse"></div>
                     <div className="h-5 bg-muted rounded animate-pulse"></div>
                     <div className="h-5 bg-muted rounded animate-pulse"></div>
@@ -577,25 +589,29 @@ export default function InvoicesPage() {
                                         ? `${invoice.client.first_name} ${invoice.client.last_name}` 
                                         : 'Sin cliente')
                     return (
-                      <div key={invoice.id} className="grid grid-cols-8 gap-4 p-4 border-b hover:bg-muted/30">
-                        <div className="flex items-center">
+                      <div key={invoice.id} className="grid grid-cols-[40px_120px_140px_1fr_100px_120px_180px_140px] gap-4 p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-center">
                           <Checkbox
                             checked={selectedInvoices.includes(invoice.id)}
                             onCheckedChange={() => handleSelectInvoice(invoice.id)}
                           />
                         </div>
-                        <div className="font-medium">{invoice.number}</div>
-                        <div className="flex gap-1 flex-wrap">
-                          <Badge variant="outline">Tipo {invoice.type}</Badge>
-                          {invoice.is_manual_load ? (
-                            <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">Carga Manual</Badge>
-                          ) : invoice.synced_from_afip ? (
-                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>
-                          ) : invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip ? (
-                            <Badge className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>
-                          ) : null}
+                        <div className="text-sm">{invoice.number}</div>
+                        <div>
+                          <Badge className="bg-gray-100 text-gray-700 border-gray-200">Tipo {invoice.type}</Badge>
                         </div>
-                        <div className="truncate" title={clientName}>{clientName}</div>
+                        <div className="truncate" title={clientName}>
+                          {clientName}
+                          <div className="flex gap-1 mt-1">
+                            {invoice.is_manual_load ? (
+                              <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50 text-xs">Carga Manual</Badge>
+                            ) : invoice.synced_from_afip ? (
+                              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs">Sinc. AFIP</Badge>
+                            ) : invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip ? (
+                              <Badge className="bg-green-50 text-green-700 border border-green-200 text-xs">Subidas a AFIP</Badge>
+                            ) : null}
+                          </div>
+                        </div>
                         <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
                         <div className="font-medium">
                           {formatCurrency(parseFloat(invoice.total), invoice.currency)}
@@ -683,8 +699,8 @@ export default function InvoicesPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Sync Dialog */}

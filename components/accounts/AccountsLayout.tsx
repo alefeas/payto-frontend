@@ -2,9 +2,8 @@
 
 import { ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
+import { BackButton } from "@/components/ui/back-button"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -46,9 +45,7 @@ export function AccountsLayout({
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton href={`/company/${companyId}`} className="border-0" />
             <div>
               <h1 className="text-3xl font-bold">{title}</h1>
               <p className="text-muted-foreground">{subtitle}</p>
@@ -59,43 +56,36 @@ export function AccountsLayout({
 
         {summaryCards}
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={filters.from_date}
-                onChange={(e) => onFiltersChange({ ...filters, from_date: e.target.value })}
-                className="w-40"
-                placeholder="Desde"
-              />
-              <Input
-                type="date"
-                value={filters.to_date}
-                onChange={(e) => onFiltersChange({ ...filters, to_date: e.target.value })}
-                className="w-40"
-                placeholder="Hasta"
-              />
-              <Input
-                placeholder={searchPlaceholder}
-                value={filters.search}
-                onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-                className="flex-1"
-              />
-              {(filters.from_date || filters.to_date || filters.search) && (
-                <Button
-                  variant="outline"
-                  onClick={() => onFiltersChange({ ...filters, from_date: '', to_date: '', search: '' })}
-                >
-                  Limpiar
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Tip: Usa la pestaña "Por Cliente/Proveedor" para ver facturas agrupadas
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex gap-2">
+          <Input
+            type="date"
+            value={filters.from_date}
+            onChange={(e) => onFiltersChange({ ...filters, from_date: e.target.value })}
+            className="w-40"
+            placeholder="Desde"
+          />
+          <Input
+            type="date"
+            value={filters.to_date}
+            onChange={(e) => onFiltersChange({ ...filters, to_date: e.target.value })}
+            className="w-40"
+            placeholder="Hasta"
+          />
+          <Input
+            placeholder={searchPlaceholder}
+            value={filters.search}
+            onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+            className="flex-1"
+          />
+          {(filters.from_date || filters.to_date || filters.search) && (
+            <Button
+              variant="outline"
+              onClick={() => onFiltersChange({ ...filters, from_date: '', to_date: '', search: '' })}
+            >
+              Limpiar
+            </Button>
+          )}
+        </div>
 
         <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-4">
           <TabsList>

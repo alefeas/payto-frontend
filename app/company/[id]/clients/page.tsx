@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
+import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -157,9 +158,7 @@ export default function ClientsPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Mis Clientes</h1>
             <p className="text-muted-foreground">Gestiona tus clientes externos para facturación</p>

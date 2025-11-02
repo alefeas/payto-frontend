@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Plus, Edit, Trash2, FileText, Mail, Phone, Building2, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
+import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, Building2, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -128,7 +129,7 @@ export default function SuppliersPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
@@ -145,12 +146,10 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Mis Proveedores</h1>
             <p className="text-muted-foreground">Gestiona tus proveedores externos</p>

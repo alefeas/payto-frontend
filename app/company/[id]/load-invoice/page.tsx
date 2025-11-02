@@ -2,8 +2,9 @@
 
 import { useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Info, Receipt, FileText } from "lucide-react"
+import { Info, Receipt, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
@@ -23,7 +24,7 @@ export default function LoadInvoicePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
@@ -41,18 +42,12 @@ export default function LoadInvoicePage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push(`/company/${companyId}`)}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+            <BackButton href={`/company/${companyId}`} />
             <div>
               <h1 className="text-3xl font-bold">Carga Manual de Facturas</h1>
               <p className="text-muted-foreground">

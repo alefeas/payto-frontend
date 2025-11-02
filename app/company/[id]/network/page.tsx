@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Plus, Users, Send, Check, X, Building2, Loader2, Clock } from "lucide-react"
+import { Search, Plus, Users, Send, Check, X, Building2, Loader2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -202,9 +203,7 @@ export default function NetworkPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Red Empresarial</h1>
             <p className="text-muted-foreground">Gestiona las conexiones con otras empresas</p>

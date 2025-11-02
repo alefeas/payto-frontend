@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, Search, Filter, Eye, User, Calendar, Activity, Shield, FileText, CreditCard, Users as UsersIcon, Settings as SettingsIcon } from "lucide-react"
+import { Search, Filter, Eye, User, Calendar, Activity, Shield, FileText, CreditCard, Users as UsersIcon, Settings as SettingsIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -110,9 +111,7 @@ export default function AuditLogPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href={`/company/${companyId}`} />
           <div>
             <h1 className="text-3xl font-bold">Registro de Auditoría</h1>
             <p className="text-muted-foreground">Historial completo de actividades del sistema</p>

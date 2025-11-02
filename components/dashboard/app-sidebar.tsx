@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
 import { companyService, Company } from "@/services/company.service"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
@@ -199,7 +200,7 @@ export function AppSidebar() {
             ))}
           </div>
         </SidebarContent>
-        <div className="mx-2 my-2 h-px bg-border" />
+        <div className="mx-2 my-2 h-px bg-gray-200" />
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -262,13 +263,13 @@ export function AppSidebar() {
                 {companies.length > 3 && (
                   <div className="px-2 pb-2">
                     <div className="relative">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+                      <Input
                         type="text"
                         placeholder="Buscar perfil..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full h-8 pl-8 pr-2 text-sm border rounded-md outline-none focus:ring-2 focus:ring-primary/20"
+                        className="pl-9 h-9 bg-white"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -318,6 +319,8 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
+      <div className="mx-2 my-2 h-px bg-gray-200" />
+
       <SidebarContent>
         {selectedCompanyId && (
           <>
@@ -337,7 +340,7 @@ export function AppSidebar() {
                         <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </CollapsibleTrigger>
                     </SidebarGroupLabel>
-                    <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                    <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down transition-all duration-500 ease-out">
                       <SidebarGroupContent>
                         <SidebarMenu>
                           {group.items.map((item) => (
@@ -385,7 +388,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <div className="mx-2 my-2 h-px bg-border" />
+      <div className="mx-2 my-2 h-px bg-gray-200" />
 
       <SidebarFooter>
         <SidebarMenu>

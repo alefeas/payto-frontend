@@ -19,6 +19,7 @@ import { ClientForm } from "@/components/clients/ClientForm"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
 import { ClientSelector } from "@/components/invoices/ClientSelector"
 import { SupplierSelector } from "@/components/invoices/SupplierSelector"
+import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
 
 interface ManualInvoiceFormProps {
   companyId: string
@@ -74,6 +75,9 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
   const [currentCompany, setCurrentCompany] = useState<any>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [associateInvoice, setAssociateInvoice] = useState(false)
+  const [relatedInvoiceId, setRelatedInvoiceId] = useState("")
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
 
   useEffect(() => {
     const initializeData = async () => {
@@ -85,6 +89,11 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
   }, [])
 
   useEffect(() => {
+    // Resetear selección de factura asociada al cambiar de pestaña
+    setAssociateInvoice(false)
+    setRelatedInvoiceId('')
+    setSelectedInvoice(null)
+    
     if (mode === "issued") {
       loadClients()
       loadConnectedCompanies()
@@ -269,6 +278,12 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
       return
     }
 
+    // Validar saldo disponible si hay factura asociada
+    if (associateInvoice && selectedInvoice && parseFloat(calculatedTotals.total) > selectedInvoice.available_balance) {
+      toast.error(`El monto no puede exceder el saldo disponible ($${selectedInvoice.available_balance.toLocaleString('es-AR')})`)
+      return
+    }
+
     // Validar límite de fecha (máximo 2 años hacia atrás)
     const twoYearsAgo = new Date()
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
@@ -295,6 +310,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
         cae: cae || undefined,
         cae_due_date: caeExpiration || undefined,
         notes: notes || undefined,
+        related_invoice_id: associateInvoice && relatedInvoiceId ? relatedInvoiceId : undefined,
         items: items.map(item => ({
           description: item.description,
           quantity: parseFloat(item.quantity.toString()),
@@ -384,13 +400,14 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
         </TabsList>
 
         <TabsContent value="received" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Datos del Proveedor</CardTitle>
-              <CardDescription>Seleccioná el proveedor que emitió la factura</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SupplierSelector
+          {!associateInvoice && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Datos del Proveedor</CardTitle>
+                <CardDescription>Seleccioná el proveedor que emitió la factura</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SupplierSelector
                 companyId={companyId}
                 savedSuppliers={suppliers}
                 connectedCompanies={connectedCompanies.map(c => ({
@@ -410,19 +427,21 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   }
                 }}
                 onSupplierCreated={loadSuppliers}
-              />
-            </CardContent>
-          </Card>
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="issued" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Datos del Receptor</CardTitle>
-              <CardDescription>Seleccioná el cliente o empresa a la que se emitió la factura</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ClientSelector
+          {!associateInvoice && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Datos del Receptor</CardTitle>
+                <CardDescription>Seleccioná el cliente o empresa a la que se emitió la factura</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ClientSelector
                 companyId={companyId}
                 connectedCompanies={connectedCompanies.map(c => ({
                   id: c.id,
@@ -446,9 +465,10 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   }
                 }}
                 onClientCreated={loadClients}
-              />
-            </CardContent>
-          </Card>
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -465,7 +485,12 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 Tipo *
                 {invoiceType && <span className="text-xs text-green-600">✓</span>}
               </Label>
-              <Select value={invoiceType} onValueChange={setInvoiceType}>
+              <Select value={invoiceType} onValueChange={(value) => {
+                setInvoiceType(value)
+                setAssociateInvoice(false)
+                setRelatedInvoiceId('')
+                setSelectedInvoice(null)
+              }}>
                 <SelectTrigger className={invoiceType ? "border-green-200" : ""}>
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
@@ -501,10 +526,16 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 }} 
                 placeholder="Ej: 1" 
                 className={salesPoint ? "border-green-200" : ""}
+                disabled={associateInvoice && !!selectedInvoice}
               />
-              {salesPoint && (
+              {salesPoint && !associateInvoice && (
                 <p className="text-xs text-green-600">
                   ✓ Se formateará como: {salesPoint.padStart(4, '0')}
+                </p>
+              )}
+              {associateInvoice && selectedInvoice && (
+                <p className="text-xs text-blue-600">
+                  Heredado de la factura asociada (requerido por AFIP)
                 </p>
               )}
             </div>
@@ -567,7 +598,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 Concepto *
                 {concept && <span className="text-xs text-green-600">✓</span>}
               </Label>
-              <Select value={concept} onValueChange={setConcept}>
+              <Select value={concept} onValueChange={setConcept} disabled={associateInvoice && !!selectedInvoice}>
                 <SelectTrigger className={concept ? "border-green-200" : ""}>
                   <SelectValue />
                 </SelectTrigger>
@@ -577,6 +608,11 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   <SelectItem value="products_services">Productos y Servicios</SelectItem>
                 </SelectContent>
               </Select>
+              {associateInvoice && selectedInvoice && (
+                <p className="text-xs text-blue-600">
+                  Heredado de la factura asociada
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -637,7 +673,13 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   value={serviceDateFrom} 
                   onChange={(e) => setServiceDateFrom(e.target.value)} 
                   className={serviceDateFrom ? "border-green-200" : ""}
+                  disabled={associateInvoice && !!selectedInvoice}
                 />
+                {associateInvoice && selectedInvoice && (
+                  <p className="text-xs text-blue-600">
+                    Heredado de la factura asociada
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
@@ -649,7 +691,13 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   value={serviceDateTo} 
                   onChange={(e) => setServiceDateTo(e.target.value)} 
                   className={serviceDateTo ? "border-green-200" : ""}
+                  disabled={associateInvoice && !!selectedInvoice}
                 />
+                {associateInvoice && selectedInvoice && (
+                  <p className="text-xs text-blue-600">
+                    Heredado de la factura asociada
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -666,7 +714,12 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 placeholder="12345678901234" 
                 maxLength={14} 
               />
-              <p className="text-xs text-muted-foreground">14 dígitos numéricos</p>
+              {mode === 'issued' && !cae && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ Sin CAE: Las NC/ND sobre esta factura no se asociarán en AFIP (solo internamente)
+                </p>
+              )}
+              {cae && <p className="text-xs text-muted-foreground">14 dígitos numéricos</p>}
             </div>
             <div className="space-y-2">
               <Label>Vencimiento CAE</Label>
@@ -675,6 +728,77 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
           </div>
         </CardContent>
       </Card>
+
+      {/* Asociar a Factura (para NC/ND emitidas y recibidas) */}
+      {(invoiceType === "003" || invoiceType === "008" || invoiceType === "013" || invoiceType === "053" || invoiceType === "002" || invoiceType === "007" || invoiceType === "012" || invoiceType === "052") && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Asociación a Factura</CardTitle>
+            <CardDescription>
+              {mode === "issued" 
+                ? "Vinculá esta nota a una factura que emitiste previamente"
+                : "Vinculá esta nota a una factura que recibiste del proveedor"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="associateInvoice"
+                  checked={associateInvoice}
+                  onChange={(e) => {
+                    setAssociateInvoice(e.target.checked)
+                    if (!e.target.checked) {
+                      setRelatedInvoiceId('')
+                      setSelectedInvoice(null)
+                    }
+                  }}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="associateInvoice" className="cursor-pointer font-medium">
+                  {mode === "issued" 
+                    ? "Asociar a una factura emitida por mi empresa"
+                    : "Asociar a una factura recibida del proveedor"}
+                </Label>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-xs text-blue-700">
+                  ✓ Asociá esta nota para mantener trazabilidad y calcular saldos correctamente
+                </p>
+                <p className="text-xs text-blue-700">
+                  ✓ El punto de venta y concepto se heredarán automáticamente
+                </p>
+                {mode === "issued" && (
+                  <p className="text-xs text-blue-700">
+                    ✓ Útil para anular facturas mediante NC por el 100% del monto
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {associateInvoice && (
+              <InvoiceSelector
+                companyId={companyId}
+                voucherType={invoiceType}
+                mode={mode}
+                onSelect={(invoice) => {
+                  setSelectedInvoice(invoice)
+                  if (invoice) {
+                    setRelatedInvoiceId(invoice.id)
+                    setSalesPoint(invoice.sales_point?.toString() || salesPoint)
+                    setConcept((invoice.concept || 'products') as any)
+                    setServiceDateFrom(invoice.service_date_from || '')
+                    setServiceDateTo(invoice.service_date_to || '')
+                  } else {
+                    setRelatedInvoiceId('')
+                  }
+                }}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Items */}
       <Card>
@@ -1013,6 +1137,14 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 {getCurrencySymbol(currency)}{totals.total}
               </span>
             </div>
+            {selectedInvoice && (
+              <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
+                <span>Saldo Disponible:</span>
+                <span className={parseFloat(totals.total) > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>
+                  {getCurrencySymbol(currency)}{selectedInvoice.available_balance.toLocaleString('es-AR')}
+                </span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

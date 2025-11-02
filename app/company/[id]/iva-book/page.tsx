@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
+import { BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -139,9 +140,7 @@ export default function IvaBookPage() {
       <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton href={`/company/${companyId}`} />
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-3">
                 <BookOpen className="h-8 w-8 text-primary" />

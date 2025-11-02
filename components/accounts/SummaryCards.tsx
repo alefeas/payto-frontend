@@ -24,67 +24,59 @@ export function SummaryCards({ summary, invoiceCount, filters, formatCurrency, t
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
+      <div className="p-6 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-medium text-muted-foreground">
             {type === 'receivable' ? 'Pendiente de Cobro' : 'Pendiente de Pago'}
-          </CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(summary.total_pending)}</div>
-          <p className="text-xs text-muted-foreground">
-            {hasFilters ? 'Del periodo filtrado' : 'Total pendiente'}
           </p>
-        </CardContent>
-      </Card>
+          <DollarSign className="h-5 w-5 text-blue-600" />
+        </div>
+        <div className="text-2xl font-bold">{formatCurrency(summary.total_pending)}</div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {hasFilters ? 'Del periodo filtrado' : 'Total pendiente'}
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Facturas Vencidas</CardTitle>
-          <AlertCircle className="h-4 w-4 text-red-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-600">{summary.overdue_count}</div>
-          <p className="text-xs text-muted-foreground">{formatCurrency(summary.overdue_amount)}</p>
-        </CardContent>
-      </Card>
+      <div className="p-6 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-medium text-muted-foreground">Facturas Vencidas</p>
+          <AlertCircle className="h-5 w-5 text-red-500" />
+        </div>
+        <div className="text-2xl font-bold text-red-600">{summary.overdue_count}</div>
+        <p className="text-xs text-muted-foreground mt-1">{formatCurrency(summary.overdue_amount)}</p>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
+      <div className="p-6 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-medium text-muted-foreground">
             {type === 'receivable' ? 'Facturas por Cobrar' : 'Próximos Vencimientos'}
-          </CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">
-            {type === 'receivable' ? invoiceCount : summary.upcoming_count || 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {type === 'receivable' 
-              ? 'Facturas emitidas' 
-              : formatCurrency(summary.upcoming_amount || 0)}
           </p>
-        </CardContent>
-      </Card>
+          <Calendar className="h-5 w-5 text-yellow-600" />
+        </div>
+        <div className="text-2xl font-bold text-yellow-600">
+          {type === 'receivable' ? invoiceCount : summary.upcoming_count || 0}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {type === 'receivable' 
+            ? 'Facturas emitidas' 
+            : formatCurrency(summary.upcoming_amount || 0)}
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
+      <div className="p-6 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-medium text-muted-foreground">
             {type === 'receivable' ? 'Cobrado' : 'Pagado'}
-          </CardTitle>
-          <TrendingUp className="h-4 w-4 text-green-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600">
-            {formatCurrency(type === 'receivable' ? summary.total_collected || 0 : summary.total_paid || 0)}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {hasFilters ? 'Del periodo filtrado' : 'Total histórico'}
           </p>
-        </CardContent>
-      </Card>
+          <TrendingUp className="h-5 w-5 text-green-600" />
+        </div>
+        <div className="text-2xl font-bold text-green-600">
+          {formatCurrency(type === 'receivable' ? summary.total_collected || 0 : summary.total_paid || 0)}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {hasFilters ? 'Del periodo filtrado' : 'Total histórico'}
+        </p>
+      </div>
     </div>
   )
 }

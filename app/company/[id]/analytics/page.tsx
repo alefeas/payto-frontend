@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock, Calendar as CalendarIcon, Download, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock, Calendar as CalendarIcon, Download, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -79,7 +80,7 @@ export default function AnalyticsPage() {
 
   if (authLoading || (loading && !summary)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
@@ -107,13 +108,11 @@ export default function AnalyticsPage() {
     : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.push(`/company/${companyId}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton href={`/company/${companyId}`} />
             <div>
               <h1 className="text-3xl font-bold">Estadísticas y Análisis</h1>
               <p className="text-muted-foreground">

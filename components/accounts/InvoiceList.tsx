@@ -64,6 +64,12 @@ export function InvoiceList({
       badges.push(<Badge key="status" className="bg-blue-50 text-blue-700 border-blue-200">Aprobada</Badge>)
     }
     
+    // Facturas anuladas tienen prioridad sobre cualquier otro estado
+    if (invoice.status === 'cancelled' || invoice.payment_status === 'cancelled') {
+      badges.push(<Badge key="cancelled" className="bg-gray-500 text-white font-semibold">Anulada</Badge>)
+      return <div className="flex gap-1 flex-wrap">{badges}</div>
+    }
+    
     if (isOverdue) {
       badges.push(<Badge key="overdue" className="bg-red-500 text-white font-semibold">Vencida</Badge>)
     }
@@ -77,56 +83,80 @@ export function InvoiceList({
         badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Pago</Badge>)
       }
     } else {
-      badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Cobro</Badge>)
+      if (invoice.payment_status === 'paid') {
+        badges.push(<Badge key="payment" className="bg-green-100 text-green-800">Cobrada</Badge>)
+      } else if (invoice.payment_status === 'partial') {
+        badges.push(<Badge key="payment" className="bg-yellow-100 text-yellow-800">Cobro Parcial</Badge>)
+      } else {
+        badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Cobro</Badge>)
+      }
     }
     
     return <div className="flex gap-1 flex-wrap">{badges}</div>
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Facturas Pendientes</CardTitle>
-            {selectedInvoices.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} seleccionada{selectedInvoices.length !== 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-          {invoices.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                if (selectedInvoices.length === invoices.length) {
-                  onSelectionChange([])
-                } else {
-                  onSelectionChange(invoices.map(inv => inv.id))
-                }
-              }}
-            >
-              {selectedInvoices.length === invoices.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
-            </Button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Facturas Pendientes</h3>
+          {selectedInvoices.length > 0 && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} seleccionada{selectedInvoices.length !== 1 ? 's' : ''}
+            </p>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Cargando facturas...</p>
-            </div>
-          ) : invoices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No hay facturas pendientes</p>
-            </div>
-          ) : (
-            invoices.map((invoice) => (
-              <div 
-                key={invoice.id} 
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer" 
+        {invoices.length > 0 && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              if (selectedInvoices.length === invoices.length) {
+                onSelectionChange([])
+              } else {
+                onSelectionChange(invoices.map(inv => inv.id))
+              }
+            }}
+          >
+            {selectedInvoices.length === invoices.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
+          </Button>
+        )}
+      </div>
+      <div className="space-y-3">
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl animate-pulse">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="h-5 w-5 bg-gray-200 rounded"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                  <div className="flex gap-2">
+                    <div className="h-9 w-9 bg-gray-200 rounded"></div>
+                    <div className="h-9 w-20 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : invoices.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>No hay facturas pendientes</p>
+          </div>
+        ) : (
+          invoices.map((invoice) => (
+            <div 
+              key={invoice.id} 
+              className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-blue-50/50 hover:border-blue-200 cursor-pointer transition-all" 
                 onClick={() => {
                   if (selectedInvoices.includes(invoice.id)) {
                     onSelectionChange(selectedInvoices.filter(id => id !== invoice.id))
@@ -151,14 +181,13 @@ export function InvoiceList({
                     <div className="text-sm text-muted-foreground">
                       {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                     </div>
-                    {type === 'payable' && invoice.supplier && (
-                      <div className="text-xs text-muted-foreground mt-1">
+                    {type === 'payable' && (
+                      <div className="text-xs mt-1">
                         {invoice.has_bank_data ? (
                           <span className="text-green-600">✓ Datos bancarios</span>
                         ) : (
                           <span className="text-orange-600">⚠ Sin datos bancarios</span>
                         )}
-                        {invoice.supplier.bank_cbu && ` • CBU: ${invoice.supplier.bank_cbu.slice(0, 6)}...`}
                       </div>
                     )}
                   </div>
@@ -187,10 +216,9 @@ export function InvoiceList({
                   </div>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          ))
+        )}
+      </div>
+    </div>
   )
 }
