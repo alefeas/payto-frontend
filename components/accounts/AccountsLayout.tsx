@@ -36,7 +36,7 @@ export function AccountsLayout({
   activeTab,
   onTabChange,
   tabs,
-  searchPlaceholder = 'Buscar por número de factura...'
+  searchPlaceholder = 'Buscar por número de factura o CUIT...'
 }: AccountsLayoutProps) {
   const router = useRouter()
 

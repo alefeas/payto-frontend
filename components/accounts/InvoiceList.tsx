@@ -57,42 +57,12 @@ export function InvoiceList({
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.payment_status !== 'paid'
     
-    // Badge para estado de la factura
-    if (type === 'receivable' && invoice.status === 'issued') {
-      badges.push(<Badge key="status" className="bg-green-50 text-green-700 border-green-200">Emitida</Badge>)
-    } else if (type === 'payable' && invoice.status === 'approved') {
-      badges.push(<Badge key="status" className="bg-blue-50 text-blue-700 border-blue-200">Aprobada</Badge>)
-    }
-    
-    // Facturas anuladas tienen prioridad sobre cualquier otro estado
-    if (invoice.status === 'cancelled' || invoice.payment_status === 'cancelled') {
-      badges.push(<Badge key="cancelled" className="bg-gray-500 text-white font-semibold">Anulada</Badge>)
-      return <div className="flex gap-1 flex-wrap">{badges}</div>
-    }
-    
+    // Solo mostrar badge de Vencida
     if (isOverdue) {
-      badges.push(<Badge key="overdue" className="bg-red-500 text-white font-semibold">Vencida</Badge>)
+      badges.push(<Badge key="overdue" className="bg-red-100 text-red-700 font-medium">Vencida</Badge>)
     }
     
-    if (type === 'payable') {
-      if (invoice.payment_status === 'paid') {
-        badges.push(<Badge key="payment" className="bg-green-100 text-green-800">Pagada</Badge>)
-      } else if (invoice.payment_status === 'partial') {
-        badges.push(<Badge key="payment" className="bg-yellow-100 text-yellow-800">Pago Parcial</Badge>)
-      } else {
-        badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Pago</Badge>)
-      }
-    } else {
-      if (invoice.payment_status === 'paid') {
-        badges.push(<Badge key="payment" className="bg-green-100 text-green-800">Cobrada</Badge>)
-      } else if (invoice.payment_status === 'partial') {
-        badges.push(<Badge key="payment" className="bg-yellow-100 text-yellow-800">Cobro Parcial</Badge>)
-      } else {
-        badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Cobro</Badge>)
-      }
-    }
-    
-    return <div className="flex gap-1 flex-wrap">{badges}</div>
+    return badges.length > 0 ? <div className="flex gap-1 flex-wrap">{badges}</div> : null
   }
 
   return (
@@ -193,27 +163,19 @@ export function InvoiceList({
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
+                  {getStatusBadges(invoice)}
                   <div className="text-right">
                     <div className="font-medium">{formatCurrency(parseFloat(invoice.pending_amount || invoice.total || 0))}</div>
                     <div className="text-sm text-muted-foreground">
                       Vence: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
                     </div>
                   </div>
-                  {getStatusBadges(invoice)}
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={(e) => {
-                      e.stopPropagation()
-                      onView(invoice.id)
-                    }}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" onClick={(e) => {
-                      e.stopPropagation()
-                      onAction(invoice.id)
-                    }}>
-                      {actionLabel}
-                    </Button>
-                  </div>
+                  <Button size="sm" variant="ghost" onClick={(e) => {
+                    e.stopPropagation()
+                    onView(invoice.id)
+                  }}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
           ))

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,11 @@ import { UpcomingTab } from "@/components/accounts/UpcomingTab"
 import { OverdueTab } from "@/components/accounts/OverdueTab"
 import { ByEntityTab } from "@/components/accounts/ByEntityTab"
 import { CollectionsTab } from "@/components/accounts/CollectionsTab"
+import { BalancesTab } from "@/components/accounts/BalancesTab"
+import { accountsReceivableService } from "@/services/accounts-receivable.service"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { DatePicker } from "@/components/ui/date-picker"
 
 export default function AccountsReceivablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -32,8 +36,9 @@ export default function AccountsReceivablePage() {
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [allInvoices, setAllInvoices] = useState<any[]>([])
   const [collections, setCollections] = useState<any[]>([])
+  const [balances, setBalances] = useState<any>(null)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [showCollectionDialog, setShowCollectionDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('invoices')
@@ -59,60 +64,28 @@ export default function AccountsReceivablePage() {
   }, [isAuthenticated, authLoading])
   
   useEffect(() => {
-    if (isAuthenticated && companyId) {
+    if (isAuthenticated && companyId && !loading) {
       loadInvoices()
     }
-  }, [filters.search, filters.from_date, filters.to_date, isAuthenticated, companyId])
+  }, [filters.from_date, filters.to_date, isAuthenticated, companyId])
   
   const loadInvoices = async () => {
     try {
-      // Cargar todas las páginas de facturas emitidas
-      let allInvoices: any[] = []
-      let currentPage = 1
-      let hasMore = true
+      const response = await invoiceService.getInvoices(companyId, 1)
+      const data = response.data || []
       
-      while (hasMore) {
-        const response = await invoiceService.getInvoices(companyId, currentPage)
-        const pageData = response.data || []
-        allInvoices = [...allInvoices, ...pageData]
-        
-        // Si hay más páginas, continuar
-        if (response.last_page && currentPage < response.last_page) {
-          currentPage++
-        } else {
-          hasMore = false
-        }
-      }
-      
-      const filtered = Array.isArray(allInvoices) ? allInvoices.filter((inv: any) => {
+      const filtered = Array.isArray(data) ? data.filter((inv: any) => {
         if (inv.issuer_company_id !== companyId) return false
         if (inv.supplier_id) return false
-        
-        // Excluir facturas anuladas (no se pueden cobrar)
+        const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+        const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+        if (isCreditNote || isDebitNote) return false
         if (inv.status === 'cancelled') return false
-        
         const companyStatus = inv.company_statuses?.[companyId]
         if (companyStatus === 'paid' || companyStatus === 'collected') return false
-        
-        if (filters.from_date || filters.to_date) {
-          const issueDate = new Date(inv.issue_date)
-          if (filters.from_date && issueDate < new Date(filters.from_date)) return false
-          if (filters.to_date && issueDate > new Date(filters.to_date)) return false
-        }
-        
-        if (filters.search) {
-          const invoiceNumber = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`
-          const clientName = inv.receiver_name || inv.client?.business_name || (inv.client?.first_name && inv.client?.last_name ? `${inv.client.first_name} ${inv.client.last_name}` : null) || inv.receiverCompany?.name || inv.receiverCompany?.business_name || ''
-          const clientCuit = inv.client?.document_number || inv.client?.national_id || inv.receiverCompany?.national_id || ''
-          const searchLower = filters.search.toLowerCase()
-          if (!invoiceNumber.toLowerCase().includes(searchLower) && 
-              !clientName.toLowerCase().includes(searchLower) && 
-              !clientCuit.includes(filters.search)) return false
-        }
-        
         return true
       }) : []
-      setInvoices(filtered)
+      setAllInvoices(filtered)
     } catch (error: any) {
       console.error('Error loading invoices:', error)
       toast.error('Error al cargar facturas')
@@ -123,11 +96,13 @@ export default function AccountsReceivablePage() {
     try {
       setLoading(true)
       
-      const [collectionsData] = await Promise.all([
+      const [collectionsData, balancesData] = await Promise.all([
         collectionService.getCollections(companyId),
+        accountsReceivableService.getBalances(companyId).catch(() => null),
       ])
       
       setCollections(collectionsData.filter((c: any) => c.status === 'confirmed') || [])
+      setBalances(balancesData)
       
       await loadInvoices()
     } catch (error: any) {
@@ -160,7 +135,7 @@ export default function AccountsReceivablePage() {
     setSubmitting(true)
     try {
       for (const invoiceId of selectedInvoices) {
-        const invoice = invoices.find(inv => inv.id === invoiceId)
+        const invoice = allInvoices.find(inv => inv.id === invoiceId)
         if (!invoice) continue
         
         // Normalizar método de cobro
@@ -213,11 +188,9 @@ export default function AccountsReceivablePage() {
       setWithholdings([])
       
       // Recargar datos con loader
-      setLoading(true)
       await loadInvoices()
       const collectionsData = await collectionService.getCollections(companyId)
       setCollections(collectionsData.filter((c: any) => c.status === 'confirmed') || [])
-      setLoading(false)
     } catch (error: any) {
       console.error('Collection error:', error)
       toast.error(error.response?.data?.message || 'Error al registrar cobro')
@@ -233,19 +206,51 @@ export default function AccountsReceivablePage() {
     }).format(amount)
   }
 
-  const getFilteredInvoices = () => {
-    return invoices
-  }
+  const filteredInvoices = useMemo(() => {
+    return allInvoices.filter(inv => {
+      if (filters.from_date || filters.to_date) {
+        const issueDate = new Date(inv.issue_date)
+        if (filters.from_date && issueDate < new Date(filters.from_date)) return false
+        if (filters.to_date && issueDate > new Date(filters.to_date)) return false
+      }
+      if (filters.search) {
+        const search = filters.search.toLowerCase()
+        const searchNum = filters.search.replace(/\D/g, '')
+        const invNum = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`.toLowerCase()
+        const name = (inv.receiver_name || inv.client?.business_name || inv.client?.first_name || inv.receiverCompany?.name || inv.receiverCompany?.business_name || '').toLowerCase()
+        const cuit = (inv.client?.document_number || inv.client?.national_id || inv.receiverCompany?.national_id || '').toString().replace(/\D/g, '')
+        if (!invNum.includes(search) && !name.includes(search) && !cuit.includes(searchNum)) return false
+      }
+      return true
+    })
+  }, [allInvoices, filters.from_date, filters.to_date, filters.search])
 
-  const getFilteredSummary = () => {
-    const filtered = getFilteredInvoices()
+  const summary = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const invoices = allInvoices.filter(inv => {
+      if (filters.from_date || filters.to_date) {
+        const issueDate = new Date(inv.issue_date)
+        if (filters.from_date && issueDate < new Date(filters.from_date)) return false
+        if (filters.to_date && issueDate > new Date(filters.to_date)) return false
+      }
+      return true
+    })
+    const totalReceivable = invoices.reduce((sum, inv) => {
+      const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
+      return sum + amount
+    }, 0)
+    const filteredCollections = collections.filter(col => {
+      if (filters.from_date || filters.to_date) {
+        const collectionDate = new Date(col.collection_date)
+        if (filters.from_date && collectionDate < new Date(filters.from_date)) return false
+        if (filters.to_date && collectionDate > new Date(filters.to_date)) return false
+      }
+      return true
+    })
+    const totalCollected = filteredCollections.reduce((sum, col) => sum + (parseFloat(col.amount) || 0), 0)
     
-    const totalReceivable = filtered.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total) || 0), 0)
-    const totalCollected = collections.reduce((sum, col) => sum + (parseFloat(col.amount) || 0), 0)
-    
-    const overdue = filtered.filter(inv => {
+    const overdue = invoices.filter(inv => {
       const dueDate = new Date(inv.due_date)
       dueDate.setHours(0, 0, 0, 0)
       return dueDate < today
@@ -256,9 +261,12 @@ export default function AccountsReceivablePage() {
       total_collected: totalCollected,
       total_pending: totalReceivable,
       overdue_count: overdue.length,
-      overdue_amount: overdue.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total) || 0), 0)
+      overdue_amount: overdue.reduce((sum, inv) => {
+        const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
+        return sum + amount
+      }, 0)
     }
-  }
+  }, [allInvoices, collections, filters.from_date, filters.to_date])
 
   if (authLoading || loading) {
     return (
@@ -300,9 +308,6 @@ export default function AccountsReceivablePage() {
   }
   if (!isAuthenticated) return null
 
-  const summary = getFilteredSummary()
-  const filtered = getFilteredInvoices()
-
   return (
     <>
     <AccountsLayout
@@ -321,7 +326,7 @@ export default function AccountsReceivablePage() {
       summaryCards={
         <SummaryCards 
           summary={summary} 
-          invoiceCount={filtered.length} 
+          invoiceCount={filteredInvoices.length} 
           filters={filters} 
           formatCurrency={formatCurrency}
           type="receivable"
@@ -332,77 +337,13 @@ export default function AccountsReceivablePage() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[
-        {
-          value: 'credits',
-          label: 'Saldos a Favor',
-          content: (
-            <Card>
-              <CardHeader>
-                <CardTitle>Saldos a Favor del Cliente</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Facturas con NC/ND que generan crédito a favor del cliente
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {(() => {
-                    const creditsInvoices = filtered.filter(inv => (parseFloat(inv.balance_pending) || 0) < 0)
-                    return loading ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>Cargando...</p>
-                      </div>
-                    ) : creditsInvoices.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No hay saldos a favor</p>
-                        <p className="text-xs mt-2">Los saldos a favor aparecen cuando se aplica una NC a una factura ya cobrada</p>
-                      </div>
-                    ) : (
-                      creditsInvoices.map((invoice) => {
-                        const creditAmount = Math.abs(parseFloat(invoice.balance_pending) || 0)
-                        const clientName = invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'
-                        return (
-                          <div key={invoice.id} className="p-4 border rounded-lg bg-blue-50/50">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="font-medium text-lg">{clientName}</div>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Factura: {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-bold text-lg text-blue-600">{formatCurrency(creditAmount)}</div>
-                                <Badge className="bg-blue-600 text-white mt-1">Saldo a Favor</Badge>
-                              </div>
-                            </div>
-                            <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
-                              <div>
-                                <span className="font-medium">Total Original:</span> {formatCurrency(parseFloat(invoice.total) || 0)}
-                              </div>
-                              <div>
-                                <span className="font-medium">Cobrado:</span> {formatCurrency((parseFloat(invoice.total) || 0) - (parseFloat(invoice.pending_amount) || 0))}
-                              </div>
-                            </div>
-                            <div className="mt-2 pt-2 border-t">
-                              <Button size="sm" variant="outline" onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}>
-                                Ver Detalle
-                              </Button>
-                            </div>
-                          </div>
-                        )
-                      })
-                    )
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        },
+
         {
           value: 'invoices',
           label: 'Facturas Pendientes',
           content: (
             <InvoiceList
-              invoices={filtered}
+              invoices={filteredInvoices}
               selectedInvoices={selectedInvoices}
               onSelectionChange={setSelectedInvoices}
               onAction={(id) => {
@@ -422,13 +363,15 @@ export default function AccountsReceivablePage() {
           label: 'Próximos Vencimientos',
           content: (
             <UpcomingTab
-              invoices={filtered}
+              invoices={filteredInvoices}
               formatCurrency={formatCurrency}
               onAction={(id) => {
                 setSelectedInvoices([id])
                 handleCollectInvoices([id])
               }}
               type="receivable"
+              selectedInvoices={selectedInvoices}
+              onSelectionChange={setSelectedInvoices}
             />
           )
         },
@@ -437,13 +380,15 @@ export default function AccountsReceivablePage() {
           label: 'Vencidas',
           content: (
             <OverdueTab
-              invoices={filtered}
+              invoices={filteredInvoices}
               formatCurrency={formatCurrency}
               onAction={(id) => {
                 setSelectedInvoices([id])
                 handleCollectInvoices([id])
               }}
               type="receivable"
+              selectedInvoices={selectedInvoices}
+              onSelectionChange={setSelectedInvoices}
             />
           )
         },
@@ -464,7 +409,7 @@ export default function AccountsReceivablePage() {
           label: 'Por Cliente',
           content: (
             <ByEntityTab
-              invoices={filtered}
+              invoices={filteredInvoices}
               formatCurrency={formatCurrency}
               onViewInvoices={(cuit) => {
                 setActiveTab('invoices')
@@ -478,6 +423,27 @@ export default function AccountsReceivablePage() {
               type="receivable"
             />
           )
+        },
+        {
+          value: 'balances',
+          label: 'Saldos',
+          content: balances ? (
+            <BalancesTab
+              creditNotes={balances.credit_notes || []}
+              debitNotes={balances.debit_notes || []}
+              summary={balances.summary}
+              formatCurrency={formatCurrency}
+              onView={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+              type="receivable"
+              filters={filters}
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">Cargando saldos...</p>
+              </CardContent>
+            </Card>
+          )
         }
       ]}
     />
@@ -487,14 +453,15 @@ export default function AccountsReceivablePage() {
             <DialogHeader>
               <DialogTitle>Registrar Cobro</DialogTitle>
               <DialogDescription>
-                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}
+                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {formatCurrency(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4 bg-muted/30">
+            <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4 py-2">
+              <div className="border border-gray-200 rounded-lg p-4 bg-muted/30">
                 <h4 className="font-medium mb-3 text-sm text-muted-foreground">Facturas seleccionadas</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {invoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
+                  {allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
                     <div key={invoice.id} className="flex justify-between items-center text-sm p-2 bg-background rounded">
                       <div>
                         <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
@@ -509,10 +476,10 @@ export default function AccountsReceivablePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Fecha de Cobro *</Label>
-                  <Input
-                    type="date"
-                    value={collectionForm.collection_date}
-                    onChange={(e) => setCollectionForm({...collectionForm, collection_date: e.target.value})}
+                  <DatePicker
+                    date={collectionForm.collection_date ? new Date(collectionForm.collection_date) : undefined}
+                    onSelect={(date) => setCollectionForm({...collectionForm, collection_date: date ? date.toISOString().split('T')[0] : ''})}
+                    placeholder="Seleccionar fecha"
                   />
                 </div>
                 <div className="space-y-2">
@@ -572,7 +539,7 @@ export default function AccountsReceivablePage() {
                 ) : (
                   <div className="space-y-2">
                     {withholdings.map((wh, idx) => {
-                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
+                      const totalInvoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
                       const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
                       const amount = base * (wh.rate || 0) / 100
                       
@@ -611,7 +578,7 @@ export default function AccountsReceivablePage() {
                       }
                       
                       return (
-                      <div key={idx} className="border rounded-lg p-3 bg-muted/30">
+                      <div key={idx} className="rounded-lg p-3 bg-muted/30 border border-gray-200">
                         <div className="space-y-2">
                           <div className="grid grid-cols-12 gap-2 items-end">
                             <div className="col-span-5">
@@ -731,12 +698,12 @@ export default function AccountsReceivablePage() {
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span className="font-semibold">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}</span>
+                    <span className="font-semibold">{formatCurrency(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}</span>
                   </div>
                   <div className="flex justify-between text-sm text-orange-600">
                     <span>Retenciones:</span>
                     <span className="font-semibold">-{formatCurrency(withholdings.reduce((sum, wh) => {
-                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
+                      const totalInvoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
                       const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
                       return sum + (base * (wh.rate || 0) / 100)
                     }, 0))}</span>
@@ -744,8 +711,8 @@ export default function AccountsReceivablePage() {
                   <Separator />
                   <div className="flex justify-between">
                     <span className="font-bold">Neto a Cobrar:</span>
-                    <span className="text-xl font-bold text-green-600">{formatCurrency(invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0) - withholdings.reduce((sum, wh) => {
-                      const totalInvoices = invoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
+                    <span className="text-xl font-bold text-green-600">{formatCurrency(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0) - withholdings.reduce((sum, wh) => {
+                      const totalInvoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
                       const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
                       return sum + (base * (wh.rate || 0) / 100)
                     }, 0))}</span>
@@ -753,6 +720,7 @@ export default function AccountsReceivablePage() {
                 </div>
               )}
             </div>
+            </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCollectionDialog(false)} disabled={submitting}>Cancelar</Button>
               <Button onClick={handleSubmitCollection} disabled={submitting}>{submitting ? 'Registrando...' : 'Registrar Cobro'}</Button>

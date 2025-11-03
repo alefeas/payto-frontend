@@ -1,20 +1,19 @@
 "use client"
 
+import { InvoiceCard } from "@/components/accounts/InvoiceCard"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { AlertCircle } from "lucide-react"
 
 interface OverdueTabProps {
   invoices: any[]
   formatCurrency: (amount: number) => string
   onAction: (id: string) => void
   type: 'receivable' | 'payable'
+  selectedInvoices?: string[]
+  onSelectionChange?: (ids: string[]) => void
 }
 
-export function OverdueTab({ invoices, formatCurrency, onAction, type }: OverdueTabProps) {
-  const entityKey = type === 'receivable' ? 'client' : 'supplier'
-  const companyKey = type === 'receivable' ? 'receiverCompany' : 'issuerCompany'
-  const entityLabel = type === 'receivable' ? 'Cliente' : 'Proveedor'
-
+export function OverdueTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange }: OverdueTabProps) {
   const overdueInvoices = invoices.filter(inv => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -25,46 +24,58 @@ export function OverdueTab({ invoices, formatCurrency, onAction, type }: Overdue
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-red-600">Facturas Vencidas</h3>
-      <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <h3 className="text-lg font-semibold text-red-700">Facturas Vencidas</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {overdueInvoices.length} factura{overdueInvoices.length !== 1 ? 's' : ''} vencida{overdueInvoices.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        {onSelectionChange && overdueInvoices.length > 0 && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              if (selectedInvoices.length === overdueInvoices.length) {
+                onSelectionChange([])
+              } else {
+                onSelectionChange(overdueInvoices.map(inv => inv.id))
+              }
+            }}
+          >
+            {selectedInvoices.length === overdueInvoices.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
+          </Button>
+        )}
+      </div>
+      <div className="space-y-2">
         {overdueInvoices.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
+            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p>No hay facturas vencidas</p>
           </div>
         ) : (
-          overdueInvoices.map((invoice) => {
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
-            const dueDate = new Date(invoice.due_date)
-            dueDate.setHours(0, 0, 0, 0)
-            const daysOverdue = Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
-            const entity = invoice[entityKey] || invoice[companyKey]
-            const entityName = (type === 'receivable' ? invoice.receiver_name : null) ||
-                             entity?.business_name || 
-                             entity?.name ||
-                             (entity?.first_name && entity?.last_name ? `${entity.first_name} ${entity.last_name}` : null) ||
-                             entityLabel
-            
-            return (
-              <div key={invoice.id} className="flex items-center justify-between p-4 border border-red-200 rounded-xl bg-red-50/50 hover:bg-red-50 transition-all">
-                <div>
-                  <div className="font-medium">{entityName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                  </div>
-                  <Badge variant="destructive" className="mt-2 text-xs">Vencida hace {daysOverdue} día{daysOverdue !== 1 ? 's' : ''}</Badge>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="font-bold text-lg text-red-600">{formatCurrency(invoice.pending_amount || invoice.total)}</div>
-                  </div>
-                  <Button size="sm" variant="destructive" onClick={() => onAction(invoice.id)}>
-                    {type === 'receivable' ? 'Cobrar' : 'Pagar'}
-                  </Button>
-                </div>
-              </div>
-            )
-          })
+          overdueInvoices.map((invoice) => (
+            <InvoiceCard
+              key={invoice.id}
+              invoice={invoice}
+              formatCurrency={formatCurrency}
+              variant="overdue"
+              type={type}
+              selected={selectedInvoices.includes(invoice.id)}
+              onSelect={(id, checked) => {
+                if (onSelectionChange) {
+                  if (checked) {
+                    onSelectionChange([...selectedInvoices, id])
+                  } else {
+                    onSelectionChange(selectedInvoices.filter(i => i !== id))
+                  }
+                }
+              }}
+            />
+          ))
         )}
       </div>
     </div>

@@ -95,7 +95,7 @@ export function InvoicePerceptionsSection({
             }
             
             return (
-              <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+              <div key={index} className="space-y-3 p-4 rounded-lg border border-gray-200 relative">
                 <Button
                   type="button"
                   variant="ghost"

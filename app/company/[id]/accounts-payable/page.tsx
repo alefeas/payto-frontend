@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { TrendingUp, TrendingDown, AlertCircle, Calendar, DollarSign, FileText, Download, Plus, Filter, Search, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
@@ -22,7 +23,12 @@ import { ByEntityTab } from "@/components/accounts/ByEntityTab"
 import { InvoiceList } from "@/components/accounts/InvoiceList"
 import { CollectionsTab } from "@/components/accounts/CollectionsTab"
 import { UpcomingTab } from "@/components/accounts/UpcomingTab"
+import { BalancesTab } from "@/components/accounts/BalancesTab"
+import { InvoiceListSkeleton, DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
+import { Skeleton } from "@/components/ui/skeleton"
 import { OverdueTab } from "@/components/accounts/OverdueTab"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { DatePicker } from "@/components/ui/date-picker"
 
 export default function AccountsPayablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -34,11 +40,11 @@ export default function AccountsPayablePage() {
   const [refreshing, setRefreshing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [dashboard, setDashboard] = useState<any>(null)
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [allInvoices, setAllInvoices] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
+  const [balances, setBalances] = useState<any>(null)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
-  const [showTxtDialog, setShowTxtDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('invoices')
   const [paymentDialogTab, setPaymentDialogTab] = useState('payment')
   const [paymentForm, setPaymentForm] = useState({
@@ -50,6 +56,8 @@ export default function AccountsPayablePage() {
     notes: '',
   })
   const [retentions, setRetentions] = useState<Array<{type: string, name: string, rate: number, baseType: string}>>([])
+  const [loadingRetentions, setLoadingRetentions] = useState(false)
+  const [generatingTxt, setGeneratingTxt] = useState(false)
   const [filters, setFilters] = useState({
     payment_status: '',
     search: '',
@@ -67,30 +75,15 @@ export default function AccountsPayablePage() {
   }, [isAuthenticated, authLoading])
   
   useEffect(() => {
-    if (isAuthenticated && companyId) {
+    if (isAuthenticated && companyId && !loading) {
       loadInvoices()
     }
-  }, [filters.search, filters.from_date, filters.to_date, isAuthenticated, companyId])
+  }, [filters.from_date, filters.to_date, isAuthenticated, companyId])
   
   const loadInvoices = async () => {
     try {
-      let allInvoices: any[] = []
-      let currentPage = 1
-      let hasMore = true
-      
-      while (hasMore) {
-        const response = await accountsPayableService.getInvoices(companyId, { page: currentPage })
-        const pageData = response.data || []
-        allInvoices = [...allInvoices, ...pageData]
-        
-        if (response.pagination?.last_page && currentPage < response.pagination.last_page) {
-          currentPage++
-        } else {
-          hasMore = false
-        }
-      }
-      
-      setInvoices(allInvoices)
+      const response = await accountsPayableService.getInvoices(companyId, { page: 1 })
+      setAllInvoices(response.data || [])
     } catch (error: any) {
       console.error('Error loading invoices:', error)
       toast.error('Error al cargar facturas')
@@ -101,13 +94,14 @@ export default function AccountsPayablePage() {
     try {
       setLoading(true)
       
-      const [dashboardData, paymentsData] = await Promise.all([
-        accountsPayableService.getDashboard(companyId),
+      const [paymentsData, balancesData] = await Promise.all([
         accountsPayableService.getPayments(companyId),
+        accountsPayableService.getBalances(companyId).catch(() => null),
       ])
       
-      setDashboard(dashboardData)
       setPayments(paymentsData.data || [])
+      setBalances(balancesData)
+      setDashboard({ summary: { upcoming_count: 0, upcoming_amount: 0 } })
       
       await loadInvoices()
     } catch (error: any) {
@@ -118,10 +112,10 @@ export default function AccountsPayablePage() {
     }
   }
 
-  const handlePayInvoices = async (invoiceIds: string[]) => {
+  const handlePayInvoices = (invoiceIds: string[]) => {
     if (invoiceIds.length === 0) return
     
-    const selectedInvoiceData = invoices.filter(inv => invoiceIds.includes(inv.id))
+    const selectedInvoiceData = allInvoices.filter(inv => invoiceIds.includes(inv.id))
     const totalAmount = selectedInvoiceData.reduce((sum, inv) => sum + (inv.pending_amount || inv.total), 0)
     
     setPaymentForm({
@@ -130,8 +124,11 @@ export default function AccountsPayablePage() {
       amount: totalAmount.toString(),
     })
     
-    try {
-      const response = await accountsPayableService.getDefaultRetentions(companyId)
+    setShowPaymentDialog(true)
+    setLoadingRetentions(true)
+    
+    accountsPayableService.getDefaultRetentions(companyId).then(response => {
+      setLoadingRetentions(false)
       if (response.is_retention_agent && response.auto_retentions?.length > 0) {
         setRetentions(response.auto_retentions.map((r: any) => ({
           type: r.type || 'other',
@@ -142,12 +139,10 @@ export default function AccountsPayablePage() {
       } else {
         setRetentions([])
       }
-    } catch (error) {
-      console.error('Error loading default retentions:', error)
+    }).catch(() => {
+      setLoadingRetentions(false)
       setRetentions([])
-    }
-    
-    setShowPaymentDialog(true)
+    })
   }
 
   const handleSubmitPayment = async () => {
@@ -163,7 +158,7 @@ export default function AccountsPayablePage() {
     try {
       // Pago múltiple: registrar pago para cada factura seleccionada
       if (selectedInvoices.length > 1) {
-        const selectedInvoiceData = invoices.filter(inv => selectedInvoices.includes(inv.id))
+        const selectedInvoiceData = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
         for (const invoice of selectedInvoiceData) {
           const invoiceAmount = invoice.pending_amount || invoice.total
           const retentionsWithAmounts = retentions.map(ret => {
@@ -215,14 +210,15 @@ export default function AccountsPayablePage() {
     }
   }
 
-  const handleGenerateTxt = async () => {
-    if (selectedInvoices.length === 0) {
+  const handleGenerateTxt = async (invoiceIds?: string[]) => {
+    const ids = invoiceIds || selectedInvoices
+    if (ids.length === 0) {
       toast.error('Selecciona al menos una factura')
       return
     }
     
     // Validar que todas las facturas tengan datos bancarios
-    const selectedInvoiceData = invoices.filter(inv => selectedInvoices.includes(inv.id))
+    const selectedInvoiceData = allInvoices.filter(inv => ids.includes(inv.id))
     const withoutBankData = selectedInvoiceData.filter(inv => !inv.has_bank_data)
     
     if (withoutBankData.length > 0) {
@@ -232,8 +228,9 @@ export default function AccountsPayablePage() {
       return
     }
     
+    setGeneratingTxt(true)
     try {
-      const blob = await accountsPayableService.generatePaymentTxt(companyId, selectedInvoices)
+      const blob = await accountsPayableService.generatePaymentTxt(companyId, ids)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -243,10 +240,11 @@ export default function AccountsPayablePage() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       toast.success('Archivo TXT generado')
-      setShowTxtDialog(false)
       setSelectedInvoices([])
     } catch (error) {
       toast.error('Error al generar archivo TXT')
+    } finally {
+      setGeneratingTxt(false)
     }
   }
 
@@ -291,46 +289,50 @@ export default function AccountsPayablePage() {
     return labels[type] || type
   }
 
-  const getFilteredInvoices = () => {
-    const filtered = invoices.filter(inv => {
-      // Excluir facturas anuladas (no se pueden pagar)
+  const filteredInvoices = useMemo(() => {
+    return allInvoices.filter(inv => {
       if (inv.status === 'cancelled') return false
-      
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
         if (filters.to_date && issueDate > new Date(filters.to_date)) return false
       }
       if (filters.search) {
-        const invoiceNumber = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`
-        const supplierName = inv.supplier?.business_name || (inv.supplier?.first_name && inv.supplier?.last_name ? `${inv.supplier.first_name} ${inv.supplier.last_name}` : null) || inv.issuerCompany?.business_name || inv.issuerCompany?.name || ''
-        const supplierCuit = inv.supplier?.document_number || inv.supplier?.national_id || inv.issuerCompany?.national_id || ''
-        const searchLower = filters.search.toLowerCase()
-        if (!invoiceNumber.toLowerCase().includes(searchLower) && 
-            !supplierName.toLowerCase().includes(searchLower) && 
-            !supplierCuit.includes(filters.search)) return false
+        const search = filters.search.toLowerCase()
+        const searchNum = filters.search.replace(/\D/g, '')
+        const invNum = `${inv.type || 'FC'} ${String(inv.sales_point || 0).padStart(4, '0')}-${String(inv.voucher_number || 0).padStart(8, '0')}`.toLowerCase()
+        const name = (inv.supplier?.business_name || inv.supplier?.first_name || inv.issuerCompany?.business_name || inv.issuerCompany?.name || '').toLowerCase()
+        const cuit = (inv.supplier?.document_number || inv.supplier?.national_id || inv.issuerCompany?.national_id || '').toString().replace(/\D/g, '')
+        if (!invNum.includes(search) && !name.includes(search) && !cuit.includes(searchNum)) return false
       }
       return true
     })
-    return filtered
-  }
+  }, [allInvoices, filters.from_date, filters.to_date, filters.search])
 
-  const getFilteredSummary = () => {
-    const filtered = getFilteredInvoices()
+  const summary = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    // Calcular totales del periodo filtrado
-    const totalPending = filtered.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount) || 0), 0)
-    const totalPayable = filtered.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
-    const totalPaid = filtered.reduce((sum, inv) => {
-      const total = parseFloat(inv.total) || 0
-      const pending = parseFloat(inv.pending_amount) || 0
-      return sum + (total - pending)
-    }, 0)
-    
-    // Calcular vencidas de las facturas filtradas
-    const overdue = filtered.filter(inv => {
+    const invoices = allInvoices.filter(inv => {
+      if (inv.status === 'cancelled') return false
+      if (filters.from_date || filters.to_date) {
+        const issueDate = new Date(inv.issue_date)
+        if (filters.from_date && issueDate < new Date(filters.from_date)) return false
+        if (filters.to_date && issueDate > new Date(filters.to_date)) return false
+      }
+      return true
+    })
+    const totalPending = invoices.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount) || 0), 0)
+    const totalPayable = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+    const filteredPayments = payments.filter(payment => {
+      if (filters.from_date || filters.to_date) {
+        const paymentDate = new Date(payment.payment_date)
+        if (filters.from_date && paymentDate < new Date(filters.from_date)) return false
+        if (filters.to_date && paymentDate > new Date(filters.to_date)) return false
+      }
+      return true
+    })
+    const totalPaid = filteredPayments.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0)
+    const overdue = invoices.filter(inv => {
       const dueDate = new Date(inv.due_date)
       dueDate.setHours(0, 0, 0, 0)
       return dueDate < today && inv.pending_amount > 0
@@ -343,7 +345,7 @@ export default function AccountsPayablePage() {
       overdue_count: overdue.length,
       overdue_amount: overdue.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount) || 0), 0)
     }
-  }
+  }, [allInvoices, payments, filters.from_date, filters.to_date])
 
   const getInvoiceStatusBadges = (invoice: any) => {
     const badges = []
@@ -387,26 +389,24 @@ export default function AccountsPayablePage() {
               <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded-xl animate-pulse"></div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-            <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
-          </div>
-          <div className="flex gap-2">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-11 w-32 bg-muted rounded-lg animate-pulse"></div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse"></div>
-            ))}
-          </div>
+          <DashboardCardsSkeleton />
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex gap-2">
+                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+                <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent>
+              <InvoiceListSkeleton count={5} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -428,11 +428,17 @@ export default function AccountsPayablePage() {
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={() => setShowTxtDialog(true)}
-              disabled={selectedInvoices.length === 0 || invoices.filter(inv => selectedInvoices.includes(inv.id)).some(inv => !inv.has_bank_data)}
+              onClick={() => handleGenerateTxt()}
+              disabled={generatingTxt || selectedInvoices.length === 0 || allInvoices.filter(inv => selectedInvoices.includes(inv.id)).some(inv => {
+                // Check has_bank_data flag or verify manually
+                if (inv.has_bank_data) return false
+                const bankData = inv.supplier || inv.issuerCompany
+                const hasBankData = bankData?.bank_name || bankData?.bank_cbu || bankData?.bank_account_number
+                return !hasBankData
+              })}
             >
               <Download className="h-4 w-4 mr-2" />
-              Generar TXT Homebanking {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+              {generatingTxt ? 'Generando...' : `Generar TXT Homebanking ${selectedInvoices.length > 0 ? `(${selectedInvoices.length})` : ''}`}
             </Button>
             <Button 
               onClick={() => {
@@ -449,9 +455,7 @@ export default function AccountsPayablePage() {
         </div>
 
         {/* Dashboard Cards */}
-        {dashboard && (() => {
-          const summary = getFilteredSummary()
-          return (
+        {dashboard && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -505,49 +509,41 @@ export default function AccountsPayablePage() {
                 </CardContent>
               </Card>
             </div>
-          )
-        })()}
+        )}
 
         {/* Filtros Globales */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={filters.from_date}
-                onChange={(e) => setFilters({...filters, from_date: e.target.value})}
-                className="w-40"
-                placeholder="Desde"
-              />
-              <Input
-                type="date"
-                value={filters.to_date}
-                onChange={(e) => setFilters({...filters, to_date: e.target.value})}
-                className="w-40"
-                placeholder="Hasta"
-              />
-              <Input
-                placeholder="Buscar por factura, proveedor o CUIT..."
-                value={filters.search}
-                onChange={(e) => setFilters({...filters, search: e.target.value})}
-                className="flex-1"
-              />
-              {(filters.from_date || filters.to_date || filters.search) && (
-                <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: ''})}>
-                  Limpiar
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Tip: Usa la pestaña "Por Proveedor" para ver facturas agrupadas
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex gap-2">
+          <Input
+            type="date"
+            value={filters.from_date}
+            onChange={(e) => setFilters({...filters, from_date: e.target.value})}
+            className="w-40"
+            placeholder="Desde"
+          />
+          <Input
+            type="date"
+            value={filters.to_date}
+            onChange={(e) => setFilters({...filters, to_date: e.target.value})}
+            className="w-40"
+            placeholder="Hasta"
+          />
+          <Input
+            placeholder="Buscar por número de factura o CUIT..."
+            value={filters.search}
+            onChange={(e) => setFilters({...filters, search: e.target.value})}
+            className="flex-1"
+          />
+          {(filters.from_date || filters.to_date || filters.search) && (
+            <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: ''})}>
+              Limpiar
+            </Button>
+          )}
+        </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
-            <TabsTrigger value="credits">Saldos a Favor Nuestros</TabsTrigger>
+            <TabsTrigger value="balances">Saldos</TabsTrigger>
             <TabsTrigger value="invoices">Facturas Pendientes</TabsTrigger>
             <TabsTrigger value="upcoming">Próximas a Vencer</TabsTrigger>
             <TabsTrigger value="overdue">Vencidas</TabsTrigger>
@@ -555,73 +551,31 @@ export default function AccountsPayablePage() {
             <TabsTrigger value="suppliers">Por Proveedor</TabsTrigger>
           </TabsList>
 
-          {/* Saldos a Favor Nuestros */}
-          <TabsContent value="credits" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Saldos a Favor Nuestros</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Facturas con NC/ND que generan crédito a nuestro favor
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {(() => {
-                    const creditsInvoices = getFilteredInvoices().filter(inv => (parseFloat(inv.balance_pending) || 0) < 0)
-                    return loading ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>Cargando...</p>
-                      </div>
-                    ) : creditsInvoices.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>No hay saldos a favor</p>
-                        <p className="text-xs mt-2">Los saldos a favor aparecen cuando se aplica una NC a una factura ya pagada</p>
-                      </div>
-                    ) : (
-                      creditsInvoices.map((invoice) => {
-                        const creditAmount = Math.abs(parseFloat(invoice.balance_pending) || 0)
-                        const supplierName = invoice.supplier?.business_name || (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) || invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || 'Proveedor'
-                        return (
-                          <div key={invoice.id} className="p-4 border rounded-lg bg-green-50/50">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="font-medium text-lg">{supplierName}</div>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Factura: {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-bold text-lg text-green-600">{formatCurrency(creditAmount)}</div>
-                                <Badge className="bg-green-600 text-white mt-1">Saldo a Favor</Badge>
-                              </div>
-                            </div>
-                            <div className="flex gap-4 text-sm text-muted-foreground pt-2 border-t">
-                              <div>
-                                <span className="font-medium">Total Original:</span> {formatCurrency(parseFloat(invoice.total) || 0)}
-                              </div>
-                              <div>
-                                <span className="font-medium">Pagado:</span> {formatCurrency((parseFloat(invoice.total) || 0) - (parseFloat(invoice.pending_amount) || 0))}
-                              </div>
-                            </div>
-                            <div className="mt-2 pt-2 border-t">
-                              <Button size="sm" variant="outline" onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}>
-                                Ver Detalle
-                              </Button>
-                            </div>
-                          </div>
-                        )
-                      })
-                    )
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Saldos */}
+          <TabsContent value="balances" className="space-y-4">
+            {balances ? (
+              <BalancesTab
+                creditNotes={balances.credit_notes || []}
+                debitNotes={balances.debit_notes || []}
+                summary={balances.summary}
+                formatCurrency={formatCurrency}
+                onView={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+                type="payable"
+                filters={filters}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">Cargando saldos...</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Facturas por Pagar */}
           <TabsContent value="invoices" className="space-y-4">
             <InvoiceList
-              invoices={getFilteredInvoices()}
+              invoices={filteredInvoices}
               selectedInvoices={selectedInvoices}
               onSelectionChange={setSelectedInvoices}
               onAction={(id) => {
@@ -638,43 +592,17 @@ export default function AccountsPayablePage() {
 
           {/* Próximas a Vencer */}
           <TabsContent value="upcoming" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-yellow-600">Próximas a Vencer (30 días)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {!dashboard?.upcoming_invoices || dashboard.upcoming_invoices.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay facturas próximas a vencer</p>
-                    </div>
-                  ) : (
-                    dashboard.upcoming_invoices.map((invoice: any) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-                      <div>
-                        <div className="font-medium">{invoice.supplier}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {invoice.voucher_number} • Vence en {invoice.days_until_due} días
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-yellow-600">{formatCurrency(invoice.pending_amount)}</div>
-                        <Button size="sm" variant="outline" onClick={() => {
-                          const fullInvoice = invoices.find(inv => inv.id === invoice.id)
-                          if (fullInvoice) {
-                            setSelectedInvoices([fullInvoice.id])
-                            handlePayInvoices([fullInvoice.id])
-                          }
-                        }}>
-                          Pagar
-                        </Button>
-                      </div>
-                    </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <UpcomingTab
+              invoices={filteredInvoices}
+              formatCurrency={formatCurrency}
+              onAction={(id) => {
+                setSelectedInvoices([id])
+                handlePayInvoices([id])
+              }}
+              type="payable"
+              selectedInvoices={selectedInvoices}
+              onSelectionChange={setSelectedInvoices}
+            />
           </TabsContent>
 
           {/* Pagos Realizados */}
@@ -689,58 +617,23 @@ export default function AccountsPayablePage() {
 
           {/* Facturas Vencidas */}
           <TabsContent value="overdue" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Facturas Vencidas</CardTitle>
-
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {!dashboard?.overdue_invoices || dashboard.overdue_invoices.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No hay facturas vencidas</p>
-                    </div>
-                  ) : (
-                    dashboard.overdue_invoices
-                      .filter((invoice: any) => {
-                        if (!filters.from_date && !filters.to_date) return true
-                        const issueDate = new Date(invoice.issue_date || invoice.due_date)
-                        if (filters.from_date && issueDate < new Date(filters.from_date)) return false
-                        if (filters.to_date && issueDate > new Date(filters.to_date)) return false
-                        return true
-                      })
-                      .map((invoice: any) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
-                      <div>
-                        <div className="font-medium">{invoice.supplier}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {invoice.voucher_number} • Vencida hace {invoice.days_overdue} días
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-red-600">{formatCurrency(invoice.pending_amount)}</div>
-                        <Button size="sm" variant="destructive" onClick={() => {
-                          const fullInvoice = invoices.find(inv => inv.id === invoice.id)
-                          if (fullInvoice) {
-                            setSelectedInvoices([fullInvoice.id])
-                            handlePayInvoices([fullInvoice.id])
-                          }
-                        }}>
-                          Pagar Urgente
-                        </Button>
-                      </div>
-                    </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <OverdueTab
+              invoices={filteredInvoices}
+              formatCurrency={formatCurrency}
+              onAction={(id) => {
+                setSelectedInvoices([id])
+                handlePayInvoices([id])
+              }}
+              type="payable"
+              selectedInvoices={selectedInvoices}
+              onSelectionChange={setSelectedInvoices}
+            />
           </TabsContent>
 
           {/* Por Proveedor */}
           <TabsContent value="suppliers" className="space-y-4">
             <ByEntityTab
-              invoices={getFilteredInvoices()}
+              invoices={filteredInvoices}
               formatCurrency={formatCurrency}
               onViewInvoices={(cuit) => {
                 setActiveTab('invoices')
@@ -751,31 +644,69 @@ export default function AccountsPayablePage() {
                 setSelectedInvoices([id])
                 handlePayInvoices([id])
               }}
+              onGenerateTxt={handleGenerateTxt}
               type="payable"
             />
           </TabsContent>
         </Tabs>
 
         {/* Payment Dialog */}
-        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <Dialog open={showPaymentDialog} onOpenChange={(open) => {
+          setShowPaymentDialog(open)
+          if (!open) {
+            setLoadingRetentions(false)
+            setPaymentDialogTab('payment')
+          }
+        }}>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Registrar Pago de Factura{selectedInvoices.length > 1 ? 's' : ''}</DialogTitle>
             </DialogHeader>
+            <ScrollArea className="max-h-[60vh] pr-4">
             
+            {loadingRetentions ? (
+              <div className="space-y-4 py-6">
+                <div className="bg-gray-100 p-4 rounded-lg space-y-2">
+                  <div className="h-4 w-48 bg-gray-300 rounded animate-pulse"></div>
+                  <div className="h-6 w-32 bg-gray-300 rounded animate-pulse"></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ) : (
             <Tabs value={paymentDialogTab} onValueChange={setPaymentDialogTab}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 mt-4">
                 <TabsTrigger value="payment">Pago</TabsTrigger>
                 <TabsTrigger value="details">Detalles</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="payment" className="space-y-4 mt-4">
+              <TabsContent value="payment" className="space-y-4 mt-2">
                 <form className="space-y-4">
                   {/* Resumen de Facturas */}
                   <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                     {selectedInvoices.length === 1 ? (
                       (() => {
-                        const invoice = invoices.find(inv => inv.id === selectedInvoices[0])
+                        const invoice = allInvoices.find(inv => inv.id === selectedInvoices[0])
                         const supplierName = invoice?.supplier?.business_name || 
                                            (invoice?.supplier?.first_name && invoice?.supplier?.last_name 
                                              ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` 
@@ -810,7 +741,7 @@ export default function AccountsPayablePage() {
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">Facturas Seleccionadas ({selectedInvoices.length})</p>
                           <div className="space-y-1 max-h-32 overflow-y-auto">
-                            {invoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
+                            {allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
                               <div key={invoice.id} className="flex justify-between text-xs p-2 bg-background rounded">
                                 <span>{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</span>
                                 <span className="font-medium">{formatCurrency(invoice.pending_amount || invoice.total)}</span>
@@ -830,10 +761,10 @@ export default function AccountsPayablePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Fecha de Pago *</Label>
-                      <Input
-                        type="date"
-                        value={paymentForm.payment_date}
-                        onChange={(e) => setPaymentForm({...paymentForm, payment_date: e.target.value})}
+                      <DatePicker
+                        date={paymentForm.payment_date ? new Date(paymentForm.payment_date) : undefined}
+                        onSelect={(date) => setPaymentForm({...paymentForm, payment_date: date ? date.toISOString().split('T')[0] : ''})}
+                        placeholder="Seleccionar fecha"
                       />
                     </div>
                     <div className="space-y-2">
@@ -872,6 +803,9 @@ export default function AccountsPayablePage() {
                       rows={2}
                     />
                   </div>
+                  
+                  <Separator />
+                  
                   {/* Retenciones */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -881,6 +815,7 @@ export default function AccountsPayablePage() {
                         onClick={() => setRetentions([...retentions, { type: 'other', name: '', rate: 0, baseType: 'net' }])} 
                         size="sm" 
                         variant="outline"
+                        disabled={loadingRetentions}
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Agregar
@@ -899,7 +834,7 @@ export default function AccountsPayablePage() {
                           const retAmount = base * (ret.rate || 0) / 100
                           
                           return (
-                            <div key={idx} className="border rounded-lg p-3 bg-muted/30">
+                            <div key={idx} className="rounded-lg p-3 bg-muted/30 border border-gray-200">
                               <div className="space-y-2">
                                 <div className="grid grid-cols-12 gap-2 items-end">
                                   <div className="col-span-5">
@@ -1043,12 +978,12 @@ export default function AccountsPayablePage() {
                 </form>
               </TabsContent>
               
-              <TabsContent value="details" className="space-y-4 mt-4">
+              <TabsContent value="details" className="space-y-4 mt-2">
                 <div className="space-y-4">
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <h4 className="font-semibold mb-3">Facturas Incluidas</h4>
                     <div className="space-y-2">
-                      {invoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => {
+                      {allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => {
                         const supplierName = invoice.supplier?.business_name || 
                                            (invoice.supplier?.first_name && invoice.supplier?.last_name 
                                              ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` 
@@ -1057,7 +992,7 @@ export default function AccountsPayablePage() {
                                            invoice.issuerCompany?.name ||
                                            'Sin nombre'
                         return (
-                          <div key={invoice.id} className="p-3 bg-background rounded-lg border">
+                          <div key={invoice.id} className="p-3 bg-background rounded-lg border border-gray-200">
                             <div className="flex justify-between items-start mb-2">
                               <div>
                                 <p className="font-medium">{supplierName}</p>
@@ -1080,41 +1015,50 @@ export default function AccountsPayablePage() {
                   </div>
                   
                   {selectedInvoices.length === 1 && (() => {
-                    const invoice = invoices.find(inv => inv.id === selectedInvoices[0])
-                    const supplier = invoice?.supplier
+                    const invoice = allInvoices.find(inv => inv.id === selectedInvoices[0])
+                    // Try supplier first, then issuerCompany (for connected companies)
+                    const bankData = invoice?.supplier || invoice?.issuerCompany
+                    const hasBankData = bankData?.bank_name || bankData?.bank_cbu || bankData?.bank_account_number
+                    
                     return (
-                      <div className="bg-muted/50 p-4 rounded-lg">
+                      <div className="bg-muted/50 p-4 rounded-lg border border-gray-200">
                         <h4 className="font-semibold mb-3">Datos Bancarios del Proveedor</h4>
-                        {supplier?.bank_name || supplier?.bank_cbu || supplier?.bank_account_number ? (
+                        {hasBankData ? (
                           <div className="space-y-2 text-sm">
-                            {supplier.bank_name && (
+                            {bankData.bank_name && (
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Banco:</span>
-                                <span className="font-medium">{supplier.bank_name}</span>
+                                <span className="font-medium">{bankData.bank_name}</span>
                               </div>
                             )}
-                            {supplier.bank_cbu && (
+                            {bankData.bank_cbu && (
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">CBU:</span>
-                                <span className="font-mono font-medium">{supplier.bank_cbu}</span>
+                                <span className="font-mono font-medium">{bankData.bank_cbu}</span>
                               </div>
                             )}
-                            {supplier.bank_account_number && (
+                            {bankData.bank_account_number && (
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Cuenta:</span>
-                                <span className="font-mono font-medium">{supplier.bank_account_number}</span>
+                                <span className="font-mono font-medium">{bankData.bank_account_number}</span>
                               </div>
                             )}
-                            {supplier.bank_account_type && (
+                            {bankData.bank_account_type && (
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Tipo:</span>
-                                <span className="font-medium">{supplier.bank_account_type === 'checking' ? 'Cuenta Corriente' : 'Caja de Ahorro'}</span>
+                                <span className="font-medium">
+                                  {bankData.bank_account_type === 'checking' || bankData.bank_account_type === 'CC' 
+                                    ? 'Cuenta Corriente' 
+                                    : bankData.bank_account_type === 'CA' 
+                                    ? 'Caja de Ahorro'
+                                    : bankData.bank_account_type}
+                                </span>
                               </div>
                             )}
-                            {supplier.bank_alias && (
+                            {bankData.bank_alias && (
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">Alias:</span>
-                                <span className="font-medium">{supplier.bank_alias}</span>
+                                <span className="font-medium">{bankData.bank_alias}</span>
                               </div>
                             )}
                           </div>
@@ -1122,7 +1066,13 @@ export default function AccountsPayablePage() {
                           <div className="text-center py-4 text-sm text-muted-foreground">
                             <AlertCircle className="h-8 w-8 mx-auto mb-2 text-orange-500" />
                             <p>No hay datos bancarios registrados</p>
-                            <p className="text-xs mt-1">Complete los datos en Mis Proveedores</p>
+                            <p className="text-xs mt-1">
+                              {invoice?.supplier 
+                                ? 'Complete los datos en Mis Proveedores'
+                                : invoice?.issuerCompany
+                                ? 'La empresa conectada no tiene datos bancarios configurados'
+                                : 'Complete los datos bancarios del proveedor'}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -1130,7 +1080,7 @@ export default function AccountsPayablePage() {
                   })()}
                   
                   {selectedInvoices.length > 1 && (
-                    <div className="bg-muted/50 p-4 rounded-lg">
+                    <div className="bg-muted/50 p-4 rounded-lg border border-gray-200">
                       <h4 className="font-semibold mb-3">Resumen del Pago</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -1139,7 +1089,7 @@ export default function AccountsPayablePage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Proveedores Únicos:</span>
-                          <span className="font-semibold">{new Set(invoices.filter(inv => selectedInvoices.includes(inv.id)).map(inv => inv.supplier_id || inv.issuer_company_id)).size}</span>
+                          <span className="font-semibold">{new Set(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map(inv => inv.supplier_id || inv.issuer_company_id)).size}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between">
@@ -1152,29 +1102,18 @@ export default function AccountsPayablePage() {
                 </div>
               </TabsContent>
             </Tabs>
+            )
+            }
+            </ScrollArea>
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPaymentDialog(false)} disabled={submitting}>Cancelar</Button>
-              <Button onClick={handleSubmitPayment} disabled={submitting}>{submitting ? 'Registrando...' : 'Registrar Pago'}</Button>
+              <Button variant="outline" onClick={() => setShowPaymentDialog(false)} disabled={submitting || loadingRetentions}>Cancelar</Button>
+              <Button onClick={handleSubmitPayment} disabled={submitting || loadingRetentions}>{submitting ? 'Registrando...' : 'Registrar Pago'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* TXT Generation Dialog */}
-        <Dialog open={showTxtDialog} onOpenChange={setShowTxtDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Generar Archivo TXT para Homebanking</DialogTitle>
-              <DialogDescription>
-                Se generará un archivo TXT con las facturas seleccionadas ({selectedInvoices.length})
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowTxtDialog(false)}>Cancelar</Button>
-              <Button onClick={handleGenerateTxt}>Generar TXT</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+
       </div>
     </div>
   )

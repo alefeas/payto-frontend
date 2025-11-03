@@ -1414,8 +1414,8 @@ export default function CreateInvoicePage() {
                 {selectedInvoice && (
                   <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
                     <span>Saldo Disponible:</span>
-                    <span className={totals.total > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>
-                      {getCurrencySymbol(formData.currency)}{selectedInvoice.available_balance.toLocaleString('es-AR')}
+                    <span className={totals.total > (selectedInvoice.available_balance || 0) ? 'text-red-600 font-bold' : 'text-green-600'}>
+                      {getCurrencySymbol(formData.currency)}{(selectedInvoice.available_balance || 0).toLocaleString('es-AR')}
                     </span>
                   </div>
                 )}

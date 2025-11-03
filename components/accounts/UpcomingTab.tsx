@@ -1,20 +1,19 @@
 "use client"
 
+import { InvoiceCard } from "@/components/accounts/InvoiceCard"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Calendar } from "lucide-react"
 
 interface UpcomingTabProps {
   invoices: any[]
   formatCurrency: (amount: number) => string
   onAction: (id: string) => void
   type: 'receivable' | 'payable'
+  selectedInvoices?: string[]
+  onSelectionChange?: (ids: string[]) => void
 }
 
-export function UpcomingTab({ invoices, formatCurrency, onAction, type }: UpcomingTabProps) {
-  const entityKey = type === 'receivable' ? 'client' : 'supplier'
-  const companyKey = type === 'receivable' ? 'receiverCompany' : 'issuerCompany'
-  const entityLabel = type === 'receivable' ? 'Cliente' : 'Proveedor'
-
+export function UpcomingTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange }: UpcomingTabProps) {
   const upcomingInvoices = invoices.filter(inv => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -27,46 +26,58 @@ export function UpcomingTab({ invoices, formatCurrency, onAction, type }: Upcomi
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Próximos Vencimientos (30 días)</h3>
-      <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-orange-500" />
+            <h3 className="text-lg font-semibold">Próximos Vencimientos (30 días)</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {upcomingInvoices.length} factura{upcomingInvoices.length !== 1 ? 's' : ''} próxima{upcomingInvoices.length !== 1 ? 's' : ''} a vencer
+          </p>
+        </div>
+        {onSelectionChange && upcomingInvoices.length > 0 && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              if (selectedInvoices.length === upcomingInvoices.length) {
+                onSelectionChange([])
+              } else {
+                onSelectionChange(upcomingInvoices.map(inv => inv.id))
+              }
+            }}
+          >
+            {selectedInvoices.length === upcomingInvoices.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
+          </Button>
+        )}
+      </div>
+      <div className="space-y-2">
         {upcomingInvoices.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p>No hay facturas próximas a vencer</p>
           </div>
         ) : (
-          upcomingInvoices.map((invoice) => {
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
-            const dueDate = new Date(invoice.due_date)
-            dueDate.setHours(0, 0, 0, 0)
-            const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-            const entity = invoice[entityKey] || invoice[companyKey]
-            const entityName = (type === 'receivable' ? invoice.receiver_name : null) ||
-                             entity?.business_name || 
-                             entity?.name ||
-                             (entity?.first_name && entity?.last_name ? `${entity.first_name} ${entity.last_name}` : null) ||
-                             entityLabel
-            
-            return (
-              <div key={invoice.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-blue-50/50 hover:border-blue-200 transition-all">
-                <div>
-                  <div className="font-medium">{entityName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                  </div>
-                  <Badge variant="outline" className="mt-2 text-xs">Vence en {daysUntilDue} día{daysUntilDue !== 1 ? 's' : ''}</Badge>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="font-bold text-lg">{formatCurrency(invoice.pending_amount || invoice.total)}</div>
-                  </div>
-                  <Button size="sm" onClick={() => onAction(invoice.id)}>
-                    {type === 'receivable' ? 'Cobrar' : 'Pagar'}
-                  </Button>
-                </div>
-              </div>
-            )
-          })
+          upcomingInvoices.map((invoice) => (
+            <InvoiceCard
+              key={invoice.id}
+              invoice={invoice}
+              formatCurrency={formatCurrency}
+              variant="upcoming"
+              type={type}
+              selected={selectedInvoices.includes(invoice.id)}
+              onSelect={(id, checked) => {
+                if (onSelectionChange) {
+                  if (checked) {
+                    onSelectionChange([...selectedInvoices, id])
+                  } else {
+                    onSelectionChange(selectedInvoices.filter(i => i !== id))
+                  }
+                }
+              }}
+            />
+          ))
         )}
       </div>
     </div>

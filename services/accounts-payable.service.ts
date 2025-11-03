@@ -173,5 +173,41 @@ export const accountsPayableService = {
   async getDefaultRetentions(companyId: string): Promise<{ is_retention_agent: boolean, auto_retentions: Array<{ type: string, name: string, rate: number, baseType: string }> }> {
     const response = await apiClient.get(`/companies/${companyId}/accounts-payable/default-retentions`)
     return response.data.data
+  },
+
+  async getBalances(companyId: string): Promise<{
+    credit_notes: Array<{
+      id: string
+      type: string
+      number: string
+      voucher_number: string
+      issue_date: string
+      due_date: string
+      supplier_name: string
+      total: number
+      balance_type: 'credit' | 'debit'
+      description: string
+    }>
+    debit_notes: Array<{
+      id: string
+      type: string
+      number: string
+      voucher_number: string
+      issue_date: string
+      due_date: string
+      supplier_name: string
+      total: number
+      balance_type: 'credit' | 'debit'
+      description: string
+    }>
+    summary: {
+      total_credits: number
+      total_debits: number
+      net_balance: number
+      net_balance_type: 'credit' | 'debit'
+    }
+  }> {
+    const response = await apiClient.get(`/companies/${companyId}/accounts-payable/balances`)
+    return response.data.data
   }
 }
