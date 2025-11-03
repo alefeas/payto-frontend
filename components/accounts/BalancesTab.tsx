@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, TrendingDown, TrendingUp } from "lucide-react"
+import { Eye, TrendingDown, TrendingUp, FileText } from "lucide-react"
 
 interface BalanceItem {
   id: string
@@ -67,6 +67,12 @@ export function BalancesTab({
   
   return (
     <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold">Saldos de NC/ND</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {filteredCreditNotes.length + filteredDebitNotes.length} nota{(filteredCreditNotes.length + filteredDebitNotes.length) !== 1 ? 's' : ''} sin asociar
+        </p>
+      </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -258,13 +264,11 @@ export function BalancesTab({
 
       {/* Empty State */}
       {filteredCreditNotes.length === 0 && filteredDebitNotes.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              No hay notas de crédito o débito sin factura asociada.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12 text-muted-foreground">
+          <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
+          <p>No hay notas de crédito o débito sin factura asociada</p>
+          <p className="text-xs mt-2">Las NC/ND sin asociar aparecerán aquí</p>
+        </div>
       )}
     </div>
   )

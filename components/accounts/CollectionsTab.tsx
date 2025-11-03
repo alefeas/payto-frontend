@@ -39,13 +39,16 @@ export function CollectionsTab({ collections, formatCurrency, filters, type }: C
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-semibold text-green-700">Historial de {type === 'receivable' ? 'Cobros' : 'Pagos'}</h3>
+        <div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <h3 className="text-lg font-semibold text-green-700">Historial de {type === 'receivable' ? 'Cobros' : 'Pagos'}</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filteredCollections.length} {type === 'receivable' ? 'cobro' : 'pago'}{filteredCollections.length !== 1 ? 's' : ''} registrado{filteredCollections.length !== 1 ? 's' : ''}
+          </p>
+          <p className="text-2xl font-bold mt-2">{formatCurrency(filteredCollections.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}</p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {filteredCollections.length} {type === 'receivable' ? 'cobro' : 'pago'}{filteredCollections.length !== 1 ? 's' : ''} registrado{filteredCollections.length !== 1 ? 's' : ''}
-        </p>
       </div>
       <div className="space-y-2">
         {filteredCollections.length === 0 ? (

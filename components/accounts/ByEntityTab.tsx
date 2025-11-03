@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Eye } from "lucide-react"
+import { Eye, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -65,11 +65,18 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Resumen por {entityLabel}</h3>
+      <div>
+        <h3 className="text-lg font-semibold">Resumen por {entityLabel}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {entitiesArray.length} {entityLabel.toLowerCase()}{entitiesArray.length !== 1 ? 's' : ''} con facturas pendientes
+        </p>
+      </div>
       <div className="space-y-3">
         {entitiesArray.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
+            <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p>No hay datos por {entityLabel.toLowerCase()}</p>
+            <p className="text-xs mt-2">Los {entityLabel.toLowerCase()}s con facturas pendientes aparecerán aquí</p>
           </div>
         ) : (
           entitiesArray.map((entity: any) => {

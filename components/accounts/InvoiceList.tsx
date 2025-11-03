@@ -1,6 +1,6 @@
 "use client"
 
-import { Eye } from "lucide-react"
+import { Eye, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -70,11 +70,10 @@ export function InvoiceList({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Facturas Pendientes</h3>
-          {selectedInvoices.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} seleccionada{selectedInvoices.length !== 1 ? 's' : ''}
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground mt-1">
+            {invoices.length} factura{invoices.length !== 1 ? 's' : ''} pendiente{invoices.length !== 1 ? 's' : ''}
+            {selectedInvoices.length > 0 && ` • ${selectedInvoices.length} seleccionada${selectedInvoices.length !== 1 ? 's' : ''}`}
+          </p>
         </div>
         {invoices.length > 0 && (
           <Button 
@@ -120,7 +119,9 @@ export function InvoiceList({
           </div>
         ) : invoices.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p>No hay facturas pendientes</p>
+            <p className="text-xs mt-2">Las facturas pendientes de {type === 'receivable' ? 'cobro' : 'pago'} aparecerán aquí</p>
           </div>
         ) : (
           invoices.map((invoice) => (

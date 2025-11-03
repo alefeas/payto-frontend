@@ -27,6 +27,7 @@ import { accountsReceivableService } from "@/services/accounts-receivable.servic
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DatePicker } from "@/components/ui/date-picker"
+import { InvoiceListSkeleton, DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
 
 export default function AccountsReceivablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -282,26 +283,24 @@ export default function AccountsReceivablePage() {
             </div>
             <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded-xl animate-pulse"></div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-            <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
-          </div>
-          <div className="flex gap-2">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-11 w-32 bg-muted rounded-lg animate-pulse"></div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse"></div>
-            ))}
-          </div>
+          <DashboardCardsSkeleton />
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex gap-2">
+                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+                <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent>
+              <InvoiceListSkeleton count={5} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     )

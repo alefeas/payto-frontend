@@ -543,12 +543,12 @@ export default function AccountsPayablePage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
-            <TabsTrigger value="balances">Saldos</TabsTrigger>
             <TabsTrigger value="invoices">Facturas Pendientes</TabsTrigger>
             <TabsTrigger value="upcoming">Próximas a Vencer</TabsTrigger>
             <TabsTrigger value="overdue">Vencidas</TabsTrigger>
             <TabsTrigger value="payments">Pagos Realizados</TabsTrigger>
             <TabsTrigger value="suppliers">Por Proveedor</TabsTrigger>
+            <TabsTrigger value="balances">Saldos</TabsTrigger>
           </TabsList>
 
           {/* Saldos */}

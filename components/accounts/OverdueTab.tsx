@@ -55,6 +55,7 @@ export function OverdueTab({ invoices, formatCurrency, onAction, type, selectedI
           <div className="text-center py-12 text-muted-foreground">
             <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p>No hay facturas vencidas</p>
+            <p className="text-xs mt-2">¡Excelente! Todas tus facturas están al día</p>
           </div>
         ) : (
           overdueInvoices.map((invoice) => (

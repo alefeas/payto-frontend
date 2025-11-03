@@ -27,7 +27,7 @@ export function InvoiceListSkeleton({ count = 5 }: { count?: number }) {
                 </div>
                 <Skeleton className="h-8 w-24" />
               </div>
-              <div className="flex gap-4 pt-2 border-t">
+              <div className="flex gap-4 pt-2">
                 <Skeleton className="h-3 w-32" />
                 <Skeleton className="h-3 w-28" />
                 <Skeleton className="h-3 w-24" />

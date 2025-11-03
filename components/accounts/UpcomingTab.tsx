@@ -30,7 +30,7 @@ export function UpcomingTab({ invoices, formatCurrency, onAction, type, selected
         <div>
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-orange-500" />
-            <h3 className="text-lg font-semibold">Próximos Vencimientos (30 días)</h3>
+            <h3 className="text-lg font-semibold text-orange-500">Próximos Vencimientos (30 días)</h3>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             {upcomingInvoices.length} factura{upcomingInvoices.length !== 1 ? 's' : ''} próxima{upcomingInvoices.length !== 1 ? 's' : ''} a vencer
@@ -57,6 +57,7 @@ export function UpcomingTab({ invoices, formatCurrency, onAction, type, selected
           <div className="text-center py-12 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p>No hay facturas próximas a vencer</p>
+            <p className="text-xs mt-2">Las facturas que venzan en los próximos 30 días aparecerán aquí</p>
           </div>
         ) : (
           upcomingInvoices.map((invoice) => (
