@@ -45,11 +45,13 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
   }, [companyId]);
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.read) {
-      await notificationService.markAsRead(notification.id);
+    const success = await notificationService.markAsRead(notification.id);
+    if (success) {
+      // Refresh notifications after marking as read
       fetchNotifications();
     }
-
+    
+    // Navigate based on entity type or notification type
     const { entityType, entityId } = notification.data;
     if (entityType === 'invoice' && entityId) {
       router.push(`/company/${companyId}/invoices/${entityId}`);
@@ -57,14 +59,32 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
       router.push(`/company/${companyId}/payments/${entityId}`);
     } else if (entityType === 'connection' && entityId) {
       router.push(`/company/${companyId}/network`);
+    } else if (notification.type === 'invoice_due_soon' || notification.type === 'invoice_overdue' || notification.type === 'invoice_due_reminder') {
+      router.push(`/company/${companyId}/invoices?status=due`);
+    } else if (notification.type === 'invoice_status_changed') {
+      if (entityId) {
+        router.push(`/company/${companyId}/invoices/${entityId}`);
+      } else {
+        router.push(`/company/${companyId}/invoices`);
+      }
+    } else if (notification.type === 'payment_status_changed') {
+      if (entityId) {
+        router.push(`/company/${companyId}/payments/${entityId}`);
+      } else {
+        router.push(`/company/${companyId}/payments`);
+      }
+    } else if (notification.type === 'system_alert' || notification.type === 'invoice_needs_review') {
+      router.push(`/company/${companyId}/dashboard`);
     }
-
+    
     setIsOpen(false);
   };
 
   const handleMarkAllAsRead = async () => {
-    await notificationService.markAllAsRead(companyId);
-    fetchNotifications();
+    const success = await notificationService.markAllAsRead(companyId);
+    if (success) {
+      fetchNotifications();
+    }
   };
 
   return (

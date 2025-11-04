@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { notificationService, Notification } from '@/services/notification.service';
 import { NotificationItem } from '@/components/notifications/notification-item';
+import { NotificationSettings } from '@/components/notifications/notification-settings';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRouter, useParams } from 'next/navigation';
+import { Bell, CheckCheck, Settings, Users, FileText, CreditCard, AlertTriangle, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 export default function NotificationsPage() {
   const params = useParams();
+  const router = useRouter();
   const companyId = params.id as string;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const fetchNotifications = async () => {
     try {
@@ -65,32 +69,87 @@ export default function NotificationsPage() {
     )
   }
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead(companyId);
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const renderNotifications = (unreadOnly = false) => {
+    const filtered = unreadOnly
+      ? notifications.filter(n => !n.read)
+      : notifications;
+
+    if (filtered.length === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          No hay notificaciones
+        </div>
+      );
+    }
+
+    return (
+      <div className="border rounded-lg divide-y">
+        {filtered.map((notification) => (
+          <NotificationItem
+            key={notification.id}
+            notification={notification}
+            onClick={() => handleNotificationClick(notification)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Notificaciones</h1>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Notificaciones</h1>
+        <Button
+          onClick={handleMarkAllAsRead}
+          disabled={notifications.length === 0}
+          variant="outline"
+          size="sm"
+        >
+          <CheckCheck className="h-4 w-4 mr-2" />
+          Marcar todas como leídas
+        </Button>
+      </div>
 
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
+      <Tabs defaultValue="notifications" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="unread">No leídas</TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center space-x-2">
+            <Bell className="h-4 w-4" />
+            <span>Notificaciones</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Configuración</span>
+          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value={filter} className="mt-6">
-          {notifications.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              No hay notificaciones
-            </div>
-          ) : (
-            <div className="border rounded-lg divide-y">
-              {notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onClick={() => handleNotificationClick(notification)}
-                />
-              ))}
-            </div>
-          )}
+        
+        <TabsContent value="notifications" className="space-y-4">
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
+            <TabsList>
+              <TabsTrigger value="all">Todas</TabsTrigger>
+              <TabsTrigger value="unread">No leídas</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="space-y-4 mt-4">
+              {renderNotifications()}
+            </TabsContent>
+            
+            <TabsContent value="unread" className="space-y-4 mt-4">
+              {renderNotifications(true)}
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+        
+        <TabsContent value="settings" className="space-y-4">
+          <NotificationSettings companyId={companyId} />
         </TabsContent>
       </Tabs>
     </div>
