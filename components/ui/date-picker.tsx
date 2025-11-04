@@ -31,13 +31,16 @@ export function DatePicker({
   minDate,
   maxDate,
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false)
+  const [month, setMonth] = React.useState<Date>(date || new Date())
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
           className={cn(
-            "w-full justify-start text-left font-normal",
+            "w-full justify-start text-left font-normal h-10",
             !date && "text-muted-foreground"
           )}
           disabled={disabled}
@@ -46,11 +49,14 @@ export function DatePicker({
           {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={onSelect}
+          onSelect={(selectedDate) => {
+            onSelect(selectedDate)
+            setOpen(false)
+          }}
           disabled={(date) => {
             if (minDate && date < minDate) return true
             if (maxDate && date > maxDate) return true
@@ -58,6 +64,8 @@ export function DatePicker({
           }}
           initialFocus
           locale={es}
+          month={month}
+          onMonthChange={setMonth}
         />
       </PopoverContent>
     </Popover>

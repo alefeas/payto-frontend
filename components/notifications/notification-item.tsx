@@ -3,6 +3,7 @@ import { es } from 'date-fns/locale';
 import { Bell, FileText, CreditCard, Users } from 'lucide-react';
 import { Notification } from '@/services/notification.service';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -32,12 +33,15 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
       )}
     >
       <div className="flex gap-3">
-        <div className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+        <Avatar className={cn(
           !notification.read ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"
         )}>
-          {getIcon()}
-        </div>
+          <AvatarFallback className={cn(
+            !notification.read ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"
+          )}>
+            {getIcon()}
+          </AvatarFallback>
+        </Avatar>
         <div className="flex-1 min-w-0">
           <p className={cn(
             "text-sm",
@@ -45,6 +49,9 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
           )}>
             {notification.title}
           </p>
+          {!notification.read && (
+            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-2" />
+          )}
           <p className="text-xs text-muted-foreground mt-1">
             {notification.companyName}
           </p>

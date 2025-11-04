@@ -18,8 +18,7 @@ import { companyService } from "@/services/company.service"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ClientForm } from "@/components/clients/ClientForm"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
-import { ClientSelector } from "@/components/invoices/ClientSelector"
-import { SupplierSelector } from "@/components/invoices/SupplierSelector"
+import { EntitySelector } from "@/components/invoices/EntitySelector"
 import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
 
 interface ManualInvoiceFormProps {
@@ -417,9 +416,10 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 <CardDescription>Seleccioná el proveedor que emitió la factura</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <SupplierSelector
+                <EntitySelector
+                mode="supplier"
                 companyId={companyId}
-                savedSuppliers={suppliers}
+                savedEntities={suppliers}
                 connectedCompanies={connectedCompanies.map(c => ({
                   id: c.id,
                   name: c.name,
@@ -428,15 +428,15 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 }))}
                 isLoading={loadingSuppliers}
                 onSelect={(data) => {
-                  if (data.supplier_id) {
-                    setSelectedSupplier(data.supplier_id)
+                  if (data.entity_id) {
+                    setSelectedSupplier(data.entity_id)
                     setSelectedCompany('')
                   } else if (data.issuer_company_id) {
                     setSelectedCompany(data.issuer_company_id)
                     setSelectedSupplier('')
                   }
                 }}
-                onSupplierCreated={loadSuppliers}
+                onEntityCreated={loadSuppliers}
                 />
                 {selectedCompany && (
                   <Alert>
@@ -461,7 +461,8 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 <CardDescription>Seleccioná el cliente o empresa a la que se emitió la factura</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <ClientSelector
+                <EntitySelector
+                mode="client"
                 companyId={companyId}
                 connectedCompanies={connectedCompanies.map(c => ({
                   id: c.id,
@@ -470,21 +471,21 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   cuit: c.national_id,
                   taxCondition: c.tax_condition
                 }))}
-                savedClients={clients}
+                savedEntities={clients}
                 isLoading={loadingClients}
                 onSelect={(data) => {
                   if (data.receiver_company_id) {
                     setSelectedCompany(data.receiver_company_id)
                     setSelectedClient('')
-                  } else if (data.client_id) {
-                    setSelectedClient(data.client_id)
+                  } else if (data.entity_id) {
+                    setSelectedClient(data.entity_id)
                     setSelectedCompany('')
                   } else {
                     setSelectedClient('')
                     setSelectedCompany('')
                   }
                 }}
-                onClientCreated={loadClients}
+                onEntityCreated={loadClients}
                 />
                 {selectedCompany && (
                   <Alert>
@@ -861,8 +862,8 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
               <CardTitle>Ítems de la Factura</CardTitle>
               <CardDescription>Detalle de productos o servicios</CardDescription>
             </div>
-            <Button type="button" onClick={addItem} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button type="button" onClick={addItem} size="sm" variant="outline">
+              <Plus className="h-4 w-4" />
               Agregar Ítem
             </Button>
           </div>
@@ -996,7 +997,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
               <CardDescription>Percepciones aplicables según jurisdicción</CardDescription>
             </div>
             <Button type="button" onClick={addPerception} size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Agregar Percepción
             </Button>
           </div>

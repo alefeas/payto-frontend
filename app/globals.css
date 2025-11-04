@@ -268,4 +268,9 @@
     background-color: hsl(var(--background)) !important;
     border: 1px solid hsl(var(--border)) !important;
   }
+  
+  /* Fix popover rendering */
+  [data-radix-popover-content] {
+    z-index: 50 !important;
+  }
 }

@@ -6,7 +6,7 @@ import { Plus, Trash2, Calculator, FileText, Shield, Loader2, Download } from "l
 
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -15,7 +15,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import type { Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
-import { ClientSelector } from "@/components/invoices/ClientSelector"
+import { EntitySelector } from "@/components/invoices/EntitySelector"
 import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { companyService } from "@/services/company.service"
@@ -650,7 +650,7 @@ export default function CreateInvoicePage() {
   if (isLoadingData) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse" />
             <div className="space-y-2">
@@ -667,7 +667,7 @@ export default function CreateInvoicePage() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
@@ -698,14 +698,14 @@ export default function CreateInvoicePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datos Básicos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información General</CardTitle>
-              <CardDescription>Seleccione el tipo de comprobante</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 flex-1">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold">Información General</h2>
+              <p className="text-sm text-muted-foreground">Seleccione el tipo de comprobante</p>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
                   <Label className="h-4 flex items-center">Tipo de Comprobante *</Label>
                   <Select 
                     value={formData.voucherType} 
@@ -734,7 +734,7 @@ export default function CreateInvoicePage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2 flex-1">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="h-4 flex items-center">Punto de Venta *</Label>
                     <div className="flex gap-1">
@@ -802,6 +802,28 @@ export default function CreateInvoicePage() {
                         </p>
                       )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Concepto *</Label>
+                  <Select 
+                    value={formData.concept} 
+                    onValueChange={(value: InvoiceConcept) => 
+                      setFormData({...formData, concept: value})}
+                    disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="products">Productos</SelectItem>
+                      <SelectItem value="services">Servicios</SelectItem>
+                      <SelectItem value="products_services">Productos y Servicios</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isNoteType && associateInvoice && selectedInvoice && (
+                    <p className="text-xs text-blue-600">
+                      Heredado de la factura asociada
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Número de Comprobante (readonly) */}
@@ -827,88 +849,161 @@ export default function CreateInvoicePage() {
                 </div>
               )}
 
-              {/* Concepto y Moneda */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Concepto *</Label>
-                  <Select 
-                    value={formData.concept} 
-                    onValueChange={(value: InvoiceConcept) => 
-                      setFormData({...formData, concept: value})}
-                    disabled={isNoteType && associateInvoice && !!selectedInvoice}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="products">Productos</SelectItem>
-                      <SelectItem value="services">Servicios</SelectItem>
-                      <SelectItem value="products_services">Productos y Servicios</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {isNoteType && associateInvoice && selectedInvoice && (
-                    <p className="text-xs text-blue-600">
-                      Heredado de la factura asociada
-                    </p>
-                  )}
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div className="space-y-2">
                 <Label>Moneda *</Label>
-                <div className="flex gap-2">
-                  <Select 
-                    value={formData.currency} 
-                    onValueChange={(value: Currency) => 
-                      setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '1' : formData.exchangeRate})}
-                    disabled={isNoteType && associateInvoice && !!selectedInvoice}
-                  >
-                    <SelectTrigger className="flex-1 h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ARS">ARS</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="9999.9999"
-                    placeholder="Cotización"
-                    value={formData.exchangeRate || ''}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      if (value.length <= 10) {
-                        setFormData({...formData, exchangeRate: value})
-                      }
-                    }}
-                    disabled={formData.currency === 'ARS' || (isNoteType && associateInvoice && !!selectedInvoice)}
-                    className="flex-1 h-10"
-                  />
-                </div>
+                <Select 
+                  value={formData.currency} 
+                  onValueChange={(value: Currency) => 
+                    setFormData({...formData, currency: value, exchangeRate: value === 'ARS' ? '1' : formData.exchangeRate})}
+                  disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ARS">ARS</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
                 {isNoteType && associateInvoice && selectedInvoice && (
                   <p className="text-xs text-blue-600">
                     Heredado de la factura asociada
                   </p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label>Cotización</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.9999"
+                  placeholder="1.00"
+                  value={formData.exchangeRate || ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value.length <= 10) {
+                      setFormData({...formData, exchangeRate: value})
+                    }
+                  }}
+                  disabled={formData.currency === 'ARS' || (isNoteType && associateInvoice && !!selectedInvoice)}
+                  className="h-10"
+                />
               </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="emissionDate">Fecha de Emisión *</Label>
+                <DatePicker
+                  date={formData.emissionDate ? new Date(formData.emissionDate + 'T00:00:00') : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear()
+                      const month = String(date.getMonth() + 1).padStart(2, '0')
+                      const day = String(date.getDate()).padStart(2, '0')
+                      setFormData({...formData, emissionDate: `${year}-${month}-${day}`})
+                    } else {
+                      setFormData({...formData, emissionDate: ''})
+                    }
+                  }}
+                  placeholder="Seleccionar fecha"
+                  minDate={selectedInvoice ? new Date(selectedInvoice.issue_date + 'T00:00:00') : undefined}
+                  maxDate={new Date()}
+                />
+                <p className="text-xs text-blue-600">
+                  No se permiten fechas futuras según normativa AFIP
+                </p>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
+                <DatePicker
+                  date={formData.dueDate ? new Date(formData.dueDate + 'T00:00:00') : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear()
+                      const month = String(date.getMonth() + 1).padStart(2, '0')
+                      const day = String(date.getDate()).padStart(2, '0')
+                      setFormData({...formData, dueDate: `${year}-${month}-${day}`})
+                    } else {
+                      setFormData({...formData, dueDate: ''})
+                    }
+                  }}
+                  placeholder="Seleccionar fecha"
+                  minDate={formData.emissionDate ? new Date(formData.emissionDate + 'T00:00:00') : new Date()}
+                />
+              </div>
+            </div>
+
+            {(formData.concept === 'services' || formData.concept === 'products_services') && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="space-y-2">
+                  <Label htmlFor="serviceDateFrom">Fecha Servicio Desde *</Label>
+                    <DatePicker
+                      date={formData.serviceDateFrom ? new Date(formData.serviceDateFrom + 'T00:00:00') : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const year = date.getFullYear()
+                          const month = String(date.getMonth() + 1).padStart(2, '0')
+                          const day = String(date.getDate()).padStart(2, '0')
+                          setFormData({...formData, serviceDateFrom: `${year}-${month}-${day}`})
+                        } else {
+                          setFormData({...formData, serviceDateFrom: ''})
+                        }
+                      }}
+                      placeholder="Fecha inicio del servicio"
+                      disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                    />
+                    {isNoteType && associateInvoice && selectedInvoice && (
+                      <p className="text-xs text-blue-600">
+                        Heredado de la factura asociada
+                      </p>
+                    )}
+                  </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="serviceDateTo">Fecha Servicio Hasta *</Label>
+                  <DatePicker
+                    date={formData.serviceDateTo ? new Date(formData.serviceDateTo + 'T00:00:00') : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const year = date.getFullYear()
+                        const month = String(date.getMonth() + 1).padStart(2, '0')
+                        const day = String(date.getDate()).padStart(2, '0')
+                        setFormData({...formData, serviceDateTo: `${year}-${month}-${day}`})
+                      } else {
+                        setFormData({...formData, serviceDateTo: ''})
+                      }
+                    }}
+                    placeholder="Fecha fin del servicio"
+                    minDate={formData.serviceDateFrom ? new Date(formData.serviceDateFrom + 'T00:00:00') : undefined}
+                    disabled={isNoteType && associateInvoice && !!selectedInvoice}
+                  />
+                  {isNoteType && associateInvoice && selectedInvoice && (
+                    <p className="text-xs text-blue-600">
+                      Heredado de la factura asociada
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
               {isNoteType && (
                 <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="associateInvoice"
                       checked={associateInvoice}
-                      onChange={(e) => {
-                        setAssociateInvoice(e.target.checked)
-                        if (!e.target.checked) {
+                      onCheckedChange={(checked) => {
+                        setAssociateInvoice(checked as boolean)
+                        if (!checked) {
                           setFormData({ ...formData, relatedInvoiceId: '' })
                           setSelectedInvoice(null)
                         }
                       }}
-                      className="h-4 w-4"
                     />
                     <Label htmlFor="associateInvoice" className="cursor-pointer font-medium">
                       Asociar a una factura emitida por mi empresa
@@ -954,146 +1049,68 @@ export default function CreateInvoicePage() {
                 />
               )}
 
-              {showClientSelector && (
-                <div className="space-y-2">
-                  <Label>Cliente *</Label>
-                  <ClientSelector
-                    companyId={companyId}
-                    connectedCompanies={connectedCompanies}
-                    savedClients={savedClients}
-                    isLoading={isLoadingData}
-                    onSelect={(data) => {
-                      if (data.receiver_company_id) {
-                        setFormData({
-                          ...formData,
-                          receiverCompanyId: data.receiver_company_id,
-                          clientData: null,
-                          saveClient: false
-                        })
-                      } else if (data.client_id) {
-                        setFormData({
-                          ...formData,
-                          receiverCompanyId: '',
-                          clientData: { client_id: data.client_id, ...data.client_data },
-                          saveClient: false
-                        })
-                      } else if (data.client_data) {
-                        setFormData({
-                          ...formData,
-                          receiverCompanyId: '',
-                          clientData: data.client_data,
-                          saveClient: data.save_client || false
-                        })
-                      }
-                    }}
-                  />
-                </div>
-              )}
+            </div>
 
-
-
-              {/* Fechas y Moneda */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emissionDate">Fecha de Emisión *</Label>
-                  <DatePicker
-                    date={formData.emissionDate ? new Date(formData.emissionDate) : undefined}
-                    onSelect={(date) => setFormData({...formData, emissionDate: date ? date.toISOString().split('T')[0] : ''})}
-                    placeholder="Seleccionar fecha de emisión"
-                    minDate={selectedInvoice ? new Date(selectedInvoice.issue_date) : undefined}
-                    maxDate={new Date()}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {selectedInvoice 
-                      ? `Fecha mínima: ${new Date(selectedInvoice.issue_date).toLocaleDateString('es-AR')} (fecha de la factura)`
-                      : 'No se permiten fechas futuras según normativa AFIP'
+            {showClientSelector && (
+              <div className="space-y-2">
+                <Label>Cliente *</Label>
+                <EntitySelector
+                  mode="client"
+                  companyId={companyId}
+                  connectedCompanies={connectedCompanies.map(c => ({
+                    ...c,
+                    cuit: c.cuit || ''
+                  }))}
+                  savedEntities={savedClients}
+                  isLoading={isLoadingData}
+                  onSelect={(data) => {
+                    if (data.receiver_company_id) {
+                      setFormData({
+                        ...formData,
+                        receiverCompanyId: data.receiver_company_id,
+                        clientData: null,
+                        saveClient: false
+                      })
+                    } else if (data.entity_id) {
+                      setFormData({
+                        ...formData,
+                        receiverCompanyId: '',
+                        clientData: { client_id: data.entity_id, ...data.entity_data },
+                        saveClient: false
+                      })
+                    } else if (data.entity_data) {
+                      setFormData({
+                        ...formData,
+                        receiverCompanyId: '',
+                        clientData: data.entity_data,
+                        saveClient: data.save_entity || false
+                      })
                     }
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
-                  <DatePicker
-                    date={formData.dueDate ? new Date(formData.dueDate) : undefined}
-                    onSelect={(date) => setFormData({...formData, dueDate: date ? date.toISOString().split('T')[0] : ''})}
-                    placeholder="Seleccionar fecha de vencimiento"
-                    minDate={formData.emissionDate ? new Date(formData.emissionDate) : new Date()}
-                  />
-                </div>
-
-                {/* Fechas de Servicio (solo para servicios o productos y servicios) */}
-                {(formData.concept === 'services' || formData.concept === 'products_services') && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="serviceDateFrom">Fecha Servicio Desde *</Label>
-                      <DatePicker
-                        date={formData.serviceDateFrom ? new Date(formData.serviceDateFrom) : undefined}
-                        onSelect={(date) => setFormData({...formData, serviceDateFrom: date ? date.toISOString().split('T')[0] : ''})}
-                        placeholder="Fecha inicio del servicio"
-                        disabled={isNoteType && associateInvoice && !!selectedInvoice}
-                      />
-                      {isNoteType && associateInvoice && selectedInvoice && (
-                        <p className="text-xs text-blue-600">
-                          Heredado de la factura asociada
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="serviceDateTo">Fecha Servicio Hasta *</Label>
-                      <DatePicker
-                        date={formData.serviceDateTo ? new Date(formData.serviceDateTo) : undefined}
-                        onSelect={(date) => setFormData({...formData, serviceDateTo: date ? date.toISOString().split('T')[0] : ''})}
-                        placeholder="Fecha fin del servicio"
-                        minDate={formData.serviceDateFrom ? new Date(formData.serviceDateFrom) : undefined}
-                        disabled={isNoteType && associateInvoice && !!selectedInvoice}
-                      />
-                      {isNoteType && associateInvoice && selectedInvoice && (
-                        <p className="text-xs text-blue-600">
-                          Heredado de la factura asociada
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {availableTypes.find(t => t.code === formData.voucherType)?.category === 'fce_mipyme' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentDueDate">Fecha Venc. Pago (FCE) *</Label>
-                    <DatePicker
-                      date={formData.paymentDueDate ? new Date(formData.paymentDueDate) : undefined}
-                      onSelect={(date) => setFormData({...formData, paymentDueDate: date ? date.toISOString().split('T')[0] : ''})}
-                      placeholder="Fecha límite de pago"
-                      minDate={formData.emissionDate ? new Date(formData.emissionDate) : new Date()}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Obligatorio para FCE MiPyME
-                    </p>
-                  </div>
-                )}
-
-
+                  }}
+                />
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
+
+
 
           {/* Ítems */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Ítems de la Factura
-                <Button type="button" onClick={addItem} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Ítem
-                </Button>
-              </CardTitle>
-              <CardDescription>Detalle de productos o servicios</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Ítems de la Factura</h2>
+                <p className="text-sm text-muted-foreground">Detalle de productos o servicios</p>
+              </div>
+              <Button type="button" onClick={addItem} size="sm" variant="outline">
+                <Plus className="h-4 w-4" />
+                Agregar Ítem
+              </Button>
+            </div>
+            <div className="space-y-4">
               {items.map((item, index) => {
                 const itemTotals = calculateItemTotal(item)
                 return (
-                <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+                <div key={index} className="space-y-3 p-4 border border-[#eeeeee] rounded-lg relative">
                   <Button
                     type="button"
                     variant="ghost"
@@ -1208,28 +1225,28 @@ export default function CreateInvoicePage() {
                 </div>
               )
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Percepciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Percepciones
-                <Button 
-                  type="button" 
-                  onClick={addPerception} 
-                  size="sm" 
-                  variant="outline"
-                  disabled={formData.clientData?.tax_condition === 'final_consumer'}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Percepción
-                </Button>
-              </CardTitle>
-              <CardDescription>Percepciones aplicables según jurisdicción</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Percepciones</h2>
+                <p className="text-sm text-muted-foreground">Percepciones aplicables según jurisdicción</p>
+              </div>
+              <Button 
+                type="button" 
+                onClick={addPerception} 
+                size="sm" 
+                variant="outline"
+                disabled={formData.clientData?.tax_condition === 'final_consumer'}
+              >
+                <Plus className="h-4 w-4" />
+                Agregar Percepción
+              </Button>
+            </div>
+            <div className="space-y-4">
               {formData.clientData?.tax_condition === 'final_consumer' ? (
                 <div className="text-center py-6 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-sm text-amber-800 font-medium">No se pueden aplicar percepciones a Consumidores Finales</p>
@@ -1252,7 +1269,7 @@ export default function CreateInvoicePage() {
                   const perceptionAmount = base * (perception.rate || 0) / 100
                   
                   return (
-                  <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+                  <div key={index} className="space-y-3 p-4 border border-[#eeeeee] rounded-lg relative">
                     <Button
                       type="button"
                       variant="ghost"
@@ -1372,18 +1389,16 @@ export default function CreateInvoicePage() {
                   )
                 })
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Totales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Resumen de Totales
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              <h2 className="text-xl font-semibold">Resumen de Totales</h2>
+            </div>
+            <div>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
@@ -1420,27 +1435,27 @@ export default function CreateInvoicePage() {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Notas y Archivo */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información Adicional</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notas Internas</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Notas adicionales sobre la factura..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value.slice(0, 500)})}
-                  maxLength={500}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Notas */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold">Información Adicional</h2>
+              <p className="text-sm text-muted-foreground">Notas y observaciones</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notas Internas</Label>
+              <Textarea
+                id="notes"
+                placeholder="Notas adicionales sobre la factura..."
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value.slice(0, 500)})}
+                maxLength={500}
+                rows={3}
+              />
+            </div>
+          </div>
 
             {/* Acciones */}
             <div className="flex gap-4">

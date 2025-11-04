@@ -1,6 +1,7 @@
 "use client"
 
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock } from "lucide-react"
 
 interface InvoiceCardProps {
@@ -80,7 +81,7 @@ export function InvoiceCard({
           <Calendar className="h-3 w-3 ml-2" />
           <span>{new Date(invoice.due_date).toLocaleDateString('es-AR')}</span>
           {showBadge && (
-            <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">Vencida</span>
+            <Badge variant="destructive" className="ml-2">Vencida</Badge>
           )}
         </div>
       </div>

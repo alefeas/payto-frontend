@@ -3,6 +3,8 @@
 import React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface PricingCardProps {
   title: string;
@@ -22,22 +24,23 @@ export default function PricingCard({
   onClick,
 }: PricingCardProps) {
   return (
-    <div
+    <Card
       onClick={onClick}
       className={cn(
-        "relative rounded-3xl border border-[#eeeeee] p-6 transition-all cursor-pointer bg-white",
+        "relative rounded-3xl transition-all cursor-pointer",
         selected ? "border-primary shadow-lg" : "hover:border-[#cccccc]",
         featured && "border-primary shadow-lg"
       )}
     >
       {featured && (
-        <div className="absolute -top-3 left-6 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+        <Badge className="absolute -top-3 left-6 bg-yellow-400 text-black hover:bg-yellow-500">
           <span>🔥</span>
-          <span>MEJOR OFERTA</span>
-        </div>
+          <span className="ml-1">MEJOR OFERTA</span>
+        </Badge>
       )}
       
-      <div className="flex items-start justify-between gap-4">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <h3 className="text-xl font-medium mb-4">{title}</h3>
           
@@ -54,12 +57,13 @@ export default function PricingCard({
           </div>
         </div>
         
-        {(selected || featured) && (
-          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-foreground flex items-center justify-center">
-            <Check className="h-4 w-4 text-background" />
-          </div>
-        )}
-      </div>
-    </div>
+          {(selected || featured) && (
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-foreground flex items-center justify-center">
+              <Check className="h-4 w-4 text-background" />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
