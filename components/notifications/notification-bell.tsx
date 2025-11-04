@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { notificationService, Notification } from '@/services/notification.service';
 import { NotificationItem } from './notification-item';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface NotificationBellProps {
   companyId: string;
@@ -21,17 +22,24 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const fetchNotifications = async () => {
+    setIsLoading(true);
     try {
-      const data = await notificationService.getNotifications(companyId);
-      setNotifications(data.slice(0, 5));
+      const [notificationsData, unreadCountData] = await Promise.all([
+        notificationService.getNotifications(companyId),
+        notificationService.getUnreadCount(companyId)
+      ]);
       
-      const count = await notificationService.getUnreadCount(companyId);
-      setUnreadCount(count);
+      setNotifications(notificationsData.slice(0, 5));
+      setUnreadCount(unreadCountData);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Show user-friendly error notification
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,36 +98,55 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative hover:bg-accent/50 transition-all duration-200 group"
+          disabled={isLoading}
+        >
+          <Bell className={cn(
+            "h-5 w-5 transition-all duration-200",
+            isLoading && "animate-pulse",
+            unreadCount > 0 && "text-primary group-hover:text-primary/80"
+          )} />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              className={cn(
+                "absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs",
+                "animate-bounce transition-all duration-300 hover:scale-110"
+              )}
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold">Notificaciones</h3>
+      <DropdownMenuContent align="end" className="w-80 max-w-sm bg-popover border border-border shadow-lg rounded-lg">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-semibold text-lg text-foreground">Notificaciones</h3>
           {unreadCount > 0 && (
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={handleMarkAllAsRead}
-              className="text-xs"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Marcar todas como leídas
             </Button>
           )}
         </div>
-        <div className="max-h-96 overflow-y-auto">
-          {notifications.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">
-              No hay notificaciones
+        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Cargando notificaciones...</p>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="p-8 text-center">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-sm text-muted-foreground">No hay notificaciones</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Te notificaremos cuando haya novedades</p>
             </div>
           ) : (
             notifications.map((notification) => (
@@ -131,16 +158,16 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
             ))
           )}
         </div>
-        <div className="p-2 border-t">
+        <div className="p-2 border-t border-border">
           <Button 
             variant="ghost" 
-            className="w-full" 
+            className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200" 
             onClick={() => {
               router.push(`/company/${companyId}/notifications`);
               setIsOpen(false);
             }}
           >
-            Ver todas
+            Ver todas las notificaciones
           </Button>
         </div>
       </DropdownMenuContent>

@@ -4,6 +4,7 @@ import { Bell, FileText, CreditCard, Users, AlertTriangle, Clock, CheckCircle, X
 import { Notification } from '@/services/notification.service';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -56,6 +57,41 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
     }
   };
 
+  const getNotificationType = () => {
+    switch (notification.type) {
+      case 'invoice_due_soon':
+        return 'Vencimiento próximo';
+      case 'invoice_overdue':
+        return 'Factura vencida';
+      case 'invoice_due_reminder':
+        return 'Recordatorio de vencimiento';
+      case 'invoice_status_changed':
+        return 'Estado de factura actualizado';
+      case 'payment_status_changed':
+        return 'Estado de pago actualizado';
+      case 'system_alert':
+        return 'Alerta del sistema';
+      case 'invoice_needs_review':
+        return 'Revisión requerida';
+      case 'connection_accepted':
+        return 'Conexión aceptada';
+      case 'connection_rejected':
+        return 'Conexión rechazada';
+      case 'invoice_received':
+        return 'Factura recibida';
+      case 'invoice_pending_approval':
+        return 'Factura pendiente de aprobación';
+      case 'payment_received':
+        return 'Pago recibido';
+      case 'payment_reminder':
+        return 'Recordatorio de pago';
+      case 'connection_request':
+        return 'Solicitud de conexión';
+      default:
+        return 'Notificación';
+    }
+  };
+
   const getIconColor = () => {
     switch (notification.type) {
       case 'invoice_overdue':
@@ -95,60 +131,69 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
     <div
       onClick={onClick}
       className={cn(
-        "p-4 hover:bg-accent cursor-pointer transition-colors border-b last:border-b-0",
-        !notification.read && "bg-blue-50 dark:bg-blue-950"
+        "p-4 hover:bg-accent/50 cursor-pointer transition-all duration-200 border-b border-border last:border-b-0 group",
+        !notification.read && "bg-primary/5 dark:bg-primary/10 border-l-4 border-l-primary"
       )}
     >
-      <div className="flex gap-3">
-        <Avatar className={cn(
-          'bg-opacity-10',
-          notification.type === 'invoice_overdue' || notification.type === 'invoice_due_reminder' ? 'bg-red-100 text-red-600' :
-          notification.type === 'invoice_due_soon' ? 'bg-yellow-100 text-yellow-600' :
-          notification.type === 'invoice_status_changed' || notification.type === 'payment_status_changed' ? 
-            (notification.data.newStatus === 'approved' || notification.data.newStatus === 'paid' || notification.data.newStatus === 'confirmed' || notification.data.newStatus === 'connection_accepted' ? 'bg-green-100 text-green-600' :
-             notification.data.newStatus === 'rejected' || notification.data.newStatus === 'cancelled' || notification.data.newStatus === 'connection_rejected' ? 'bg-red-100 text-red-600' :
-             'bg-blue-100 text-blue-600') :
-          notification.type === 'system_alert' || notification.type === 'invoice_needs_review' ? 'bg-orange-100 text-orange-600' :
-          'bg-blue-100 text-blue-600'
-        )}>
-          <AvatarFallback className={cn(
-            'bg-opacity-10',
-            notification.type === 'invoice_overdue' || notification.type === 'invoice_due_reminder' ? 'bg-red-100 text-red-600' :
-            notification.type === 'invoice_due_soon' ? 'bg-yellow-100 text-yellow-600' :
+      <div className="flex gap-4">
+        <div className="relative flex-shrink-0">
+          <Avatar className={cn(
+            'h-10 w-10 transition-all duration-200 group-hover:scale-105',
+            notification.type === 'invoice_overdue' || notification.type === 'invoice_due_reminder' ? 'bg-red-100 text-red-600 border-2 border-red-200' :
+            notification.type === 'invoice_due_soon' ? 'bg-yellow-100 text-yellow-600 border-2 border-yellow-200' :
             notification.type === 'invoice_status_changed' || notification.type === 'payment_status_changed' ? 
-              (notification.data.newStatus === 'approved' || notification.data.newStatus === 'paid' || notification.data.newStatus === 'confirmed' || notification.data.newStatus === 'connection_accepted' ? 'bg-green-100 text-green-600' :
-               notification.data.newStatus === 'rejected' || notification.data.newStatus === 'cancelled' || notification.data.newStatus === 'connection_rejected' ? 'bg-red-100 text-red-600' :
-               'bg-blue-100 text-blue-600') :
-            notification.type === 'system_alert' || notification.type === 'invoice_needs_review' ? 'bg-orange-100 text-orange-600' :
-            'bg-blue-100 text-blue-600'
+              (notification.data.newStatus === 'approved' || notification.data.newStatus === 'paid' || notification.data.newStatus === 'confirmed' || notification.data.newStatus === 'connection_accepted' ? 'bg-green-100 text-green-600 border-2 border-green-200' :
+               notification.data.newStatus === 'rejected' || notification.data.newStatus === 'cancelled' || notification.data.newStatus === 'connection_rejected' ? 'bg-red-100 text-red-600 border-2 border-red-200' :
+               'bg-blue-100 text-blue-600 border-2 border-blue-200') :
+            notification.type === 'system_alert' || notification.type === 'invoice_needs_review' ? 'bg-orange-100 text-orange-600 border-2 border-orange-200' :
+            'bg-blue-100 text-blue-600 border-2 border-blue-200'
           )}>
-            <div className={getIconColor()}>
-              {getIcon()}
-            </div>
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className={cn(
-            "text-sm",
-            !notification.read && "font-semibold"
-          )}>
-            {notification.title}
-          </p>
+            <AvatarFallback className={cn(
+              'bg-transparent text-current',
+              !notification.read && 'font-semibold'
+            )}>
+              <div className={cn(getIconColor(), "transition-transform duration-200 group-hover:scale-110")}>
+                {getIcon()}
+              </div>
+            </AvatarFallback>
+          </Avatar>
           {!notification.read && (
-            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-2" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background animate-pulse" />
           )}
-          <p className="text-xs text-muted-foreground mt-1">
-            {notification.companyName}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <p className={cn(
+                "text-sm font-medium text-foreground transition-colors duration-200",
+                !notification.read && "font-semibold"
+              )}>
+                {notification.title}
+              </p>
+              <Badge 
+                variant="outline" 
+                className="text-xs mt-1 px-2 py-0 border-primary/20 text-primary/70"
+              >
+                {getNotificationType()}
+              </Badge>
+            </div>
+            <div className="flex-shrink-0">
+              <time className="text-xs text-muted-foreground whitespace-nowrap">
+                {formatDistanceToNow(new Date(notification.createdAt), {
+                  addSuffix: true,
+                  locale: es,
+                })}
+              </time>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
             {notification.message}
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {formatDistanceToNow(new Date(notification.createdAt), {
-              addSuffix: true,
-              locale: es,
-            })}
-          </p>
+          {notification.companyName && (
+            <p className="text-xs text-muted-foreground/70 mt-2 font-medium">
+              {notification.companyName}
+            </p>
+          )}
         </div>
       </div>
     </div>
