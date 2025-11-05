@@ -151,7 +151,7 @@ export function InvoiceSelector({
                   const type = invoice.type || invoice.invoice_type || ''
                   const name = invoice.receiver_name || invoice.issuer_name || invoice.client_name || ''
                   const total = invoice.total || invoice.total_amount || 0
-                  const balance = invoice.balance_pending || invoice.available_balance || 0
+                  const balance = invoice.available_balance || invoice.balance_pending || 0
                   
                   return (
                     <DropdownMenuItem
@@ -177,7 +177,7 @@ export function InvoiceSelector({
                             {(invoice.origin || invoice.status_label) && <span>•</span>}
                             <span>Concepto: {conceptLabel}</span>
                             <span>•</span>
-                            <span>Saldo: {invoice.currency || 'ARS'} ${balance.toLocaleString('es-AR')} de {invoice.currency || 'ARS'} ${total.toLocaleString('es-AR')}</span>
+                            <span className="font-medium">Saldo: {invoice.currency || 'ARS'} ${balance.toLocaleString('es-AR')} de ${total.toLocaleString('es-AR')}</span>
                           </div>
                         </div>
                       </div>
@@ -264,10 +264,12 @@ export function InvoiceSelector({
                 <span className="text-muted-foreground">Total Original:</span>
                 <span className="font-medium">{inv.currency || 'ARS'} ${total.toLocaleString('es-AR')}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Saldo Disponible:</span>
-                <span className="font-bold text-green-600">{inv.currency || 'ARS'} ${balance.toLocaleString('es-AR')}</span>
-              </div>
+              {(type === 'NC' || type === 'ND') && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Saldo Disponible:</span>
+                  <span className="font-bold text-green-600">{inv.currency || 'ARS'} ${balance.toLocaleString('es-AR')}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

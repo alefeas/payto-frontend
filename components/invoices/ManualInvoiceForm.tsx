@@ -88,6 +88,14 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
     initializeData()
   }, [])
 
+  // Limpiar fechas de servicio cuando el concepto cambie a "products"
+  useEffect(() => {
+    if (concept === 'products' && !associateInvoice) {
+      setServiceDateFrom('')
+      setServiceDateTo('')
+    }
+  }, [concept, associateInvoice])
+
   useEffect(() => {
     // Resetear selección de factura asociada al cambiar de pestaña
     setAssociateInvoice(false)
@@ -281,8 +289,9 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
       return
     }
 
-    // Validar saldo disponible si hay factura asociada
-    if (associateInvoice && selectedInvoice && parseFloat(calculatedTotals.total) > selectedInvoice.available_balance) {
+    // Validar saldo disponible solo para ND/NC
+    const isNCND = (invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '002' || invoiceType === '007' || invoiceType === '012' || invoiceType === '052');
+    if (isNCND && associateInvoice && selectedInvoice && parseFloat(calculatedTotals.total) > selectedInvoice.available_balance) {
       toast.error(`El monto no puede exceder el saldo disponible ($${selectedInvoice.available_balance.toLocaleString('es-AR')})`)
       return
     }
@@ -556,16 +565,21 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 }} 
                 placeholder="Ej: 1" 
                 className={salesPoint ? "border-green-200" : ""}
-                disabled={associateInvoice && !!selectedInvoice}
+                disabled={associateInvoice && !!selectedInvoice && !!selectedInvoice.sales_point}
               />
               {salesPoint && !associateInvoice && (
                 <p className="text-xs text-green-600">
                   ✓ Se formateará como: {salesPoint.padStart(4, '0')}
                 </p>
               )}
-              {associateInvoice && selectedInvoice && (
+              {associateInvoice && selectedInvoice && selectedInvoice.sales_point && (
                 <p className="text-xs text-blue-600">
                   Heredado de la factura asociada (requerido por AFIP)
+                </p>
+              )}
+              {associateInvoice && selectedInvoice && !selectedInvoice.sales_point && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ La factura asociada no tiene punto de venta. Ingresalo manualmente.
                 </p>
               )}
             </div>
@@ -827,7 +841,9 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                     setSelectedInvoice(invoice)
                     if (invoice) {
                       setRelatedInvoiceId(invoice.id)
-                      setSalesPoint(invoice.sales_point?.toString() || salesPoint)
+                      if (invoice.sales_point) {
+                        setSalesPoint(invoice.sales_point.toString())
+                      }
                       setConcept((invoice.concept || 'products') as any)
                       setServiceDateFrom(invoice.service_date_from || '')
                       setServiceDateTo(invoice.service_date_to || '')
@@ -1191,7 +1207,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 {getCurrencySymbol(currency)}{totals.total}
               </span>
             </div>
-            {selectedInvoice && (
+            {selectedInvoice && (invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '002' || invoiceType === '007' || invoiceType === '012' || invoiceType === '052') && (
               <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
                 <span>Saldo Disponible:</span>
                 <span className={parseFloat(totals.total) > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>

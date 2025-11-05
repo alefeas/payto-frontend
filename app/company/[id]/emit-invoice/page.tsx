@@ -70,6 +70,7 @@ export default function CreateInvoicePage() {
   const [isInitialized, setIsInitialized] = useState(false)
   const [associateInvoice, setAssociateInvoice] = useState(false)
   const [salesPoints, setSalesPoints] = useState<{id: string, point_number: number, name: string | null}[]>([])
+  const [invoiceSelectorKey, setInvoiceSelectorKey] = useState(0)
 
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -282,6 +283,18 @@ export default function CreateInvoicePage() {
 
 
 
+  const selectedType = availableTypes.find(t => t.code === formData.voucherType)
+  const isNoteType = selectedType?.category === 'credit_note' || selectedType?.category === 'debit_note'
+  const showClientSelector = !isNoteType || (isNoteType && !associateInvoice)
+
+  // Limpiar selectedInvoice cuando el tipo de comprobante ya no sea ND/NC
+  useEffect(() => {
+    if (!isNoteType && selectedInvoice) {
+      setSelectedInvoice(null)
+      setAssociateInvoice(false)
+    }
+  }, [isNoteType, selectedInvoice])
+
   useEffect(() => {
     if (currentCompany && !isInitialized) {
       console.log('Initializing with company:', currentCompany)
@@ -363,7 +376,14 @@ export default function CreateInvoicePage() {
     }
   }, [formData.emissionDate])
 
-  // Consultar próximo número cuando cambia tipo de factura o punto de venta
+  // Limpiar fechas de servicio si el concepto cambia a productos
+  useEffect(() => {
+    if (formData.concept === 'products' && !isNoteType && !associateInvoice) {
+      setFormData(prev => ({ ...prev, serviceDateFrom: '', serviceDateTo: '' }))
+    }
+  }, [formData.concept, isNoteType, associateInvoice])
+
+  // Consultar próximo número cuando cambia tipo de factura, punto de venta o concepto
   useEffect(() => {
     const loadNextNumber = async () => {
       if (!formData.voucherType || !formData.salesPoint) return
@@ -385,7 +405,7 @@ export default function CreateInvoicePage() {
     }
 
     loadNextNumber()
-  }, [formData.voucherType, formData.salesPoint, companyId])
+  }, [formData.voucherType, formData.salesPoint, formData.concept, companyId])
 
   const addItem = () => {
     setItems([...items, { description: '', quantity: 1, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany?.defaultVat || 21 }])
@@ -458,10 +478,6 @@ export default function CreateInvoicePage() {
     
     setPerceptions(newPerceptions)
   }
-
-  const selectedType = availableTypes.find(t => t.code === formData.voucherType)
-  const isNoteType = selectedType?.category === 'credit_note' || selectedType?.category === 'debit_note'
-  const showClientSelector = !isNoteType || (isNoteType && !associateInvoice)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -777,8 +793,8 @@ export default function CreateInvoicePage() {
                   </div>
                   <Select 
                         value={formData.salesPoint > 0 ? formData.salesPoint.toString() : undefined} 
-                        onValueChange={(value) => setFormData({...formData, salesPoint: parseInt(value)})}
-                        disabled={salesPoints.length === 0 || (isNoteType && associateInvoice && !!selectedInvoice)}
+                        onValueChange={(value) => setFormData(prev => ({...prev, salesPoint: parseInt(value)}))}
+                        disabled={salesPoints.length === 0 || (isNoteType && associateInvoice && !!selectedInvoice && salesPoints.some(sp => sp.point_number === selectedInvoice.sales_point))}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={salesPoints.length === 0 ? "No hay puntos de venta" : "Seleccione punto de venta"} />
@@ -796,7 +812,7 @@ export default function CreateInvoicePage() {
                           No hay puntos de venta. Sincronizá desde AFIP o agregá uno manualmente.
                         </p>
                       )}
-                      {isNoteType && associateInvoice && selectedInvoice && (
+                      {isNoteType && associateInvoice && selectedInvoice && salesPoints.some(sp => sp.point_number === selectedInvoice.sales_point) && (
                         <p className="text-xs text-blue-600">
                           Heredado de la factura asociada (requerido por AFIP)
                         </p>
@@ -1025,23 +1041,28 @@ export default function CreateInvoicePage() {
 
               {isNoteType && associateInvoice && (
                 <InvoiceSelector
+                  key={invoiceSelectorKey}
                   companyId={companyId}
                   voucherType={formData.voucherType}
                   onSelect={(invoice) => {
                     setSelectedInvoice(invoice)
                     if (invoice) {
-                      console.log('Invoice selected:', invoice)
-                      console.log('Sales point from invoice:', invoice.sales_point)
-                      setFormData({ 
-                        ...formData, 
+                      const salesPointValue = Number(invoice.sales_point || currentCompany?.default_sales_point || 1)
+                      const salesPointExists = salesPoints.some(sp => sp.point_number === salesPointValue)
+                      setFormData(prev => ({ 
+                        ...prev, 
                         relatedInvoiceId: invoice.id,
-                        salesPoint: invoice.sales_point || currentCompany?.default_sales_point || 1,
+                        salesPoint: salesPointExists ? salesPointValue : (currentCompany?.default_sales_point || 1),
                         concept: (invoice.concept || 'products') as InvoiceConcept,
                         serviceDateFrom: invoice.service_date_from || '',
                         serviceDateTo: invoice.service_date_to || '',
                         currency: (invoice.currency || 'ARS') as Currency,
                         exchangeRate: invoice.exchange_rate?.toString() || '1'
-                      })
+                      }))
+                      if (!salesPointExists) {
+                        setSalesPointFormData({ point_number: salesPointValue.toString(), name: '' })
+                        setShowAddSalesPointDialog(true)
+                      }
                     } else {
                       setFormData({ ...formData, relatedInvoiceId: '' })
                     }
@@ -1519,7 +1540,13 @@ export default function CreateInvoicePage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => { setShowAddSalesPointDialog(false); setSalesPointFormData({ point_number: '', name: '' }); }} disabled={addingSalesPoint}>Cancelar</Button>
+                <Button variant="outline" onClick={() => { 
+                  setShowAddSalesPointDialog(false); 
+                  setSalesPointFormData({ point_number: '', name: '' });
+                  setSelectedInvoice(null);
+                  setFormData(prev => ({ ...prev, relatedInvoiceId: '' }));
+                  setInvoiceSelectorKey(prev => prev + 1);
+                }} disabled={addingSalesPoint}>Cancelar</Button>
                 <Button onClick={async () => {
                   if (!salesPointFormData.point_number) {
                     toast.error('Ingresa el número de punto de venta')
@@ -1533,8 +1560,11 @@ export default function CreateInvoicePage() {
                       name: salesPointFormData.name || null
                     })
                     const newSalesPoint = response.data.data
-                    setSalesPoints(prev => [...prev, newSalesPoint])
+                    setSalesPoints(prev => [...prev, newSalesPoint].sort((a, b) => a.point_number - b.point_number))
                     setFormData(prev => ({...prev, salesPoint: newSalesPoint.point_number}))
+                    if (selectedInvoice) {
+                      setSelectedInvoice(prev => ({ ...prev, sales_point: newSalesPoint.point_number }))
+                    }
                     toast.success('Punto de venta agregado y seleccionado')
                     setShowAddSalesPointDialog(false)
                     setSalesPointFormData({ point_number: '', name: '' })
