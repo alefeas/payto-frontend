@@ -20,6 +20,7 @@ import { ClientForm } from "@/components/clients/ClientForm"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
 import { EntitySelector } from "@/components/invoices/EntitySelector"
 import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
+import { DatePicker } from "@/components/ui/date-picker"
 
 interface ManualInvoiceFormProps {
   companyId: string
@@ -614,11 +615,10 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 Fecha de Emisión *
                 {issueDate && <span className="text-xs text-green-600">✓</span>}
               </Label>
-              <Input 
-                type="date" 
-                value={issueDate} 
-                onChange={(e) => setIssueDate(e.target.value)} 
-                className={issueDate ? "border-green-200" : ""}
+              <DatePicker
+                date={issueDate ? new Date(issueDate) : undefined}
+                onSelect={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : '')}
+                placeholder="Seleccionar fecha"
               />
             </div>
             <div className="space-y-2">
@@ -626,12 +626,10 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 Fecha de Vencimiento *
                 {dueDate && <span className="text-xs text-green-600">✓</span>}
               </Label>
-              <Input 
-                type="date" 
-                value={dueDate} 
-                onChange={(e) => setDueDate(e.target.value)} 
-                required 
-                className={dueDate ? "border-green-200" : ""}
+              <DatePicker
+                date={dueDate ? new Date(dueDate) : undefined}
+                onSelect={(date) => setDueDate(date ? date.toISOString().split('T')[0] : '')}
+                placeholder="Seleccionar fecha"
               />
             </div>
           </div>
@@ -722,11 +720,10 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   Fecha Servicio Desde *
                   {serviceDateFrom && <span className="text-xs text-green-600">✓</span>}
                 </Label>
-                <Input 
-                  type="date" 
-                  value={serviceDateFrom} 
-                  onChange={(e) => setServiceDateFrom(e.target.value)} 
-                  className={serviceDateFrom ? "border-green-200" : ""}
+                <DatePicker
+                  date={serviceDateFrom ? new Date(serviceDateFrom) : undefined}
+                  onSelect={(date) => setServiceDateFrom(date ? date.toISOString().split('T')[0] : '')}
+                  placeholder="Seleccionar fecha"
                   disabled={associateInvoice && !!selectedInvoice}
                 />
                 {associateInvoice && selectedInvoice && (
@@ -740,11 +737,10 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   Fecha Servicio Hasta *
                   {serviceDateTo && <span className="text-xs text-green-600">✓</span>}
                 </Label>
-                <Input 
-                  type="date" 
-                  value={serviceDateTo} 
-                  onChange={(e) => setServiceDateTo(e.target.value)} 
-                  className={serviceDateTo ? "border-green-200" : ""}
+                <DatePicker
+                  date={serviceDateTo ? new Date(serviceDateTo) : undefined}
+                  onSelect={(date) => setServiceDateTo(date ? date.toISOString().split('T')[0] : '')}
+                  placeholder="Seleccionar fecha"
                   disabled={associateInvoice && !!selectedInvoice}
                 />
                 {associateInvoice && selectedInvoice && (
@@ -777,7 +773,11 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
             </div>
             <div className="space-y-2">
               <Label>Vencimiento CAE</Label>
-              <Input type="date" value={caeExpiration} onChange={(e) => setCaeExpiration(e.target.value)} />
+              <DatePicker
+                date={caeExpiration ? new Date(caeExpiration) : undefined}
+                onSelect={(date) => setCaeExpiration(date ? date.toISOString().split('T')[0] : '')}
+                placeholder="Seleccionar fecha"
+              />
             </div>
           </div>
         </CardContent>

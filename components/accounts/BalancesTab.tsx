@@ -30,7 +30,7 @@ interface BalancesTabProps {
     net_balance: number
     net_balance_type: 'credit' | 'debit'
   }
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number, currency?: string) => string
   onView?: (id: string) => void
   type: 'receivable' | 'payable'
   filters?: { search?: string }
@@ -184,8 +184,8 @@ export function BalancesTab({
                   <div className="text-right">
                     <div className="font-bold text-lg text-blue-600">
                       {type === 'receivable' && nc.pending_amount !== undefined
-                        ? formatCurrency(nc.pending_amount)
-                        : formatCurrency(nc.total)
+                        ? formatCurrency(nc.pending_amount, nc.currency)
+                        : formatCurrency(nc.total, nc.currency)
                       }
                     </div>
                     <div className="text-xs text-blue-600">
@@ -250,8 +250,8 @@ export function BalancesTab({
                   <div className="text-right">
                     <div className="font-bold text-lg text-orange-600">
                       {type === 'receivable' && nd.pending_amount !== undefined
-                        ? formatCurrency(nd.pending_amount)
-                        : formatCurrency(nd.total)
+                        ? formatCurrency(nd.pending_amount, nd.currency)
+                        : formatCurrency(nd.total, nd.currency)
                       }
                     </div>
                     <div className="text-xs text-orange-600">
