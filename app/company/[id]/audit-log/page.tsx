@@ -1,265 +1,208 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { Search, Filter, Eye, User, Calendar, Activity, Shield, FileText, CreditCard, Users as UsersIcon, Settings as SettingsIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/contexts/auth-context"
-import { auditService, AuditLog } from "@/services/audit.service"
+import { useState, useEffect, useCallback } from "react"
+import { useParams } from "next/navigation"
+import { AuditDashboardStats } from '@/components/audit/audit-dashboard-stats'
+import { AuditFilters } from "@/components/audit/audit-filters"
+import { AuditLogsTable } from "@/components/audit/audit-logs-table"
+import { AuditPagination } from "@/components/audit/audit-pagination"
+import { AuditSearchAdvanced } from "@/components/audit/audit-search-advanced"
+import { AuditLoadingSkeleton } from "@/components/audit/audit-skeletons"
+import { AuditNoResults, AuditNoLogs } from "@/components/audit/audit-empty-state"
+import { auditService, AuditLog, AuditFilters as AuditFiltersType } from "@/services/audit.service"
 import { toast } from "sonner"
 
 export default function AuditLogPage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const router = useRouter()
   const params = useParams()
   const companyId = params.id as string
-
+  
   const [logs, setLogs] = useState<AuditLog[]>([])
+  const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [actionFilter, setActionFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [filters, setFilters] = useState<AuditFiltersType>({
+    action: '',
+    entity_type: '',
+    entity_id: '',
+    user_id: '',
+    start_date: '',
+    end_date: ''
+  })
+  const [hasSearched, setHasSearched] = useState(false)
+  const [availableActions, setAvailableActions] = useState<string[]>([])
+  const [isExporting, setIsExporting] = useState(false)
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/log-in')
-    } else if (isAuthenticated) {
-      loadLogs()
-    }
-  }, [isAuthenticated, authLoading, router])
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async (page: number = 1, currentFilters: AuditFiltersType = filters) => {
     try {
       setLoading(true)
-      const response = await auditService.getCompanyAuditLogs(companyId)
+      const response = await auditService.getCompanyAuditLogs(companyId, page, currentFilters)
       setLogs(response.data)
-    } catch (error) {
+      setCurrentPage(response.current_page)
+      setTotalPages(response.total_pages)
+      setTotalItems(response.total_items)
+      setHasSearched(true)
+      
+      // Extraer acciones únicas de los logs
+      const actions = [...new Set(response.data.map(log => log.action))].sort()
+      setAvailableActions(actions)
+    } catch (error: any) {
       console.error('Error loading audit logs:', error)
-      toast.error('Error al cargar registro de auditoría')
+      if (error.message?.includes('timeout')) {
+        toast.error('Tiempo de espera agotado. Por favor, intente nuevamente.')
+      } else if (error.response?.status === 500) {
+        toast.error('Error del servidor. Por favor, intente más tarde.')
+      } else {
+        toast.error('No se pudieron cargar los registros de auditoría')
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [companyId, filters])
 
-  const filteredLogs = logs.filter(log => {
-    const matchesSearch = 
-      log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesAction = actionFilter === "all" || log.action.includes(actionFilter)
-    
-    return matchesSearch && matchesAction
-  })
-
-  const getActionIcon = (action: string) => {
-    if (action.includes('member')) return <UsersIcon className="h-4 w-4" />
-    if (action.includes('company')) return <SettingsIcon className="h-4 w-4" />
-    if (action.includes('invoice')) return <FileText className="h-4 w-4" />
-    if (action.includes('payment')) return <CreditCard className="h-4 w-4" />
-    return <Activity className="h-4 w-4" />
-  }
-
-  const getActionLabel = (action: string): string => {
-    const labels: Record<string, string> = {
-      'company.created': 'Empresa Creada',
-      'company.updated': 'Empresa Actualizada',
-      'company.deleted': 'Empresa Eliminada',
-      'company.invite_code_regenerated': 'Código Regenerado',
-      'member.joined': 'Miembro Unido',
-      'member.role_updated': 'Rol Actualizado',
-      'member.removed': 'Miembro Removido',
+  const loadStats = useCallback(async (currentFilters: AuditFiltersType = filters) => {
+    try {
+      const statsData = await auditService.getCompanyAuditStats(companyId, currentFilters)
+      setStats(statsData)
+    } catch (error: any) {
+      console.error('Error loading audit stats:', error)
+      if (error.message?.includes('timeout')) {
+        toast.error('Tiempo de espera agotado al cargar estadísticas')
+      }
     }
-    return labels[action] || action
-  }
+  }, [companyId, filters])
 
-  const getActionColor = (action: string): string => {
-    if (action.includes('created') || action.includes('joined')) return 'bg-green-100 text-green-800'
-    if (action.includes('updated') || action.includes('regenerated')) return 'bg-blue-100 text-blue-800'
-    if (action.includes('deleted') || action.includes('removed')) return 'bg-red-100 text-red-800'
-    return 'bg-gray-100 text-gray-800'
-  }
+  useEffect(() => {
+    loadLogs(1, filters)
+    loadStats(filters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId])
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-24 bg-muted rounded animate-pulse"></div>
-            ))}
-          </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
-        </div>
-      </div>
-    )
-  }
+  const handleFiltersChange = useCallback((newFilters: AuditFiltersType) => {
+    setFilters(newFilters)
+    setCurrentPage(1)
+    loadLogs(1, newFilters)
+    loadStats(newFilters)
+  }, [companyId])
 
-  if (!isAuthenticated) return null
+  const handleSearch = useCallback((query: string, searchFilters: AuditFiltersType) => {
+    setFilters(searchFilters)
+    setCurrentPage(1)
+    loadLogs(1, searchFilters)
+    loadStats(searchFilters)
+  }, [companyId])
+
+  const resetFilters = useCallback(() => {
+    const reset = {
+      action: '',
+      entity_type: '',
+      entity_id: '',
+      user_id: '',
+      start_date: '',
+      end_date: ''
+    }
+    setFilters(reset)
+    setCurrentPage(1)
+    loadLogs(1, reset)
+    loadStats(reset)
+  }, [companyId])
+
+  const handlePageChange = useCallback((page: number) => {
+    loadLogs(page, filters)
+  }, [filters])
+
+  const handleExport = useCallback(async () => {
+    try {
+      setIsExporting(true)
+      const csvBlob = await auditService.exportAuditLogsToCsv(companyId, filters)
+      
+      // Crear nombre de archivo con fecha y filtros
+      const timestamp = new Date().toISOString().split('T')[0]
+      let filename = `auditoria_${timestamp}`
+      
+      if (filters.action) filename += `_accion_${filters.action}`
+      if (filters.entity_type) filename += `_entidad_${filters.entity_type}`
+      if (filters.start_date) filename += `_desde_${filters.start_date}`
+      if (filters.end_date) filename += `_hasta_${filters.end_date}`
+      
+      filename += '.csv'
+      
+      // Download the blob
+      const url = window.URL.createObjectURL(csvBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast.success('Archivo CSV exportado correctamente')
+    } catch (error) {
+      console.error('Error exporting audit logs:', error)
+      toast.error('Error al exportar el archivo CSV')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [companyId, filters])
+
+  const handleViewTrail = useCallback((log: AuditLog) => {
+    if (log.entityType && log.entityId) {
+      // Aquí podrías abrir un modal o redirigir a una vista de trail
+      toast.info(`Mostrando trail para ${log.entityType} ${log.entityId}`)
+    }
+  }, [])
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div>
-            <h1 className="text-3xl font-bold">Registro de Auditoría</h1>
-            <p className="text-muted-foreground">Historial completo de actividades del sistema</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Eventos</p>
-                  <p className="text-2xl font-bold">{logs.length}</p>
-                </div>
-                <Activity className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Hoy</p>
-                  <p className="text-2xl font-bold">{logs.filter(log => 
-                    new Date(log.createdAt).toDateString() === new Date().toDateString()
-                  ).length}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Usuarios Únicos</p>
-                  <p className="text-2xl font-bold">{new Set(logs.map(l => l.userId)).size}</p>
-                </div>
-                <User className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtros de Búsqueda
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar eventos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <Select value={actionFilter} onValueChange={setActionFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Acción" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las acciones</SelectItem>
-                  <SelectItem value="company">Empresa</SelectItem>
-                  <SelectItem value="member">Miembros</SelectItem>
-                  <SelectItem value="invoice">Facturas</SelectItem>
-                  <SelectItem value="payment">Pagos</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm("")
-                  setActionFilter("all")
-                }}
-              >
-                Limpiar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Registro de Eventos ({filteredLogs.length})</CardTitle>
-            <CardDescription>Historial cronológico de todas las actividades</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredLogs.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-medium mb-2">No hay eventos registrados</h3>
-                <p className="text-sm text-muted-foreground">
-                  {logs.length === 0 
-                    ? "Aún no se han registrado actividades en esta empresa"
-                    : "No se encontraron eventos con los filtros aplicados"
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredLogs.map((log) => (
-                  <div key={log.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="p-2 bg-muted rounded-lg">
-                          {getActionIcon(log.action)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium">{log.description}</p>
-                            <Badge className={getActionColor(log.action)}>
-                              {getActionLabel(log.action)}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {log.user.name}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(log.createdAt).toLocaleString()}
-                            </span>
-                            {log.ipAddress && (
-                              <span>IP: {log.ipAddress}</span>
-                            )}
-                            {log.entityId && (
-                              <span>ID: {log.entityId}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+    <div className="container mx-auto py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Registro de Auditoría</h1>
+        <p className="text-gray-600">Monitoree todas las actividades realizadas en su empresa</p>
       </div>
+
+      <AuditDashboardStats companyId={companyId} />
+
+      <div className="mb-6">
+        <AuditFilters
+          companyId={companyId}
+          onFiltersChange={handleFiltersChange}
+          onExport={handleExport}
+          availableActions={availableActions}
+          isLoading={loading || isExporting}
+        />
+      </div>
+
+      {loading ? (
+        <AuditLoadingSkeleton />
+      ) : logs.length === 0 ? (
+        hasSearched ? (
+          <AuditNoResults onResetFilters={resetFilters} />
+        ) : (
+          <AuditNoLogs />
+        )
+      ) : (
+        <>
+          <div className="mb-6">
+            <AuditLogsTable
+              logs={logs}
+              isLoading={loading}
+              onViewTrail={handleViewTrail}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <AuditPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={10}
+              onPageChange={handlePageChange}
+              isLoading={loading}
+            />
+          )}
+        </>
+      )}
     </div>
   )
 }
