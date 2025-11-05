@@ -30,6 +30,8 @@ import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import { hasPermission } from "@/lib/permissions"
 import { NotificationBell } from "@/components/notifications/notification-bell"
+import { RecentActivity } from "@/components/audit/recent-activity"
+import { AuditDashboardWidget } from "@/components/audit/audit-dashboard-widget"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -406,30 +408,39 @@ export default function CompanyPage() {
           </div>
         </div>
 
-        {/* Additional Features */}
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold mb-1.5">Funcionalidades Adicionales</h2>
-            <p className="text-sm text-muted-foreground">
-              Herramientas avanzadas para optimizar tu gestión empresarial
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {additionalItems.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
-                onClick={item.action}
-              >
-                <div className="p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
-                  <item.icon className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
-                </div>
+        {/* Recent Activity and Additional Features */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-1.5">Funcionalidades Adicionales</h2>
+                <p className="text-sm text-muted-foreground">
+                  Herramientas avanzadas para optimizar tu gestión empresarial
+                </p>
               </div>
-            ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {additionalItems.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
+                    onClick={item.action}
+                  >
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
+                      <item.icon className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Recent Activity Sidebar */}
+          <div className="lg:col-span-1">
+            <AuditDashboardWidget companyId={companyId} />
           </div>
         </div>
       </div>

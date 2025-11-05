@@ -251,7 +251,9 @@ export default function InvoicesPage() {
     const dueDate = new Date(invoice.due_date)
     dueDate.setHours(0, 0, 0, 0)
     const isOverdue = dueDate < today && invoice.payment_status !== 'paid' && invoice.status !== 'cancelled'
-    const isIssuer = invoice.issuer_company_id === companyId
+    // Asegurar comparación robusta (string) para distinguir emisor vs receptor
+    const isIssuer = String(invoice.issuer_company_id) === String(companyId)
+    const isReceiver = String(invoice.receiver_company_id) === String(companyId)
     const isRejected = invoice.display_status === 'rejected' || invoice.status === 'rejected'
     
     // 1. Vencimiento (solo si no está pagada/cobrada/rechazada)
@@ -268,11 +270,12 @@ export default function InvoicesPage() {
     // PRIORIDAD 1: Anulada (tiene prioridad sobre todo)
     if (status === 'cancelled' || invoice.payment_status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-500 text-white">Anulada</Badge>)
-    } else if (companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'paid') {
-      const label = isIssuer ? 'Cobrada' : 'Pagada'
+    } else if (companyStatus === 'collected' || companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'collected' || status === 'paid') {
+      // Si la compañía actual es receptora, mostrar "Pagada"; si es emisora, "Cobrada"
+      const label = isReceiver ? 'Pagada' : 'Cobrada'
       badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
     } else if (invoice.payment_status === 'partial') {
-      const label = isIssuer ? 'Cobro Parcial' : 'Pago Parcial'
+      const label = isReceiver ? 'Pago Parcial' : 'Cobro Parcial'
       badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">{label}</Badge>)
     } else if (status === 'partially_cancelled') {
       badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)

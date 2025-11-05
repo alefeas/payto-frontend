@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { notificationService, Notification } from '@/services/notification.service';
 import { NotificationItem } from '@/components/notifications/notification-item';
 import { NotificationSettings } from '@/components/notifications/notification-settings';
+import { AuditNotifications } from '@/components/audit/audit-notifications';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, CheckCheck, Settings, Users, FileText, CreditCard, AlertTriangle, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Bell, CheckCheck, Settings, Users, FileText, CreditCard, AlertTriangle, Clock, CheckCircle, XCircle, AlertCircle, Activity } from 'lucide-react';
 
 export default function NotificationsPage() {
   const params = useParams();
@@ -125,6 +126,10 @@ export default function NotificationsPage() {
             <Bell className="h-4 w-4" />
             <span>Notificaciones</span>
           </TabsTrigger>
+          <TabsTrigger value="audit" className="flex items-center space-x-2">
+            <Activity className="h-4 w-4" />
+            <span>Auditoría</span>
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center space-x-2">
             <Settings className="h-4 w-4" />
             <span>Configuración</span>
@@ -150,6 +155,10 @@ export default function NotificationsPage() {
         
         <TabsContent value="settings" className="space-y-4">
           <NotificationSettings companyId={companyId} />
+        </TabsContent>
+        
+        <TabsContent value="audit" className="space-y-4">
+          <AuditNotifications companyId={companyId} limit={20} />
         </TabsContent>
       </Tabs>
     </div>
