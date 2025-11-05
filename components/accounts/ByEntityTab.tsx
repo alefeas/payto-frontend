@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 interface ByEntityTabProps {
   invoices: any[]
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number, currency?: string) => string
   onViewInvoices: (cuit: string) => void
   onViewInvoice: (id: string) => void
   onActionInvoice: (id: string) => void
@@ -106,7 +106,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-muted-foreground mb-1">Pendiente</div>
-                  <div className="font-bold text-lg text-blue-600">{formatCurrency(entity.total_pending)}</div>
+                  <div className="font-bold text-lg text-blue-600">{formatCurrency(entity.total_pending, entityInvoices[0]?.currency)}</div>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-gray-200">
@@ -144,7 +144,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
           
           <div className="bg-blue-50 p-4 rounded-lg mb-4">
             <div className="text-sm text-muted-foreground">Total Pendiente</div>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(selectedEntity?.total_pending || 0)}</div>
+            <div className="text-2xl font-bold text-blue-600">{formatCurrency(selectedEntity?.total_pending || 0, selectedEntity?.invoices?.[0]?.currency)}</div>
           </div>
           
           <div className="space-y-3 mb-4">
@@ -229,7 +229,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="font-bold text-lg">{formatCurrency(invoice.pending_amount || invoice.total)}</div>
+                      <div className="font-bold text-lg">{formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}</div>
                       {isOverdue && <Badge className="mt-1 bg-red-100 text-red-700 font-medium">Vencida</Badge>}
                     </div>
                     <Button size="sm" variant="ghost" onClick={(e) => {

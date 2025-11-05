@@ -54,6 +54,7 @@ export default function AccountsReceivablePage() {
     search: '',
     from_date: '',
     to_date: '',
+    currency: 'all' as string,
   })
 
   useEffect(() => {
@@ -200,15 +201,15 @@ export default function AccountsReceivablePage() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-    }).format(amount)
+  const formatCurrency = (amount: number, currency?: string) => {
+    const curr = currency || 'ARS'
+    const symbols: Record<string, string> = { 'ARS': '$', 'USD': 'USD $', 'EUR': 'EUR €' }
+    return `${symbols[curr] || '$'} ${amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   const filteredInvoices = useMemo(() => {
     return allInvoices.filter(inv => {
+      if (filters.currency !== 'all' && inv.currency !== filters.currency) return false
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
@@ -224,50 +225,38 @@ export default function AccountsReceivablePage() {
       }
       return true
     })
-  }, [allInvoices, filters.from_date, filters.to_date, filters.search])
+  }, [allInvoices, filters.from_date, filters.to_date, filters.search, filters.currency])
 
   const summary = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const invoices = allInvoices.filter(inv => {
-      if (filters.from_date || filters.to_date) {
-        const issueDate = new Date(inv.issue_date)
-        if (filters.from_date && issueDate < new Date(filters.from_date)) return false
-        if (filters.to_date && issueDate > new Date(filters.to_date)) return false
-      }
-      return true
-    })
-    const totalReceivable = invoices.reduce((sum, inv) => {
-      const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
-      return sum + amount
-    }, 0)
-    const filteredCollections = collections.filter(col => {
-      if (filters.from_date || filters.to_date) {
-        const collectionDate = new Date(col.collection_date)
-        if (filters.from_date && collectionDate < new Date(filters.from_date)) return false
-        if (filters.to_date && collectionDate > new Date(filters.to_date)) return false
-      }
-      return true
-    })
-    const totalCollected = filteredCollections.reduce((sum, col) => sum + (parseFloat(col.amount) || 0), 0)
+    const in7Days = new Date(today)
+    in7Days.setDate(in7Days.getDate() + 7)
+    const byCurrency = { ARS: { receivable: 0, collected: 0, collected_count: 0, upcoming: 0, upcoming_count: 0, overdue: 0, overdue_count: 0 }, USD: { receivable: 0, collected: 0, collected_count: 0, upcoming: 0, upcoming_count: 0, overdue: 0, overdue_count: 0 }, EUR: { receivable: 0, collected: 0, collected_count: 0, upcoming: 0, upcoming_count: 0, overdue: 0, overdue_count: 0 } }
     
-    const overdue = invoices.filter(inv => {
+    allInvoices.forEach(inv => {
+      const curr = inv.currency || 'ARS'
+      const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
+      byCurrency[curr].receivable += amount
       const dueDate = new Date(inv.due_date)
       dueDate.setHours(0, 0, 0, 0)
-      return dueDate < today
+      if (dueDate < today) {
+        byCurrency[curr].overdue += amount
+        byCurrency[curr].overdue_count++
+      } else if (dueDate <= in7Days) {
+        byCurrency[curr].upcoming += amount
+        byCurrency[curr].upcoming_count++
+      }
     })
     
-    return {
-      total_receivable: totalReceivable,
-      total_collected: totalCollected,
-      total_pending: totalReceivable,
-      overdue_count: overdue.length,
-      overdue_amount: overdue.reduce((sum, inv) => {
-        const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
-        return sum + amount
-      }, 0)
-    }
-  }, [allInvoices, collections, filters.from_date, filters.to_date])
+    collections.forEach(col => {
+      const curr = col.invoice?.currency || 'ARS'
+      byCurrency[curr].collected += parseFloat(col.amount) || 0
+      byCurrency[curr].collected_count++
+    })
+    
+    return { byCurrency, overdue_count: byCurrency.ARS.overdue_count + byCurrency.USD.overdue_count + byCurrency.EUR.overdue_count, upcoming_count: byCurrency.ARS.upcoming_count + byCurrency.USD.upcoming_count + byCurrency.EUR.upcoming_count, collected_count: byCurrency.ARS.collected_count + byCurrency.USD.collected_count + byCurrency.EUR.collected_count }
+  }, [allInvoices, collections])
 
   if (authLoading || loading) {
     return (
@@ -323,16 +312,64 @@ export default function AccountsReceivablePage() {
         </Button>
       }
       summaryCards={
-        <SummaryCards 
-          summary={summary} 
-          invoiceCount={filteredInvoices.length} 
-          filters={filters} 
-          formatCurrency={formatCurrency}
-          type="receivable"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Por Cobrar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">$ {summary.byCurrency.ARS.receivable.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                <span>USD $ {summary.byCurrency.USD.receivable.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                <span>EUR € {summary.byCurrency.EUR.receivable.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{filteredInvoices.length} factura{filteredInvoices.length !== 1 ? 's' : ''}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vencidas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600 mb-2">{summary.overdue_count}</div>
+              <div className="text-sm font-semibold mb-1">$ {summary.byCurrency.ARS.overdue.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                <span>USD $ {summary.byCurrency.USD.overdue.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                <span>EUR € {summary.byCurrency.EUR.overdue.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Próx. Venc.</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600 mb-2">{summary.upcoming_count}</div>
+              <div className="text-sm font-semibold mb-1">$ {summary.byCurrency.ARS.upcoming.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                <span>USD $ {summary.byCurrency.USD.upcoming.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                <span>EUR € {summary.byCurrency.EUR.upcoming.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cobrado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600 mb-2">$ {summary.byCurrency.ARS.collected.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+              <div className="flex gap-3 text-xs text-muted-foreground">
+                <span>USD $ {summary.byCurrency.USD.collected.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                <span>EUR € {summary.byCurrency.EUR.collected.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{summary.collected_count} cobro{summary.collected_count !== 1 ? 's' : ''}</p>
+            </CardContent>
+          </Card>
+        </div>
       }
       filters={filters}
       onFiltersChange={setFilters}
+      showCurrencyFilter={true}
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[

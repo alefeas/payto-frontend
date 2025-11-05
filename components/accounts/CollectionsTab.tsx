@@ -5,13 +5,14 @@ import { CheckCircle2 } from "lucide-react"
 
 interface CollectionsTabProps {
   collections: any[]
-  formatCurrency: (amount: number) => string
-  filters: { from_date: string; to_date: string; search?: string }
+  formatCurrency: (amount: number, currency?: string) => string
+  filters: { from_date: string; to_date: string; search?: string; currency?: string }
   type: 'receivable' | 'payable'
 }
 
 export function CollectionsTab({ collections, formatCurrency, filters, type }: CollectionsTabProps) {
   const filteredCollections = collections.filter((item) => {
+    if (filters.currency && filters.currency !== 'all' && item.invoice?.currency !== filters.currency) return false
     if (filters.from_date || filters.to_date) {
       const date = new Date(item.collection_date || item.payment_date)
       if (filters.from_date && date < new Date(filters.from_date)) return false
@@ -47,7 +48,6 @@ export function CollectionsTab({ collections, formatCurrency, filters, type }: C
           <p className="text-sm text-muted-foreground mt-1">
             {filteredCollections.length} {type === 'receivable' ? 'cobro' : 'pago'}{filteredCollections.length !== 1 ? 's' : ''} registrado{filteredCollections.length !== 1 ? 's' : ''}
           </p>
-          <p className="text-2xl font-bold mt-2">{formatCurrency(filteredCollections.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}</p>
         </div>
       </div>
       <div className="space-y-2">
@@ -62,7 +62,7 @@ export function CollectionsTab({ collections, formatCurrency, filters, type }: C
             <PaymentCollectionCard
               key={item.id}
               item={item}
-              formatCurrency={formatCurrency}
+              formatCurrency={(amount) => formatCurrency(amount, item.invoice?.currency)}
               type={type}
             />
           ))

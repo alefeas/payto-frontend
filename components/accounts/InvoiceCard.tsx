@@ -6,7 +6,7 @@ import { Calendar, Clock } from "lucide-react"
 
 interface InvoiceCardProps {
   invoice: any
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number, currency?: string) => string
   onAction?: (id: string) => void
   actionLabel?: string
   variant?: 'default' | 'upcoming' | 'overdue'
@@ -86,7 +86,7 @@ export function InvoiceCard({
         </div>
       </div>
       <div className={`font-bold text-lg ${amountColor[variant]}`}>
-        {formatCurrency(invoice.pending_amount || invoice.total)}
+        {formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}
       </div>
     </div>
   )

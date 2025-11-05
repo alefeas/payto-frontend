@@ -6,6 +6,7 @@ import { BackButton } from "@/components/ui/back-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface AccountsLayoutProps {
   companyId: string
@@ -17,12 +18,14 @@ interface AccountsLayoutProps {
     search: string
     from_date: string
     to_date: string
+    currency?: string
   }
   searchPlaceholder?: string
   onFiltersChange: (filters: any) => void
   activeTab: string
   onTabChange: (tab: string) => void
   tabs: Array<{ value: string; label: string; content: ReactNode }>
+  showCurrencyFilter?: boolean
 }
 
 export function AccountsLayout({
@@ -36,7 +39,8 @@ export function AccountsLayout({
   activeTab,
   onTabChange,
   tabs,
-  searchPlaceholder = 'Buscar por número de factura o CUIT...'
+  searchPlaceholder = 'Buscar por número de factura o CUIT...',
+  showCurrencyFilter = false
 }: AccountsLayoutProps) {
   const router = useRouter()
 
@@ -57,6 +61,19 @@ export function AccountsLayout({
         {summaryCards}
 
         <div className="flex gap-2">
+          {showCurrencyFilter && (
+            <Select value={filters.currency || 'all'} onValueChange={(value) => onFiltersChange({...filters, currency: value})}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="ARS">ARS $</SelectItem>
+                <SelectItem value="USD">USD $</SelectItem>
+                <SelectItem value="EUR">EUR €</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Input
             type="date"
             value={filters.from_date}
@@ -77,10 +94,10 @@ export function AccountsLayout({
             onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
             className="flex-1"
           />
-          {(filters.from_date || filters.to_date || filters.search) && (
+          {(filters.from_date || filters.to_date || filters.search || (showCurrencyFilter && filters.currency !== 'all')) && (
             <Button
               variant="outline"
-              onClick={() => onFiltersChange({ ...filters, from_date: '', to_date: '', search: '' })}
+              onClick={() => onFiltersChange({ ...filters, from_date: '', to_date: '', search: '', ...(showCurrencyFilter && { currency: 'all' }) })}
             >
               Limpiar
             </Button>

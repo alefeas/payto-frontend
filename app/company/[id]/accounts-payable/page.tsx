@@ -64,6 +64,7 @@ export default function AccountsPayablePage() {
     overdue: false,
     from_date: '',
     to_date: '',
+    currency: 'all' as string,
   })
 
   useEffect(() => {
@@ -248,11 +249,10 @@ export default function AccountsPayablePage() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-    }).format(amount)
+  const formatCurrency = (amount: number, currency?: string) => {
+    const curr = currency || 'ARS'
+    const symbols: Record<string, string> = { 'ARS': '$', 'USD': 'USD $', 'EUR': 'EUR €' }
+    return `${symbols[curr] || '$'} ${amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   const getRetentionLabel = (type: string) => {
@@ -292,6 +292,7 @@ export default function AccountsPayablePage() {
   const filteredInvoices = useMemo(() => {
     return allInvoices.filter(inv => {
       if (inv.status === 'cancelled') return false
+      if (filters.currency !== 'all' && inv.currency !== filters.currency) return false
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
         if (filters.from_date && issueDate < new Date(filters.from_date)) return false
@@ -307,45 +308,33 @@ export default function AccountsPayablePage() {
       }
       return true
     })
-  }, [allInvoices, filters.from_date, filters.to_date, filters.search])
+  }, [allInvoices, filters.from_date, filters.to_date, filters.search, filters.currency])
 
   const summary = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const invoices = allInvoices.filter(inv => {
-      if (inv.status === 'cancelled') return false
-      if (filters.from_date || filters.to_date) {
-        const issueDate = new Date(inv.issue_date)
-        if (filters.from_date && issueDate < new Date(filters.from_date)) return false
-        if (filters.to_date && issueDate > new Date(filters.to_date)) return false
-      }
-      return true
-    })
-    const totalPending = invoices.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount) || 0), 0)
-    const totalPayable = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
-    const filteredPayments = payments.filter(payment => {
-      if (filters.from_date || filters.to_date) {
-        const paymentDate = new Date(payment.payment_date)
-        if (filters.from_date && paymentDate < new Date(filters.from_date)) return false
-        if (filters.to_date && paymentDate > new Date(filters.to_date)) return false
-      }
-      return true
-    })
-    const totalPaid = filteredPayments.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0)
-    const overdue = invoices.filter(inv => {
+    const byCurrency = { ARS: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0 }, USD: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0 }, EUR: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0 } }
+    
+    allInvoices.filter(inv => inv.status !== 'cancelled').forEach(inv => {
+      const curr = inv.currency || 'ARS'
+      const amount = parseFloat(inv.pending_amount) || 0
+      byCurrency[curr].pending += amount
       const dueDate = new Date(inv.due_date)
       dueDate.setHours(0, 0, 0, 0)
-      return dueDate < today && inv.pending_amount > 0
+      if (dueDate < today && amount > 0) {
+        byCurrency[curr].overdue += amount
+        byCurrency[curr].overdue_count++
+      }
     })
     
-    return {
-      total_payable: totalPayable,
-      total_paid: totalPaid,
-      total_pending: totalPending,
-      overdue_count: overdue.length,
-      overdue_amount: overdue.reduce((sum, inv) => sum + (parseFloat(inv.pending_amount) || 0), 0)
-    }
-  }, [allInvoices, payments, filters.from_date, filters.to_date])
+    payments.forEach(payment => {
+      const curr = payment.invoice?.currency || 'ARS'
+      byCurrency[curr].paid += parseFloat(payment.amount) || 0
+      byCurrency[curr].paid_count++
+    })
+    
+    return { byCurrency, overdue_count: byCurrency.ARS.overdue_count + byCurrency.USD.overdue_count + byCurrency.EUR.overdue_count, paid_count: byCurrency.ARS.paid_count + byCurrency.USD.paid_count + byCurrency.EUR.paid_count }
+  }, [allInvoices, payments])
 
   const getInvoiceStatusBadges = (invoice: any) => {
     const badges = []
@@ -353,22 +342,28 @@ export default function AccountsPayablePage() {
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(invoice.due_date)
     dueDate.setHours(0, 0, 0, 0)
-    const isOverdue = dueDate < today && invoice.payment_status !== 'paid'
-    
-    // Estado de vencimiento
+
+    // Estado de la compañía actual sobre la factura
+    const companyStatus = invoice.company_statuses?.[companyId]
+    const total = parseFloat(invoice.total) || 0
+    const pending = parseFloat(invoice.pending_amount) || 0
+
+    // Vencimiento: solo marcar si no está pagada para esta compañía
+    const isOverdue = dueDate < today && companyStatus !== 'paid'
+
     if (isOverdue) {
       badges.push(<Badge key="overdue" className="bg-red-500 text-white font-semibold">Vencida</Badge>)
     }
-    
-    // Estado de pago
-    if (invoice.payment_status === 'paid') {
+
+    // Estado de pago para la compañía actual
+    if (companyStatus === 'paid') {
       badges.push(<Badge key="payment" className="bg-green-100 text-green-800">Pagada</Badge>)
-    } else if (invoice.payment_status === 'partial') {
+    } else if (pending > 0 && pending < total) {
       badges.push(<Badge key="payment" className="bg-yellow-100 text-yellow-800">Pago Parcial</Badge>)
     } else {
       badges.push(<Badge key="payment" className="bg-gray-100 text-gray-800">Pendiente Pago</Badge>)
     }
-    
+
     return <div className="flex gap-1 flex-wrap">{badges}</div>
   }
 
@@ -463,10 +458,11 @@ export default function AccountsPayablePage() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(summary.total_pending)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {filters.from_date || filters.to_date ? 'Del periodo filtrado' : 'Total pendiente'}
-                  </p>
+                  <div className="text-2xl font-bold mb-2">$ {summary.byCurrency.ARS.pending.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span>USD $ {summary.byCurrency.USD.pending.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                    <span>EUR € {summary.byCurrency.EUR.pending.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -476,10 +472,12 @@ export default function AccountsPayablePage() {
                   <AlertCircle className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{summary.overdue_count}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCurrency(summary.overdue_amount)}
-                  </p>
+                  <div className="text-2xl font-bold text-red-600 mb-2">{summary.overdue_count}</div>
+                  <div className="text-sm font-semibold mb-1">$ {summary.byCurrency.ARS.overdue.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span>USD $ {summary.byCurrency.USD.overdue.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                    <span>EUR € {summary.byCurrency.EUR.overdue.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -491,7 +489,7 @@ export default function AccountsPayablePage() {
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-600">{dashboard.summary.upcoming_count}</div>
                   <p className="text-xs text-muted-foreground">
-                    {formatCurrency(dashboard.summary.upcoming_amount)}
+                    {formatCurrency(dashboard.summary.upcoming_amount, 'ARS')}
                   </p>
                 </CardContent>
               </Card>
@@ -502,10 +500,12 @@ export default function AccountsPayablePage() {
                   <TrendingUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.total_paid)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {filters.from_date || filters.to_date ? 'Del periodo filtrado' : 'Total histórico'}
-                  </p>
+                  <div className="text-2xl font-bold text-green-600 mb-2">$ {summary.byCurrency.ARS.paid.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span>USD $ {summary.byCurrency.USD.paid.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                    <span>EUR € {summary.byCurrency.EUR.paid.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">{summary.paid_count} pago{summary.paid_count !== 1 ? 's' : ''}</p>
                 </CardContent>
               </Card>
             </div>
@@ -513,6 +513,17 @@ export default function AccountsPayablePage() {
 
         {/* Filtros Globales */}
         <div className="flex gap-2">
+          <Select value={filters.currency} onValueChange={(value) => setFilters({...filters, currency: value})}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="ARS">ARS $</SelectItem>
+              <SelectItem value="USD">USD $</SelectItem>
+              <SelectItem value="EUR">EUR €</SelectItem>
+            </SelectContent>
+          </Select>
           <Input
             type="date"
             value={filters.from_date}
@@ -533,8 +544,8 @@ export default function AccountsPayablePage() {
             onChange={(e) => setFilters({...filters, search: e.target.value})}
             className="flex-1"
           />
-          {(filters.from_date || filters.to_date || filters.search) && (
-            <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: ''})}>
+          {(filters.from_date || filters.to_date || filters.search || filters.currency !== 'ARS') && (
+            <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: '', currency: 'ARS'})}>
               Limpiar
             </Button>
           )}
@@ -609,7 +620,7 @@ export default function AccountsPayablePage() {
           <TabsContent value="payments" className="space-y-4">
             <CollectionsTab
               collections={payments}
-              formatCurrency={formatCurrency}
+              formatCurrency={(amount, currency) => formatCurrency(amount, currency)}
               filters={filters}
               type="payable"
             />

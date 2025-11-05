@@ -166,7 +166,7 @@ export function InvoiceList({
                 <div className="flex items-center gap-4">
                   {getStatusBadges(invoice)}
                   <div className="text-right">
-                    <div className="font-medium">{formatCurrency(parseFloat(invoice.pending_amount || invoice.total || 0))}</div>
+                    <div className="font-medium">{formatCurrency(parseFloat(invoice.pending_amount || invoice.total || 0), invoice.currency)}</div>
                     <div className="text-sm text-muted-foreground">
                       Vence: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
                     </div>

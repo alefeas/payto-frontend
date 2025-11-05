@@ -18,6 +18,7 @@ interface BalanceItem {
   pending_amount?: number
   balance_type: 'credit' | 'debit'
   description: string
+  currency?: string
 }
 
 interface BalancesTabProps {
@@ -65,6 +66,16 @@ export function BalancesTab({
   const filteredCreditNotes = filterNotes(creditNotes)
   const filteredDebitNotes = filterNotes(debitNotes)
   
+  const summaryByCurrency = { ARS: { credits: 0, debits: 0 }, USD: { credits: 0, debits: 0 }, EUR: { credits: 0, debits: 0 } }
+  filteredCreditNotes.forEach(nc => {
+    const curr = nc.currency || 'ARS'
+    summaryByCurrency[curr].credits += nc.pending_amount || 0
+  })
+  filteredDebitNotes.forEach(nd => {
+    const curr = nd.currency || 'ARS'
+    summaryByCurrency[curr].debits += nd.pending_amount || 0
+  })
+  
   return (
     <div className="space-y-6">
       <div>
@@ -83,7 +94,11 @@ export function BalancesTab({
             <TrendingDown className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.total_credits)}</div>
+            <div className="text-2xl font-bold mb-2">$ {summaryByCurrency.ARS.credits.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+            <div className="flex gap-3 text-xs text-muted-foreground mb-2">
+              <span>USD $ {summaryByCurrency.USD.credits.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              <span>EUR € {summaryByCurrency.EUR.credits.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+            </div>
             <p className="text-xs text-muted-foreground">
               {filteredCreditNotes.length} {filteredCreditNotes.length === 1 ? 'nota' : 'notas'}
             </p>
@@ -98,7 +113,11 @@ export function BalancesTab({
             <TrendingUp className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.total_debits)}</div>
+            <div className="text-2xl font-bold mb-2">$ {summaryByCurrency.ARS.debits.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+            <div className="flex gap-3 text-xs text-muted-foreground mb-2">
+              <span>USD $ {summaryByCurrency.USD.debits.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              <span>EUR € {summaryByCurrency.EUR.debits.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+            </div>
             <p className="text-xs text-muted-foreground">
               {filteredDebitNotes.length} {filteredDebitNotes.length === 1 ? 'nota' : 'notas'}
             </p>
@@ -115,17 +134,11 @@ export function BalancesTab({
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${
-              summary.net_balance_type === 'debit' ? 'text-red-600' : 'text-green-600'
-            }`}>
-              {formatCurrency(Math.abs(summary.net_balance))}
+            <div className="text-2xl font-bold mb-2">$ {(summaryByCurrency.ARS.debits - summaryByCurrency.ARS.credits).toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+            <div className="flex gap-3 text-xs text-muted-foreground">
+              <span>USD $ {(summaryByCurrency.USD.debits - summaryByCurrency.USD.credits).toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+              <span>EUR € {(summaryByCurrency.EUR.debits - summaryByCurrency.EUR.credits).toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {summary.net_balance_type === 'debit' 
-                ? (type === 'receivable' ? 'A cobrar adicional' : 'A pagar adicional')
-                : (type === 'receivable' ? 'Crédito pendiente' : 'Crédito a favor')
-              }
-            </p>
           </CardContent>
         </Card>
       </div>
