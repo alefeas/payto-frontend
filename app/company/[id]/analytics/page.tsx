@@ -519,7 +519,8 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value, name) => {
-                      const currency = name.includes('ARS') ? '$' : name.includes('USD') ? 'USD $' : name.includes('EUR') ? 'EUR €' : '$'
+                      const nameStr = String(name)
+                      const currency = nameStr.includes('ARS') ? '$' : nameStr.includes('USD') ? 'USD $' : nameStr.includes('EUR') ? 'EUR €' : '$'
                       return `${currency} ${Number(value).toLocaleString('es-AR')}`
                     }} />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
@@ -569,7 +570,8 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value, name) => {
-                      const currency = name.includes('ARS') ? '$' : name.includes('USD') ? 'USD $' : 'EUR €'
+                      const nameStr = String(name)
+                      const currency = nameStr.includes('ARS') ? '$' : nameStr.includes('USD') ? 'USD $' : 'EUR €'
                       return `${currency} ${Number(value).toLocaleString('es-AR')}`
                     }} />
                     <Legend />
