@@ -17,6 +17,16 @@ export interface AnalyticsSummary {
     average: number
   }
   balance: number
+  sales_by_currency?: {
+    ARS: { total: number; count: number }
+    USD: { total: number; count: number }
+    EUR: { total: number; count: number }
+  }
+  purchases_by_currency?: {
+    ARS: { total: number; count: number }
+    USD: { total: number; count: number }
+    EUR: { total: number; count: number }
+  }
 }
 
 export interface RevenueTrend {
@@ -24,6 +34,12 @@ export interface RevenueTrend {
   sales: number
   purchases: number
   balance: number
+  sales_ARS?: number
+  sales_USD?: number
+  sales_EUR?: number
+  purchases_ARS?: number
+  purchases_USD?: number
+  purchases_EUR?: number
 }
 
 export interface TopClient {
