@@ -9,7 +9,7 @@ export function AuthenticatedLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset>
         <main className="flex-1">{children}</main>

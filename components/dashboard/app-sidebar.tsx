@@ -76,17 +76,26 @@ export function AppSidebar() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadCompanies()
+      // Extraer companyId de la URL si existe
+      const pathMatch = pathname.match(/\/company\/([^/]+)/)
+      const urlCompanyId = pathMatch ? pathMatch[1] : null
+      loadCompanies(urlCompanyId || undefined)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, pathname])
 
-  const loadCompanies = async () => {
+  const loadCompanies = async (selectCompanyId?: string) => {
     try {
       setLoading(true)
       const data = await companyService.getCompanies()
       const active = data.filter(c => c.isActive)
       setCompanies(active)
-      if (active.length > 0) {
+      
+      // Si se especifica un ID, seleccionarlo
+      if (selectCompanyId) {
+        setSelectedCompanyId(selectCompanyId)
+      } 
+      // Si no hay empresa seleccionada y hay empresas disponibles, seleccionar la primera
+      else if (active.length > 0 && !selectedCompanyId) {
         setSelectedCompanyId(active[0].id)
       }
     } catch (error: any) {
@@ -95,6 +104,15 @@ export function AppSidebar() {
       setLoading(false)
     }
   }
+
+  // Exponer función para recargar empresas desde fuera
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).reloadCompanies = (newCompanyId?: string) => {
+        loadCompanies(newCompanyId)
+      }
+    }
+  }, [loadCompanies])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)

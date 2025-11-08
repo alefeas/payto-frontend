@@ -134,10 +134,19 @@ export default function CreateCompanyForm() {
         }
       }
 
+      // Recargar empresas en el sidebar y seleccionar la nueva
+      if (typeof window !== 'undefined' && (window as any).reloadCompanies) {
+        await (window as any).reloadCompanies(company.id)
+      }
+
       toast.success(`Empresa "${formData.name}" creada exitosamente`)
+      
+      // Navegar sin recargar la página
       router.push(`/company/${company.id}`)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al crear la empresa')
+      console.error('Error al crear empresa:', error)
+      const errorMessage = error.response?.data?.message || error.message || 'Error al crear la empresa'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

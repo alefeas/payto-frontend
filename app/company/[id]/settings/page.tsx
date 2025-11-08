@@ -535,7 +535,7 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>CUIT</Label>
-                        <Input value={formData.national_id} readOnly disabled className="bg-gray-100 dark:bg-gray-800" />
+                        <Input value={formData.national_id || company?.nationalId || company?.national_id || ''} readOnly disabled className="bg-gray-100 dark:bg-gray-800" />
                         <p className="text-xs text-muted-foreground">El CUIT no puede modificarse ya que está vinculado al certificado AFIP</p>
                       </div>
                       <div className="space-y-2">
@@ -1244,17 +1244,26 @@ export default function SettingsPage() {
                 
                 {canDelete && (
                   <div className="border-t pt-6">
-                    <Label className="text-red-600">Zona de Peligro</Label>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
-                    </p>
-                    <Button variant="destructive" onClick={() => {
-                      setShowDeleteModal(true)
-                      checkInvoices()
-                    }}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Eliminar Perfil Fiscal
-                    </Button>
+                    <div className="border-2 border-destructive/20 rounded-lg p-6 bg-destructive/5">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                          <Trash2 className="h-5 w-5 text-destructive" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-destructive mb-2">Zona de Peligro</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
+                          </p>
+                          <Button variant="destructive" onClick={() => {
+                            setShowDeleteModal(true)
+                            checkInvoices()
+                          }}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar Perfil Fiscal
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -1339,6 +1348,16 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Botón de guardar al final de la página */}
+        {canUpdate && (
+          <div className="mt-6">
+            <Button onClick={saveCompany} disabled={saving || !hasChanges} className="w-full">
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </div>
+        )}
 
         {/* Add Bank Account Dialog */}
         <Dialog open={showAddBankDialog} onOpenChange={setShowAddBankDialog}>
