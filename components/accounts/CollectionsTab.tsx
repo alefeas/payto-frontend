@@ -62,7 +62,7 @@ export function CollectionsTab({ collections, formatCurrency, filters, type }: C
             <PaymentCollectionCard
               key={item.id}
               item={item}
-              formatCurrency={(amount) => formatCurrency(amount, item.invoice?.currency)}
+              formatCurrency={formatCurrency}
               type={type}
             />
           ))

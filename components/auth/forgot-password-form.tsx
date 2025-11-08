@@ -58,14 +58,15 @@ export default function ForgotPasswordForm() {
           <div className="space-y-4">
             <Button
               variant="outline"
-              className="w-full h-12 text-base"
+              className="w-full"
+              size="lg"
               onClick={() => setEmailSent(false)}
             >
               Enviar de nuevo
             </Button>
 
             <Link href="/log-in" className="block">
-              <Button variant="ghost" className="w-full h-12 text-base">
+              <Button variant="ghost" className="w-full" size="lg">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver al inicio de sesión
               </Button>
@@ -114,13 +115,13 @@ export default function ForgotPasswordForm() {
             />
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base" size="lg" disabled={isLoading}>
+          <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
             {isLoading ? "Enviando..." : "Enviar enlace de recuperación"}
           </Button>
         </form>
 
         <Link href="/log-in" className="block">
-          <Button variant="ghost" className="w-full h-12 text-base">
+          <Button variant="ghost" className="w-full" size="lg">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al inicio de sesión
           </Button>

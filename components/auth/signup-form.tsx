@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { FormFooterLink } from "@/components/ui/form-footer-link";
 import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
 import { formatPhone } from "@/lib/input-formatters";
@@ -181,14 +180,14 @@ export default function SignupForm() {
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-              s === step ? 'bg-blue-600 text-white' :
-              s < step ? 'bg-blue-100 text-blue-600' :
-              'bg-gray-200 text-gray-500'
+              s === step ? 'bg-primary text-white' :
+              s < step ? 'bg-primary/20 text-primary' :
+              'bg-gray-200 text-gray-400'
             }`}>
               {s}
             </div>
             {s < 3 && <div className={`w-12 h-0.5 transition-colors ${
-              s < step ? 'bg-blue-600' : 'bg-gray-200'
+              s < step ? 'bg-primary' : 'bg-gray-200'
             }`} />}
           </div>
         ))}
@@ -492,11 +491,15 @@ export default function SignupForm() {
           Continuar con Google
         </Button>
 
-        <FormFooterLink
-          text="¿Ya tienes una cuenta?"
-          linkText="Iniciar sesión"
-          href="/log-in"
-        />
+        <p className="text-sm text-center text-gray-600">
+          ¿Ya tienes una cuenta?{" "}
+          <Link
+            href="/log-in"
+            className="font-medium text-primary hover:underline transition-colors"
+          >
+            Iniciar sesión
+          </Link>
+        </p>
       </div>
     </div>
   );

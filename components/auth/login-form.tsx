@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { FormFooterLink } from "@/components/ui/form-footer-link";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { Eye, EyeOff } from "lucide-react";
@@ -167,11 +166,15 @@ export default function LoginForm() {
           Continuar con Google
         </Button>
 
-        <FormFooterLink
-          text="¿No tienes una cuenta?"
-          linkText="Registrarse"
-          href="/sign-up"
-        />
+        <p className="text-sm text-center text-gray-600">
+          ¿No tienes una cuenta?{" "}
+          <Link
+            href="/sign-up"
+            className="font-medium text-primary hover:underline transition-colors"
+          >
+            Registrarse
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -87,7 +87,7 @@ export function AuditMetadataViewer({ metadata, trigger }: AuditMetadataViewerPr
   }
 
   const defaultTrigger = (
-    <Button variant="ghost" size="sm" className="h-6 px-2">
+    <Button variant="ghost" size="sm">
       <Eye className="h-3 w-3 mr-1" />
       Ver detalles
     </Button>

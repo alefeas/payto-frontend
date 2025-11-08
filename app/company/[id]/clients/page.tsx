@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { clientService, Client } from "@/services/client.service"
 import { ClientForm } from "@/components/clients/ClientForm"
+import { Skeleton } from "@/components/ui/skeleton"
             
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
@@ -135,17 +136,58 @@ export default function ClientsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header Skeleton */}
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-80 bg-muted rounded animate-pulse"></div>
+            <Skeleton className="h-10 w-10 rounded" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-36" />
             </div>
           </div>
-          <div className="h-32 bg-muted rounded animate-pulse"></div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+
+          {/* Search and Filter Skeleton */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-10 w-48" />
+          </div>
+
+          {/* Clients List Skeleton */}
+          <div>
+            <div className="mb-4">
+              <Skeleton className="h-6 w-32 mb-1" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between py-3 px-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -154,7 +196,7 @@ export default function ClientsPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -199,50 +241,46 @@ export default function ClientsPage() {
         </div>
 
         {/* Search and Filters */}
-        <Card>
-          <CardContent className="!p-2">
-            <div className="flex items-center gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre, documento o email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-9"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Condición:</span>
-                <Select value={filterCondicion} onValueChange={setFilterCondicion}>
-                  <SelectTrigger className="w-[200px] h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
-                    <SelectItem value="monotax">Monotributo</SelectItem>
-                    <SelectItem value="exempt">Exento</SelectItem>
-                    <SelectItem value="final_consumer">Consumidor Final</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre, documento o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-9"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Condición:</span>
+            <Select value={filterCondicion} onValueChange={setFilterCondicion}>
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="registered_taxpayer">Responsable Inscripto</SelectItem>
+                <SelectItem value="monotax">Monotributo</SelectItem>
+                <SelectItem value="exempt">Exento</SelectItem>
+                <SelectItem value="final_consumer">Consumidor Final</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Clients List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">
               {showArchived ? `Clientes Archivados (${archivedClients.length})` : `Clientes (${filteredClients.length})`}
-            </CardTitle>
-            <CardDescription>
+            </h2>
+            <p className="text-sm text-muted-foreground">
               {showArchived 
                 ? "Clientes archivados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
                 : "Lista de clientes externos guardados para facturación rápida"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
+          </div>
+          <div>
             {showArchived ? (
               filteredArchivedClients.length === 0 ? (
                 <div className="text-center py-12">
@@ -253,12 +291,11 @@ export default function ClientsPage() {
               ) : (
                 <div className="space-y-2">
                   {filteredArchivedClients.map((client) => (
-                    <Card key={client.id} className="hover:shadow-md transition-shadow bg-muted/30">
-                      <CardContent className="p-4">
+                    <Card key={client.id} className="p-4 hover:shadow-md transition-shadow bg-muted/30">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-base truncate">{getClientDisplayName(client)}</h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-sm truncate">{getClientDisplayName(client)}</h3>
                               <Badge className={condicionIvaColors[client.taxCondition]}>
                                 {condicionIvaLabels[client.taxCondition]}
                               </Badge>
@@ -272,7 +309,7 @@ export default function ClientsPage() {
                               )}
                             </div>
                             
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <FileText className="h-3 w-3" />
                                 {client.documentType}: {client.documentNumber}
@@ -338,7 +375,6 @@ export default function ClientsPage() {
                             </Button>
                           </div>
                         </div>
-                      </CardContent>
                     </Card>
                   ))}
                 </div>
@@ -362,8 +398,7 @@ export default function ClientsPage() {
             ) : (
               <div className="space-y-2">
                 {filteredClients.map((client) => (
-                  <Card key={client.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
+                  <Card key={client.id} className="p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between gap-4">
                         {/* Client Info */}
                         <div className="flex-1 min-w-0">
@@ -427,13 +462,12 @@ export default function ClientsPage() {
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
                   </Card>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

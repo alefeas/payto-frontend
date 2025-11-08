@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Calendar, Clock, CheckSquare, Trash2, Edit3, ArrowLeft } from "lucide-react"
+import { Plus, Calendar, Clock, CheckSquare, Trash2, Edit3 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { BackButton } from "@/components/ui/back-button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -148,15 +150,53 @@ export default function TasksPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-64"></div>
-            <div className="h-6 bg-muted rounded w-96"></div>
-            <div className="space-y-4 mt-8">
-              <div className="h-32 bg-muted rounded"></div>
-              <div className="h-32 bg-muted rounded"></div>
-              <div className="h-32 bg-muted rounded"></div>
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded" />
+              <div className="space-y-2">
+                <Skeleton className="h-9 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
             </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+          
+          {/* Filter Buttons Skeleton */}
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-20" />
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+          
+          {/* Task List Skeleton */}
+          <div className="space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="border-gray-200 dark:border-gray-700">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="h-5 w-5 rounded mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-5 w-48" />
+                          <Skeleton className="h-4 w-64" />
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-16" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -169,9 +209,7 @@ export default function TasksPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton />
             <div>
               <h1 className="text-3xl font-bold">Mis Tareas</h1>
               <p className="text-muted-foreground">Gestiona tu lista de tareas pendientes</p>
@@ -285,9 +323,32 @@ export default function TasksPage() {
         {/* Tasks List */}
         <div className="space-y-4">
           {loadingTasks ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Cargando tareas...</p>
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="border-gray-200 dark:border-gray-700">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-5 w-5 rounded mt-1" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-5 w-48" />
+                            <Skeleton className="h-4 w-64" />
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-5 w-16" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Skeleton className="h-8 w-8 rounded" />
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : filteredTasks.length === 0 ? (
             <Card>

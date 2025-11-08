@@ -118,7 +118,7 @@ export default function ResetPasswordForm() {
           </div>
 
           <Link href="/forgot-password" className="block">
-            <Button className="w-full h-12 text-base">
+            <Button className="w-full" size="lg">
               Solicitar nuevo enlace
             </Button>
           </Link>
@@ -199,7 +199,7 @@ export default function ResetPasswordForm() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base" size="lg" disabled={isLoading}>
+          <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
             {isLoading ? "Restableciendo..." : "Restablecer contraseña"}
           </Button>
         </form>

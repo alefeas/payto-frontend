@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -75,25 +76,19 @@ export default function IvaBookPage() {
     setLoading(true)
     try {
       const [salesResponse, purchasesResponse, summaryResponse] = await Promise.all([
-        apiClient.get(`/companies/${companyId}/iva-book/sales`, {
-          params: { month: selectedMonth, year: selectedYear }
-        }),
-        apiClient.get(`/companies/${companyId}/iva-book/purchases`, {
-          params: { month: selectedMonth, year: selectedYear }
-        }),
-        apiClient.get(`/companies/${companyId}/iva-book/summary`, {
-          params: { month: selectedMonth, year: selectedYear }
-        })
+        apiClient.get(`/companies/${companyId}/iva-book/sales?month=${selectedMonth}&year=${selectedYear}`),
+        apiClient.get(`/companies/${companyId}/iva-book/purchases?month=${selectedMonth}&year=${selectedYear}`),
+        apiClient.get(`/companies/${companyId}/iva-book/summary?month=${selectedMonth}&year=${selectedYear}`)
       ])
 
-      setSalesBook(salesResponse.data.data)
-      setPurchasesBook(purchasesResponse.data.data)
-      setSummary(summaryResponse.data.data)
+      setSalesBook((salesResponse.data as any).data)
+      setPurchasesBook((purchasesResponse.data as any).data)
+      setSummary((summaryResponse.data as any).data)
       
       // Debug: verificar valores del backend
-      console.log('Summary from backend:', summaryResponse.data.data)
-      console.log('Sales totals:', salesResponse.data.data?.totals)
-      console.log('Purchases totals:', purchasesResponse.data.data?.totals)
+      console.log('Summary from backend:', (summaryResponse.data as any).data)
+      console.log('Sales totals:', (salesResponse.data as any).data?.totals)
+      console.log('Purchases totals:', (purchasesResponse.data as any).data?.totals)
     } catch (error: any) {
       toast.error('Error al cargar datos', {
         description: error.response?.data?.message || 'Intente nuevamente'
@@ -115,19 +110,64 @@ export default function IvaBookPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
         <div className="max-w-[1600px] mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10" />
+              <div>
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-96" />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-[140px]" />
+              <Skeleton className="h-10 w-[100px]" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-3 w-28 mt-2" />
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+
+          {/* Tabs Content Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-64" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Table Header */}
+                <div className="flex gap-4">
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+                {/* Table Rows */}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex gap-4 py-3 border-b">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -250,9 +290,7 @@ export default function IvaBookPage() {
                     size="sm"
                     onClick={async () => {
                       try {
-                        const response = await apiClient.get(`/companies/${companyId}/iva-book/export/sales?month=${selectedMonth}&year=${selectedYear}`, {
-                          responseType: 'blob'
-                        })
+                        const response = await apiClient.get(`/companies/${companyId}/iva-book/export/sales?month=${selectedMonth}&year=${selectedYear}`) as any
                         const url = window.URL.createObjectURL(new Blob([response.data]))
                         const link = document.createElement('a')
                         link.href = url
@@ -388,9 +426,7 @@ export default function IvaBookPage() {
                     size="sm"
                     onClick={async () => {
                       try {
-                        const response = await apiClient.get(`/companies/${companyId}/iva-book/export/purchases?month=${selectedMonth}&year=${selectedYear}`, {
-                          responseType: 'blob'
-                        })
+                        const response = await apiClient.get(`/companies/${companyId}/iva-book/export/purchases?month=${selectedMonth}&year=${selectedYear}`) as any
                         const url = window.URL.createObjectURL(new Blob([response.data]))
                         const link = document.createElement('a')
                         link.href = url
@@ -577,9 +613,7 @@ export default function IvaBookPage() {
                     ? `REGINFO_CV_VENTAS_${selectedYear}_${selectedMonth}.txt`
                     : `REGINFO_CV_COMPRAS_${selectedYear}_${selectedMonth}.txt`
                   
-                  const response = await apiClient.get(`/companies/${companyId}/iva-book/export/${endpoint}?month=${selectedMonth}&year=${selectedYear}&force=1`, {
-                    responseType: 'blob'
-                  })
+                  const response = await apiClient.get(`/companies/${companyId}/iva-book/export/${endpoint}?month=${selectedMonth}&year=${selectedYear}&force=1`) as any
                   const url = window.URL.createObjectURL(new Blob([response.data]))
                   const link = document.createElement('a')
                   link.href = url

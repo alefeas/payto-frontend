@@ -6,6 +6,7 @@ import { Search, Plus, Users, Send, Check, X, Building2, Loader2, Clock } from "
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -159,7 +160,7 @@ export default function NetworkPage() {
       setIsDeleting(true)
       const response = await networkService.deleteConnection(companyId, connectionToDelete.id)
       toast.success('Conexión eliminada', {
-        description: response.data?.message || 'La empresa fue convertida en cliente/proveedor externo'
+        description: (response.data as any)?.message || 'La empresa fue convertida en cliente/proveedor externo'
       })
       setShowDeleteModal(false)
       setConnectionToDelete(null)
@@ -180,19 +181,82 @@ export default function NetworkPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header Skeleton */}
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <Skeleton className="h-10 w-10 rounded" />
             <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <div className="ml-auto">
+              <Skeleton className="h-10 w-32" />
             </div>
           </div>
+          
+          {/* Stats Cards Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+              <Card key={i} className="border-gray-200 dark:border-gray-700">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          
+          {/* Tabs Skeleton */}
+          <Card className="border-gray-200 dark:border-gray-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  <Skeleton className="h-9 w-24" />
+                  <Skeleton className="h-9 w-32" />
+                  <Skeleton className="h-9 w-28" />
+                </div>
+                <Skeleton className="h-10 w-64" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-5 w-48" />
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-center space-y-1">
+                          <Skeleton className="h-4 w-8 mx-auto" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <Skeleton className="h-4 w-8 mx-auto" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <div className="text-center space-y-1">
+                          <Skeleton className="h-4 w-16 mx-auto" />
+                          <Skeleton className="h-3 w-8" />
+                        </div>
+                        <Skeleton className="h-5 w-12" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -253,8 +317,22 @@ export default function NetworkPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Card key={i} className="p-4 border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="h-10 w-10 rounded-lg" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-4 w-48" />
+                              <Skeleton className="h-3 w-32" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                          <Skeleton className="h-8 w-20" />
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 ) : (
                 <div className="space-y-4">
@@ -324,8 +402,25 @@ export default function NetworkPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Card key={i} className="p-4 border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="h-10 w-10 rounded-lg" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-4 w-48" />
+                              <Skeleton className="h-3 w-32" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-20" />
+                            <Skeleton className="h-8 w-20" />
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 ) : (
                 <div className="space-y-4">
@@ -393,8 +488,22 @@ export default function NetworkPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Card key={i} className="p-4 border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="h-10 w-10 rounded-lg" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-4 w-48" />
+                              <Skeleton className="h-3 w-32" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                          <Skeleton className="h-6 w-16" />
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 ) : (
                 <div className="space-y-4">
@@ -497,7 +606,6 @@ export default function NetworkPage() {
                   setShowDeleteModal(false)
                   setConnectionToDelete(null)
                 }} 
-                className="w-full sm:w-auto" 
                 disabled={isDeleting}
               >
                 Cancelar
@@ -505,7 +613,6 @@ export default function NetworkPage() {
               <Button 
                 variant="destructive"
                 onClick={confirmDeleteConnection} 
-                className="w-full sm:w-auto" 
                 disabled={isDeleting}
               >
                 {isDeleting ? (
@@ -562,10 +669,10 @@ export default function NetworkPage() {
               </div>
             </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="w-full sm:w-auto" disabled={isSending}>
+              <Button variant="outline" onClick={() => setShowRequestModal(false)} disabled={isSending}>
                 Cancelar
               </Button>
-              <Button onClick={handleSendRequest} className="w-full sm:w-auto" disabled={isSending}>
+              <Button onClick={handleSendRequest} disabled={isSending}>
                 {isSending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

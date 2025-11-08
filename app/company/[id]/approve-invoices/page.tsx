@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { CheckCircle, XCircle, Clock, FileText, User, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -44,7 +45,7 @@ export default function ApproveInvoicesPage() {
       setLoading(true)
       const company = await companyService.getCompany(id as string)
       setCompanyName(company.name)
-      const reqApprovals = company.requiredApprovals !== undefined ? company.requiredApprovals : (company.required_approvals !== undefined ? company.required_approvals : 0)
+      const reqApprovals = company.required_approvals !== undefined ? company.required_approvals : 0
       setRequiredApprovals(reqApprovals)
       
       if (user?.id) {
@@ -142,14 +143,51 @@ export default function ApproveInvoicesPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header Skeleton */}
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <Skeleton className="h-10 w-10" />
             <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-96" />
             </div>
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+
+          {/* Info Card Skeleton */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Main Content Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-64" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -245,7 +283,7 @@ export default function ApproveInvoicesPage() {
                             <Button 
                               size="sm" 
                               onClick={() => openApproveDialog(invoice)}
-                              className="bg-green-600 hover:bg-green-700"
+                              variant="default"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Aprobar
@@ -313,7 +351,7 @@ export default function ApproveInvoicesPage() {
             <Button variant="outline" onClick={() => setShowApproveDialog(false)} disabled={processing}>
               Cancelar
             </Button>
-            <Button onClick={handleApprove} disabled={processing} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleApprove} disabled={processing} variant="default">
               {processing ? 'Aprobando...' : 'Aprobar'}
             </Button>
           </DialogFooter>

@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { CompanyRole, CompanyMember } from "@/types"
@@ -180,8 +181,8 @@ export default function MembersPage() {
     }
   }
 
-  const canManageMembers = company?.role === "owner" || company?.role === "administrator"
-  const isOwner = company?.role === "owner"
+  const canManageMembers = company?.role?.toLowerCase() === "owner" || company?.role?.toLowerCase() === "administrator"
+  const isOwner = company?.role?.toLowerCase() === "owner"
   const currentUserId = user?.id
   
   const canChangeRole = (member: CompanyMember) => {
@@ -204,19 +205,90 @@ export default function MembersPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header Skeleton */}
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <Skeleton className="h-10 w-10 rounded" />
             <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-96" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="h-24 bg-muted rounded animate-pulse"></div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-10 flex-1" />
+                    <Skeleton className="h-10 w-20" />
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Role Counts Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-3 text-center">
+                  <Skeleton className="h-5 w-5 mx-auto mb-1" />
+                  <Skeleton className="h-6 w-8 mx-auto mb-1" />
+                  <Skeleton className="h-3 w-16 mx-auto" />
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+
+          {/* Members List Skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                        <div className="flex gap-2">
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -277,7 +349,7 @@ export default function MembersPage() {
                           try {
                             setRegenerating(true)
                             const result = await companyService.regenerateInviteCode(companyId)
-                            setCompany(prev => prev ? { ...prev, inviteCode: result.inviteCode } : null)
+                            setCompany(prev => prev ? { ...prev, inviteCode: result } : null)
                             toast.success('Código regenerado exitosamente')
                           } catch (error: any) {
                             toast.error(error.response?.data?.message || 'Error al regenerar código')

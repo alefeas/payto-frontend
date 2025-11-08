@@ -32,6 +32,8 @@ import { hasPermission } from "@/lib/permissions"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { RecentActivity } from "@/components/audit/recent-activity"
 import { AuditDashboardWidget } from "@/components/audit/audit-dashboard-widget"
+import { Skeleton } from "@/components/ui/skeleton"
+import { DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -67,7 +69,7 @@ export default function CompanyPage() {
       
       if (found) {
         // Try to get certificate details if user has permission
-        if (['owner', 'administrator'].includes(found.role || '')) {
+        if (['owner', 'administrator'].includes(String(found.role || ''))) {
           try {
             const cert = await afipCertificateService.getCertificate(companyId)
             setCertificate(cert)
@@ -78,7 +80,7 @@ export default function CompanyPage() {
           }
         } else {
           // For non-admin users, check verification status from company data
-          setIsAfipVerified(found.verificationStatus === 'verified' || found.verification_status === 'verified')
+          setIsAfipVerified(found.verification_status === 'verified')
         }
       }
     } catch (error: any) {
@@ -92,15 +94,55 @@ export default function CompanyPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-64"></div>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="h-24 bg-muted rounded"></div>
-              <div className="h-24 bg-muted rounded"></div>
-              <div className="h-24 bg-muted rounded"></div>
-              <div className="h-24 bg-muted rounded"></div>
+          {/* Header Skeleton */}
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-96" />
             </div>
           </div>
+          
+          {/* Company Info Card Skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-24" />
+              </div>
+            </CardHeader>
+          </Card>
+          
+          {/* Menu Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-3 w-full" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Stats Cards Skeleton */}
+          <DashboardCardsSkeleton />
         </div>
       </div>
     )
@@ -134,7 +176,7 @@ export default function CompanyPage() {
       description: "Facturas, NC, ND, Recibos, etc.",
       icon: FileText,
       permission: 'invoices.create' as const,
-      action: () => router.push(`/company/${company.id}/emit-invoice`)
+      action: () => router.push(`/company/${String(company.id)}/emit-invoice`)
     }] : []),
     ...(hasPermission(userRole, 'invoices.create') ? [{
       title: "Cargar Comprobante Manual",
@@ -268,50 +310,42 @@ export default function CompanyPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Facturas Emitidas</p>
-                  <p className="text-2xl font-bold">0</p>
-                </div>
-                <FileText className="h-8 w-8 text-blue-500" />
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Facturas Emitidas</p>
+                <p className="text-2xl font-bold">0</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Facturas Pendientes</p>
-                  <p className="text-2xl font-bold text-orange-600">0</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
+              <FileText className="h-8 w-8 text-blue-500" />
+            </div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Facturas Pendientes</p>
+                <p className="text-2xl font-bold text-orange-600">0</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Facturas Cobradas</p>
-                  <p className="text-2xl font-bold text-green-600">0</p>
-                </div>
-                <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <AlertTriangle className="h-8 w-8 text-orange-500" />
+            </div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Facturas Cobradas</p>
+                <p className="text-2xl font-bold text-green-600">0</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pagos Pendientes</p>
-                  <p className="text-2xl font-bold text-red-600">0</p>
-                </div>
-                <CreditCard className="h-8 w-8 text-red-500" />
+              <CheckCircle2 className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+          <div className="p-4 rounded-lg border border-gray-200 bg-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Pagos Pendientes</p>
+                <p className="text-2xl font-bold text-red-600">0</p>
               </div>
-            </CardContent>
-          </Card>
+              <CreditCard className="h-8 w-8 text-red-500" />
+            </div>
+          </div>
         </div>
 
         {/* Recordatorio para sincronizar condición IVA - Solo si tiene certificado pero aún no sincronizó */}

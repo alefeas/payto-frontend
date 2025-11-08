@@ -1,14 +1,13 @@
 import apiClient from '@/lib/api-client';
+import { invalidateCompanyCache } from '@/lib/api-client';
+import { Company as BaseCompany, ApiResponse } from '@/types';
+import { isCompany, isValidCompany } from '@/lib/type-guards';
 
-export interface Company {
-  id: string;
-  uniqueId?: string;
-  name: string;
-  businessName?: string;
+// Interfaz extendida para el servicio con campos adicionales del backend
+export interface Company extends Omit<BaseCompany, 'uniqueId'> {
+  uniqueId: string;
   business_name?: string;
-  nationalId: string;
   national_id?: string;
-  phone?: string;
   addressData?: {
     street?: string;
     streetNumber?: string;
@@ -18,33 +17,16 @@ export interface Company {
     province?: string;
     city?: string;
   };
-  taxCondition?: string;
   tax_condition?: string;
-  defaultSalesPoint?: number;
   default_sales_point?: number;
   lastInvoiceNumber?: number;
-  defaultVat?: number;
-  vatPerception?: number;
-  grossIncomePerception?: number;
-  socialSecurityPerception?: number;
-  vatRetention?: number;
-  incomeTaxRetention?: number;
-  grossIncomeRetention?: number;
-  socialSecurityRetention?: number;
-  isActive?: boolean;
-  inviteCode?: string;
-  role?: string;
-  verificationStatus?: 'unverified' | 'verified';
   verification_status?: 'unverified' | 'verified';
-  verifiedAt?: string;
   verified_at?: string;
-  requiredApprovals?: number;
   required_approvals?: number;
   isPerceptionAgent?: boolean;
   autoPerceptions?: any[];
   isRetentionAgent?: boolean;
   autoRetentions?: any[];
-  createdAt?: string;
   updatedAt?: string;
 }
 
@@ -66,41 +48,113 @@ export interface CreateCompanyData {
 
 export const companyService = {
   async getCompanies(): Promise<Company[]> {
-    const response = await apiClient.get<{ success: boolean; data: Company[] }>('/companies');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<Company[]>>('/companies', {
+      showToast: false,
+      suppressError: true
+    });
+    const companies = response.data.data;
+    
+    // Validar que todas las empresas tengan la estructura correcta
+    companies.forEach((company: any) => {
+      if (!isCompany(company)) {
+        console.warn('Invalid company structure received:', company);
+      }
+    });
+    
+    return companies;
   },
 
   async getCompanyById(id: string): Promise<Company> {
-    const response = await apiClient.get<{ success: boolean; data: Company }>(`/companies/${id}`);
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<Company>>(`/companies/${id}`, {
+      showToast: false,
+      suppressError: true
+    });
+    const company = response.data.data;
+    
+    // Validar la estructura de la empresa
+    if (!isValidCompany(company)) {
+      console.warn('Invalid company structure received:', company);
+    }
+    
+    return company;
   },
 
   async createCompany(data: CreateCompanyData): Promise<Company> {
-    const response = await apiClient.post<{ success: boolean; data: Company }>('/companies', data);
-    return response.data.data;
+    const response = await apiClient.post<ApiResponse<Company>>('/companies', data, {
+      showToast: false,
+      suppressError: true
+    });
+    const company = response.data.data;
+    
+    // Validar la empresa creada
+    if (!isValidCompany(company)) {
+      console.warn('Invalid company structure received after creation:', company);
+    }
+    
+    // Invalidar caché de empresas después de crear una nueva
+    invalidateCompanyCache();
+    
+    return company;
   },
 
   async joinCompany(inviteCode: string): Promise<Company> {
-    const response = await apiClient.post<{ success: boolean; data: Company }>('/companies/join', {
-      invite_code: inviteCode,
+    const response = await apiClient.post<ApiResponse<Company>>('/companies/join', { invite_code: inviteCode }, {
+      showToast: false,
+      suppressError: true
     });
-    return response.data.data;
+    const company = response.data.data;
+    
+    // Validar la empresa
+    if (!isValidCompany(company)) {
+      console.warn('Invalid company structure received after joining:', company);
+    }
+    
+    // Invalidar caché de empresas después de unirse a una
+    invalidateCompanyCache();
+    
+    return company;
   },
 
-  async updateCompany(id: string, data: any): Promise<Company> {
-    const response = await apiClient.put<{ success: boolean; data: Company }>(`/companies/${id}`, data);
-    return response.data.data;
+  async updateCompany(id: string, data: Partial<CreateCompanyData>): Promise<Company> {
+    const response = await apiClient.put<ApiResponse<Company>>(`/companies/${id}`, data, {
+      showToast: false,
+      suppressError: true
+    });
+    const company = response.data.data;
+    
+    // Validar la empresa actualizada
+    if (!isValidCompany(company)) {
+      console.warn('Invalid company structure received after update:', company);
+    }
+    
+    // Invalidar caché de empresa específica y general
+    invalidateCompanyCache(id);
+    invalidateCompanyCache();
+    
+    return company;
   },
 
-  async regenerateInviteCode(id: string): Promise<{ inviteCode: string }> {
-    const response = await apiClient.post<{ success: boolean; data: { inviteCode: string } }>(`/companies/${id}/regenerate-invite`);
-    return response.data.data;
+  async regenerateInviteCode(id: string): Promise<string> {
+    const response = await apiClient.post<ApiResponse<{ invite_code: string }>>(`/companies/${id}/regenerate-invite`, {}, {
+      showToast: false,
+      suppressError: true
+    });
+    
+    // Invalidar caché de empresa específica
+    invalidateCompanyCache(id);
+    
+    return response.data.data.invite_code;
   },
 
   async deleteCompany(id: string, deletionCode: string): Promise<void> {
-    await apiClient.delete(`/companies/${id}`, {
-      data: { deletion_code: deletionCode }
+    await apiClient.delete(`/companies/${id}`, { deletion_code: deletionCode }, {
+      showToast: false,
+      suppressError: true
     });
+    
+    // Invalidar caché de empresa específica y general
+    invalidateCompanyCache(id);
+    invalidateCompanyCache();
   },
 
   // Alias for getCompanyById

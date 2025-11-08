@@ -67,6 +67,8 @@ export interface Invoice {
   total: number
   status: InvoiceStatus
   display_status?: InvoiceStatus
+  payment_status?: 'paid' | 'partial' | 'pending' | 'cancelled'
+  company_statuses?: Record<string, 'paid' | 'collected' | 'pending'>
   pdfUrl?: string // Generated automatically
   afipTxtUrl?: string // TXT for AFIP/ARCA
   notes?: string

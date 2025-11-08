@@ -95,9 +95,9 @@ export function PerceptionAgentConfig({ companyId, isPerceptionAgent, autoPercep
                     variant="ghost"
                     size="icon"
                     onClick={() => removePerception(index)}
-                    className="absolute top-2 right-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="absolute top-2 right-2"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-red-600" />
                   </Button>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
@@ -188,14 +188,14 @@ export function PerceptionAgentConfig({ companyId, isPerceptionAgent, autoPercep
               ))}
             </div>
 
-            <Button type="button" onClick={addPerception} variant="outline" className="w-full">
+            <Button type="button" onClick={addPerception} variant="outline" size="lg">
               <Plus className="h-4 w-4 mr-2" />
               Agregar Percepción
             </Button>
           </>
         )}
 
-        <Button onClick={handleSave} disabled={saving} className="w-full">
+        <Button onClick={handleSave} disabled={saving} size="lg">
           {saving ? 'Guardando...' : 'Guardar Configuración'}
         </Button>
       </CardContent>

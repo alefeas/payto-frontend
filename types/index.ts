@@ -1,5 +1,6 @@
 // Re-export all types from a single entry point
 export * from './auth'
+export * from './api'
 export * from './company'
 export * from './client'
 export * from './invoice'

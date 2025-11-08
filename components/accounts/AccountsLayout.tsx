@@ -49,7 +49,7 @@ export function AccountsLayout({
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <BackButton href={`/company/${companyId}`} className="border-0" />
+            <BackButton href={`/company/${companyId}`} />
             <div>
               <h1 className="text-3xl font-bold">{title}</h1>
               <p className="text-muted-foreground">{subtitle}</p>
@@ -97,6 +97,7 @@ export function AccountsLayout({
           {(filters.from_date || filters.to_date || filters.search || (showCurrencyFilter && filters.currency !== 'all')) && (
             <Button
               variant="outline"
+              size="lg"
               onClick={() => onFiltersChange({ ...filters, from_date: '', to_date: '', search: '', ...(showCurrencyFilter && { currency: 'all' }) })}
             >
               Limpiar

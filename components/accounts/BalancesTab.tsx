@@ -183,10 +183,10 @@ export function BalancesTab({
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="font-bold text-lg text-blue-600">
-                      {type === 'receivable' && nc.pending_amount !== undefined
-                        ? formatCurrency(nc.pending_amount, nc.currency)
-                        : formatCurrency(nc.total, nc.currency)
-                      }
+                      {formatCurrency(
+                        type === 'receivable' && nc.pending_amount !== undefined ? nc.pending_amount : nc.total,
+                        nc.currency
+                      )}
                     </div>
                     <div className="text-xs text-blue-600">
                       {nc.description}
@@ -249,10 +249,10 @@ export function BalancesTab({
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <div className="font-bold text-lg text-orange-600">
-                      {type === 'receivable' && nd.pending_amount !== undefined
-                        ? formatCurrency(nd.pending_amount, nd.currency)
-                        : formatCurrency(nd.total, nd.currency)
-                      }
+                      {formatCurrency(
+                        type === 'receivable' && nd.pending_amount !== undefined ? nd.pending_amount : nd.total,
+                        nd.currency
+                      )}
                     </div>
                     <div className="text-xs text-orange-600">
                       {nd.description}

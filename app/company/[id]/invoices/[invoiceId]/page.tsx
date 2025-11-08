@@ -308,7 +308,9 @@ export default function InvoiceDetailPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <BackButton onClick={handleBack} className="mt-1" />
+            <div className="mt-1">
+              <BackButton onClick={handleBack} />
+            </div>
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{invoice.number}</h1>
@@ -367,17 +369,17 @@ export default function InvoiceDetailPage() {
               </>
             ) : (
               <>
-                <Button onClick={downloadPDF} className="shadow-sm">
+                <Button onClick={downloadPDF} variant="default">
                   <Download className="h-4 w-4 mr-2" />
                   PDF Sistema
                 </Button>
                 {invoice.attachment_path && (
-                  <Button onClick={downloadAttachment} variant="outline" className="shadow-sm border-blue-300 text-blue-700 hover:bg-blue-50">
+                  <Button onClick={downloadAttachment} variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
                     PDF Original
                   </Button>
                 )}
-                <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
+                <Button onClick={downloadTXT} variant="outline">
                   <FileText className="h-4 w-4 mr-2" />
                   TXT
                 </Button>

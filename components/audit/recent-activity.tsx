@@ -146,7 +146,7 @@ export function RecentActivity({ companyId, limit = 5 }: RecentActivityProps) {
         
         <div className="mt-4 pt-4 border-t">
           <Link href={`/company/${companyId}/audit-log`}>
-            <Button variant="outline" size="sm" className="w-full">
+            <Button variant="outline" size="lg">
               Ver todos los registros
             </Button>
           </Link>

@@ -345,7 +345,7 @@ export default function VerifyCompanyPage() {
                   </Alert>
 
                   {!generatedCSR ? (
-                    <Button onClick={handleGenerateCSR} disabled={generating} className="w-full">
+                    <Button onClick={handleGenerateCSR} disabled={generating}>
                       <Key className="h-4 w-4 mr-2" />
                       {generating ? 'Generando...' : 'Generar CSR'}
                     </Button>
@@ -354,7 +354,7 @@ export default function VerifyCompanyPage() {
                       <div className="space-y-2">
                         <Label>CSR Generado</Label>
                         <Textarea value={generatedCSR} readOnly rows={6} className="font-mono text-xs" />
-                        <Button onClick={handleDownloadCSR} variant="outline" className="w-full">
+                        <Button onClick={handleDownloadCSR} variant="outline">
                           <Download className="h-4 w-4 mr-2" />
                           Descargar CSR
                         </Button>
@@ -414,7 +414,7 @@ export default function VerifyCompanyPage() {
                           </p>
                         </div>
 
-                        <Button onClick={handleUploadAssisted} disabled={uploading} className="w-full">
+                        <Button onClick={handleUploadAssisted} disabled={uploading}>
                           <Upload className="h-4 w-4 mr-2" />
                           {uploading ? 'Subiendo...' : 'Configurar Certificado'}
                         </Button>
@@ -511,7 +511,7 @@ export default function VerifyCompanyPage() {
                     </p>
                   </div>
 
-                  <Button onClick={handleUploadManual} disabled={uploading} className="w-full">
+                  <Button onClick={handleUploadManual} disabled={uploading}>
                     <Upload className="h-4 w-4 mr-2" />
                     {uploading ? 'Subiendo...' : 'Configurar Certificado'}
                   </Button>

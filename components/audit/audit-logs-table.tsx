@@ -181,7 +181,7 @@ export function AuditLogsTable({ logs, isLoading, onViewTrail }: AuditLogsTableP
                         <AuditMetadataViewer 
                           metadata={log.metadata}
                           trigger={
-                            <Button variant="ghost" size="sm" className="h-6 px-2">
+                            <Button variant="ghost" size="sm">
                               <Code className="h-3 w-3 mr-1" />
                               Detalles
                             </Button>

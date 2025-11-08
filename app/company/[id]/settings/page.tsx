@@ -21,6 +21,7 @@ import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { formatCUIT, formatPhone, formatCBU } from "@/lib/input-formatters"
 import { AfipFiscalDataButton } from "@/components/company/AfipFiscalDataButton"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const PROVINCIAS = [
   "Buenos Aires",
@@ -152,7 +153,7 @@ export default function SettingsPage() {
       try {
         const apiClient = (await import('@/lib/api-client')).default
         const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
-        setSalesPoints(spResponse.data.data || [])
+        setSalesPoints((spResponse.data as any).data || [])
       } catch (error) {
         console.error('Error loading sales points:', error)
       }
@@ -161,7 +162,7 @@ export default function SettingsPage() {
       try {
         const apiClient = (await import('@/lib/api-client')).default
         const membersResponse = await apiClient.get(`/companies/${companyId}/members`)
-        const approvers = (membersResponse.data.data || []).filter((m: any) => 
+        const approvers = ((membersResponse.data as any).data || []).filter((m: any) => 
           ['owner', 'administrator', 'financial_director', 'accountant', 'approver'].includes(m.role) && m.isActive
         )
         setMaxApprovals(Math.max(1, approvers.length))
@@ -175,7 +176,7 @@ export default function SettingsPage() {
       const initialData = {
         name: companyData.name || '',
         business_name: companyData.businessName || '',
-        national_id: companyData.nationalId || '',
+        national_id: companyData.national_id || '',
         phone: companyData.phone || '',
         street: addr.street || '',
         street_number: addr.streetNumber || '',
@@ -186,8 +187,8 @@ export default function SettingsPage() {
         province: addr.province || '',
         tax_condition: companyData.taxCondition || '',
         default_sales_point: parseInt(String(companyData.defaultSalesPoint || 1)),
-        default_vat: parseFloat(String(companyData.defaultVat || 21)),
-        required_approvals: companyData.requiredApprovals !== undefined ? parseInt(String(companyData.requiredApprovals)) : (companyData.required_approvals !== undefined ? parseInt(String(companyData.required_approvals)) : 0),
+        default_vat: 21,
+        required_approvals: companyData.required_approvals !== undefined ? parseInt(String(companyData.required_approvals)) : 0,
         is_perception_agent: companyData.isPerceptionAgent || false,
         auto_perceptions: companyData.autoPerceptions || [],
         is_retention_agent: companyData.isRetentionAgent || false,
@@ -204,7 +205,7 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    if (company && company.role !== 'administrator' && company.role !== 'owner') {
+    if (company && company.role?.toLowerCase() !== 'administrator' && company.role?.toLowerCase() !== 'owner') {
       router.push(`/company/${companyId}`)
       toast.error('Acceso denegado', {
         description: 'Solo los propietarios y administradores pueden acceder a la configuración'
@@ -239,9 +240,9 @@ export default function SettingsPage() {
     try {
       const result = await companyService.regenerateInviteCode(companyId)
       if (company) {
-        setCompany({...company, inviteCode: result.inviteCode})
+        setCompany({...company, inviteCode: result})
       }
-      toast.success(`Nuevo código: ${result.inviteCode}`)
+      toast.success(`Nuevo código: ${result}`)
       setShowRegenerateModal(false)
     } catch (error) {
       toast.error('Error al regenerar código')
@@ -252,7 +253,7 @@ export default function SettingsPage() {
     try {
       const apiClient = (await import('@/lib/api-client')).default
       const response = await apiClient.get(`/companies/${companyId}/invoices?limit=1`)
-      const invoicesExist = response.data.data && response.data.data.length > 0
+      const invoicesExist = (response.data as any).data && (response.data as any).data.length > 0
       setHasInvoices(invoicesExist)
     } catch (error) {
       setHasInvoices(false)
@@ -372,21 +373,103 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-96" />
+              </div>
             </div>
+            <Skeleton className="h-10 w-32" />
           </div>
-          <div className="h-12 bg-muted rounded animate-pulse"></div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          
+          {/* Tabs Skeleton */}
+          <Skeleton className="h-12 w-full rounded" />
+          
+          {/* Content Cards Skeleton */}
+          <div className="space-y-6">
+            {/* General Tab Content */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-6 w-48" />
+                </div>
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Skeleton className="h-4 w-32 mb-4" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <Skeleton className="h-4 w-24 mb-4" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
   }
   if (!isAuthenticated || !company) return null
-  if (company.role !== 'administrator' && company.role !== 'owner') return null
+  if (company.role?.toLowerCase() !== 'administrator' && company.role?.toLowerCase() !== 'owner') return null
 
   const userRole = company.role as CompanyRole
   const canUpdate = hasPermission(userRole, 'company.update')
@@ -592,7 +675,7 @@ export default function SettingsPage() {
                             const apiClient = (await import('@/lib/api-client')).default
                             await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
                             const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
-                            setSalesPoints(spResponse.data.data || [])
+                            setSalesPoints((spResponse.data as any).data || [])
                             toast.success('Puntos de venta sincronizados con AFIP')
                           } catch (error: any) {
                             toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
@@ -637,13 +720,13 @@ export default function SettingsPage() {
                               }}>
                                 <Edit className="h-3 w-3" />
                               </Button>
-                              {company.role === 'owner' && process.env.NEXT_PUBLIC_AFIP_ENVIRONMENT === 'homologacion' && (
-                                <Button size="sm" variant="ghost" className="text-orange-600 hover:text-orange-700" onClick={async () => {
+                              {company.role?.toLowerCase() === 'owner' && process.env.NEXT_PUBLIC_AFIP_ENVIRONMENT === 'homologacion' && (
+                                <Button size="sm" variant="ghost" onClick={async () => {
                                   if (!confirm(`¿Reiniciar números de comprobante del punto ${sp.point_number}?\n\nEsto eliminará TODAS las facturas de este punto de venta.\n\nEsta acción NO se puede deshacer.`)) return
                                   try {
                                     const apiClient = (await import('@/lib/api-client')).default
                                     const response = await apiClient.post(`/companies/${companyId}/sales-points/${sp.point_number}/reset-vouchers`)
-                                    toast.success(`Reiniciado. ${response.data.deleted_invoices} facturas eliminadas. Próximo número: 1`)
+                                    toast.success(`Reiniciado. ${(response.data as any).deleted_invoices} facturas eliminadas. Próximo número: 1`)
                                     await loadData()
                                   } catch (error: any) {
                                     toast.error(error.response?.data?.error || 'Error al reiniciar')
@@ -1425,7 +1508,7 @@ export default function SettingsPage() {
                     point_number: parseInt(salesPointFormData.point_number),
                     name: salesPointFormData.name || null
                   })
-                  const newSalesPoint = response.data.data
+                  const newSalesPoint = (response.data as any).data
                   setSalesPoints([...salesPoints, newSalesPoint])
                   if (salesPoints.length === 0) {
                     setFormData({...formData, default_sales_point: newSalesPoint.point_number})
@@ -1475,7 +1558,7 @@ export default function SettingsPage() {
                   const response = await apiClient.put(`/companies/${companyId}/sales-points/${editingSalesPoint.id}`, {
                     name: salesPointFormData.name || null
                   })
-                  const updatedSalesPoint = response.data.data
+                  const updatedSalesPoint = (response.data as any).data
                   setSalesPoints(salesPoints.map(sp => sp.id === updatedSalesPoint.id ? updatedSalesPoint : sp))
                   toast.success('Punto de venta actualizado')
                   setShowEditSalesPointDialog(false)
