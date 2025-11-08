@@ -5,7 +5,7 @@ import { Calendar, CreditCard, FileText } from "lucide-react"
 
 interface PaymentCollectionCardProps {
   item: any
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number, currency?: string) => string
   type: 'receivable' | 'payable'
 }
 
@@ -59,7 +59,7 @@ export function PaymentCollectionCard({ item, formatCurrency, type }: PaymentCol
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(item.amount) || 0)}</div>
+          <div className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(item.amount) || 0, item.currency || item.invoice?.currency)}</div>
           <Badge className="bg-green-600 text-white text-xs">{actionLabel}</Badge>
         </div>
       </div>
