@@ -237,22 +237,26 @@ export default function AccountsReceivablePage() {
     allInvoices.forEach(inv => {
       const curr = inv.currency || 'ARS'
       const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
-      byCurrency[curr].receivable += amount
-      const dueDate = new Date(inv.due_date)
-      dueDate.setHours(0, 0, 0, 0)
-      if (dueDate < today) {
-        byCurrency[curr].overdue += amount
-        byCurrency[curr].overdue_count++
-      } else if (dueDate <= in7Days) {
-        byCurrency[curr].upcoming += amount
-        byCurrency[curr].upcoming_count++
+      if (curr in byCurrency) {
+        byCurrency[curr as keyof typeof byCurrency].receivable += amount
+        const dueDate = new Date(inv.due_date)
+        dueDate.setHours(0, 0, 0, 0)
+        if (dueDate < today) {
+          byCurrency[curr as keyof typeof byCurrency].overdue += amount
+          byCurrency[curr as keyof typeof byCurrency].overdue_count++
+        } else if (dueDate <= in7Days) {
+          byCurrency[curr as keyof typeof byCurrency].upcoming += amount
+          byCurrency[curr as keyof typeof byCurrency].upcoming_count++
+        }
       }
     })
     
     collections.forEach(col => {
       const curr = col.invoice?.currency || 'ARS'
-      byCurrency[curr].collected += parseFloat(col.amount) || 0
-      byCurrency[curr].collected_count++
+      if (curr in byCurrency) {
+        byCurrency[curr as keyof typeof byCurrency].collected += parseFloat(col.amount) || 0
+        byCurrency[curr as keyof typeof byCurrency].collected_count++
+      }
     })
     
     return { byCurrency, overdue_count: byCurrency.ARS.overdue_count + byCurrency.USD.overdue_count + byCurrency.EUR.overdue_count, upcoming_count: byCurrency.ARS.upcoming_count + byCurrency.USD.upcoming_count + byCurrency.EUR.upcoming_count, collected_count: byCurrency.ARS.collected_count + byCurrency.USD.collected_count + byCurrency.EUR.collected_count }
@@ -489,7 +493,11 @@ export default function AccountsReceivablePage() {
             <DialogHeader>
               <DialogTitle>Registrar Cobro</DialogTitle>
               <DialogDescription>
-                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {formatCurrency(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}
+                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {(() => {
+                  const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                  const currency = invoices[0]?.currency || 'ARS'
+                  return formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0), currency)
+                })()}
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] pr-4">
@@ -503,7 +511,7 @@ export default function AccountsReceivablePage() {
                         <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
                         <p className="text-xs text-muted-foreground">{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</p>
                       </div>
-                      <p className="font-semibold">{formatCurrency(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total)}</p>
+                      <p className="font-semibold">{formatCurrency(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total, invoice.currency)}</p>
                     </div>
                   ))}
                 </div>
@@ -734,24 +742,36 @@ export default function AccountsReceivablePage() {
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span className="font-semibold">{formatCurrency(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0))}</span>
+                    <span className="font-semibold">{(() => {
+                      const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                      const currency = invoices[0]?.currency || 'ARS'
+                      return formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0), currency)
+                    })()}</span>
                   </div>
                   <div className="flex justify-between text-sm text-orange-600">
                     <span>Retenciones:</span>
-                    <span className="font-semibold">-{formatCurrency(withholdings.reduce((sum, wh) => {
-                      const totalInvoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
-                      const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
-                      return sum + (base * (wh.rate || 0) / 100)
-                    }, 0))}</span>
+                    <span className="font-semibold">-{(() => {
+                      const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                      const currency = invoices[0]?.currency || 'ARS'
+                      const totalInvoices = invoices.reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
+                      return formatCurrency(withholdings.reduce((sum, wh) => {
+                        const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
+                        return sum + (base * (wh.rate || 0) / 100)
+                      }, 0), currency)
+                    })()}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between">
                     <span className="font-bold">Neto a Cobrar:</span>
-                    <span className="text-xl font-bold text-green-600">{formatCurrency(allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0) - withholdings.reduce((sum, wh) => {
-                      const totalInvoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id)).reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
-                      const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
-                      return sum + (base * (wh.rate || 0) / 100)
-                    }, 0))}</span>
+                    <span className="text-xl font-bold text-green-600">{(() => {
+                      const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                      const currency = invoices[0]?.currency || 'ARS'
+                      const totalInvoices = invoices.reduce((s, inv) => s + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0)
+                      return formatCurrency(totalInvoices - withholdings.reduce((sum, wh) => {
+                        const base = wh.baseType === 'total' ? totalInvoices : totalInvoices
+                        return sum + (base * (wh.rate || 0) / 100)
+                      }, 0), currency)
+                    })()}</span>
                   </div>
                 </div>
               )}
