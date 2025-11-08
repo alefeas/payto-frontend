@@ -318,19 +318,23 @@ export default function AccountsPayablePage() {
     allInvoices.filter(inv => inv.status !== 'cancelled').forEach(inv => {
       const curr = inv.currency || 'ARS'
       const amount = parseFloat(inv.pending_amount) || 0
-      byCurrency[curr].pending += amount
-      const dueDate = new Date(inv.due_date)
-      dueDate.setHours(0, 0, 0, 0)
-      if (dueDate < today && amount > 0) {
-        byCurrency[curr].overdue += amount
-        byCurrency[curr].overdue_count++
+      if (curr in byCurrency) {
+        byCurrency[curr as keyof typeof byCurrency].pending += amount
+        const dueDate = new Date(inv.due_date)
+        dueDate.setHours(0, 0, 0, 0)
+        if (dueDate < today && amount > 0) {
+          byCurrency[curr as keyof typeof byCurrency].overdue += amount
+          byCurrency[curr as keyof typeof byCurrency].overdue_count++
+        }
       }
     })
     
     payments.forEach(payment => {
       const curr = payment.invoice?.currency || 'ARS'
-      byCurrency[curr].paid += parseFloat(payment.amount) || 0
-      byCurrency[curr].paid_count++
+      if (curr in byCurrency) {
+        byCurrency[curr as keyof typeof byCurrency].paid += parseFloat(payment.amount) || 0
+        byCurrency[curr as keyof typeof byCurrency].paid_count++
+      }
     })
     
     return { byCurrency, overdue_count: byCurrency.ARS.overdue_count + byCurrency.USD.overdue_count + byCurrency.EUR.overdue_count, paid_count: byCurrency.ARS.paid_count + byCurrency.USD.paid_count + byCurrency.EUR.paid_count }
@@ -742,7 +746,7 @@ export default function AccountsPayablePage() {
                             <Separator />
                             <div className="flex justify-between text-sm">
                               <span>Total Factura:</span>
-                              <span className="font-semibold">{formatCurrency(invoice?.pending_amount || invoice?.total || 0)}</span>
+                              <span className="font-semibold">{formatCurrency(invoice?.pending_amount || invoice?.total || 0, invoice?.currency)}</span>
                             </div>
                           </>
                         )
@@ -755,7 +759,7 @@ export default function AccountsPayablePage() {
                             {allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
                               <div key={invoice.id} className="flex justify-between text-xs p-2 bg-background rounded">
                                 <span>{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</span>
-                                <span className="font-medium">{formatCurrency(invoice.pending_amount || invoice.total)}</span>
+                                <span className="font-medium">{formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}</span>
                               </div>
                             ))}
                           </div>
@@ -763,7 +767,11 @@ export default function AccountsPayablePage() {
                         <Separator />
                         <div className="flex justify-between text-sm">
                           <span>Total a Pagar:</span>
-                          <span className="font-semibold">{formatCurrency(parseFloat(paymentForm.amount) || 0)}</span>
+                          <span className="font-semibold">{(() => {
+                            const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                            const currency = invoices[0]?.currency || 'ARS'
+                            return formatCurrency(parseFloat(paymentForm.amount) || 0, currency)
+                          })()}</span>
                         </div>
                       </>
                     )}
@@ -964,26 +972,38 @@ export default function AccountsPayablePage() {
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Subtotal:</span>
-                      <span className="font-semibold">{formatCurrency(parseFloat(paymentForm.amount) || 0)}</span>
+                      <span className="font-semibold">{(() => {
+                        const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                        const currency = invoices[0]?.currency || 'ARS'
+                        return formatCurrency(parseFloat(paymentForm.amount) || 0, currency)
+                      })()}</span>
                     </div>
                     {retentions.length > 0 && (
                       <div className="flex justify-between text-sm text-orange-600">
                         <span>Retenciones:</span>
-                        <span className="font-semibold">-{formatCurrency(retentions.reduce((sum, r) => {
-                          const amount = parseFloat(paymentForm.amount) || 0
-                          const base = r.baseType === 'total' ? amount : amount
-                          return sum + (base * (r.rate || 0) / 100)
-                        }, 0))}</span>
+                        <span className="font-semibold">-{(() => {
+                          const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                          const currency = invoices[0]?.currency || 'ARS'
+                          return formatCurrency(retentions.reduce((sum, r) => {
+                            const amount = parseFloat(paymentForm.amount) || 0
+                            const base = r.baseType === 'total' ? amount : amount
+                            return sum + (base * (r.rate || 0) / 100)
+                          }, 0), currency)
+                        })()}</span>
                       </div>
                     )}
                     <Separator />
                     <div className="flex justify-between">
                       <span className="font-bold">Neto a Pagar:</span>
-                      <span className="text-xl font-bold text-green-600">{formatCurrency(parseFloat(paymentForm.amount) - retentions.reduce((sum, r) => {
-                        const amount = parseFloat(paymentForm.amount) || 0
-                        const base = r.baseType === 'total' ? amount : amount
-                        return sum + (base * (r.rate || 0) / 100)
-                      }, 0))}</span>
+                      <span className="text-xl font-bold text-green-600">{(() => {
+                        const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                        const currency = invoices[0]?.currency || 'ARS'
+                        return formatCurrency(parseFloat(paymentForm.amount) - retentions.reduce((sum, r) => {
+                          const amount = parseFloat(paymentForm.amount) || 0
+                          const base = r.baseType === 'total' ? amount : amount
+                          return sum + (base * (r.rate || 0) / 100)
+                        }, 0), currency)
+                      })()}</span>
                     </div>
                   </div>
                 </form>
@@ -1011,13 +1031,13 @@ export default function AccountsPayablePage() {
                                   {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                                 </p>
                               </div>
-                              <p className="font-semibold">{formatCurrency(invoice.pending_amount || invoice.total)}</p>
+                              <p className="font-semibold">{formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}</p>
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                               <div>Emisión: {new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
                               <div>Vencimiento: {new Date(invoice.due_date).toLocaleDateString('es-AR')}</div>
-                              <div>Subtotal: {formatCurrency(invoice.subtotal || 0)}</div>
-                              <div>IVA: {formatCurrency(invoice.total_taxes || 0)}</div>
+                              <div>Subtotal: {formatCurrency(invoice.subtotal || 0, invoice.currency)}</div>
+                              <div>IVA: {formatCurrency(invoice.total_taxes || 0, invoice.currency)}</div>
                             </div>
                           </div>
                         )
@@ -1105,7 +1125,11 @@ export default function AccountsPayablePage() {
                         <Separator />
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Monto Total:</span>
-                          <span className="font-bold text-lg">{formatCurrency(parseFloat(paymentForm.amount) || 0)}</span>
+                          <span className="font-bold text-lg">{(() => {
+                            const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                            const currency = invoices[0]?.currency || 'ARS'
+                            return formatCurrency(parseFloat(paymentForm.amount) || 0, currency)
+                          })()}</span>
                         </div>
                       </div>
                     </div>
