@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { analyticsService, type AnalyticsSummary, type RevenueTrend, type TopClient, type PendingInvoices } from "@/services/analytics.service"
 import { toast } from "sonner"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AnalyticsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -31,6 +32,8 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<'month' | 'quarter' | 'year' | 'custom'>('month')
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [exporting, setExporting] = useState(false)
+  const [selectedCurrency, setSelectedCurrency] = useState<'ALL' | 'ARS' | 'USD' | 'EUR'>('ALL')
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -43,13 +46,14 @@ export default function AnalyticsPage() {
       if (period === 'custom' && (!dateRange?.from || !dateRange?.to)) {
         return
       }
+      setIsRefreshing(true)
       loadAnalytics()
     }
   }, [isAuthenticated, companyId, period, dateRange])
 
   const loadAnalytics = async () => {
     try {
-      setLoading(true)
+      if (!summary) setLoading(true)
       
       let startDate: string | undefined
       let endDate: string | undefined
@@ -75,6 +79,7 @@ export default function AnalyticsPage() {
       toast.error('Error al cargar estadísticas')
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -82,19 +87,94 @@ export default function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-96" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-10 w-32" />
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+              <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-4 rounded" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-7 w-32 mb-1" />
+                  <Skeleton className="h-3 w-20" />
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          
+          {/* Charts Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full rounded" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-64 w-full rounded" />
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Tables Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
@@ -102,10 +182,32 @@ export default function AnalyticsPage() {
 
   if (!isAuthenticated || !summary) return null
 
-  const netBalance = summary.balance
-  const profitMargin = summary.sales.total > 0 
-    ? ((summary.sales.total - summary.purchases.total) / summary.sales.total) * 100 
-    : 0
+  const getCurrencyData = (currency: 'ALL' | 'ARS' | 'USD' | 'EUR') => {
+    if (currency === 'ALL') {
+      const balance = summary.sales.total - summary.purchases.total
+      const margin = summary.sales.total > 0 ? ((summary.sales.total - summary.purchases.total) / summary.sales.total) * 100 : 0
+      return { sales: summary.sales, purchases: summary.purchases, balance, margin }
+    }
+    // Si hay datos por moneda, usarlos; sino usar los totales para ARS
+    if (summary.sales_by_currency && summary.purchases_by_currency) {
+      const salesByCurrency = summary.sales_by_currency[currency] || { total: 0, count: 0 }
+      const purchasesByCurrency = summary.purchases_by_currency[currency] || { total: 0, count: 0 }
+      const balance = salesByCurrency.total - purchasesByCurrency.total
+      const margin = salesByCurrency.total > 0 ? ((salesByCurrency.total - purchasesByCurrency.total) / salesByCurrency.total) * 100 : 0
+      return { sales: salesByCurrency, purchases: purchasesByCurrency, balance, margin }
+    } else {
+      // Fallback: mostrar todos los datos en ARS
+      if (currency === 'ARS') {
+        const balance = summary.sales.total - summary.purchases.total
+        const margin = summary.sales.total > 0 ? ((summary.sales.total - summary.purchases.total) / summary.sales.total) * 100 : 0
+        return { sales: summary.sales, purchases: summary.purchases, balance, margin }
+      }
+      return { sales: { total: 0, count: 0 }, purchases: { total: 0, count: 0 }, balance: 0, margin: 0 }
+    }
+  }
+
+  const currencyData = getCurrencyData(selectedCurrency)
+  const currencySymbols: Record<string, string> = { 'ALL': '', 'ARS': '$', 'USD': 'USD $', 'EUR': 'EUR €' }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -137,6 +239,17 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Select value={selectedCurrency} onValueChange={(v: any) => setSelectedCurrency(v)}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas</SelectItem>
+                <SelectItem value="ARS">ARS $</SelectItem>
+                <SelectItem value="USD">USD $</SelectItem>
+                <SelectItem value="EUR">EUR €</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
               <SelectTrigger className="w-[180px]">
                 <CalendarIcon className="h-4 w-4 mr-2" />
@@ -152,7 +265,7 @@ export default function AnalyticsPage() {
             {period === 'custom' && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+                  <Button variant="outline" size="lg">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
                       dateRange.to ? (
@@ -232,98 +345,202 @@ export default function AnalyticsPage() {
         </div>
 
         {/* KPIs Principales */}
+        {isRefreshing && summary ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="space-y-3 animate-pulse">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="transition-all duration-300 ease-in-out">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
+                <div className="w-full transition-all duration-300 ease-in-out">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Ventas {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
                   </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    ${summary.sales.total.toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {summary.sales.count} facturas
-                  </p>
+                  {selectedCurrency === 'ALL' && summary.sales_by_currency ? (
+                    <>
+                      <p className="text-2xl font-bold text-green-600 mb-2">
+                        $ {summary.sales_by_currency.ARS.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-muted-foreground">
+                          USD $ {summary.sales_by_currency.USD.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          EUR € {summary.sales_by_currency.EUR.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-green-600">
+                        {currencySymbols[selectedCurrency]} {currencyData.sales.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {currencyData.sales.count} facturas
+                      </p>
+                    </>
+                  )}
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-all duration-300 ease-in-out">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
+                <div className="w-full transition-all duration-300 ease-in-out">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Compras {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
                   </p>
-                  <p className="text-2xl font-bold text-red-600">
-                    ${summary.purchases.total.toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {summary.purchases.count} facturas
-                  </p>
+                  {selectedCurrency === 'ALL' && summary.purchases_by_currency ? (
+                    <>
+                      <p className="text-2xl font-bold text-red-600 mb-2">
+                        $ {summary.purchases_by_currency.ARS.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-muted-foreground">
+                          USD $ {summary.purchases_by_currency.USD.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          EUR € {summary.purchases_by_currency.EUR.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-red-600">
+                        {currencySymbols[selectedCurrency]} {currencyData.purchases.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {currencyData.purchases.count} facturas
+                      </p>
+                    </>
+                  )}
                 </div>
                 <TrendingDown className="h-8 w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-all duration-300 ease-in-out">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Balance Neto</p>
-                  <p className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ${netBalance.toLocaleString('es-AR')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ventas - Compras
-                  </p>
+                <div className="w-full transition-all duration-300 ease-in-out">
+                  <p className="text-sm text-muted-foreground mb-2">Balance Neto</p>
+                  {selectedCurrency === 'ALL' && summary.sales_by_currency && summary.purchases_by_currency ? (
+                    <>
+                      <p className={`text-2xl font-bold mb-2 ${(summary.sales_by_currency.ARS.total - summary.purchases_by_currency.ARS.total) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        $ {(summary.sales_by_currency.ARS.total - summary.purchases_by_currency.ARS.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-muted-foreground">
+                          USD $ {(summary.sales_by_currency.USD.total - summary.purchases_by_currency.USD.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          EUR € {(summary.sales_by_currency.EUR.total - summary.purchases_by_currency.EUR.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className={`text-2xl font-bold ${currencyData.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {currencySymbols[selectedCurrency]} {currencyData.balance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ventas - Compras
+                      </p>
+                    </>
+                  )}
                 </div>
-                <DollarSign className={`h-8 w-8 ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <DollarSign className={`h-8 w-8 ${currencyData.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-all duration-300 ease-in-out">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="transition-all duration-300 ease-in-out">
                   <p className="text-sm text-muted-foreground">Margen</p>
-                  <p className={`text-2xl font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {profitMargin.toFixed(1)}%
+                  <p className={`text-2xl font-bold ${currencyData.margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {currencyData.margin.toFixed(1)}%
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Rentabilidad
                   </p>
                 </div>
-                <BarChart3 className={`h-8 w-8 ${profitMargin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <BarChart3 className={`h-8 w-8 ${currencyData.margin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
               </div>
             </CardContent>
           </Card>
         </div>
+        )}
 
+        {isRefreshing && summary ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[...Array(2)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-32 mt-2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-[200px] w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Gráfico de Tendencia */}
           <Card>
             <CardHeader>
               <CardTitle>Tendencia de Facturación</CardTitle>
-              <CardDescription>Últimos 6 meses</CardDescription>
+              <CardDescription>Últimos 6 meses {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={revenueTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="sales" stroke="#10b981" name="Ventas" strokeWidth={2} />
-                  <Line type="monotone" dataKey="purchases" stroke="#ef4444" name="Compras" strokeWidth={2} />
-                </LineChart>
+                {selectedCurrency === 'ALL' ? (
+                  <LineChart data={revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value, name) => {
+                      const currency = name.includes('ARS') ? '$' : name.includes('USD') ? 'USD $' : name.includes('EUR') ? 'EUR €' : '$'
+                      return `${currency} ${Number(value).toLocaleString('es-AR')}`
+                    }} />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    <Line type="monotone" dataKey="sales_ARS" stroke="#10b981" name="Ventas ARS" strokeWidth={2} />
+                    <Line type="monotone" dataKey="sales_USD" stroke="#059669" name="Ventas USD" strokeWidth={2} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="sales_EUR" stroke="#047857" name="Ventas EUR" strokeWidth={2} strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="purchases_ARS" stroke="#ef4444" name="Compras ARS" strokeWidth={2} />
+                    <Line type="monotone" dataKey="purchases_USD" stroke="#dc2626" name="Compras USD" strokeWidth={2} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="purchases_EUR" stroke="#b91c1c" name="Compras EUR" strokeWidth={2} strokeDasharray="3 3" />
+                  </LineChart>
+                ) : (
+                  <LineChart data={revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} />
+                    <Legend />
+                    <Line type="monotone" dataKey={`sales_${selectedCurrency}`} stroke="#10b981" name="Ventas" strokeWidth={2} />
+                    <Line type="monotone" dataKey={`purchases_${selectedCurrency}`} stroke="#ef4444" name="Compras" strokeWidth={2} />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -332,28 +549,59 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Flujo de Caja Acumulado</CardTitle>
-              <CardDescription>Balance mes a mes</CardDescription>
+              <CardDescription>Balance mes a mes {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={revenueTrend.map((item, index, arr) => {
-                  const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => acc + (curr.sales - curr.purchases), 0)
-                  return {
-                    month: item.month,
-                    balance: accumulated
-                  }
-                })}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString('es-AR')}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
-                </LineChart>
+                {selectedCurrency === 'ALL' ? (
+                  <LineChart data={revenueTrend.map((item, index, arr) => {
+                    const accARS = arr.slice(0, index + 1).reduce((acc, curr) => acc + ((curr.sales_ARS || 0) - (curr.purchases_ARS || 0)), 0)
+                    const accUSD = arr.slice(0, index + 1).reduce((acc, curr) => acc + ((curr.sales_USD || 0) - (curr.purchases_USD || 0)), 0)
+                    const accEUR = arr.slice(0, index + 1).reduce((acc, curr) => acc + ((curr.sales_EUR || 0) - (curr.purchases_EUR || 0)), 0)
+                    return {
+                      month: item.month,
+                      balance_ARS: accARS,
+                      balance_USD: accUSD,
+                      balance_EUR: accEUR
+                    }
+                  })}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value, name) => {
+                      const currency = name.includes('ARS') ? '$' : name.includes('USD') ? 'USD $' : 'EUR €'
+                      return `${currency} ${Number(value).toLocaleString('es-AR')}`
+                    }} />
+                    <Legend />
+                    <Line type="monotone" dataKey="balance_ARS" stroke="#6366f1" name="Balance ARS" strokeWidth={2} />
+                    <Line type="monotone" dataKey="balance_USD" stroke="#4f46e5" name="Balance USD" strokeWidth={2} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="balance_EUR" stroke="#4338ca" name="Balance EUR" strokeWidth={2} strokeDasharray="3 3" />
+                  </LineChart>
+                ) : (
+                  <LineChart data={revenueTrend.map((item, index, arr) => {
+                    const accumulated = arr.slice(0, index + 1).reduce((acc, curr) => {
+                      const sales = curr[`sales_${selectedCurrency}`] || 0
+                      const purchases = curr[`purchases_${selectedCurrency}`] || 0
+                      return acc + (sales - purchases)
+                    }, 0)
+                    return {
+                      month: item.month,
+                      balance: accumulated
+                    }
+                  })}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} />
+                    <Legend />
+                    <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Alertas de Vencimientos */}
         <Card>
