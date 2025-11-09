@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { afipVerificationService, type VerificationStatus } from "@/services/afip-verification.service"
 import { afipCertificateService, AfipCertificate } from "@/services/afip-certificate.service"
 import { companyService } from "@/services/company.service"
+import { Skeleton} from "@/components/ui/skeleton"
 
 export default function VerifyCompanyPage() {
   const { id } = useParams()
@@ -219,14 +220,31 @@ export default function VerifyCompanyPage() {
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
+            <Skeleton className="h-10 w-10" />
             <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-48" />
             </div>
           </div>
-          <div className="h-32 bg-muted rounded animate-pulse"></div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-64" />
+              <Skeleton className="h-4 w-96 mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -263,7 +281,7 @@ export default function VerifyCompanyPage() {
           <CardContent>
             {isVerified ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start gap-3 p-4 bg-green-50 border border-gray-200 rounded-lg">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium text-green-900">Certificado Activo</p>
@@ -301,7 +319,7 @@ export default function VerifyCompanyPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-gray-200 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-amber-900">Sin Certificado AFIP</p>
@@ -345,7 +363,7 @@ export default function VerifyCompanyPage() {
                   </Alert>
 
                   {!generatedCSR ? (
-                    <Button onClick={handleGenerateCSR} disabled={generating}>
+                    <Button onClick={handleGenerateCSR} disabled={generating} className="w-full">
                       <Key className="h-4 w-4 mr-2" />
                       {generating ? 'Generando...' : 'Generar CSR'}
                     </Button>
@@ -354,7 +372,7 @@ export default function VerifyCompanyPage() {
                       <div className="space-y-2">
                         <Label>CSR Generado</Label>
                         <Textarea value={generatedCSR} readOnly rows={6} className="font-mono text-xs" />
-                        <Button onClick={handleDownloadCSR} variant="outline">
+                        <Button onClick={handleDownloadCSR} variant="outline" className="w-full">
                           <Download className="h-4 w-4 mr-2" />
                           Descargar CSR
                         </Button>
@@ -414,7 +432,7 @@ export default function VerifyCompanyPage() {
                           </p>
                         </div>
 
-                        <Button onClick={handleUploadAssisted} disabled={uploading}>
+                        <Button onClick={handleUploadAssisted} disabled={uploading} className="w-full">
                           <Upload className="h-4 w-4 mr-2" />
                           {uploading ? 'Subiendo...' : 'Configurar Certificado'}
                         </Button>
@@ -511,7 +529,7 @@ export default function VerifyCompanyPage() {
                     </p>
                   </div>
 
-                  <Button onClick={handleUploadManual} disabled={uploading}>
+                  <Button onClick={handleUploadManual} disabled={uploading} className="w-full">
                     <Upload className="h-4 w-4 mr-2" />
                     {uploading ? 'Subiendo...' : 'Configurar Certificado'}
                   </Button>
@@ -534,7 +552,7 @@ export default function VerifyCompanyPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border">
+              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200">
                 <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">WSFE - Facturación Electrónica</p>
@@ -544,7 +562,7 @@ export default function VerifyCompanyPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border">
+              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200">
                 <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">WS SR PADRON A5 - Padrón de Contribuyentes</p>

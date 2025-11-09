@@ -294,8 +294,8 @@ export default function ClientsPage() {
                     <Card key={client.id} className="p-4 hover:shadow-md transition-shadow bg-muted/30">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-sm truncate">{getClientDisplayName(client)}</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-base truncate">{getClientDisplayName(client)}</h3>
                               <Badge className={condicionIvaColors[client.taxCondition]}>
                                 {condicionIvaLabels[client.taxCondition]}
                               </Badge>
@@ -309,7 +309,7 @@ export default function ClientsPage() {
                               )}
                             </div>
                             
-                            <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <FileText className="h-3 w-3" />
                                 {client.documentType}: {client.documentNumber}
