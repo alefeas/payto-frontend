@@ -169,7 +169,7 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
               <Label>Fecha Desde</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateFrom ? format(dateFrom, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 
                      <span>Seleccionar fecha</span>}
@@ -191,7 +191,7 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
               <Label>Fecha Hasta</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateTo ? format(dateTo, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 
                      <span>Seleccionar fecha</span>}
