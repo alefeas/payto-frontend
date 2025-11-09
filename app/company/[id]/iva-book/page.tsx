@@ -98,17 +98,14 @@ export default function IvaBookPage() {
     }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 2
-    }).format(value)
+  const formatCurrency = (value: number, currency: string = 'ARS') => {
+    const symbols: Record<string, string> = { 'ARS': '$', 'USD': 'USD $', 'EUR': 'EUR €' }
+    return `${symbols[currency] || '$'} ${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   if (authLoading || loading || !company) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+      <div className="min-h-screen bg-background p-6">
         <div className="max-w-[1600px] mx-auto space-y-6">
           {/* Header Skeleton */}
           <div className="flex items-center justify-between">
@@ -157,7 +154,7 @@ export default function IvaBookPage() {
                 </div>
                 {/* Table Rows */}
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex gap-4 py-3 border-b">
+                  <div key={i} className="flex gap-4 py-3 border-b border-gray-200">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="h-4 w-24" />
                     <Skeleton className="h-4 w-32" />
@@ -176,7 +173,7 @@ export default function IvaBookPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -214,54 +211,81 @@ export default function IvaBookPage() {
         </div>
 
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-green-900 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Débito Fiscal
-                </CardTitle>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Débito Fiscal</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-700">{formatCurrency(summary.debito_fiscal)}</div>
-                <p className="text-xs text-green-600 mt-2">IVA de facturas emitidas</p>
+                {summary.debito_fiscal_by_currency ? (
+                  <>
+                    <div className="text-2xl font-bold text-green-600 mb-2">
+                      $ {summary.debito_fiscal_by_currency.ARS?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                    </div>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      <span>USD $ {summary.debito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                      <span>EUR € {summary.debito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.debito_fiscal)}</div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">IVA de facturas emitidas</p>
               </CardContent>
             </Card>
 
-            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-blue-900 flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4" />
-                  Crédito Fiscal
-                </CardTitle>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Crédito Fiscal</CardTitle>
+                <TrendingDown className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-700">{formatCurrency(summary.credito_fiscal)}</div>
-                <p className="text-xs text-blue-600 mt-2">IVA de facturas recibidas</p>
+                {summary.credito_fiscal_by_currency ? (
+                  <>
+                    <div className="text-2xl font-bold text-blue-600 mb-2">
+                      $ {summary.credito_fiscal_by_currency.ARS?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                    </div>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      <span>USD $ {summary.credito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                      <span>EUR € {summary.credito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.credito_fiscal)}</div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">IVA de facturas recibidas</p>
               </CardContent>
             </Card>
 
-            <Card className={summary.saldo >= 0 ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-orange-100/50' : 'border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100/50'}>
-              <CardHeader className="pb-3">
-                <CardTitle className={`text-sm font-medium flex items-center gap-2 ${summary.saldo >= 0 ? 'text-orange-900' : 'text-emerald-900'}`}>
-                  {summary.saldo >= 0 ? (
-                    <>
-                      <TrendingUp className="h-4 w-4" />
-                      Saldo a Pagar
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="h-4 w-4" />
-                      Saldo a Favor
-                    </>
-                  )}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {summary.saldo >= 0 ? 'Saldo a Pagar' : 'Saldo a Favor'}
                 </CardTitle>
+                {summary.saldo >= 0 ? (
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                )}
               </CardHeader>
               <CardContent>
-                <div className={`text-3xl font-bold ${summary.saldo >= 0 ? 'text-orange-700' : 'text-emerald-700'}`}>
-                  {formatCurrency(Math.abs(summary.saldo))}
-                </div>
-                <p className={`text-xs mt-2 ${summary.saldo >= 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                {summary.saldo_by_currency ? (
+                  <>
+                    <div className={`text-2xl font-bold mb-2 ${summary.saldo_by_currency.ARS >= 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      $ {Math.abs(summary.saldo_by_currency.ARS || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      <span>USD $ {Math.abs(summary.saldo_by_currency.USD || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span>EUR € {Math.abs(summary.saldo_by_currency.EUR || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className={`text-2xl font-bold ${summary.saldo >= 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    {formatCurrency(Math.abs(summary.saldo))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
                   {summary.saldo >= 0 ? 'A pagar a AFIP' : 'A favor del contribuyente'}
                 </p>
               </CardContent>
@@ -276,12 +300,12 @@ export default function IvaBookPage() {
           </TabsList>
 
           <TabsContent value="sales" className="space-y-4">
-            <Card className="shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-transparent">
+            <Card>
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl">Libro IVA Ventas</CardTitle>
-                    <CardDescription className="text-base mt-1">
+                    <CardTitle>Libro IVA Ventas</CardTitle>
+                    <CardDescription>
                       Facturas emitidas - {salesBook?.period?.month_name} {salesBook?.period?.year}
                     </CardDescription>
                   </div>
@@ -350,7 +374,7 @@ export default function IvaBookPage() {
                     No hay facturas emitidas en este período
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border">
+                  <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50">
@@ -359,10 +383,11 @@ export default function IvaBookPage() {
                           <TableHead>Cliente</TableHead>
                           <TableHead>CUIT/DNI</TableHead>
                           <TableHead>Condición IVA</TableHead>
+                          <TableHead>Mon.</TableHead>
                           <TableHead className="text-right">Neto</TableHead>
+                          <TableHead className="text-right">27%</TableHead>
                           <TableHead className="text-right">21%</TableHead>
                           <TableHead className="text-right">10.5%</TableHead>
-                          <TableHead className="text-right">27%</TableHead>
                           <TableHead className="text-right">5%</TableHead>
                           <TableHead className="text-right">2.5%</TableHead>
                           <TableHead className="text-right">Exento</TableHead>
@@ -372,30 +397,31 @@ export default function IvaBookPage() {
                       </TableHeader>
                       <TableBody>
                         {salesBook?.records?.map((record: any, idx: number) => (
-                          <TableRow key={idx}>
+                          <TableRow key={idx} className="border-b border-gray-200">
                             <TableCell className="font-medium">{record.fecha}</TableCell>
                             <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
                             <TableCell className="max-w-[150px] truncate">{record.cliente}</TableCell>
                             <TableCell>{record.cuit}</TableCell>
                             <TableCell className="text-xs">{record.condicion_iva || 'Responsable No Inscripto'}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.neto_gravado)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_21)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_105)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_27)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_5)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_25)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.exento)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.percepciones)}</TableCell>
-                            <TableCell className="text-right font-semibold">{formatCurrency(record.total)}</TableCell>
+                            <TableCell className="text-xs font-medium">{record.currency || 'ARS'}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.neto_gravado, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_27, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_21, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_105, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_5, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_25, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.exento, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.percepciones, record.currency)}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatCurrency(record.total, record.currency)}</TableCell>
                           </TableRow>
                         ))}
                         {salesBook?.totals && (
                           <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={5}>TOTALES</TableCell>
+                            <TableCell colSpan={6}>TOTALES (ARS)</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.neto_gravado)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_27)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_21)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_105)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_27)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_5)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_25)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(salesBook.totals.exento)}</TableCell>
@@ -412,12 +438,12 @@ export default function IvaBookPage() {
           </TabsContent>
 
           <TabsContent value="purchases" className="space-y-4">
-            <Card className="shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent">
+            <Card>
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl">Libro IVA Compras</CardTitle>
-                    <CardDescription className="text-base mt-1">
+                    <CardTitle>Libro IVA Compras</CardTitle>
+                    <CardDescription>
                       Facturas recibidas - {purchasesBook?.period?.month_name} {purchasesBook?.period?.year}
                     </CardDescription>
                   </div>
@@ -486,7 +512,7 @@ export default function IvaBookPage() {
                     No hay facturas recibidas en este período
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border">
+                  <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50">
@@ -495,10 +521,11 @@ export default function IvaBookPage() {
                           <TableHead>Proveedor</TableHead>
                           <TableHead>CUIT/DNI</TableHead>
                           <TableHead>Condición IVA</TableHead>
+                          <TableHead>Mon.</TableHead>
                           <TableHead className="text-right">Neto</TableHead>
+                          <TableHead className="text-right">27%</TableHead>
                           <TableHead className="text-right">21%</TableHead>
                           <TableHead className="text-right">10.5%</TableHead>
-                          <TableHead className="text-right">27%</TableHead>
                           <TableHead className="text-right">5%</TableHead>
                           <TableHead className="text-right">2.5%</TableHead>
                           <TableHead className="text-right">Exento</TableHead>
@@ -508,30 +535,31 @@ export default function IvaBookPage() {
                       </TableHeader>
                       <TableBody>
                         {purchasesBook?.records?.map((record: any, idx: number) => (
-                          <TableRow key={idx}>
+                          <TableRow key={idx} className="border-b border-gray-200">
                             <TableCell className="font-medium">{record.fecha}</TableCell>
                             <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
                             <TableCell className="max-w-[150px] truncate">{record.proveedor}</TableCell>
                             <TableCell>{record.cuit}</TableCell>
                             <TableCell className="text-xs">{record.condicion_iva || 'Responsable No Inscripto'}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.neto_gravado)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_21)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_105)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_27)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_5)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_25)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.exento)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.retenciones)}</TableCell>
-                            <TableCell className="text-right font-semibold">{formatCurrency(record.total)}</TableCell>
+                            <TableCell className="text-xs font-medium">{record.currency || 'ARS'}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.neto_gravado, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_27, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_21, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_105, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_5, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.iva_25, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.exento, record.currency)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(record.retenciones, record.currency)}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatCurrency(record.total, record.currency)}</TableCell>
                           </TableRow>
                         ))}
                         {purchasesBook?.totals && (
                           <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={5}>TOTALES</TableCell>
+                            <TableCell colSpan={6}>TOTALES (ARS)</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.neto_gravado)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_27)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_21)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_105)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_27)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_5)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_25)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(purchasesBook.totals.exento)}</TableCell>
