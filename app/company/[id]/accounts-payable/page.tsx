@@ -753,7 +753,7 @@ export default function AccountsPayablePage() {
                             {hasNotes && (
                               <>
                                 {invoice?.credit_notes_applied?.map((nc: any) => (
-                                  <div key={nc.id} className="flex justify-between text-sm text-green-600">
+                                  <div key={nc.id} className="flex justify-between text-sm text-red-600">
                                     <span>NC {String(nc.sales_point || 0).padStart(4, '0')}-{String(nc.voucher_number || 0).padStart(8, '0')}:</span>
                                     <span>-{formatCurrency(nc.total || 0, invoice?.currency)}</span>
                                   </div>
