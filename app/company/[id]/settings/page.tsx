@@ -153,7 +153,7 @@ export default function SettingsPage() {
       try {
         const apiClient = (await import('@/lib/api-client')).default
         const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
-        setSalesPoints((spResponse.data as any).data || [])
+        setSalesPoints(spResponse.data.data || [])
       } catch (error) {
         console.error('Error loading sales points:', error)
       }
@@ -162,7 +162,7 @@ export default function SettingsPage() {
       try {
         const apiClient = (await import('@/lib/api-client')).default
         const membersResponse = await apiClient.get(`/companies/${companyId}/members`)
-        const approvers = ((membersResponse.data as any).data || []).filter((m: any) => 
+        const approvers = (membersResponse.data.data || []).filter((m: any) => 
           ['owner', 'administrator', 'financial_director', 'accountant', 'approver'].includes(m.role) && m.isActive
         )
         setMaxApprovals(Math.max(1, approvers.length))
@@ -176,7 +176,7 @@ export default function SettingsPage() {
       const initialData = {
         name: companyData.name || '',
         business_name: companyData.businessName || '',
-        national_id: companyData.national_id || '',
+        national_id: companyData.nationalId || '',
         phone: companyData.phone || '',
         street: addr.street || '',
         street_number: addr.streetNumber || '',
@@ -187,8 +187,8 @@ export default function SettingsPage() {
         province: addr.province || '',
         tax_condition: companyData.taxCondition || '',
         default_sales_point: parseInt(String(companyData.defaultSalesPoint || 1)),
-        default_vat: 21,
-        required_approvals: companyData.required_approvals !== undefined ? parseInt(String(companyData.required_approvals)) : 0,
+        default_vat: parseFloat(String(companyData.defaultVat || 21)),
+        required_approvals: companyData.requiredApprovals !== undefined ? parseInt(String(companyData.requiredApprovals)) : (companyData.required_approvals !== undefined ? parseInt(String(companyData.required_approvals)) : 0),
         is_perception_agent: companyData.isPerceptionAgent || false,
         auto_perceptions: companyData.autoPerceptions || [],
         is_retention_agent: companyData.isRetentionAgent || false,
@@ -205,7 +205,7 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    if (company && company.role?.toLowerCase() !== 'administrator' && company.role?.toLowerCase() !== 'owner') {
+    if (company && company.role !== 'administrator' && company.role !== 'owner') {
       router.push(`/company/${companyId}`)
       toast.error('Acceso denegado', {
         description: 'Solo los propietarios y administradores pueden acceder a la configuración'
@@ -240,9 +240,9 @@ export default function SettingsPage() {
     try {
       const result = await companyService.regenerateInviteCode(companyId)
       if (company) {
-        setCompany({...company, inviteCode: result})
+        setCompany({...company, inviteCode: result.inviteCode})
       }
-      toast.success(`Nuevo código: ${result}`)
+      toast.success(`Nuevo código: ${result.inviteCode}`)
       setShowRegenerateModal(false)
     } catch (error) {
       toast.error('Error al regenerar código')
@@ -253,7 +253,7 @@ export default function SettingsPage() {
     try {
       const apiClient = (await import('@/lib/api-client')).default
       const response = await apiClient.get(`/companies/${companyId}/invoices?limit=1`)
-      const invoicesExist = (response.data as any).data && (response.data as any).data.length > 0
+      const invoicesExist = response.data.data && response.data.data.length > 0
       setHasInvoices(invoicesExist)
     } catch (error) {
       setHasInvoices(false)
@@ -424,7 +424,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <Skeleton className="h-4 w-24 mb-4" />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -469,7 +469,7 @@ export default function SettingsPage() {
     )
   }
   if (!isAuthenticated || !company) return null
-  if (company.role?.toLowerCase() !== 'administrator' && company.role?.toLowerCase() !== 'owner') return null
+  if (company.role !== 'administrator' && company.role !== 'owner') return null
 
   const userRole = company.role as CompanyRole
   const canUpdate = hasPermission(userRole, 'company.update')
@@ -535,7 +535,7 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>CUIT</Label>
-                        <Input value={formData.national_id || company?.nationalId || company?.national_id || ''} readOnly disabled className="bg-gray-100 dark:bg-gray-800" />
+                        <Input value={formData.national_id} readOnly disabled className="bg-gray-100 dark:bg-gray-800" />
                         <p className="text-xs text-muted-foreground">El CUIT no puede modificarse ya que está vinculado al certificado AFIP</p>
                       </div>
                       <div className="space-y-2">
@@ -546,7 +546,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="font-medium mb-4">Dirección</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -665,7 +665,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium">Puntos de Venta</h3>
                     {canUpdate && (
@@ -675,7 +675,7 @@ export default function SettingsPage() {
                             const apiClient = (await import('@/lib/api-client')).default
                             await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
                             const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
-                            setSalesPoints((spResponse.data as any).data || [])
+                            setSalesPoints(spResponse.data.data || [])
                             toast.success('Puntos de venta sincronizados con AFIP')
                           } catch (error: any) {
                             toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
@@ -692,7 +692,7 @@ export default function SettingsPage() {
                     )}
                   </div>
                   {salesPoints.length === 0 ? (
-                    <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                    <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
                       <p className="text-sm text-muted-foreground">No hay puntos de venta configurados</p>
                       {canUpdate && (
                         <Button size="sm" className="mt-2" onClick={() => setShowAddSalesPointDialog(true)}>
@@ -704,7 +704,7 @@ export default function SettingsPage() {
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
                       {salesPoints.map((sp) => (
-                        <div key={sp.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div key={sp.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-mono font-semibold">{sp.point_number.toString().padStart(4, '0')}</span>
@@ -720,13 +720,13 @@ export default function SettingsPage() {
                               }}>
                                 <Edit className="h-3 w-3" />
                               </Button>
-                              {company.role?.toLowerCase() === 'owner' && process.env.NEXT_PUBLIC_AFIP_ENVIRONMENT === 'homologacion' && (
-                                <Button size="sm" variant="ghost" onClick={async () => {
+                              {company.role === 'owner' && process.env.NEXT_PUBLIC_AFIP_ENVIRONMENT === 'homologacion' && (
+                                <Button size="sm" variant="ghost" className="text-orange-600 hover:text-orange-700" onClick={async () => {
                                   if (!confirm(`¿Reiniciar números de comprobante del punto ${sp.point_number}?\n\nEsto eliminará TODAS las facturas de este punto de venta.\n\nEsta acción NO se puede deshacer.`)) return
                                   try {
                                     const apiClient = (await import('@/lib/api-client')).default
                                     const response = await apiClient.post(`/companies/${companyId}/sales-points/${sp.point_number}/reset-vouchers`)
-                                    toast.success(`Reiniciado. ${(response.data as any).deleted_invoices} facturas eliminadas. Próximo número: 1`)
+                                    toast.success(`Reiniciado. ${response.data.deleted_invoices} facturas eliminadas. Próximo número: 1`)
                                     await loadData()
                                   } catch (error: any) {
                                     toast.error(error.response?.data?.error || 'Error al reiniciar')
@@ -749,7 +749,7 @@ export default function SettingsPage() {
                   )}
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="font-medium mb-4">Aprobaciones de Facturas</h3>
                   <div className="space-y-2">
                     <Label>Aprobaciones Requeridas</Label>
@@ -780,7 +780,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="font-medium mb-4">IVA Predeterminado</h3>
                   <div className="space-y-2">
                     <Label>Alícuota de IVA por defecto</Label>
@@ -812,7 +812,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-medium">Agente de Percepciones</h3>
@@ -827,7 +827,7 @@ export default function SettingsPage() {
                   {formData.is_perception_agent && (
                     <div className="space-y-3">
                       {formData.auto_perceptions.map((perception: any, index: number) => (
-                        <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                        <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-3 relative">
                           <Button
                             type="button"
                             variant="ghost"
@@ -964,7 +964,7 @@ export default function SettingsPage() {
                   )}
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-medium">Agente de Retenciones</h3>
@@ -979,7 +979,7 @@ export default function SettingsPage() {
                   {formData.is_retention_agent && (
                     <div className="space-y-3">
                       {formData.auto_retentions.map((retention: any, index: number) => (
-                        <div key={index} className="p-4 border rounded-lg space-y-3 relative">
+                        <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-3 relative">
                           <Button
                             type="button"
                             variant="ghost"
@@ -1135,28 +1135,28 @@ export default function SettingsPage() {
                 <div>
                   <h3 className="font-medium mb-4">Notificaciones por Email</h3>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Nuevas Facturas</p>
                         <p className="text-sm text-muted-foreground">Recibir notificación cuando se emite una nueva factura</p>
                       </div>
                       <Switch defaultChecked disabled />
                     </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Pagos Recibidos</p>
                         <p className="text-sm text-muted-foreground">Notificar cuando se registra un pago</p>
                       </div>
                       <Switch defaultChecked disabled />
                     </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Facturas Vencidas</p>
                         <p className="text-sm text-muted-foreground">Alertas sobre facturas que no han sido pagadas</p>
                       </div>
                       <Switch defaultChecked disabled />
                     </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Nuevos Miembros</p>
                         <p className="text-sm text-muted-foreground">Notificar cuando alguien se une al perfil fiscal</p>
@@ -1166,24 +1166,24 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="font-medium mb-4">Recordatorios Automáticos</h3>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Recordatorio de Vencimiento</p>
                         <p className="text-sm text-muted-foreground">Enviar recordatorio 3 días antes del vencimiento</p>
                       </div>
                       <Switch disabled />
                     </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Resumen Semanal</p>
                         <p className="text-sm text-muted-foreground">Recibir resumen de actividad cada semana</p>
                       </div>
                       <Switch disabled />
                     </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="space-y-1">
                         <p className="font-medium">Resumen Mensual</p>
                         <p className="text-sm text-muted-foreground">Recibir informe mensual de facturación</p>
@@ -1193,7 +1193,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 
-                <div className="border-t pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="font-medium mb-4">Canales de Notificación</h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -1243,27 +1243,18 @@ export default function SettingsPage() {
                 </div>
                 
                 {canDelete && (
-                  <div className="border-t pt-6">
-                    <div className="border-2 border-destructive/20 rounded-lg p-6 bg-destructive/5">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                          <Trash2 className="h-5 w-5 text-destructive" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-destructive mb-2">Zona de Peligro</h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
-                          </p>
-                          <Button variant="destructive" onClick={() => {
-                            setShowDeleteModal(true)
-                            checkInvoices()
-                          }}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar Perfil Fiscal
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="border-t border-gray-200 pt-6">
+                    <Label className="text-red-600">Zona de Peligro</Label>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
+                    </p>
+                    <Button variant="destructive" onClick={() => {
+                      setShowDeleteModal(true)
+                      checkInvoices()
+                    }}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar Perfil Fiscal
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -1292,7 +1283,7 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 {bankAccounts.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                  <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
                     <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="font-medium mb-2">No hay cuentas bancarias</h3>
                     <p className="text-sm text-muted-foreground mb-4">Agrega una cuenta para recibir pagos</p>
@@ -1306,7 +1297,7 @@ export default function SettingsPage() {
                 ) : (
                   <div className="grid grid-cols-2 gap-4">
                     {bankAccounts.map((account) => (
-                      <div key={account.id} className="border rounded-lg p-4 relative">
+                      <div key={account.id} className="border border-gray-200 rounded-lg p-4 relative">
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <h4 className="font-semibold">{account.bankName}</h4>
@@ -1348,16 +1339,6 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Botón de guardar al final de la página */}
-        {canUpdate && (
-          <div className="mt-6">
-            <Button onClick={saveCompany} disabled={saving || !hasChanges} className="w-full">
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
-          </div>
-        )}
 
         {/* Add Bank Account Dialog */}
         <Dialog open={showAddBankDialog} onOpenChange={setShowAddBankDialog}>
@@ -1527,7 +1508,7 @@ export default function SettingsPage() {
                     point_number: parseInt(salesPointFormData.point_number),
                     name: salesPointFormData.name || null
                   })
-                  const newSalesPoint = (response.data as any).data
+                  const newSalesPoint = response.data.data
                   setSalesPoints([...salesPoints, newSalesPoint])
                   if (salesPoints.length === 0) {
                     setFormData({...formData, default_sales_point: newSalesPoint.point_number})
@@ -1577,7 +1558,7 @@ export default function SettingsPage() {
                   const response = await apiClient.put(`/companies/${companyId}/sales-points/${editingSalesPoint.id}`, {
                     name: salesPointFormData.name || null
                   })
-                  const updatedSalesPoint = (response.data as any).data
+                  const updatedSalesPoint = response.data.data
                   setSalesPoints(salesPoints.map(sp => sp.id === updatedSalesPoint.id ? updatedSalesPoint : sp))
                   toast.success('Punto de venta actualizado')
                   setShowEditSalesPointDialog(false)
@@ -1667,7 +1648,7 @@ export default function SettingsPage() {
                 )}
               </div>
               
-              <div className="border-t pt-4">
+              <div className="border-t border-gray-200 pt-4">
                 <Label htmlFor="deleteCode" className="flex items-center gap-2">
                   🔐 Código de Seguridad
                 </Label>

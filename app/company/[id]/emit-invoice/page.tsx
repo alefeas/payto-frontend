@@ -1131,7 +1131,7 @@ export default function CreateInvoicePage() {
               {items.map((item, index) => {
                 const itemTotals = calculateItemTotal(item)
                 return (
-                <div key={index} className="space-y-3 p-4 border border-[#eeeeee] rounded-lg relative">
+                <div key={index} className="space-y-3 p-4 border border-gray-200 rounded-lg relative">
                   <Button
                     type="button"
                     variant="ghost"
@@ -1238,7 +1238,7 @@ export default function CreateInvoicePage() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-end gap-4 text-sm border-t pt-2">
+                  <div className="flex justify-end gap-4 text-sm border-t border-gray-200 pt-2">
                     <span className="text-muted-foreground">Subtotal: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{itemTotals.subtotal.toFixed(2)}</span></span>
                     <span className="text-muted-foreground">IVA: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{(itemTotals.total - itemTotals.subtotal).toFixed(2)}</span></span>
                     <span className="text-muted-foreground">Total: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{itemTotals.total.toFixed(2)}</span></span>
@@ -1290,7 +1290,7 @@ export default function CreateInvoicePage() {
                   const perceptionAmount = base * (perception.rate || 0) / 100
                   
                   return (
-                  <div key={index} className="space-y-3 p-4 border border-[#eeeeee] rounded-lg relative">
+                  <div key={index} className="space-y-3 p-4 border border-gray-200 rounded-lg relative">
                     <Button
                       type="button"
                       variant="ghost"
@@ -1401,7 +1401,7 @@ export default function CreateInvoicePage() {
                       </div>
                     </div>
                     
-                    <div className="flex justify-end gap-4 text-sm border-t pt-2">
+                    <div className="flex justify-end gap-4 text-sm border-t border-gray-200 pt-2">
                       <span className="text-muted-foreground">Base: <span className="font-medium text-foreground">{getCurrencySymbol(formData.currency)}{base.toFixed(2)}</span></span>
                       <span className="text-muted-foreground">Alícuota: <span className="font-medium text-foreground">{perception.rate || 0}%</span></span>
                       <span className="text-muted-foreground">Total: <span className="font-medium text-orange-600">{getCurrencySymbol(formData.currency)}{perceptionAmount.toFixed(2)}</span></span>
@@ -1441,14 +1441,14 @@ export default function CreateInvoicePage() {
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
                   <span>Total:</span>
                   <span>
                     {getCurrencySymbol(formData.currency)}{totals.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 {selectedInvoice && (
-                  <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
+                  <div className="flex justify-between text-sm text-muted-foreground border-t border-gray-200 pt-2">
                     <span>Saldo Disponible:</span>
                     <span className={totals.total > (selectedInvoice.available_balance || 0) ? 'text-red-600 font-bold' : 'text-green-600'}>
                       {getCurrencySymbol(formData.currency)}{(selectedInvoice.available_balance || 0).toLocaleString('es-AR')}
