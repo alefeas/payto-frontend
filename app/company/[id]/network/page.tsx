@@ -271,7 +271,7 @@ export default function NetworkPage() {
               )}
             </div>
           </div>
-          <Button onClick={() => setShowRequestModal(true)}>
+          <Button onClick={() => setShowRequestModal(true)} className="bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] hover:opacity-90">
             <Plus className="h-4 w-4 mr-2" />
             Conectar Empresa
           </Button>
@@ -363,13 +363,6 @@ export default function NetworkPage() {
                             <p className="text-sm font-medium">{connection.totalInvoicesReceived}</p>
                             <p className="text-xs text-muted-foreground">Recibidas</p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-sm font-medium text-green-600">
-                              ${((connection.totalAmountSent || 0) + (connection.totalAmountReceived || 0)).toLocaleString()}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Total</p>
-                          </div>
-                          <Badge variant="secondary">Conectado</Badge>
                           <Button 
                             size="sm" 
                             variant="ghost"

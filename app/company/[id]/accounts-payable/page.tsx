@@ -117,7 +117,7 @@ export default function AccountsPayablePage() {
     if (invoiceIds.length === 0) return
     
     const selectedInvoiceData = allInvoices.filter(inv => invoiceIds.includes(inv.id))
-    const totalAmount = selectedInvoiceData.reduce((sum, inv) => sum + (inv.pending_amount || inv.total), 0)
+    const totalAmount = selectedInvoiceData.reduce((sum, inv) => sum + parseFloat(inv.balance_pending ?? inv.available_balance ?? inv.total), 0)
     
     setPaymentForm({
       ...paymentForm,
@@ -161,15 +161,15 @@ export default function AccountsPayablePage() {
       if (selectedInvoices.length > 1) {
         const selectedInvoiceData = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
         for (const invoice of selectedInvoiceData) {
-          const invoiceAmount = invoice.pending_amount || invoice.total
+          const invoiceBalance = parseFloat(invoice.balance_pending ?? invoice.available_balance ?? invoice.total)
           const retentionsWithAmounts = retentions.map(ret => {
-            const base = ret.baseType === 'total' ? invoiceAmount : invoiceAmount
+            const base = ret.baseType === 'total' ? invoiceBalance : invoiceBalance
             return { type: ret.type, name: ret.name, rate: ret.rate, base_amount: base, amount: base * ret.rate / 100 }
           })
           
           await accountsPayableService.registerPayment(companyId, {
             invoice_id: invoice.id,
-            amount: invoiceAmount,
+            amount: invoiceBalance,
             payment_date: paymentForm.payment_date,
             payment_method: paymentForm.payment_method,
             reference_number: paymentForm.reference_number,
@@ -180,15 +180,16 @@ export default function AccountsPayablePage() {
         toast.success(`${selectedInvoices.length} pagos registrados exitosamente`)
       } else {
         // Pago individual
-        const amount = parseFloat(paymentForm.amount)
+        const invoice = allInvoices.find(inv => inv.id === selectedInvoices[0])
+        const invoiceBalance = parseFloat(invoice?.balance_pending ?? invoice?.available_balance ?? invoice?.total ?? paymentForm.amount)
         const retentionsWithAmounts = retentions.map(ret => {
-          const base = ret.baseType === 'total' ? amount : amount
+          const base = ret.baseType === 'total' ? invoiceBalance : invoiceBalance
           return { type: ret.type, name: ret.name, rate: ret.rate, base_amount: base, amount: base * ret.rate / 100 }
         })
         
         await accountsPayableService.registerPayment(companyId, {
           ...paymentForm,
-          amount,
+          amount: invoiceBalance,
           retentions: retentionsWithAmounts,
         })
         toast.success('Pago registrado exitosamente')
@@ -729,6 +730,7 @@ export default function AccountsPayablePage() {
                                            invoice?.issuerCompany?.business_name ||
                                            invoice?.issuerCompany?.name ||
                                            'Sin nombre'
+                        const hasNotes = (invoice?.credit_notes_applied?.length > 0 || invoice?.debit_notes_applied?.length > 0)
                         return (
                           <>
                             <div className="flex justify-between">
@@ -745,8 +747,29 @@ export default function AccountsPayablePage() {
                             </div>
                             <Separator />
                             <div className="flex justify-between text-sm">
-                              <span>Total Factura:</span>
-                              <span className="font-semibold">{formatCurrency(invoice?.pending_amount || invoice?.total || 0, invoice?.currency)}</span>
+                              <span>Total Original:</span>
+                              <span className="font-semibold">{formatCurrency(invoice?.total || 0, invoice?.currency)}</span>
+                            </div>
+                            {hasNotes && (
+                              <>
+                                {invoice?.credit_notes_applied?.map((nc: any) => (
+                                  <div key={nc.id} className="flex justify-between text-sm text-green-600">
+                                    <span>NC {String(nc.sales_point || 0).padStart(4, '0')}-{String(nc.voucher_number || 0).padStart(8, '0')}:</span>
+                                    <span>-{formatCurrency(nc.total || 0, invoice?.currency)}</span>
+                                  </div>
+                                ))}
+                                {invoice?.debit_notes_applied?.map((nd: any) => (
+                                  <div key={nd.id} className="flex justify-between text-sm text-orange-600">
+                                    <span>ND {String(nd.sales_point || 0).padStart(4, '0')}-{String(nd.voucher_number || 0).padStart(8, '0')}:</span>
+                                    <span>+{formatCurrency(nd.total || 0, invoice?.currency)}</span>
+                                  </div>
+                                ))}
+                                <Separator />
+                              </>
+                            )}
+                            <div className="flex justify-between text-sm font-bold">
+                              <span>Saldo a Pagar:</span>
+                              <span>{formatCurrency(invoice?.pending_amount || invoice?.total || 0, invoice?.currency)}</span>
                             </div>
                           </>
                         )

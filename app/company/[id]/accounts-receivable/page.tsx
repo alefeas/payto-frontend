@@ -81,6 +81,7 @@ export default function AccountsReceivablePage() {
         if (inv.supplier_id) return false
         const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
         const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+        // Excluir TODAS las ND/NC (asociadas y standalone)
         if (isCreditNote || isDebitNote) return false
         if (inv.status === 'cancelled') return false
         const companyStatus = inv.company_statuses?.[companyId]
@@ -146,8 +147,8 @@ export default function AccountsReceivablePage() {
           method = 'card'
         }
         
-        // Calcular montos de retenciones
-        const invoiceAmount = parseFloat(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total)
+        // Calcular montos de retenciones usando balance_pending (incluye ND/NC)
+        const invoiceAmount = parseFloat(invoice.balance_pending ?? invoice.available_balance ?? invoice.total)
         const withholdingsData: any = {}
         
         withholdings.forEach(wh => {
@@ -505,15 +506,35 @@ export default function AccountsReceivablePage() {
               <div className="border border-gray-200 rounded-lg p-4 bg-muted/30">
                 <h4 className="font-medium mb-3 text-sm text-muted-foreground">Facturas seleccionadas</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => (
-                    <div key={invoice.id} className="flex justify-between items-center text-sm p-2 bg-background rounded">
-                      <div>
-                        <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
-                        <p className="text-xs text-muted-foreground">{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</p>
+                  {allInvoices.filter(inv => selectedInvoices.includes(inv.id)).map((invoice) => {
+                    const hasNotes = (invoice.credit_notes_applied?.length > 0 || invoice.debit_notes_applied?.length > 0)
+                    return (
+                    <div key={invoice.id} className="p-2 bg-background rounded space-y-1">
+                      <div className="flex justify-between items-center text-sm">
+                        <div>
+                          <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
+                          <p className="text-xs text-muted-foreground">{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</p>
+                        </div>
+                        <p className="font-semibold">{formatCurrency(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total, invoice.currency)}</p>
                       </div>
-                      <p className="font-semibold">{formatCurrency(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total, invoice.currency)}</p>
+                      {hasNotes && (
+                        <div className="text-xs space-y-0.5 pl-2 border-l-2 border-gray-300">
+                          {invoice.credit_notes_applied?.map((nc: any) => (
+                            <div key={nc.id} className="flex justify-between text-green-600">
+                              <span>NC {String(nc.sales_point || 0).padStart(4, '0')}-{String(nc.voucher_number || 0).padStart(8, '0')}</span>
+                              <span>-{formatCurrency(nc.total || 0, invoice.currency)}</span>
+                            </div>
+                          ))}
+                          {invoice.debit_notes_applied?.map((nd: any) => (
+                            <div key={nd.id} className="flex justify-between text-orange-600">
+                              <span>ND {String(nd.sales_point || 0).padStart(4, '0')}-{String(nd.voucher_number || 0).padStart(8, '0')}</span>
+                              <span>+{formatCurrency(nd.total || 0, invoice.currency)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
               

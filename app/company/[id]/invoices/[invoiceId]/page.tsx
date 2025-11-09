@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2 } from "lucide-react"
+import { Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2, Eye } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
@@ -723,6 +723,157 @@ export default function InvoiceDetailPage() {
             </Card>
           )}
         </div>
+
+        {/* NC/ND Aplicadas - Solo para facturas normales */}
+        {invoice.balance_breakdown && !['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type) && 
+         (invoice.balance_breakdown.credit_notes?.length > 0 || invoice.balance_breakdown.debit_notes?.length > 0) && (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Ajustes Aplicados
+              </CardTitle>
+              <CardDescription>Notas de crédito y débito que modifican el saldo de esta factura</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Cálculo Visual */}
+                <div className="bg-muted/30 rounded-lg p-4 border">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-sm text-muted-foreground">Monto Original</span>
+                      <span className="font-semibold">
+                        {formatCurrency(invoice.balance_breakdown.original_amount, invoice.currency)}
+                      </span>
+                    </div>
+                    {invoice.balance_breakdown.total_credit_notes > 0 && (
+                      <div className="flex justify-between items-center py-1.5 border-t">
+                        <span className="text-sm text-red-600">Notas de Crédito</span>
+                        <span className="font-semibold text-red-600">
+                          -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
+                        </span>
+                      </div>
+                    )}
+                    {invoice.balance_breakdown.total_debit_notes > 0 && (
+                      <div className="flex justify-between items-center py-1.5 border-t">
+                        <span className="text-sm text-green-600">Notas de Débito</span>
+                        <span className="font-semibold text-green-600">
+                          +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center py-2 border-t-2">
+                      <span className="font-bold">Saldo Pendiente</span>
+                      <span className="font-bold text-lg text-primary">
+                        {formatCurrency(invoice.balance_breakdown.balance_pending, invoice.currency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de NC y ND */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {invoice.balance_breakdown.credit_notes?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2 text-muted-foreground">Notas de Crédito ({invoice.balance_breakdown.credit_notes.length})</h4>
+                      <div className="space-y-2">
+                        {invoice.balance_breakdown.credit_notes.map((nc: any) => (
+                          <div 
+                            key={nc.id} 
+                            className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => router.push(`/company/${companyId}/invoices/${nc.id}`)}
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{nc.number}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(nc.issue_date).toLocaleDateString('es-AR')}
+                              </p>
+                            </div>
+                            <span className="font-semibold text-sm text-red-600">
+                              -{formatCurrency(nc.amount, invoice.currency)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {invoice.balance_breakdown.debit_notes?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2 text-muted-foreground">Notas de Débito ({invoice.balance_breakdown.debit_notes.length})</h4>
+                      <div className="space-y-2">
+                        {invoice.balance_breakdown.debit_notes.map((nd: any) => (
+                          <div 
+                            key={nd.id} 
+                            className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => router.push(`/company/${companyId}/invoices/${nd.id}`)}
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{nd.number}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(nd.issue_date).toLocaleDateString('es-AR')}
+                              </p>
+                            </div>
+                            <span className="font-semibold text-sm text-green-600">
+                              +{formatCurrency(nd.amount, invoice.currency)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Factura Relacionada - Solo para NC/ND */}
+        {invoice.related_invoice_id && ['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type) && (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Factura Relacionada
+              </CardTitle>
+              <CardDescription>
+                {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) 
+                  ? 'Esta nota de crédito ajusta el saldo de la siguiente factura'
+                  : 'Esta nota de débito ajusta el saldo de la siguiente factura'
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div 
+                  className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">Factura {invoice.relatedInvoice?.number || invoice.related_invoice_id}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Click para ver el detalle completo
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4 border">
+                  <p className="text-sm font-medium">
+                    {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) 
+                      ? `Reduce el saldo en ${formatCurrency(parseFloat(invoice.total), invoice.currency)}`
+                      : `Aumenta el saldo en ${formatCurrency(parseFloat(invoice.total), invoice.currency)}`
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Percepciones Detail */}
         {invoice.perceptions && invoice.perceptions.length > 0 && (

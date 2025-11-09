@@ -167,7 +167,14 @@ export function InvoiceList({
                   {getStatusBadges(invoice)}
                   <div className="text-right">
                     <div className="font-medium">{formatCurrency(parseFloat(invoice.pending_amount || invoice.total || 0), invoice.currency)}</div>
-                    <div className="text-sm text-muted-foreground">
+                    {(invoice.total_nc > 0 || invoice.total_nd > 0) && (
+                      <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                        <div>Original: {formatCurrency(invoice.total, invoice.currency)}</div>
+                        {invoice.total_nc > 0 && <div className="text-red-600">NC: -{formatCurrency(invoice.total_nc, invoice.currency)}</div>}
+                        {invoice.total_nd > 0 && <div className="text-green-600">ND: +{formatCurrency(invoice.total_nd, invoice.currency)}</div>}
+                      </div>
+                    )}
+                    <div className="text-sm text-muted-foreground mt-1">
                       Vence: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
                     </div>
                   </div>

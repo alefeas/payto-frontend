@@ -90,16 +90,34 @@ export default function CompanyPage() {
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           
+          // Por Cobrar: facturas emitidas por esta empresa que no están pagadas
+          const receivable = data.filter((inv: any) => {
+            if (inv.issuer_company_id !== companyId) return false
+            if (inv.supplier_id) return false
+            const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+            const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+            if (isCreditNote || isDebitNote) return false
+            if (inv.status === 'cancelled') return false
+            const companyStatus = inv.company_statuses?.[companyId]
+            if (companyStatus === 'paid' || companyStatus === 'collected') return false
+            return true
+          }).length
+          
+          // Por Pagar: facturas recibidas de proveedores que no están pagadas
+          const payable = data.filter((inv: any) => {
+            if (inv.issuer_company_id === companyId) return false
+            if (inv.status === 'cancelled') return false
+            const companyStatus = inv.company_statuses?.[companyId]
+            if (companyStatus === 'paid') return false
+            return true
+          }).length
+          
           setStats({
             pendingApproval: data.filter((inv: any) => 
               inv.display_status === 'pending_approval' || inv.status === 'pending_approval'
             ).length,
-            receivable: data.filter((inv: any) => 
-              (inv.display_status === 'pending' || inv.status === 'pending') && inv.direction === 'outgoing'
-            ).length,
-            payable: data.filter((inv: any) => 
-              (inv.display_status === 'pending' || inv.status === 'pending') && inv.direction === 'incoming'
-            ).length,
+            receivable,
+            payable,
             overdue: data.filter((inv: any) => {
               const status = inv.display_status || inv.status
               if (status === 'paid' || status === 'cancelled' || status === 'void') return false

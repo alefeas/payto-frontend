@@ -52,8 +52,8 @@ export default function ApproveInvoicesPage() {
         setCurrentUserId(user.id)
       }
       
-      const result = await invoiceService.getInvoices(id as string)
-      // Filtrar facturas que necesitan aprobación
+      const result = await invoiceService.getInvoices(id as string, { exclude_associated_notes: true })
+      // Filtrar facturas que necesitan aprobación (excluye ND/NC asociadas)
       const pendingInvoices = (result.data || []).filter((inv: Invoice) => {
         const status = inv.display_status || inv.status
         return status === 'pending_approval'

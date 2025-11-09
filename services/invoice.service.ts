@@ -120,6 +120,7 @@ export const invoiceService = {
     client?: string
     date_from?: string
     date_to?: string
+    exclude_associated_notes?: boolean
   }): Promise<{ data: Invoice[], total: number, last_page: number, current_page: number }> {
     const params: any = { page }
     if (filters?.status && filters.status !== 'all') params.status = filters.status
@@ -128,6 +129,7 @@ export const invoiceService = {
     if (filters?.client && filters.client !== 'all') params.client = filters.client
     if (filters?.date_from) params.date_from = filters.date_from
     if (filters?.date_to) params.date_to = filters.date_to
+    if (filters?.exclude_associated_notes) params.exclude_associated_notes = true
     const response = await apiClient.get(`/companies/${companyId}/invoices`, { params })
     return {
       data: response.data.data || response.data,
