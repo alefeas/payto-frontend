@@ -343,7 +343,7 @@ export default function DashboardPage() {
                   <span className="text-sm font-medium">Activos</span>
                 </div>
                 <span className="text-lg font-bold text-orange-600">
-                  {companies.filter(c => c.active).length}
+                  {companies.filter(c => c.isActive).length}
                 </span>
               </div>
             </CardContent>
