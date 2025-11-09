@@ -43,13 +43,14 @@ export default function NotFound() {
             onClick={() => router.back()}
             variant="outline"
             size="lg"
+            className="w-full sm:w-auto gap-2"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-4 w-4" />
             Volver atrás
           </Button>
           <Link href="/dashboard" className="w-full sm:w-auto">
-            <Button size="lg">
-              <Home className="h-4 w-4 mr-2" />
+            <Button size="lg" className="w-full gap-2">
+              <Home className="h-4 w-4" />
               Ir al inicio
             </Button>
           </Link>

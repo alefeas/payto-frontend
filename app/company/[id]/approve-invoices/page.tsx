@@ -45,7 +45,7 @@ export default function ApproveInvoicesPage() {
       setLoading(true)
       const company = await companyService.getCompany(id as string)
       setCompanyName(company.name)
-      const reqApprovals = company.required_approvals !== undefined ? company.required_approvals : 0
+      const reqApprovals = company.requiredApprovals !== undefined ? company.requiredApprovals : (company.required_approvals !== undefined ? company.required_approvals : 0)
       setRequiredApprovals(reqApprovals)
       
       if (user?.id) {
@@ -283,7 +283,7 @@ export default function ApproveInvoicesPage() {
                             <Button 
                               size="sm" 
                               onClick={() => openApproveDialog(invoice)}
-                              variant="default"
+                              className="bg-green-600 hover:bg-green-700"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Aprobar
@@ -351,7 +351,7 @@ export default function ApproveInvoicesPage() {
             <Button variant="outline" onClick={() => setShowApproveDialog(false)} disabled={processing}>
               Cancelar
             </Button>
-            <Button onClick={handleApprove} disabled={processing} variant="default">
+            <Button onClick={handleApprove} disabled={processing} className="bg-green-600 hover:bg-green-700">
               {processing ? 'Aprobando...' : 'Aprobar'}
             </Button>
           </DialogFooter>

@@ -22,11 +22,11 @@ import { InvoiceListSkeleton } from "@/components/accounts/InvoiceListSkeleton"
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const formats: Record<string, string> = {
-    'ARS': `$ ${formatted}`,
-    'USD': `USD $ ${formatted}`,
-    'EUR': `EUR € ${formatted}`
+    'ARS': `ARS $${formatted}`,
+    'USD': `USD $${formatted}`,
+    'EUR': `EUR €${formatted}`
   }
-  return formats[currency] || `$ ${formatted}`
+  return formats[currency] || `ARS $${formatted}`
 }
 
 export default function InvoicesPage() {
@@ -62,9 +62,6 @@ export default function InvoicesPage() {
   })
   const [syncResults, setSyncResults] = useState<any>(null)
   const [syncProgress, setSyncProgress] = useState<string>('')
-  const [isDownloadingPDF, setIsDownloadingPDF] = useState<string | null>(null)
-  const [isDownloadingTXT, setIsDownloadingTXT] = useState<string | null>(null)
-  const [isBulkDownloading, setIsBulkDownloading] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -122,11 +119,11 @@ export default function InvoicesPage() {
     if (isAuthenticated && companyId) {
       loadAllClients()
     }
-  }, [companyId]) // Solo depende de companyId, no de isAuthenticated
+  }, [isAuthenticated, companyId])
 
   useEffect(() => {
     const loadInvoices = async () => {
-      if (!companyId || !isAuthenticated) return
+      if (!companyId) return
       
       setIsLoading(true)
       try {
@@ -155,8 +152,10 @@ export default function InvoicesPage() {
       }
     }
 
-    loadInvoices()
-  }, [companyId, isAuthenticated, currentPage, searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
+    if (isAuthenticated && companyId) {
+      loadInvoices()
+    }
+  }, [isAuthenticated, companyId, currentPage, searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
 
   const handleSelectInvoice = (invoiceId: string) => {
     setSelectedInvoices(prev => {
@@ -202,9 +201,7 @@ export default function InvoicesPage() {
 
 
   const downloadPDF = async (invoiceId: string) => {
-    if (isDownloadingPDF) return
     const invoice = invoices.find(inv => inv.id === invoiceId)
-    setIsDownloadingPDF(invoiceId)
     try {
       const blob = await invoiceService.downloadPDF(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -218,15 +215,11 @@ export default function InvoicesPage() {
       toast.success('PDF descargado')
     } catch (error) {
       toast.error('Error al descargar PDF')
-    } finally {
-      setIsDownloadingPDF(null)
     }
   }
 
   const downloadTXT = async (invoiceId: string) => {
-    if (isDownloadingTXT) return
     const invoice = invoices.find(inv => inv.id === invoiceId)
-    setIsDownloadingTXT(invoiceId)
     try {
       const blob = await invoiceService.downloadTXT(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -240,8 +233,6 @@ export default function InvoicesPage() {
       toast.success('TXT descargado')
     } catch (error) {
       toast.error('Error al descargar TXT')
-    } finally {
-      setIsDownloadingTXT(null)
     }
   }
 
@@ -393,9 +384,11 @@ export default function InvoicesPage() {
                 </Button>
                 <Button 
                   onClick={async () => {
-                    if (isBulkDownloading || selectedInvoices.length === 0) return
+                    if (selectedInvoices.length === 0) {
+                      toast.error('Selecciona al menos un comprobante')
+                      return
+                    }
                     
-                    setIsBulkDownloading(true)
                     try {
                       toast.info('Generando TXT...')
                       const blob = await invoiceService.downloadBulk(companyId, selectedInvoices, 'txt')
@@ -411,25 +404,21 @@ export default function InvoicesPage() {
                     } catch (error: any) {
                       console.error('Download error:', error)
                       toast.error(error.response?.data?.error || 'Error al descargar archivos')
-                    } finally {
-                      setIsBulkDownloading(false)
                     }
                   }}
-                  disabled={selectedInvoices.length === 0 || isBulkDownloading}
+                  disabled={selectedInvoices.length === 0}
                   size="sm"
                 >
-                  {isBulkDownloading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4 mr-2" />
-                  )}
+                  <Download className="h-4 w-4 mr-2" />
                   Descargar TXT ({selectedInvoices.length})
                 </Button>
                 <Button 
                   onClick={async () => {
-                    if (isBulkDownloading || selectedInvoices.length === 0) return
+                    if (selectedInvoices.length === 0) {
+                      toast.error('Selecciona al menos un comprobante')
+                      return
+                    }
                     
-                    setIsBulkDownloading(true)
                     try {
                       toast.info('Generando PDF...')
                       const blob = await invoiceService.downloadBulk(companyId, selectedInvoices, 'pdf')
@@ -445,19 +434,13 @@ export default function InvoicesPage() {
                     } catch (error: any) {
                       console.error('Download error:', error)
                       toast.error(error.response?.data?.error || 'Error al descargar archivos')
-                    } finally {
-                      setIsBulkDownloading(false)
                     }
                   }}
-                  disabled={selectedInvoices.length === 0 || isBulkDownloading}
+                  disabled={selectedInvoices.length === 0}
                   size="sm"
                   variant="outline"
                 >
-                  {isBulkDownloading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <FileText className="h-4 w-4 mr-2" />
-                  )}
+                  <FileText className="h-4 w-4 mr-2" />
                   Descargar PDF ({selectedInvoices.length})
                 </Button>
               </div>
@@ -674,26 +657,16 @@ export default function InvoicesPage() {
                             variant="ghost"
                             onClick={() => downloadPDF(invoice.id)}
                             title="Descargar PDF"
-                            disabled={isDownloadingPDF === invoice.id}
                           >
-                            {isDownloadingPDF === invoice.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Download className="h-4 w-4" />
-                            )}
+                            <Download className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => downloadTXT(invoice.id)}
                             title="Descargar TXT AFIP"
-                            disabled={isDownloadingTXT === invoice.id}
                           >
-                            {isDownloadingTXT === invoice.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <FileText className="h-4 w-4" />
-                            )}
+                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -938,13 +911,13 @@ export default function InvoicesPage() {
                 <Card className="p-4">
                   <p className="text-sm text-muted-foreground">Nuevos Importados</p>
                   <p className="text-3xl font-bold text-green-600">
-                    {syncResults.invoices ? syncResults.invoices.filter((inv: any) => inv.saved).length : <Skeleton className="h-8 w-12" />}
+                    {syncResults.invoices?.filter((inv: any) => inv.saved).length || 0}
                   </p>
                 </Card>
                 <Card className="p-4">
                   <p className="text-sm text-muted-foreground">Ya Existían</p>
                   <p className="text-3xl font-bold text-orange-600">
-                    {syncResults.invoices ? syncResults.invoices.filter((inv: any) => !inv.saved).length : <Skeleton className="h-8 w-12" />}
+                    {syncResults.invoices?.filter((inv: any) => !inv.saved).length || 0}
                   </p>
                 </Card>
               </div>
@@ -984,23 +957,6 @@ export default function InvoicesPage() {
                             {inv.saved ? 'Importada' : 'Ya existe'}
                           </Badge>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {!syncResults.invoices && syncResults.imported_count > 0 && (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <div className="space-y-2 border rounded-lg p-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex justify-between items-start p-3 border-b last:border-b-0">
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-40" />
-                          <Skeleton className="h-3 w-64" />
-                        </div>
-                        <Skeleton className="h-6 w-16" />
                       </div>
                     ))}
                   </div>

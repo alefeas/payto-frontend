@@ -369,17 +369,17 @@ export default function InvoiceDetailPage() {
               </>
             ) : (
               <>
-                <Button onClick={downloadPDF} variant="default">
+                <Button onClick={downloadPDF} className="shadow-sm">
                   <Download className="h-4 w-4 mr-2" />
                   PDF Sistema
                 </Button>
                 {invoice.attachment_path && (
-                  <Button onClick={downloadAttachment} variant="outline">
+                  <Button onClick={downloadAttachment} variant="outline" className="shadow-sm border-blue-300 text-blue-700 hover:bg-blue-50">
                     <FileText className="h-4 w-4 mr-2" />
                     PDF Original
                   </Button>
                 )}
-                <Button onClick={downloadTXT} variant="outline">
+                <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
                   <FileText className="h-4 w-4 mr-2" />
                   TXT
                 </Button>
