@@ -144,7 +144,6 @@ export function AppSidebar() {
       label: "General",
       items: [
         { title: "Inicio", icon: Home, url: `/company/${selectedCompanyId}` },
-        { title: "Mis Tareas", icon: CheckSquare, url: `/tasks` },
         { title: "Notificaciones", icon: Bell, url: `/company/${selectedCompanyId}/notifications` },
       ]
     },
