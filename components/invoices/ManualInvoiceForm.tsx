@@ -24,6 +24,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 
 interface ManualInvoiceFormProps {
   companyId: string
+  onReady?: () => void
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -44,7 +45,7 @@ interface Perception {
   base_type: string
 }
 
-export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvoiceFormProps) {
+export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: ManualInvoiceFormProps) {
   const [mode, setMode] = useState<"issued" | "received">("received")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -84,7 +85,13 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
     const initializeData = async () => {
       setIsLoadingData(true)
       await loadCompanyData()
+      await Promise.all([
+        loadClients(),
+        loadSuppliers(),
+        loadConnectedCompanies()
+      ])
       setIsLoadingData(false)
+      onReady?.()
     }
     initializeData()
   }, [])
@@ -104,8 +111,6 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
     setSelectedInvoice(null)
     
     if (mode === "issued") {
-      loadClients()
-      loadConnectedCompanies()
       // Cargar percepciones default solo para emitidas
       if (currentCompany && currentCompany.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
         const perceptionsToAdd = currentCompany.autoPerceptions.map((p: any) => ({
@@ -118,8 +123,6 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
         setPerceptions(perceptionsToAdd)
       }
     } else {
-      loadSuppliers()
-      loadConnectedCompanies() // También cargar para recibidas
       // Limpiar percepciones cuando se cambia a recibidas
       setPerceptions([])
     }
@@ -393,16 +396,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
     return formats[curr as keyof typeof formats] || 'ARS $'
   }
 
-  if (isLoadingData) {
-    return (
-      <div className="space-y-6">
-        <div className="h-32 bg-muted rounded-lg animate-pulse" />
-        <div className="h-64 bg-muted rounded-lg animate-pulse" />
-        <div className="h-48 bg-muted rounded-lg animate-pulse" />
-        <div className="h-32 bg-muted rounded-lg animate-pulse" />
-      </div>
-    )
-  }
+  if (isLoadingData) return null
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -895,7 +889,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
             const itemTotal = itemSubtotal + itemTax
             
             return (
-            <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+            <div key={index} className="space-y-3 p-4 border border-gray-200 rounded-lg relative">
               <Button
                 type="button"
                 variant="ghost"
@@ -993,7 +987,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 </div>
               </div>
               
-              <div className="flex justify-end gap-4 text-sm border-t pt-2">
+              <div className="flex justify-end gap-4 text-sm border-t border-gray-200 pt-2">
                 <span className="text-muted-foreground">Subtotal: <span className="font-medium text-foreground">{getCurrencySymbol(currency)}{itemSubtotal.toFixed(2)}</span></span>
                 <span className="text-muted-foreground">IVA: <span className="font-medium text-foreground">{getCurrencySymbol(currency)}{itemTax.toFixed(2)}</span></span>
                 <span className="text-muted-foreground">Total: <span className="font-medium text-foreground">{getCurrencySymbol(currency)}{itemTotal.toFixed(2)}</span></span>
@@ -1048,7 +1042,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
               const perceptionAmount = base * (perception.rate || 0) / 100
               
               return (
-              <div key={index} className="space-y-3 p-4 border rounded-lg relative">
+              <div key={index} className="space-y-3 p-4 border border-gray-200 rounded-lg relative">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1159,7 +1153,7 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-4 text-sm border-t pt-2">
+                <div className="flex justify-end gap-4 text-sm border-t border-gray-200 pt-2">
                   <span className="text-muted-foreground">Base: <span className="font-medium text-foreground">{getCurrencySymbol(currency)}{base.toFixed(2)}</span></span>
                   <span className="text-muted-foreground">Alícuota: <span className="font-medium text-foreground">{perception.rate || 0}%</span></span>
                   <span className="text-muted-foreground">Total: <span className="font-medium text-orange-600">{getCurrencySymbol(currency)}{perceptionAmount.toFixed(2)}</span></span>
@@ -1201,14 +1195,14 @@ export function ManualInvoiceForm({ companyId, onSuccess, onCancel }: ManualInvo
                 </span>
               </div>
             )}
-            <div className="flex justify-between text-lg font-bold border-t pt-2">
+            <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
               <span>Total:</span>
               <span>
                 {getCurrencySymbol(currency)}{totals.total}
               </span>
             </div>
             {selectedInvoice && (invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '002' || invoiceType === '007' || invoiceType === '012' || invoiceType === '052') && (
-              <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
+              <div className="flex justify-between text-sm text-muted-foreground border-t border-gray-200 pt-2">
                 <span>Saldo Disponible:</span>
                 <span className={parseFloat(totals.total) > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>
                   {getCurrencySymbol(currency)}{selectedInvoice.available_balance.toLocaleString('es-AR')}

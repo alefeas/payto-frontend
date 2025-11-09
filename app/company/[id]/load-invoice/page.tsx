@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Info, Receipt, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { ManualInvoiceForm } from "@/components/invoices/ManualInvoiceForm"
 
@@ -15,6 +16,7 @@ export default function LoadInvoicePage() {
   const router = useRouter()
   const params = useParams()
   const companyId = params.id as string
+  const [isFormReady, setIsFormReady] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -22,24 +24,53 @@ export default function LoadInvoicePage() {
     }
   }, [isAuthenticated, authLoading, router])
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated) return null
+
+  if (!isFormReady) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-5xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-96" />
+              </div>
             </div>
           </div>
-          <div className="h-32 bg-muted rounded animate-pulse"></div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Skeleton className="h-10 w-full" />
+              <div className="grid grid-cols-3 gap-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
   }
-  if (!isAuthenticated) return null
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -90,6 +121,7 @@ export default function LoadInvoicePage() {
           <CardContent>
             <ManualInvoiceForm
               companyId={companyId}
+              onReady={() => setIsFormReady(true)}
               onSuccess={() => {
                 router.push(`/company/${companyId}/invoices`)
               }}
