@@ -28,6 +28,7 @@ export default function NetworkPage() {
   const [requests, setRequests] = useState<ConnectionRequest[]>([])
   const [sentRequests, setSentRequests] = useState<ConnectionRequest[]>([])
   const [stats, setStats] = useState<NetworkStats>({ totalConnections: 0, pendingReceived: 0, pendingSent: 0 })
+  const [myCompanyId, setMyCompanyId] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState("")
   const [showRequestModal, setShowRequestModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -51,6 +52,15 @@ export default function NetworkPage() {
   const loadData = async () => {
     try {
       setIsLoading(true)
+      
+      // Cargar ID de mi empresa
+      try {
+        const { companyService } = await import('@/services/company.service')
+        const company = await companyService.getCompanyById(companyId)
+        setMyCompanyId(company.uniqueId)
+      } catch (error) {
+        console.error('Error al cargar ID de empresa:', error)
+      }
       
       // Cargar datos de forma independiente para que un error no afecte a los demás
       const [connectionsResult, requestsResult, sentRequestsResult, statsResult] = await Promise.allSettled([
@@ -125,8 +135,12 @@ export default function NetworkPage() {
     }
   }
 
+  const [acceptingId, setAcceptingId] = useState<string | null>(null)
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
+
   const handleAcceptRequest = async (request: ConnectionRequest) => {
     try {
+      setAcceptingId(request.id)
       await networkService.acceptRequest(companyId, request.id)
       toast.success('Solicitud aceptada', {
         description: `${request.fromCompanyName} ahora está en tu red empresarial`
@@ -134,11 +148,14 @@ export default function NetworkPage() {
       loadData()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al aceptar solicitud')
+    } finally {
+      setAcceptingId(null)
     }
   }
 
   const handleRejectRequest = async (request: ConnectionRequest) => {
     try {
+      setRejectingId(request.id)
       await networkService.rejectRequest(companyId, request.id)
       toast.success('Solicitud rechazada', {
         description: `Se rechazó la solicitud de ${request.fromCompanyName}`
@@ -146,6 +163,8 @@ export default function NetworkPage() {
       loadData()
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al rechazar solicitud')
+    } finally {
+      setRejectingId(null)
     }
   }
 
@@ -226,7 +245,31 @@ export default function NetworkPage() {
           <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
             <h1 className="text-3xl font-bold">Red Empresarial</h1>
-            <p className="text-muted-foreground">Gestiona las conexiones con otras empresas</p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-sm text-muted-foreground">Gestiona las conexiones con otras empresas</p>
+              {myCompanyId && (
+                <>
+                  <span className="text-sm text-muted-foreground">•</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Tu ID:</span>
+                    <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{myCompanyId}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(myCompanyId);
+                        toast.success('ID copiado al portapapeles');
+                      }}
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <Button onClick={() => setShowRequestModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -287,10 +330,25 @@ export default function NetworkPage() {
                           </div>
                           <div>
                             <h3 className="font-semibold">{connection.connectedCompanyName}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              ID de Conexión: <span className="font-mono">{connection.connectedCompanyUniqueId}</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm text-muted-foreground">ID de Conexión:</p>
+                              <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{connection.connectedCompanyUniqueId}</code>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(connection.connectedCompanyUniqueId);
+                                  toast.success('ID copiado al portapapeles');
+                                }}
+                              >
+                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
                               Conectado el {new Date(connection.connectedAt!).toLocaleDateString()}
                             </p>
                           </div>
@@ -358,9 +416,24 @@ export default function NetworkPage() {
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold">{request.fromCompanyName}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              ID de Conexión: <span className="font-mono">{request.fromCompanyUniqueId}</span>
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm text-muted-foreground">ID de Conexión:</p>
+                              <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{request.fromCompanyUniqueId}</code>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(request.fromCompanyUniqueId);
+                                  toast.success('ID copiado al portapapeles');
+                                }}
+                              >
+                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               Solicitado el {new Date(request.requestedAt).toLocaleDateString()}
                             </p>
@@ -376,17 +449,37 @@ export default function NetworkPage() {
                           <Button 
                             size="sm" 
                             onClick={() => handleAcceptRequest(request)}
+                            disabled={acceptingId === request.id || rejectingId === request.id}
                           >
-                            <Check className="h-4 w-4 mr-1" />
-                            Aceptar
+                            {acceptingId === request.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                Aceptando...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4 mr-1" />
+                                Aceptar
+                              </>
+                            )}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => handleRejectRequest(request)}
+                            disabled={acceptingId === request.id || rejectingId === request.id}
                           >
-                            <X className="h-4 w-4 mr-1" />
-                            Rechazar
+                            {rejectingId === request.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                Rechazando...
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-4 w-4 mr-1" />
+                                Rechazar
+                              </>
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -427,9 +520,24 @@ export default function NetworkPage() {
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold">{request.toCompanyName}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              ID de Conexión: <span className="font-mono">{request.fromCompanyUniqueId}</span>
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm text-muted-foreground">ID de Conexión:</p>
+                              <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{request.fromCompanyUniqueId}</code>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(request.fromCompanyUniqueId);
+                                  toast.success('ID copiado al portapapeles');
+                                }}
+                              >
+                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               Enviado el {new Date(request.requestedAt).toLocaleDateString()}
                             </p>

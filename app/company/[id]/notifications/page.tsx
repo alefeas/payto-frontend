@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { notificationService, Notification } from '@/services/notification.service';
-import { NotificationItem } from '@/components/notifications/notification-item';
-import { NotificationSettings } from '@/components/notifications/notification-settings';
-import { AuditNotifications } from '@/components/audit/audit-notifications';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, CheckCheck, Settings, Users, FileText, CreditCard, AlertTriangle, Clock, CheckCircle, XCircle, AlertCircle, Activity } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { BackButton } from '@/components/ui/back-button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Bell, CheckCheck, Clock, Inbox } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function NotificationsPage() {
   const params = useParams();
@@ -22,10 +22,7 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const data = await notificationService.getNotifications(
-        companyId,
-        filter === 'unread'
-      );
+      const data = await notificationService.getNotifications(companyId, false);
       setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -36,12 +33,12 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [companyId, filter]);
+  }, [companyId]);
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
       await notificationService.markAsRead(notification.id);
-      fetchNotifications();
+      setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
     }
 
     const { entityType, entityId } = notification.data;
@@ -56,15 +53,45 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="space-y-6">
-          <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
-          <div className="h-12 bg-muted rounded animate-pulse"></div>
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-muted rounded animate-pulse" />
-            ))}
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-9 w-64" />
+              <Skeleton className="h-5 w-96" />
+            </div>
           </div>
+          <Card className="border-gray-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-9 w-20" />
+                  <Skeleton className="h-9 w-28" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-3 rounded-lg border border-gray-200">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -73,94 +100,151 @@ export default function NotificationsPage() {
   const handleMarkAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead(companyId);
-      fetchNotifications();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
   };
 
-  const renderNotifications = (unreadOnly = false) => {
-    const filtered = unreadOnly
-      ? notifications.filter(n => !n.read)
-      : notifications;
-
-    if (filtered.length === 0) {
-      return (
-        <div className="text-center py-12 text-muted-foreground">
-          No hay notificaciones
-        </div>
-      );
-    }
-
-    return (
-      <div className="border rounded-lg divide-y">
-        {filtered.map((notification) => (
-          <NotificationItem
-            key={notification.id}
-            notification={notification}
-            onClick={() => handleNotificationClick(notification)}
-          />
-        ))}
-      </div>
-    );
+  const getNotificationColor = (type: string) => {
+    if (type.includes('overdue') || type.includes('rejected')) return 'bg-red-100 text-red-800 border-red-200';
+    if (type.includes('due_soon') || type.includes('reminder')) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    if (type.includes('approved') || type.includes('paid') || type.includes('accepted')) return 'bg-green-100 text-green-800 border-green-200';
+    return 'bg-blue-100 text-blue-800 border-blue-200';
   };
 
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Notificaciones</h1>
-        <Button
-          onClick={handleMarkAllAsRead}
-          disabled={notifications.length === 0}
-          variant="outline"
-          size="sm"
-        >
-          <CheckCheck className="h-4 w-4 mr-2" />
-          Marcar todas como leídas
-        </Button>
-      </div>
+  const getNotificationIcon = (type: string) => {
+    if (type.includes('overdue') || type.includes('due')) return <Clock className="h-4 w-4" />;
+    return <Bell className="h-4 w-4" />;
+  };
 
-      <Tabs defaultValue="notifications" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="notifications" className="flex items-center space-x-2">
-            <Bell className="h-4 w-4" />
-            <span>Notificaciones</span>
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center space-x-2">
-            <Activity className="h-4 w-4" />
-            <span>Auditoría</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Configuración</span>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="notifications" className="space-y-4">
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
-            <TabsList>
-              <TabsTrigger value="all">Todas</TabsTrigger>
-              <TabsTrigger value="unread">No leídas</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="space-y-4 mt-4">
-              {renderNotifications()}
-            </TabsContent>
-            
-            <TabsContent value="unread" className="space-y-4 mt-4">
-              {renderNotifications(true)}
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-        
-        <TabsContent value="settings" className="space-y-4">
-          <NotificationSettings companyId={companyId} />
-        </TabsContent>
-        
-        <TabsContent value="audit" className="space-y-4">
-          <AuditNotifications companyId={companyId} limit={20} />
-        </TabsContent>
-      </Tabs>
+  const filteredNotifications = filter === 'unread' 
+    ? notifications.filter(n => !n.read) 
+    : notifications;
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <BackButton href={`/company/${companyId}`} />
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">Notificaciones</h1>
+            <p className="text-muted-foreground">
+              {unreadCount > 0 
+                ? `Tienes ${unreadCount} notificación${unreadCount > 1 ? 'es' : ''} sin leer`
+                : 'Todas tus notificaciones están al día'
+              }
+            </p>
+          </div>
+          {notifications.length > 0 && (
+            <Button
+              onClick={handleMarkAllAsRead}
+              variant="outline"
+              size="sm"
+            >
+              <CheckCheck className="h-4 w-4 mr-2" />
+              Marcar todas como leídas
+            </Button>
+          )}
+        </div>
+
+        <Card className="border-gray-200">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Mis Notificaciones
+                </CardTitle>
+                <CardDescription>
+                  Mantente informado sobre eventos importantes de tu empresa
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={filter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilter('all')}
+                >
+                  Todas
+                </Button>
+                <Button
+                  variant={filter === 'unread' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilter('unread')}
+                >
+                  No leídas {unreadCount > 0 && `(${unreadCount})`}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
+              {filteredNotifications.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Inbox className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-1">
+                    {filter === 'unread' ? 'No hay notificaciones sin leer' : 'No hay notificaciones'}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {filter === 'unread' 
+                      ? 'Todas tus notificaciones están al día'
+                      : 'Cuando recibas notificaciones, aparecerán aquí'
+                    }
+                  </p>
+                </div>
+              ) : (
+                filteredNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm relative ${
+                      notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    {!notification.read && (
+                      <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                    )}
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-1 min-w-0 pr-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className={`text-sm font-medium ${
+                            notification.read ? 'text-gray-700' : 'text-gray-900'
+                          }`}>
+                            {notification.title}
+                          </h4>
+                        </div>
+                        <p className={`text-xs mb-2 ${
+                          notification.read ? 'text-gray-500' : 'text-gray-700'
+                        }`}>
+                          {notification.message}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-gray-500">
+                            {notification.companyName}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
+                            <Clock className="h-3 w-3" />
+                            {formatDistanceToNow(new Date(notification.createdAt), { 
+                              addSuffix: true, 
+                              locale: es 
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

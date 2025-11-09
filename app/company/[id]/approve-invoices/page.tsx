@@ -153,7 +153,7 @@ export default function ApproveInvoicesPage() {
           </div>
 
           {/* Info Card Skeleton */}
-          <Card>
+          <Card className="border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-5 w-5" />
@@ -163,7 +163,7 @@ export default function ApproveInvoicesPage() {
           </Card>
 
           {/* Main Content Skeleton */}
-          <Card>
+          <Card className="border-gray-200">
             <CardHeader>
               <Skeleton className="h-6 w-64" />
               <Skeleton className="h-4 w-48" />
@@ -171,7 +171,7 @@ export default function ApproveInvoicesPage() {
             <CardContent>
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="border rounded-lg p-4">
+                  <div key={i} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-32" />
@@ -235,7 +235,7 @@ export default function ApproveInvoicesPage() {
             ) : (
               <div className="space-y-3">
                 {invoices.map((invoice) => (
-                  <div key={invoice.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                  <div key={invoice.id} className="border border-gray-200 rounded-lg p-4 hover:bg-accent/50 transition-colors">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
@@ -302,7 +302,7 @@ export default function ApproveInvoicesPage() {
                     </div>
                     
                     {invoice.approvals_received > 0 && invoice.approvals && Array.isArray(invoice.approvals) && invoice.approvals.length > 0 && (
-                      <div className="mt-3 pt-3 border-t flex items-center gap-2 text-sm">
+                      <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2 text-sm">
                         <User className="h-3 w-3 text-muted-foreground" />
                         <span className="text-muted-foreground">Aprobado por:</span>
                         <div className="flex flex-wrap gap-1">

@@ -1,17 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Filter, X, Download } from 'lucide-react'
+import { CalendarIcon, Filter, X, Download, Search } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { AuditExportButton } from './audit-export-button'
 import type { AuditFilters } from '@/services/audit.service'
 
 interface AuditFiltersProps {
@@ -27,27 +26,6 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
   const [dateFrom, setDateFrom] = useState<Date | undefined>()
   const [dateTo, setDateTo] = useState<Date | undefined>()
   const [showFilters, setShowFilters] = useState(false)
-  const didMountRef = useRef(false)
-
-  useEffect(() => {
-    if (!didMountRef.current) {
-      // Evitar disparar filtros en el primer render para prevenir bucles
-      didMountRef.current = true
-      return
-    }
-
-    const timeoutId = setTimeout(() => {
-      const formattedFilters = {
-        ...filters,
-        start_date: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
-        end_date: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined
-      }
-      onFiltersChange(formattedFilters)
-    }, 500) // Debounce de 500ms
-
-    return () => clearTimeout(timeoutId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, dateFrom, dateTo])
 
   const handleFilterChange = (key: keyof AuditFilters, value: string | number | undefined) => {
     setFilters(prev => ({
@@ -56,44 +34,63 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
     }))
   }
 
+  const applyFilters = () => {
+    const formattedFilters = {
+      ...filters,
+      start_date: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
+      end_date: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined
+    }
+    onFiltersChange(formattedFilters)
+  }
+
   const clearFilters = () => {
     setFilters({})
     setDateFrom(undefined)
     setDateTo(undefined)
+    onFiltersChange({})
   }
 
   const hasActiveFilters = Object.keys(filters).length > 0 || dateFrom || dateTo
 
   return (
-    <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-semibold">Filtros de Auditoría</CardTitle>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
             disabled={isLoading}
-            className="flex items-center gap-2"
           >
-            <Filter className="h-4 w-4" />
+            <Filter className="h-4 w-4 mr-2" />
             {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
           </Button>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              disabled={isLoading}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Limpiar Filtros
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
             onClick={onExport}
             disabled={isLoading}
-            className="flex items-center gap-2"
           >
-            <Download className="h-4 w-4" />
-            Exportar CSV
+            <Download className="h-4 w-4 mr-2" />
+            {isLoading ? 'Exportando...' : 'Exportar CSV'}
           </Button>
         </div>
-      </CardHeader>
+      </div>
       
       {showFilters && (
-        <CardContent>
+        <Card className="border-gray-200">
+          <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="action">Acción</Label>
@@ -210,36 +207,18 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
             </div>
           </div>
 
-          {hasActiveFilters && (
-            <div className="flex justify-end mt-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="flex items-center gap-2"
-              >
-                <X className="h-4 w-4" />
-                Limpiar Filtros
-              </Button>
-            </div>
-          )}
-        </CardContent>
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={applyFilters}
+              disabled={isLoading}
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Aplicar Filtros
+            </Button>
+          </div>
+          </CardContent>
+        </Card>
       )}
-      
-      <div className="pt-4 border-t">
-        <AuditExportButton 
-          companyId={companyId}
-          filters={{
-            action: filters.action,
-            entityType: filters.entity_type,
-            entityId: filters.entity_id,
-            userId: filters.user_id,
-            startDate: filters.start_date,
-            endDate: filters.end_date
-          }}
-          className="w-full"
-        />
-      </div>
-    </Card>
+    </div>
   )
 }

@@ -62,15 +62,21 @@ export const auditService = {
           per_page: filters.per_page || 50,
           ...filters 
         },
-        timeout: 30000 // 30 segundos timeout
+        timeout: 30000
       })
-      return response.data.data
+      const result = response.data.data
+      return {
+        data: result.data,
+        current_page: result.pagination.currentPage,
+        total_pages: result.pagination.lastPage,
+        total_items: result.pagination.total,
+        per_page: result.pagination.perPage
+      }
     } catch (error: any) {
       if (error.code === 'ECONNABORTED') {
         throw new Error('Tiempo de espera agotado. Por favor, intente nuevamente.')
       }
       if (error.response?.status === 404) {
-        // Retornar datos vacíos si no hay logs en lugar de error 404
         return {
           data: [],
           current_page: 1,

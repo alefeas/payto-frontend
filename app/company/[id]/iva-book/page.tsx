@@ -37,6 +37,8 @@ export default function IvaBookPage() {
   const [purchasesBook, setPurchasesBook] = useState<any>(null)
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [exportingSales, setExportingSales] = useState(false)
+  const [exportingPurchases, setExportingPurchases] = useState(false)
   const [validationError, setValidationError] = useState<{message: string, type: 'sales' | 'purchases'} | null>(null)
 
   const months = [
@@ -312,8 +314,10 @@ export default function IvaBookPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
+                    disabled={exportingSales}
                     onClick={async () => {
                       try {
+                        setExportingSales(true)
                         const response = await apiClient.get(`/companies/${companyId}/iva-book/export/sales?month=${selectedMonth}&year=${selectedYear}`) as any
                         const url = window.URL.createObjectURL(new Blob([response.data]))
                         const link = document.createElement('a')
@@ -345,11 +349,13 @@ export default function IvaBookPage() {
                           })
                         }
                         console.error('Download error:', error, errorMsg)
+                      } finally {
+                        setExportingSales(false)
                       }
                     }}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Exportar para AFIP
+                    {exportingSales ? 'Exportando...' : 'Exportar para AFIP'}
                   </Button>
                 </div>
               </CardHeader>
@@ -450,8 +456,10 @@ export default function IvaBookPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
+                    disabled={exportingPurchases}
                     onClick={async () => {
                       try {
+                        setExportingPurchases(true)
                         const response = await apiClient.get(`/companies/${companyId}/iva-book/export/purchases?month=${selectedMonth}&year=${selectedYear}`) as any
                         const url = window.URL.createObjectURL(new Blob([response.data]))
                         const link = document.createElement('a')
@@ -483,11 +491,13 @@ export default function IvaBookPage() {
                           })
                         }
                         console.error('Download error:', error, errorMsg)
+                      } finally {
+                        setExportingPurchases(false)
                       }
                     }}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Exportar para AFIP
+                    {exportingPurchases ? 'Exportando...' : 'Exportar para AFIP'}
                   </Button>
                 </div>
               </CardHeader>

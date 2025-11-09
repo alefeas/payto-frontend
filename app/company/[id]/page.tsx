@@ -43,6 +43,7 @@ export default function CompanyPage() {
   const [loading, setLoading] = useState(true)
   const [isAfipVerified, setIsAfipVerified] = useState(false)
   const [certificate, setCertificate] = useState<any>(null)
+  const [stats, setStats] = useState({ pendingApproval: 0, receivable: 0, payable: 0, overdue: 0 })
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -79,6 +80,37 @@ export default function CompanyPage() {
         } else {
           // For non-admin users, check verification status from company data
           setIsAfipVerified(found.verification_status === 'verified')
+        }
+        
+        // Load invoice stats
+        try {
+          const { invoiceService } = await import('@/services/invoice.service')
+          const invoices = await invoiceService.getInvoices(companyId)
+          const data = invoices.data || []
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          
+          setStats({
+            pendingApproval: data.filter((inv: any) => 
+              inv.display_status === 'pending_approval' || inv.status === 'pending_approval'
+            ).length,
+            receivable: data.filter((inv: any) => 
+              (inv.display_status === 'pending' || inv.status === 'pending') && inv.direction === 'outgoing'
+            ).length,
+            payable: data.filter((inv: any) => 
+              (inv.display_status === 'pending' || inv.status === 'pending') && inv.direction === 'incoming'
+            ).length,
+            overdue: data.filter((inv: any) => {
+              const status = inv.display_status || inv.status
+              if (status === 'paid' || status === 'cancelled' || status === 'void') return false
+              if (!inv.due_date) return false
+              const dueDate = new Date(inv.due_date)
+              dueDate.setHours(0, 0, 0, 0)
+              return dueDate < today
+            }).length
+          })
+        } catch {
+          // Keep default stats
         }
       }
     } catch (error: any) {
@@ -307,43 +339,47 @@ export default function CompanyPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Facturas Emitidas</p>
-                <p className="text-2xl font-bold">0</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-500" />
-            </div>
-          </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Facturas Pendientes</p>
-                <p className="text-2xl font-bold text-orange-600">0</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-orange-500" />
-            </div>
-          </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Facturas Cobradas</p>
-                <p className="text-2xl font-bold text-green-600">0</p>
-              </div>
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
-            </div>
-          </div>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pagos Pendientes</p>
-                <p className="text-2xl font-bold text-red-600">0</p>
-              </div>
-              <CreditCard className="h-8 w-8 text-red-500" />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-gray-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pendientes de Aprobar</CardTitle>
+              <CheckSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{stats.pendingApproval}</div>
+              <p className="text-xs text-muted-foreground">Requieren aprobación</p>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Por Cobrar</CardTitle>
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.receivable}</div>
+              <p className="text-xs text-muted-foreground">Facturas emitidas sin pagar</p>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Por Pagar</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{stats.payable}</div>
+              <p className="text-xs text-muted-foreground">Facturas de proveedores</p>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vencidas</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
+              <p className="text-xs text-muted-foreground">Pasaron fecha de vencimiento</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recordatorio para sincronizar condición IVA - Solo si tiene certificado pero aún no sincronizó */}

@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams } from "next/navigation"
+import { BackButton } from "@/components/ui/back-button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AuditDashboardStats } from '@/components/audit/audit-dashboard-stats'
 import { AuditFilters } from "@/components/audit/audit-filters"
 import { AuditLogsTable } from "@/components/audit/audit-logs-table"
@@ -22,6 +24,7 @@ export default function AuditLogPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
+  const [allLogs, setAllLogs] = useState<AuditLog[]>([])
   const [filters, setFilters] = useState<AuditFiltersType>({
     action: '',
     entity_type: '',
@@ -33,20 +36,32 @@ export default function AuditLogPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [availableActions, setAvailableActions] = useState<string[]>([])
   const [isExporting, setIsExporting] = useState(false)
+  const isInitialMount = useRef(true)
 
-  const loadLogs = useCallback(async (page: number = 1, currentFilters: AuditFiltersType = filters) => {
+  const loadLogs = async (page: number = 1, currentFilters: AuditFiltersType = filters) => {
     try {
       setLoading(true)
-      const response = await auditService.getCompanyAuditLogs(companyId, page, currentFilters)
+      const response = await auditService.getCompanyAuditLogs(companyId, page, { ...currentFilters, per_page: 20 })
       setLogs(response.data)
       setCurrentPage(response.current_page)
       setTotalPages(response.total_pages)
       setTotalItems(response.total_items)
       setHasSearched(true)
       
-      // Extraer acciones únicas de los logs
-      const actions = [...new Set(response.data.map(log => log.action))].sort()
-      setAvailableActions(actions)
+      // Only update stats on first page load or filter change
+      if (page === 1) {
+        const uniqueActions = new Set(response.data.map(log => log.action)).size
+        const actionBreakdown: Record<string, number> = {}
+        response.data.forEach(log => {
+          actionBreakdown[log.action] = (actionBreakdown[log.action] || 0) + 1
+        })
+        
+        setStats({
+          total_logs: response.total_items || 0,
+          unique_actions: uniqueActions || 0,
+          action_breakdown: actionBreakdown
+        })
+      }
     } catch (error: any) {
       console.error('Error loading audit logs:', error)
       if (error.message?.includes('timeout')) {
@@ -59,41 +74,44 @@ export default function AuditLogPage() {
     } finally {
       setLoading(false)
     }
-  }, [companyId, filters])
-
-  const loadStats = useCallback(async (currentFilters: AuditFiltersType = filters) => {
-    try {
-      const statsData = await auditService.getCompanyAuditStats(companyId, currentFilters)
-      setStats(statsData)
-    } catch (error: any) {
-      console.error('Error loading audit stats:', error)
-      if (error.message?.includes('timeout')) {
-        toast.error('Tiempo de espera agotado al cargar estadísticas')
-      }
-    }
-  }, [companyId, filters])
+  }
 
   useEffect(() => {
-    loadLogs(1, filters)
-    loadStats(filters)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (companyId && isInitialMount.current) {
+      isInitialMount.current = false
+      loadInitialData()
+    }
   }, [companyId])
 
-  const handleFiltersChange = useCallback((newFilters: AuditFiltersType) => {
+  const loadInitialData = async () => {
+    try {
+      setLoading(true)
+      // Load first page to get all available actions
+      const response = await auditService.getCompanyAuditLogs(companyId, 1, { per_page: 100 })
+      const allActions = [...new Set(response.data.map(log => log.action))].sort()
+      setAvailableActions(allActions)
+      
+      // Now load with actual filters
+      await loadLogs(1, filters)
+    } catch (error) {
+      console.error('Error loading initial data:', error)
+      await loadLogs(1, filters)
+    }
+  }
+
+  const handleFiltersChange = (newFilters: AuditFiltersType) => {
     setFilters(newFilters)
     setCurrentPage(1)
     loadLogs(1, newFilters)
-    loadStats(newFilters)
-  }, [companyId])
+  }
 
-  const handleSearch = useCallback((query: string, searchFilters: AuditFiltersType) => {
+  const handleSearch = (query: string, searchFilters: AuditFiltersType) => {
     setFilters(searchFilters)
     setCurrentPage(1)
     loadLogs(1, searchFilters)
-    loadStats(searchFilters)
-  }, [companyId])
+  }
 
-  const resetFilters = useCallback(() => {
+  const resetFilters = () => {
     const reset = {
       action: '',
       entity_type: '',
@@ -105,12 +123,11 @@ export default function AuditLogPage() {
     setFilters(reset)
     setCurrentPage(1)
     loadLogs(1, reset)
-    loadStats(reset)
-  }, [companyId])
+  }
 
-  const handlePageChange = useCallback((page: number) => {
+  const handlePageChange = (page: number) => {
     loadLogs(page, filters)
-  }, [filters])
+  }
 
   const handleExport = useCallback(async () => {
     try {
@@ -139,70 +156,79 @@ export default function AuditLogPage() {
       window.URL.revokeObjectURL(url)
       
       toast.success('Archivo CSV exportado correctamente')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error exporting audit logs:', error)
-      toast.error('Error al exportar el archivo CSV')
+      const errorMsg = error.response?.data?.message || error.message || 'Error al exportar el archivo CSV'
+      toast.error('Error al exportar', {
+        description: errorMsg
+      })
     } finally {
       setIsExporting(false)
     }
   }, [companyId, filters])
 
-  const handleViewTrail = useCallback((log: AuditLog) => {
-    if (log.entityType && log.entityId) {
-      // Aquí podrías abrir un modal o redirigir a una vista de trail
-      toast.info(`Mostrando trail para ${log.entityType} ${log.entityId}`)
-    }
-  }, [])
+
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Registro de Auditoría</h1>
-        <p className="text-gray-600">Monitoree todas las actividades realizadas en su empresa</p>
-      </div>
-
-      <AuditDashboardStats companyId={companyId} />
-
-      <div className="mb-6">
-        <AuditFilters
-          companyId={companyId}
-          onFiltersChange={handleFiltersChange}
-          onExport={handleExport}
-          availableActions={availableActions}
-          isLoading={loading || isExporting}
-        />
-      </div>
-
-      {loading ? (
-        <AuditLoadingSkeleton />
-      ) : logs.length === 0 ? (
-        hasSearched ? (
-          <AuditNoResults onResetFilters={resetFilters} />
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {loading ? (
+          <>
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-9 w-64" />
+                <Skeleton className="h-5 w-96" />
+              </div>
+            </div>
+            <AuditLoadingSkeleton />
+          </>
         ) : (
-          <AuditNoLogs />
-        )
-      ) : (
-        <>
-          <div className="mb-6">
-            <AuditLogsTable
-              logs={logs}
-              isLoading={loading}
-              onViewTrail={handleViewTrail}
-            />
-          </div>
+          <>
+            <div className="flex items-center gap-4">
+              <BackButton href={`/company/${companyId}`} />
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold">Registro de Auditoría</h1>
+                <p className="text-muted-foreground">Monitoree todas las actividades realizadas en su empresa</p>
+              </div>
+            </div>
 
-          {totalPages > 1 && (
-            <AuditPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={10}
-              onPageChange={handlePageChange}
-              isLoading={loading}
+            {stats && <AuditDashboardStats companyId={companyId} stats={stats} />}
+
+            <AuditFilters
+              companyId={companyId}
+              onFiltersChange={handleFiltersChange}
+              onExport={handleExport}
+              availableActions={availableActions}
+              isLoading={isExporting}
             />
-          )}
-        </>
-      )}
+
+            {logs.length === 0 ? (
+              hasSearched ? (
+                <AuditNoResults onResetFilters={resetFilters} />
+              ) : (
+                <AuditNoLogs />
+              )
+            ) : (
+              <>
+                <AuditLogsTable
+                  logs={logs}
+                  isLoading={false}
+                />
+
+                <AuditPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={20}
+                  onPageChange={handlePageChange}
+                  isLoading={false}
+                />
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

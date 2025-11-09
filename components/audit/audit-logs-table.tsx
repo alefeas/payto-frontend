@@ -18,10 +18,9 @@ import { es } from 'date-fns/locale'
 interface AuditLogsTableProps {
   logs: AuditLog[]
   isLoading: boolean
-  onViewTrail?: (log: AuditLog) => void
 }
 
-export function AuditLogsTable({ logs, isLoading, onViewTrail }: AuditLogsTableProps) {
+export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -97,7 +96,7 @@ export function AuditLogsTable({ logs, isLoading, onViewTrail }: AuditLogsTableP
   }
 
   return (
-    <Card>
+    <Card className="border-gray-200">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Registros de Auditoría</CardTitle>
@@ -115,10 +114,14 @@ export function AuditLogsTable({ logs, isLoading, onViewTrail }: AuditLogsTableP
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px]">
-          <Table>
+        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+          <span>💡 Desliza horizontalmente para ver más columnas</span>
+        </div>
+        <div className="relative">
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="border-b border-gray-200">
                 <TableHead>Acción</TableHead>
                 <TableHead>Descripción</TableHead>
                 <TableHead>Usuario</TableHead>
@@ -130,7 +133,7 @@ export function AuditLogsTable({ logs, isLoading, onViewTrail }: AuditLogsTableP
             </TableHeader>
             <TableBody>
               {filteredLogs.map((log) => (
-                <TableRow key={log.id}>
+                <TableRow key={log.id} className="border-b border-gray-200">
                   <TableCell>
                     <Badge className={getActionColor(log.action)}>
                       {getActionLabel(log.action)}
@@ -268,26 +271,17 @@ export function AuditLogsTable({ logs, isLoading, onViewTrail }: AuditLogsTableP
                           </div>
                         </DialogContent>
                       </Dialog>
-                      
-                      {onViewTrail && log.entityType && log.entityId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onViewTrail(log)}
-                        >
-                          <Hash className="h-4 w-4" />
-                          Ver Trail
-                        </Button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </ScrollArea>
+          </div>
+          <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+        </div>
         
-        <div className="mt-4 text-sm text-gray-500">
+        <div className="mt-4 text-sm text-muted-foreground">
           Mostrando {filteredLogs.length} de {logs.length} registros
         </div>
       </CardContent>

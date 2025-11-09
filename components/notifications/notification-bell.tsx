@@ -122,8 +122,8 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-w-sm bg-popover border border-border shadow-lg rounded-lg">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+      <DropdownMenuContent align="end" className="w-96 bg-white border border-gray-200 shadow-lg rounded-lg">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="font-semibold text-lg text-foreground">Notificaciones</h3>
           {unreadCount > 0 && (
             <Button 
@@ -136,29 +136,63 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
             </Button>
           )}
         </div>
-        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        <div className="max-h-96 overflow-y-auto">
           {isLoading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Cargando notificaciones...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-500">Cargando...</p>
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center">
-              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-sm text-muted-foreground">No hay notificaciones</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">Te notificaremos cuando haya novedades</p>
+              <Bell className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">No hay notificaciones</p>
             </div>
           ) : (
-            notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onClick={() => handleNotificationClick(notification)}
-              />
-            ))
+            notifications.map((notification) => {
+              const getNotificationColor = (type: string) => {
+                if (type.includes('overdue') || type.includes('rejected')) return 'bg-red-100 text-red-800 border-red-200';
+                if (type.includes('due_soon') || type.includes('reminder')) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                if (type.includes('approved') || type.includes('paid') || type.includes('accepted')) return 'bg-green-100 text-green-800 border-green-200';
+                return 'bg-blue-100 text-blue-800 border-blue-200';
+              };
+              
+              const getShortMessage = (message: string) => {
+                if (message.length > 60) return message.substring(0, 60) + '...';
+                return message;
+              };
+              
+              return (
+                <div
+                  key={notification.id}
+                  className={`p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0 ${
+                    !notification.read ? 'bg-blue-50/50' : ''
+                  }`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                      <Bell className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {notification.title}
+                        </p>
+                        {!notification.read && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 line-clamp-2">
+                        {getShortMessage(notification.message)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
-        <div className="p-2 border-t border-border">
+        <div className="p-2 border-t border-gray-200">
           <Button 
             variant="ghost" 
             className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200" 
