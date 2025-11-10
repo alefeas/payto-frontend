@@ -111,11 +111,7 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
           )} />
           {unreadCount > 0 && (
             <Badge 
-              variant="destructive" 
-              className={cn(
-                "absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs",
-                "animate-bounce transition-all duration-300 hover:scale-110"
-              )}
+              className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center px-1 bg-red-600 text-white text-xs font-extrabold border-0"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>

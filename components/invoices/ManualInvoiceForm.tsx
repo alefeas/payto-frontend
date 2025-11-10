@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Plus, Trash2, FileText, Receipt, Calculator, Loader2, Upload, Info } from "lucide-react"
 import { toast } from "sonner"
+
 import { invoiceService } from "@/services/invoice.service"
 import { clientService } from "@/services/client.service"
 import { supplierService } from "@/services/supplier.service"
@@ -83,15 +84,33 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
 
   useEffect(() => {
     const initializeData = async () => {
+      console.log('[ManualInvoiceForm] Iniciando carga de datos...')
       setIsLoadingData(true)
-      await loadCompanyData()
-      await Promise.all([
-        loadClients(),
-        loadSuppliers(),
-        loadConnectedCompanies()
-      ])
-      setIsLoadingData(false)
-      onReady?.()
+      
+      try {
+        console.log('[ManualInvoiceForm] Cargando datos de empresa...')
+        await loadCompanyData()
+        console.log('[ManualInvoiceForm] Datos de empresa cargados')
+        
+        console.log('[ManualInvoiceForm] Cargando clientes, proveedores y empresas conectadas...')
+        await Promise.all([
+          loadClients(),
+          loadSuppliers(),
+          loadConnectedCompanies()
+        ])
+        console.log('[ManualInvoiceForm] Todos los datos cargados exitosamente')
+        
+        setIsLoadingData(false)
+        console.log('[ManualInvoiceForm] isLoadingData = false')
+        
+        console.log('[ManualInvoiceForm] Llamando onReady()')
+        onReady?.()
+        console.log('[ManualInvoiceForm] onReady() ejecutado')
+      } catch (error) {
+        console.error('[ManualInvoiceForm] Error durante la inicialización:', error)
+        setIsLoadingData(false)
+        onReady?.()
+      }
     }
     initializeData()
   }, [])
@@ -130,10 +149,13 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
 
   const loadCompanyData = async () => {
     try {
+      console.log('[loadCompanyData] Iniciando carga para companyId:', companyId)
       const company = await companyService.getCompany(companyId)
+      console.log('[loadCompanyData] Empresa cargada:', company?.name)
       setCurrentCompany(company)
     } catch (error) {
-      console.error('Error loading company:', error)
+      console.error('[loadCompanyData] Error loading company:', error)
+      throw error
     }
   }
 
@@ -141,10 +163,13 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
 
   const loadClients = async () => {
     try {
+      console.log('[loadClients] Iniciando carga de clientes')
       setLoadingClients(true)
       const data = await clientService.getClients(companyId)
+      console.log('[loadClients] Clientes cargados:', data?.length)
       setClients(data)
     } catch (error) {
+      console.error('[loadClients] Error:', error)
       toast.error("Error al cargar clientes")
     } finally {
       setLoadingClients(false)
@@ -153,10 +178,13 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
 
   const loadSuppliers = async () => {
     try {
+      console.log('[loadSuppliers] Iniciando carga de proveedores')
       setLoadingSuppliers(true)
       const data = await supplierService.getSuppliers(companyId)
+      console.log('[loadSuppliers] Proveedores cargados:', data?.length)
       setSuppliers(data)
     } catch (error) {
+      console.error('[loadSuppliers] Error:', error)
       toast.error("Error al cargar proveedores")
     } finally {
       setLoadingSuppliers(false)
@@ -165,8 +193,10 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
 
   const loadConnectedCompanies = async () => {
     try {
+      console.log('[loadConnectedCompanies] Iniciando carga de empresas conectadas')
       const { networkService } = await import('@/services/network.service')
       const connections = await networkService.getConnections(companyId)
+      console.log('[loadConnectedCompanies] Empresas conectadas cargadas:', connections?.length)
       setConnectedCompanies(connections.map(conn => ({
         id: conn.connectedCompanyId,
         name: conn.connectedCompanyName,
@@ -174,7 +204,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
         tax_condition: conn.connectedCompanyTaxCondition
       })))
     } catch (error: any) {
-      console.error("Error loading connected companies:", error)
+      console.error('[loadConnectedCompanies] Error loading connected companies:', error)
       setConnectedCompanies([])
     }
   }
@@ -396,7 +426,12 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
     return formats[curr as keyof typeof formats] || 'ARS $'
   }
 
-  if (isLoadingData) return null
+  if (isLoadingData) {
+    console.log('[ManualInvoiceForm] Renderizando null porque isLoadingData =', isLoadingData)
+    return null
+  }
+  
+  console.log('[ManualInvoiceForm] Renderizando formulario completo')
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -515,17 +550,14 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Tipo *
-                {invoiceType && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Tipo *</Label>
               <Select value={invoiceType} onValueChange={(value) => {
                 setInvoiceType(value)
                 setAssociateInvoice(false)
                 setRelatedInvoiceId('')
                 setSelectedInvoice(null)
               }}>
-                <SelectTrigger className={invoiceType ? "border-green-200" : ""}>
+                <SelectTrigger>
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -545,10 +577,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Punto de Venta *
-                {salesPoint && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Punto de Venta *</Label>
               <Input 
                 type="number" 
                 min="1" 
@@ -559,30 +588,11 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                   setSalesPoint(val)
                 }} 
                 placeholder="Ej: 1" 
-                className={salesPoint ? "border-green-200" : ""}
                 disabled={associateInvoice && !!selectedInvoice && !!selectedInvoice.sales_point}
               />
-              {salesPoint && !associateInvoice && (
-                <p className="text-xs text-green-600">
-                  ✓ Se formateará como: {salesPoint.padStart(4, '0')}
-                </p>
-              )}
-              {associateInvoice && selectedInvoice && selectedInvoice.sales_point && (
-                <p className="text-xs text-blue-600">
-                  Heredado de la factura asociada (requerido por AFIP)
-                </p>
-              )}
-              {associateInvoice && selectedInvoice && !selectedInvoice.sales_point && (
-                <p className="text-xs text-amber-600">
-                  ⚠️ La factura asociada no tiene punto de venta. Ingresalo manualmente.
-                </p>
-              )}
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Número *
-                {voucherNumber && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Número *</Label>
               <Input 
                 type="number" 
                 min="1" 
@@ -593,22 +603,13 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                   setVoucherNumber(val)
                 }} 
                 placeholder="Ej: 1" 
-                className={voucherNumber ? "border-green-200" : ""}
               />
-              {voucherNumber && (
-                <p className="text-xs text-green-600">
-                  ✓ Se formateará como: {voucherNumber.padStart(8, '0')}
-                </p>
-              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Fecha de Emisión *
-                {issueDate && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Fecha de Emisión *</Label>
               <DatePicker
                 date={issueDate ? new Date(issueDate) : undefined}
                 onSelect={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : '')}
@@ -616,10 +617,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               />
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Fecha de Vencimiento *
-                {dueDate && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Fecha de Vencimiento *</Label>
               <DatePicker
                 date={dueDate ? new Date(dueDate) : undefined}
                 onSelect={(date) => setDueDate(date ? date.toISOString().split('T')[0] : '')}
@@ -630,12 +628,9 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Concepto *
-                {concept && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Concepto *</Label>
               <Select value={concept} onValueChange={setConcept} disabled={associateInvoice && !!selectedInvoice}>
-                <SelectTrigger className={concept ? "border-green-200" : ""}>
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -651,10 +646,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               )}
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Moneda *
-                {currency && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Moneda *</Label>
               <Select value={currency} onValueChange={(v) => { 
                 setCurrency(v)
                 if (v === "ARS") {
@@ -663,7 +655,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                   setExchangeRate("")
                 }
               }} disabled={associateInvoice && !!selectedInvoice}>
-                <SelectTrigger className={currency ? "border-green-200" : ""}>
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -679,10 +671,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               )}
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                Tipo de Cambio {currency !== "ARS" && "*"}
-                {currency !== "ARS" && exchangeRate && parseFloat(exchangeRate) > 0 && <span className="text-xs text-green-600">✓</span>}
-              </Label>
+              <Label>Tipo de Cambio {currency !== "ARS" && "*"}</Label>
               <Input 
                 type="number" 
                 step="0.01"
@@ -697,7 +686,6 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                 }}
                 placeholder="1.00" 
                 disabled={currency === "ARS" || (associateInvoice && !!selectedInvoice)}
-                className={currency !== "ARS" && exchangeRate && parseFloat(exchangeRate) > 0 ? "border-green-200" : ""}
               />
               {associateInvoice && selectedInvoice && (
                 <p className="text-xs text-blue-600">
@@ -710,10 +698,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
           {(concept === "services" || concept === "products_services") && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  Fecha Servicio Desde *
-                  {serviceDateFrom && <span className="text-xs text-green-600">✓</span>}
-                </Label>
+                <Label>Fecha Servicio Desde *</Label>
                 <DatePicker
                   date={serviceDateFrom ? new Date(serviceDateFrom) : undefined}
                   onSelect={(date) => setServiceDateFrom(date ? date.toISOString().split('T')[0] : '')}
@@ -727,10 +712,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  Fecha Servicio Hasta *
-                  {serviceDateTo && <span className="text-xs text-green-600">✓</span>}
-                </Label>
+                <Label>Fecha Servicio Hasta *</Label>
                 <DatePicker
                   date={serviceDateTo ? new Date(serviceDateTo) : undefined}
                   onSelect={(date) => setServiceDateTo(date ? date.toISOString().split('T')[0] : '')}
@@ -758,12 +740,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                 placeholder="12345678901234" 
                 maxLength={14} 
               />
-              {mode === 'issued' && !cae && (
-                <p className="text-xs text-amber-600">
-                  ⚠️ Sin CAE: Las NC/ND sobre esta factura no se asociarán en AFIP (solo internamente)
-                </p>
-              )}
-              {cae && <p className="text-xs text-muted-foreground">14 dígitos numéricos</p>}
+
             </div>
             <div className="space-y-2">
               <Label>Vencimiento CAE</Label>

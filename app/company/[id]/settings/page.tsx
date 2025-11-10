@@ -1248,7 +1248,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
                     </p>
-                    <Button variant="destructive" onClick={() => {
+                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => {
                       setShowDeleteModal(true)
                       checkInvoices()
                     }}>
