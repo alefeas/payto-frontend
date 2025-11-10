@@ -21,6 +21,7 @@ export default function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null);
+  const [hasShownSuccess, setHasShownSuccess] = useState(false);
 
   useEffect(() => {
     const tokenParam = searchParams.get("token");
@@ -64,11 +65,13 @@ export default function ResetPasswordForm() {
 
     try {
       await authService.resetPassword(token, password);
-      toast.success("Contraseña restablecida correctamente");
-      router.push("/log-in?reset=success");
+      if (!hasShownSuccess) {
+        setHasShownSuccess(true);
+        toast.success("Contraseña restablecida correctamente");
+        setTimeout(() => router.push("/log-in?reset=success"), 500);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Error al restablecer la contraseña");
-    } finally {
       setIsLoading(false);
     }
   };

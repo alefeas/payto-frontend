@@ -40,8 +40,22 @@ export default function VerifyAccountForm() {
     }
 
     inputRefs.current[0]?.focus();
-    startResendTimer();
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (resendTimer === 0) return;
+
+    const interval = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   useEffect(() => {
     if (!email) return;
@@ -151,15 +165,6 @@ export default function VerifyAccountForm() {
 
   const startResendTimer = () => {
     setResendTimer(60);
-    const interval = setInterval(() => {
-      setResendTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   if (!email) {

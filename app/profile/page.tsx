@@ -23,6 +23,28 @@ import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import type { CompanyRole } from "@/types"
 
+// Mapeo de género backend -> frontend
+function mapGenderFromBackend(gender: string): string {
+  const map: Record<string, string> = {
+    'male': 'masculino',
+    'female': 'femenino',
+    'other': 'otro',
+    'prefer_not_to_say': 'prefiero_no_decir'
+  }
+  return map[gender] || ''
+}
+
+// Mapeo de género frontend -> backend
+function mapGenderToBackend(gender: string): string {
+  const map: Record<string, string> = {
+    'masculino': 'male',
+    'femenino': 'female',
+    'otro': 'other',
+    'prefiero_no_decir': 'prefer_not_to_say'
+  }
+  return map[gender] || ''
+}
+
 const countries = [
   { value: "ar", label: "Argentina" },
   { value: "br", label: "Brasil" },
@@ -81,7 +103,7 @@ export default function ProfilePage() {
         email: user.email,
         phone: user.phone || '',
         dateOfBirth: user.dateOfBirth || '',
-        gender: user.gender || '',
+        gender: mapGenderFromBackend(user.gender || ''),
         country: user.country || 'Argentina',
         province: user.province || '',
         city: user.city || '',
@@ -135,7 +157,11 @@ export default function ProfilePage() {
     setIsSaving(true)
     
     try {
-      if (await updateProfile(formData)) {
+      const dataToSend = {
+        ...formData,
+        gender: formData.gender ? mapGenderToBackend(formData.gender) : ''
+      }
+      if (await updateProfile(dataToSend)) {
         toast.success('Perfil actualizado correctamente')
       }
     } catch (error: any) {
@@ -291,7 +317,7 @@ export default function ProfilePage() {
                       <Label htmlFor="gender">Género</Label>
                       <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar" />
+                          <SelectValue placeholder={formData.gender ? undefined : "Seleccionar"} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="masculino">Masculino</SelectItem>
