@@ -172,10 +172,6 @@ export default function CreateInvoicePage() {
         
         // Load current company
         const company = await companyService.getCompany(companyId)
-        console.log('Loaded company:', company)
-        console.log('Tax condition:', company.taxCondition)
-        console.log('isPerceptionAgent:', company.isPerceptionAgent)
-        console.log('autoPerceptions:', company.autoPerceptions)
         setCurrentCompany({
           id: company.id,
           name: company.name,
@@ -202,16 +198,14 @@ export default function CreateInvoicePage() {
         try {
           const { networkService } = await import('@/services/network.service')
           const connections = await networkService.getConnections(companyId)
-          const connectedCompaniesData = connections.map(conn => {
-            console.log('Mapping connection:', conn)
-            return {
+          const connectedCompaniesData = connections.map(conn => ({
               id: conn.connectedCompanyId,
               name: conn.connectedCompanyName,
               uniqueId: conn.connectedCompanyUniqueId,
               taxCondition: conn.connectedCompanyTaxCondition || 'registered_taxpayer',
               cuit: conn.connectedCompanyCuit
             }
-          })
+          ))
           setConnectedCompanies(connectedCompaniesData)
         } catch (error: any) {
           console.error('Error loading connections:', error)
@@ -298,12 +292,10 @@ export default function CreateInvoicePage() {
 
   useEffect(() => {
     if (currentCompany && !isInitialized) {
-      console.log('Initializing with company:', currentCompany)
       setItems([{ description: '', quantity: 1, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany.defaultVat || 21 }])
       
       // Load auto-perceptions if company is perception agent with smooth animation
       if (currentCompany.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
-        console.log('Loading auto-perceptions:', currentCompany.autoPerceptions)
         // Add perceptions one by one with delay for smooth animation
         const perceptionsToAdd = currentCompany.autoPerceptions.map((p: any) => ({
           type: p.type,
@@ -318,8 +310,6 @@ export default function CreateInvoicePage() {
             setPerceptions(prev => [...prev, perception])
           }, index * 100) // 100ms delay between each perception
         })
-      } else {
-        console.log('No auto-perceptions to load')
       }
       
       setIsInitialized(true)
@@ -544,7 +534,6 @@ export default function CreateInvoicePage() {
     }
 
     setIsSubmitting(true)
-    console.log('Submitting voucher with sales_point:', formData.salesPoint)
 
     const isExistingClient = formData.clientData?.client_id
     
@@ -633,8 +622,6 @@ export default function CreateInvoicePage() {
       router.push(`/company/${companyId}/invoices`)
     } catch (error: any) {
       setIsSubmitting(false)
-      console.error('Error creating voucher:', error)
-      console.error('Error response:', error.response?.data)
       
       const errorData = error.response?.data
       let errorMessage = 'Error desconocido'

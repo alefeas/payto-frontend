@@ -372,6 +372,9 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
         })) : undefined
       }
 
+      const fileInput = document.getElementById('attachment') as HTMLInputElement
+      const attachment = fileInput?.files?.[0]
+
       let createdInvoice: any
       if (mode === "issued") {
         // Solo enviar cliente/empresa si NO hay factura asociada (el backend lo hereda)
@@ -382,7 +385,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
             payload.receiver_company_id = selectedCompany
           }
         }
-        const response = await invoiceService.createManualIssued(companyId, payload)
+        const response = await invoiceService.createManualIssued(companyId, payload, attachment)
         createdInvoice = response.invoice
         toast.success("Factura emitida registrada exitosamente")
       } else {
@@ -394,21 +397,9 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
             payload.issuer_company_id = selectedCompany
           }
         }
-        const response = await invoiceService.createManualReceived(companyId, payload)
+        const response = await invoiceService.createManualReceived(companyId, payload, attachment)
         createdInvoice = response.invoice
         toast.success("Factura recibida registrada exitosamente")
-      }
-
-      // Subir adjunto si existe
-      const fileInput = document.getElementById('attachment') as HTMLInputElement
-      if (fileInput?.files?.[0] && createdInvoice?.id) {
-        try {
-          await invoiceService.uploadAttachment(companyId, createdInvoice.id, fileInput.files[0])
-          toast.success("PDF original adjuntado correctamente")
-        } catch (error) {
-          console.error('Error uploading attachment:', error)
-          toast.error("Factura creada pero no se pudo adjuntar el PDF")
-        }
       }
 
       onSuccess?.()

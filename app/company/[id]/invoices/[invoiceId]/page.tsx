@@ -40,6 +40,9 @@ export default function InvoiceDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
+  const [isDownloadingTXT, setIsDownloadingTXT] = useState(false)
+  const [isDownloadingAttachment, setIsDownloadingAttachment] = useState(false)
   const [editForm, setEditForm] = useState({
     concept: '',
     service_date_from: '',
@@ -68,13 +71,6 @@ export default function InvoiceDetailPage() {
       setIsLoading(true)
       try {
         const data = await invoiceService.getInvoice(companyId, invoiceId)
-        console.log('[InvoiceDetail] Fechas recibidas:', {
-          issue_date: data.issue_date,
-          due_date: data.due_date,
-          service_date_from: data.service_date_from,
-          service_date_to: data.service_date_to,
-          afip_cae_due_date: data.afip_cae_due_date
-        })
         setInvoice(data)
       } catch (error: any) {
         toast.error('Error al cargar comprobante', {
@@ -140,6 +136,7 @@ export default function InvoiceDetailPage() {
   }
 
   const downloadPDF = async () => {
+    setIsDownloadingPDF(true)
     try {
       const blob = await invoiceService.downloadPDF(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -152,14 +149,16 @@ export default function InvoiceDetailPage() {
       document.body.removeChild(a)
       toast.success('PDF descargado')
     } catch (error: any) {
-      console.error('PDF download error:', error)
       toast.error('Error al descargar PDF', {
         description: error.response?.data?.error || error.message || 'Intente nuevamente'
       })
+    } finally {
+      setIsDownloadingPDF(false)
     }
   }
 
   const downloadTXT = async () => {
+    setIsDownloadingTXT(true)
     try {
       const blob = await invoiceService.downloadTXT(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -172,14 +171,16 @@ export default function InvoiceDetailPage() {
       document.body.removeChild(a)
       toast.success('TXT descargado')
     } catch (error: any) {
-      console.error('TXT download error:', error)
       toast.error('Error al descargar TXT', {
         description: error.response?.data?.error || error.message || 'Intente nuevamente'
       })
+    } finally {
+      setIsDownloadingTXT(false)
     }
   }
 
   const downloadAttachment = async () => {
+    setIsDownloadingAttachment(true)
     try {
       const blob = await invoiceService.downloadAttachment(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -192,10 +193,11 @@ export default function InvoiceDetailPage() {
       document.body.removeChild(a)
       toast.success('PDF original descargado')
     } catch (error: any) {
-      console.error('Attachment download error:', error)
       toast.error('Error al descargar PDF original', {
         description: error.response?.data?.error || error.message || 'Intente nuevamente'
       })
+    } finally {
+      setIsDownloadingAttachment(false)
     }
   }
 
@@ -357,19 +359,46 @@ export default function InvoiceDetailPage() {
               </>
             ) : (
               <>
-                <Button onClick={downloadPDF} className="shadow-sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  PDF Sistema
+                <Button onClick={downloadPDF} disabled={isDownloadingPDF} className="shadow-sm">
+                  {isDownloadingPDF ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      PDF Sistema
+                    </>
+                  )}
                 </Button>
                 {invoice.attachment_path && (
-                  <Button onClick={downloadAttachment} variant="outline" className="shadow-sm border-blue-300 text-blue-700 hover:bg-blue-50">
-                    <FileText className="h-4 w-4 mr-2" />
-                    PDF Original
+                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm border-blue-300 text-blue-700 hover:bg-blue-50">
+                    {isDownloadingAttachment ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Descargando...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-4 w-4 mr-2" />
+                        PDF Original
+                      </>
+                    )}
                   </Button>
                 )}
-                <Button onClick={downloadTXT} variant="outline" className="shadow-sm">
-                  <FileText className="h-4 w-4 mr-2" />
-                  TXT
+                <Button onClick={downloadTXT} disabled={isDownloadingTXT} variant="outline" className="shadow-sm">
+                  {isDownloadingTXT ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      TXT
+                    </>
+                  )}
                 </Button>
               </>
             )}
@@ -553,8 +582,6 @@ export default function InvoiceDetailPage() {
                   const taxAmount = parseFloat(item.tax_amount || 0)
                   const total = subtotal + taxAmount
                   
-                  console.log('Item:', item.description, '| tax_rate:', item.tax_rate, '| tax_category:', item.tax_category, '| taxRate parsed:', taxRate)
-                  
                   return (
                     <div key={item.id}>
                       <div className="grid grid-cols-7 gap-3 py-3">
@@ -586,15 +613,17 @@ export default function InvoiceDetailPage() {
                         </div>
                         <div className="text-center">
                           {item.tax_category === 'exempt' ? (
-                            <span className="text-xs text-muted-foreground">Exento</span>
+                            <div className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium border border-gray-300 rounded-full bg-gray-50">
+                              Exento
+                            </div>
                           ) : item.tax_category === 'not_taxed' ? (
-                            <span className="text-xs text-muted-foreground">No Grav.</span>
-                          ) : taxRate > 0 ? (
-                            <div className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium border-2 border-gray-900 rounded-full">
-                              {taxRate}%
+                            <div className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium border border-gray-300 rounded-full bg-gray-50">
+                              No Grav.
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground">0%</span>
+                            <div className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium border border-gray-300 rounded-full bg-gray-50">
+                              {taxRate}%
+                            </div>
                           )}
                         </div>
                         <div className="text-right">

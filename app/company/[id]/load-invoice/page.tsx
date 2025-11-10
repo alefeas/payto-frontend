@@ -17,8 +17,6 @@ export default function LoadInvoicePage() {
   const params = useParams()
   const companyId = params.id as string
   const [isFormReady, setIsFormReady] = useState(false)
-  
-  console.log('[LoadInvoicePage] Render - isFormReady:', isFormReady, 'authLoading:', authLoading, 'isAuthenticated:', isAuthenticated)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -27,7 +25,6 @@ export default function LoadInvoicePage() {
   }, [isAuthenticated, authLoading, router])
 
   if (authLoading || !isAuthenticated) {
-    console.log('[LoadInvoicePage] Retornando null por auth')
     return null
   }
 
@@ -117,10 +114,7 @@ export default function LoadInvoicePage() {
             <CardContent>
               <ManualInvoiceForm
                 companyId={companyId}
-                onReady={() => {
-                  console.log('[LoadInvoicePage] onReady callback ejecutado, cambiando isFormReady a true')
-                  setIsFormReady(true)
-                }}
+                onReady={() => setIsFormReady(true)}
                 onSuccess={() => {
                   router.push(`/company/${companyId}/invoices`)
                 }}
@@ -174,10 +168,7 @@ export default function LoadInvoicePage() {
           <div style={{ display: 'none' }}>
             <ManualInvoiceForm
               companyId={companyId}
-              onReady={() => {
-                console.log('[LoadInvoicePage] onReady callback ejecutado, cambiando isFormReady a true')
-                setIsFormReady(true)
-              }}
+              onReady={() => setIsFormReady(true)}
               onSuccess={() => {
                 router.push(`/company/${companyId}/invoices`)
               }}

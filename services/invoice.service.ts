@@ -279,18 +279,50 @@ export const invoiceService = {
     return response.data.invoice
   },
 
-  async createManualIssued(companyId: string, data: any): Promise<any> {
+  async createManualIssued(companyId: string, data: any, attachment?: File): Promise<any> {
+    if (attachment) {
+      const formData = new FormData()
+      Object.keys(data).forEach(key => {
+        if (key === 'items' || key === 'perceptions') {
+          formData.append(key, JSON.stringify(data[key]))
+        } else if (data[key] !== undefined && data[key] !== null) {
+          formData.append(key, data[key])
+        }
+      })
+      formData.append('attachment', attachment)
+      
+      const response = await apiClient.post(`/companies/${companyId}/invoices/manual-issued`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return response.data
+    }
+    
     const response = await apiClient.post(`/companies/${companyId}/invoices/manual-issued`, data)
     return response.data
   },
 
-  async createManualReceived(companyId: string, data: any): Promise<any> {
+  async createManualReceived(companyId: string, data: any, attachment?: File): Promise<any> {
+    if (attachment) {
+      const formData = new FormData()
+      Object.keys(data).forEach(key => {
+        if (key === 'items' || key === 'perceptions') {
+          formData.append(key, JSON.stringify(data[key]))
+        } else if (data[key] !== undefined && data[key] !== null) {
+          formData.append(key, data[key])
+        }
+      })
+      formData.append('attachment', attachment)
+      
+      const response = await apiClient.post(`/companies/${companyId}/invoices/manual-received`, formData, {
+        timeout: 30000,
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      return response.data
+    }
+    
     const response = await apiClient.post(`/companies/${companyId}/invoices/manual-received`, data, {
       timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     })
     return response.data
   }
