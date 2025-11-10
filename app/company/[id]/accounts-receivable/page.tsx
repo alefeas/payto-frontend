@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { BackButton } from "@/components/ui/back-button"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -28,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DatePicker } from "@/components/ui/date-picker"
 import { InvoiceListSkeleton, DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AccountsReceivablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -303,20 +305,25 @@ export default function AccountsReceivablePage() {
 
   return (
     <>
-    <AccountsLayout
-      companyId={companyId}
-      title="Cuentas por Cobrar"
-      subtitle="Gestión de facturas emitidas y cobros"
-      headerActions={
-        <Button 
-          onClick={() => selectedInvoices.length > 0 && handleCollectInvoices(selectedInvoices)}
-          disabled={selectedInvoices.length === 0}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Registrar Cobro {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
-        </Button>
-      }
-      summaryCards={
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <BackButton href={`/company/${companyId}`} />
+            <div>
+              <h1 className="text-3xl font-bold">Cuentas por Cobrar</h1>
+              <p className="text-muted-foreground">Gestión de facturas emitidas y cobros</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => selectedInvoices.length > 0 && handleCollectInvoices(selectedInvoices)}
+            disabled={selectedInvoices.length === 0}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Registrar Cobro {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -371,18 +378,57 @@ export default function AccountsReceivablePage() {
             </CardContent>
           </Card>
         </div>
-      }
-      filters={filters}
-      onFiltersChange={setFilters}
-      showCurrencyFilter={true}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      tabs={[
 
-        {
-          value: 'invoices',
-          label: 'Facturas Pendientes',
-          content: (
+        <div className="flex gap-2">
+          <Select value={filters.currency} onValueChange={(value) => setFilters({...filters, currency: value})}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="ARS">ARS $</SelectItem>
+              <SelectItem value="USD">USD $</SelectItem>
+              <SelectItem value="EUR">EUR €</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="w-40">
+            <DatePicker
+              date={filters.from_date ? new Date(filters.from_date) : undefined}
+              onSelect={(date) => setFilters({...filters, from_date: date ? date.toISOString().split('T')[0] : ''})}
+              placeholder="Desde"
+            />
+          </div>
+          <div className="w-40">
+            <DatePicker
+              date={filters.to_date ? new Date(filters.to_date) : undefined}
+              onSelect={(date) => setFilters({...filters, to_date: date ? date.toISOString().split('T')[0] : ''})}
+              placeholder="Hasta"
+            />
+          </div>
+          <Input
+            placeholder="Buscar por número de factura o CUIT..."
+            value={filters.search}
+            onChange={(e) => setFilters({...filters, search: e.target.value})}
+            className="flex-1"
+          />
+          {(filters.from_date || filters.to_date || filters.search || filters.currency !== 'all') && (
+            <Button variant="outline" onClick={() => setFilters({...filters, from_date: '', to_date: '', search: '', currency: 'all'})}>
+              Limpiar
+            </Button>
+          )}
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="invoices">Facturas Pendientes</TabsTrigger>
+            <TabsTrigger value="upcoming">Próximos Vencimientos</TabsTrigger>
+            <TabsTrigger value="overdue">Vencidas</TabsTrigger>
+            <TabsTrigger value="collections">Cobros Realizados</TabsTrigger>
+            <TabsTrigger value="clients">Por Cliente</TabsTrigger>
+            <TabsTrigger value="balances">Saldos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="invoices" className="space-y-4">
             <InvoiceList
               invoices={filteredInvoices}
               selectedInvoices={selectedInvoices}
@@ -397,12 +443,9 @@ export default function AccountsReceivablePage() {
               type="receivable"
               loading={loading}
             />
-          )
-        },
-        {
-          value: 'upcoming',
-          label: 'Próximos Vencimientos',
-          content: (
+          </TabsContent>
+
+          <TabsContent value="upcoming" className="space-y-4">
             <UpcomingTab
               invoices={filteredInvoices}
               formatCurrency={formatCurrency}
@@ -414,12 +457,9 @@ export default function AccountsReceivablePage() {
               selectedInvoices={selectedInvoices}
               onSelectionChange={setSelectedInvoices}
             />
-          )
-        },
-        {
-          value: 'overdue',
-          label: 'Vencidas',
-          content: (
+          </TabsContent>
+
+          <TabsContent value="overdue" className="space-y-4">
             <OverdueTab
               invoices={filteredInvoices}
               formatCurrency={formatCurrency}
@@ -431,24 +471,18 @@ export default function AccountsReceivablePage() {
               selectedInvoices={selectedInvoices}
               onSelectionChange={setSelectedInvoices}
             />
-          )
-        },
-        {
-          value: 'collections',
-          label: 'Cobros Realizados',
-          content: (
+          </TabsContent>
+
+          <TabsContent value="collections" className="space-y-4">
             <CollectionsTab
               collections={collections}
               formatCurrency={formatCurrency}
               filters={filters}
               type="receivable"
             />
-          )
-        },
-        {
-          value: 'clients',
-          label: 'Por Cliente',
-          content: (
+          </TabsContent>
+
+          <TabsContent value="clients" className="space-y-4">
             <ByEntityTab
               invoices={filteredInvoices}
               formatCurrency={formatCurrency}
@@ -463,31 +497,30 @@ export default function AccountsReceivablePage() {
               }}
               type="receivable"
             />
-          )
-        },
-        {
-          value: 'balances',
-          label: 'Saldos',
-          content: balances ? (
-            <BalancesTab
-              creditNotes={balances.credit_notes || []}
-              debitNotes={balances.debit_notes || []}
-              summary={balances.summary}
-              formatCurrency={formatCurrency}
-              onView={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
-              type="receivable"
-              filters={filters}
-            />
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Cargando saldos...</p>
-              </CardContent>
-            </Card>
-          )
-        }
-      ]}
-    />
+          </TabsContent>
+
+          <TabsContent value="balances" className="space-y-4">
+            {balances ? (
+              <BalancesTab
+                creditNotes={balances.credit_notes || []}
+                debitNotes={balances.debit_notes || []}
+                summary={balances.summary}
+                formatCurrency={formatCurrency}
+                onView={(id) => router.push(`/company/${companyId}/invoices/${id}`)}
+                type="receivable"
+                filters={filters}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">Cargando saldos...</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
     
     <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
           <DialogContent className="max-w-2xl">

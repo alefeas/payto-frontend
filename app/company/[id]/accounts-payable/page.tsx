@@ -293,6 +293,8 @@ export default function AccountsPayablePage() {
   const filteredInvoices = useMemo(() => {
     return allInvoices.filter(inv => {
       if (inv.status === 'cancelled') return false
+      const companyStatus = inv.company_statuses?.[companyId]
+      if (companyStatus === 'paid') return false
       if (filters.currency !== 'all' && inv.currency !== filters.currency) return false
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
@@ -529,20 +531,20 @@ export default function AccountsPayablePage() {
               <SelectItem value="EUR">EUR €</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            type="date"
-            value={filters.from_date}
-            onChange={(e) => setFilters({...filters, from_date: e.target.value})}
-            className="w-40"
-            placeholder="Desde"
-          />
-          <Input
-            type="date"
-            value={filters.to_date}
-            onChange={(e) => setFilters({...filters, to_date: e.target.value})}
-            className="w-40"
-            placeholder="Hasta"
-          />
+          <div className="w-40">
+            <DatePicker
+              date={filters.from_date ? new Date(filters.from_date) : undefined}
+              onSelect={(date) => setFilters({...filters, from_date: date ? date.toISOString().split('T')[0] : ''})}
+              placeholder="Desde"
+            />
+          </div>
+          <div className="w-40">
+            <DatePicker
+              date={filters.to_date ? new Date(filters.to_date) : undefined}
+              onSelect={(date) => setFilters({...filters, to_date: date ? date.toISOString().split('T')[0] : ''})}
+              placeholder="Hasta"
+            />
+          </div>
           <Input
             placeholder="Buscar por número de factura o CUIT..."
             value={filters.search}

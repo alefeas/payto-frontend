@@ -52,11 +52,24 @@ export default function ApproveInvoicesPage() {
         setCurrentUserId(user.id)
       }
       
-      const result = await invoiceService.getInvoices(id as string, { exclude_associated_notes: true })
-      // Filtrar facturas que necesitan aprobación (excluye ND/NC asociadas)
+      const result = await invoiceService.getInvoices(id as string)
+      // Filtrar facturas normales y ND/NC no asociadas que necesitan aprobación
       const pendingInvoices = (result.data || []).filter((inv: Invoice) => {
         const status = inv.display_status || inv.status
-        return status === 'pending_approval'
+        if (status !== 'pending_approval') return false
+        
+        const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+        const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+        
+        // Si es factura normal, incluir
+        if (!isCreditNote && !isDebitNote) return true
+        
+        // Si es ND/NC, solo incluir si NO está asociada a una factura
+        if (isCreditNote || isDebitNote) {
+          return !(inv as any).related_invoice_id
+        }
+        
+        return false
       })
       setInvoices(pendingInvoices)
     } catch (error: any) {
