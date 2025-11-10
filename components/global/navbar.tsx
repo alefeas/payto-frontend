@@ -23,10 +23,16 @@ export default function Navbar() {
             Precios
           </a>
           <a
-            href="#features"
+            href="/features"
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             Características
+          </a>
+          <a
+            href="/contact"
+            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            Contacto
           </a>
         </div>
 

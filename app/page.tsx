@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen overflow-x-hidden flex flex-col">
+      <main className="min-h-screen overflow-x-hidden flex flex-col pt-20">
         <section className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center">
           <div className="w-full max-w-6xl mx-auto px-6 py-16">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
