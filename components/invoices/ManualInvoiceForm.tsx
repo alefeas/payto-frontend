@@ -248,7 +248,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
       const discount = itemBase * (item.discount_percentage / 100)
       const itemSubtotal = itemBase - discount
       // Exento (-1) y No Gravado (-2) tienen IVA = 0
-      const taxRate = item.tax_rate > 0 ? item.tax_rate : 0
+      const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
       const itemTax = itemSubtotal * (taxRate / 100)
       
       subtotal += itemSubtotal
@@ -861,7 +861,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
             const discount = itemBase * (item.discount_percentage / 100)
             const itemSubtotal = itemBase - discount
             // Exento (-1) y No Gravado (-2) tienen IVA = 0
-            const taxRate = item.tax_rate > 0 ? item.tax_rate : 0
+            const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
             const itemTax = itemSubtotal * (taxRate / 100)
             const itemTotal = itemSubtotal + itemTax
             
@@ -1007,7 +1007,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                 const discount = itemBase * (item.discount_percentage / 100)
                 const itemSubtotal = itemBase - discount
                 // Exento (-1) y No Gravado (-2) tienen IVA = 0
-                const taxRate = item.tax_rate > 0 ? item.tax_rate : 0
+                const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
                 return sum + (itemSubtotal * (taxRate / 100))
               }, 0)
               let base = subtotal

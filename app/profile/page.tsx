@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Building, MapPin, Clock, Save, ArrowLeft } from "lucide-react"
+import { User, Building, MapPin, Clock, Save } from "lucide-react"
 import { toast } from "sonner"
 import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +18,7 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { formatPhone } from "@/lib/input-formatters"
 import { companyService, Company } from "@/services/company.service"
+import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton"
 import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import type { CompanyRole } from "@/types"
@@ -64,6 +66,7 @@ export default function ProfilePage() {
   
   const [userCompanies, setUserCompanies] = useState<Company[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   
   const [isSaving, setIsSaving] = useState(false)
   const router = useRouter()
@@ -106,6 +109,7 @@ export default function ProfilePage() {
       console.error('Error loading companies:', error)
     } finally {
       setLoadingCompanies(false)
+      setInitialLoad(false)
     }
   }
 
@@ -141,16 +145,8 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-48"></div>
-          <div className="h-32 bg-muted rounded"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    )
+  if (isLoading || !isAuthenticated || initialLoad) {
+    return <ProfileSkeleton />
   }
 
   return (
@@ -158,13 +154,7 @@ export default function ProfilePage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => router.push('/dashboard')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <BackButton href="/dashboard" />
           <div>
             <h1 className="text-3xl font-bold">Mi Perfil</h1>
             <p className="text-muted-foreground">Gestiona tu información personal y preferencias</p>

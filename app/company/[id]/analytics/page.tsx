@@ -98,7 +98,9 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-10 w-[120px]" />
+              <Skeleton className="h-10 w-[180px]" />
+              <Skeleton className="h-10 w-[100px]" />
               <Skeleton className="h-10 w-32" />
             </div>
           </div>
@@ -106,7 +108,7 @@ export default function AnalyticsPage() {
           {/* Stats Cards Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Card key={i}>
+              <Card key={i} className="border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-4 w-4 rounded" />
@@ -121,7 +123,7 @@ export default function AnalyticsPage() {
           
           {/* Charts Grid Skeleton */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="border-gray-200">
               <CardHeader>
                 <Skeleton className="h-6 w-32" />
                 <Skeleton className="h-4 w-48" />
@@ -130,7 +132,7 @@ export default function AnalyticsPage() {
                 <Skeleton className="h-64 w-full rounded" />
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-gray-200">
               <CardHeader>
                 <Skeleton className="h-6 w-32" />
                 <Skeleton className="h-4 w-48" />
@@ -141,41 +143,22 @@ export default function AnalyticsPage() {
             </Card>
           </div>
           
-          {/* Tables Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Alert Card Skeleton */}
+          <Card className="border-gray-200">
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="p-4 border border-gray-200 rounded-lg">
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -357,7 +340,7 @@ export default function AnalyticsPage() {
         {isRefreshing && summary ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Card key={i}>
+              <Card key={i} className="border-gray-200">
                 <CardContent className="p-6">
                   <div className="space-y-3 animate-pulse">
                     <Skeleton className="h-4 w-32" />
@@ -370,7 +353,7 @@ export default function AnalyticsPage() {
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="transition-all duration-300 ease-in-out">
+          <Card className="transition-all duration-300 ease-in-out border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="w-full transition-all duration-300 ease-in-out">
@@ -407,7 +390,7 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="transition-all duration-300 ease-in-out">
+          <Card className="transition-all duration-300 ease-in-out border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="w-full transition-all duration-300 ease-in-out">
@@ -444,7 +427,7 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="transition-all duration-300 ease-in-out">
+          <Card className="transition-all duration-300 ease-in-out border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="w-full transition-all duration-300 ease-in-out">
@@ -479,7 +462,7 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="transition-all duration-300 ease-in-out">
+          <Card className="transition-all duration-300 ease-in-out border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="transition-all duration-300 ease-in-out">
@@ -501,7 +484,7 @@ export default function AnalyticsPage() {
         {isRefreshing && summary ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[...Array(2)].map((_, i) => (
-              <Card key={i}>
+              <Card key={i} className="border-gray-200">
                 <CardHeader>
                   <Skeleton className="h-6 w-48" />
                   <Skeleton className="h-4 w-32 mt-2" />
@@ -515,7 +498,7 @@ export default function AnalyticsPage() {
         ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Gráfico de Tendencia */}
-          <Card>
+          <Card className="border-gray-200">
             <CardHeader>
               <CardTitle>Tendencia de Facturación</CardTitle>
               <CardDescription>Últimos 6 meses {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
@@ -556,7 +539,7 @@ export default function AnalyticsPage() {
           </Card>
 
           {/* Flujo de Caja */}
-          <Card>
+          <Card className="border-gray-200">
             <CardHeader>
               <CardTitle>Flujo de Caja Acumulado</CardTitle>
               <CardDescription>Balance mes a mes {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
@@ -615,7 +598,7 @@ export default function AnalyticsPage() {
         )}
 
         {/* Alertas de Vencimientos */}
-        <Card>
+        <Card className="border-gray-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />

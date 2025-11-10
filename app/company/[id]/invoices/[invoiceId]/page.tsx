@@ -7,6 +7,7 @@ import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { InvoiceDetailSkeleton } from "@/components/invoices/InvoiceDetailSkeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
@@ -229,31 +230,7 @@ export default function InvoiceDetailPage() {
   }
 
   if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="h-8 w-48 bg-muted rounded animate-pulse"></div>
-                <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="h-10 w-32 bg-muted rounded animate-pulse"></div>
-              <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
-            </div>
-          </div>
-          <div className="h-64 bg-muted rounded animate-pulse"></div>
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-64 bg-muted rounded animate-pulse"></div>
-            <div className="h-64 bg-muted rounded animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    )
+    return <InvoiceDetailSkeleton />
   }
   if (!isAuthenticated || !invoice) return null
 
@@ -545,70 +522,89 @@ export default function InvoiceDetailPage() {
             <CardDescription>Productos y servicios del comprobante</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-semibold text-xs">Descripción</th>
-                      <th className="text-center p-3 font-semibold text-xs w-16">Cant.</th>
-                      <th className="text-right p-3 font-semibold text-xs w-24">P. Unit.</th>
-                      <th className="text-center p-3 font-semibold text-xs w-16">Bonif.</th>
-                      <th className="text-center p-3 font-semibold text-xs w-16">IVA</th>
-                      <th className="text-right p-3 font-semibold text-xs w-24">IVA $</th>
-                      <th className="text-right p-3 font-semibold text-xs w-28">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoice.items?.map((item: any, index: number) => {
-                      const qty = parseFloat(item.quantity)
-                      const unitPrice = parseFloat(item.unit_price)
-                      const discount = parseFloat(item.discount_percentage || 0)
-                      const taxRate = parseFloat(item.tax_rate)
-                      const subtotal = parseFloat(item.subtotal)
-                      const taxAmount = parseFloat(item.tax_amount || 0)
-                      const total = subtotal + taxAmount
-                      
-                      return (
-                        <tr key={item.id} className={index !== invoice.items.length - 1 ? "border-b" : ""}>
-                          <td className="p-3">
-                            {isEditing ? (
-                              <Input
-                                type="text"
-                                value={editForm.items[index]?.description || ''}
-                                onChange={(e) => {
-                                  const newItems = [...editForm.items]
-                                  newItems[index] = { description: e.target.value }
-                                  setEditForm({...editForm, items: newItems})
-                                }}
-                                className="h-9 text-sm bg-slate-50 border-slate-300 focus:ring-slate-500"
-                                placeholder="Descripción del ítem"
-                              />
-                            ) : (
-                              <p className="font-medium text-sm">{item.description}</p>
-                            )}
-                          </td>
-                          <td className="p-3 text-center text-sm">{qty}</td>
-                          <td className="p-3 text-right text-xs">
-                            {formatCurrency(unitPrice, invoice.currency)}
-                          </td>
-                          <td className="p-3 text-center">
-                            {discount > 0 ? <Badge variant="secondary" className="text-xs">{discount}%</Badge> : <span className="text-xs text-muted-foreground">-</span>}
-                          </td>
-                          <td className="p-3 text-center">
-                            <Badge variant="outline" className="text-xs">{taxRate}%</Badge>
-                          </td>
-                          <td className="p-3 text-right text-xs text-muted-foreground">
-                            {formatCurrency(taxAmount, invoice.currency)}
-                          </td>
-                          <td className="p-3 text-right font-semibold text-sm">
-                            {formatCurrency(total, invoice.currency)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+            <div>
+              <div className="grid grid-cols-7 gap-3 py-2 mb-3 border-b border-gray-200">
+                <div className="col-span-2">
+                  <p className="text-xs font-semibold text-muted-foreground">Descripción</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-muted-foreground">Cant.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-muted-foreground">P. Unit.</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-muted-foreground">Bonif.</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-muted-foreground">IVA</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-muted-foreground">Total</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {invoice.items?.map((item: any, index: number) => {
+                  const qty = parseFloat(item.quantity)
+                  const unitPrice = parseFloat(item.unit_price)
+                  const discount = parseFloat(item.discount_percentage || 0)
+                  const taxRate = parseFloat(item.tax_rate)
+                  const subtotal = parseFloat(item.subtotal)
+                  const taxAmount = parseFloat(item.tax_amount || 0)
+                  const total = subtotal + taxAmount
+                  
+                  console.log('Item:', item.description, '| tax_rate:', item.tax_rate, '| tax_category:', item.tax_category, '| taxRate parsed:', taxRate)
+                  
+                  return (
+                    <div key={item.id}>
+                      <div className="grid grid-cols-7 gap-3 py-3">
+                        <div className="col-span-2">
+                          {isEditing ? (
+                          <Input
+                            type="text"
+                            value={editForm.items[index]?.description || ''}
+                            onChange={(e) => {
+                              const newItems = [...editForm.items]
+                              newItems[index] = { description: e.target.value }
+                              setEditForm({...editForm, items: newItems})
+                            }}
+                            className="h-9 text-sm bg-slate-50 border-slate-300 focus:ring-slate-500"
+                            placeholder="Descripción del ítem"
+                          />
+                          ) : (
+                            <p className="font-medium text-sm">{item.description}</p>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm">{qty}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs">{formatCurrency(unitPrice, invoice.currency)}</p>
+                        </div>
+                        <div className="text-center">
+                          {discount > 0 ? <Badge variant="secondary" className="text-xs">{discount}%</Badge> : <span className="text-xs text-muted-foreground">-</span>}
+                        </div>
+                        <div className="text-center">
+                          {item.tax_category === 'exempt' ? (
+                            <span className="text-xs text-muted-foreground">Exento</span>
+                          ) : item.tax_category === 'not_taxed' ? (
+                            <span className="text-xs text-muted-foreground">No Grav.</span>
+                          ) : taxRate > 0 ? (
+                            <div className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium border-2 border-gray-900 rounded-full">
+                              {taxRate}%
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">0%</span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-sm">{formatCurrency(total, invoice.currency)}</p>
+                        </div>
+                      </div>
+                      {index !== invoice.items.length - 1 && <div className="border-b border-gray-200" />}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </CardContent>
@@ -621,28 +617,33 @@ export default function InvoiceDetailPage() {
               <CardTitle>Resumen de Totales</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center py-1.5">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-muted-foreground">Subtotal</span>
                   <span className="font-medium text-sm">
                     {formatCurrency(parseFloat(invoice.subtotal), invoice.currency)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-1.5 border-t">
+                <div className="border-b border-gray-200" />
+                <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-muted-foreground">Impuestos (IVA)</span>
                   <span className="font-medium text-sm">
                     {formatCurrency(parseFloat(invoice.total_taxes), invoice.currency)}
                   </span>
                 </div>
                 {parseFloat(invoice.total_perceptions || 0) > 0 && (
-                  <div className="flex justify-between items-center py-1.5 border-t">
-                    <span className="text-sm text-orange-600">Percepciones</span>
-                    <span className="font-medium text-sm text-orange-600">
-                      {formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
-                    </span>
-                  </div>
+                  <>
+                    <div className="border-b border-gray-200" />
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-orange-600">Percepciones</span>
+                      <span className="font-medium text-sm text-orange-600">
+                        {formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
+                      </span>
+                    </div>
+                  </>
                 )}
-                <div className="flex justify-between items-center py-2 border-t-2">
+                <div className="border-b border-gray-200" />
+                <div className="flex justify-between items-center py-2">
                   <span className="font-bold">Total Comprobante</span>
                   <span className="font-bold text-lg text-primary">
                     {formatCurrency(parseFloat(invoice.total), invoice.currency)}
@@ -667,14 +668,18 @@ export default function InvoiceDetailPage() {
                     </span>
                   </div>
                   {totalWithholdings > 0 && (
-                    <div className="flex justify-between items-center py-2 border-t">
-                      <span className="text-orange-600">Retenciones</span>
-                      <span className="font-medium text-orange-600">
-                        -{formatCurrency(totalWithholdings, invoice.currency)}
-                      </span>
-                    </div>
+                    <>
+                      <div className="border-b border-gray-200" />
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-orange-600">Retenciones</span>
+                        <span className="font-medium text-orange-600">
+                          -{formatCurrency(totalWithholdings, invoice.currency)}
+                        </span>
+                      </div>
+                    </>
                   )}
-                  <div className="flex justify-between items-center py-3 border-t-2 text-lg font-bold">
+                  <div className="border-b border-gray-200" />
+                  <div className="flex justify-between items-center py-3 text-lg font-bold">
                     <span className="text-green-700">{isIssuer ? 'Total Cobrado' : 'Total Pagado'}</span>
                     <span className="text-green-700">
                       {formatCurrency(
@@ -684,30 +689,36 @@ export default function InvoiceDetailPage() {
                     </span>
                   </div>
                   {withholdingsArray.length > 0 ? (
-                    <div className="pt-3 border-t space-y-2">
-                      <h4 className="font-semibold text-sm text-orange-700 mb-3 flex items-center gap-2">
-                        <Percent className="h-4 w-4" />
-                        Detalle de Retenciones
-                      </h4>
-                      <div className="space-y-2">
-                        {withholdingsArray.map((withholding: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-2.5 px-3 bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-2">
-                              <div className="w-1.5 h-8 bg-orange-500 rounded-full"></div>
-                              <p className="font-medium text-sm text-gray-800">{withholding.name}</p>
+                    <div>
+                      <div className="border-b border-gray-200" />
+                      <div className="pt-3 space-y-2">
+                        <h4 className="font-semibold text-sm text-orange-700 mb-3 flex items-center gap-2">
+                          <Percent className="h-4 w-4" />
+                          Detalle de Retenciones
+                        </h4>
+                        <div className="space-y-2">
+                          {withholdingsArray.map((withholding: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center py-2.5 px-3 bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-8 bg-orange-500 rounded-full"></div>
+                                <p className="font-medium text-sm text-gray-800">{withholding.name}</p>
+                              </div>
+                              <span className="font-bold text-sm text-orange-700 bg-white px-3 py-1 rounded-md shadow-sm">
+                                {formatCurrency(parseFloat(withholding.amount), invoice.currency)}
+                              </span>
                             </div>
-                            <span className="font-bold text-sm text-orange-700 bg-white px-3 py-1 rounded-md shadow-sm">
-                              {formatCurrency(parseFloat(withholding.amount), invoice.currency)}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="pt-3 border-t">
-                      <p className="text-sm text-muted-foreground text-center py-2">
-                        {isIssuer ? 'No se aplicaron retenciones en este cobro' : 'No se aplicaron retenciones en este pago'}
-                      </p>
+                    <div>
+                      <div className="border-b border-gray-200" />
+                      <div className="pt-3">
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          {isIssuer ? 'No se aplicaron retenciones en este cobro' : 'No se aplicaron retenciones en este pago'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -749,31 +760,38 @@ export default function InvoiceDetailPage() {
             <CardContent>
               <div className="space-y-4">
                 {/* Cálculo Visual */}
-                <div className="bg-muted/30 rounded-lg p-4 border">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center py-1.5">
+                <div className="bg-muted/30 rounded-lg p-4 border border-gray-200">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2">
                       <span className="text-sm text-muted-foreground">Monto Original</span>
                       <span className="font-semibold">
                         {formatCurrency(invoice.balance_breakdown.original_amount, invoice.currency)}
                       </span>
                     </div>
                     {invoice.balance_breakdown.total_credit_notes > 0 && (
-                      <div className="flex justify-between items-center py-1.5 border-t">
-                        <span className="text-sm text-red-600">Notas de Crédito</span>
-                        <span className="font-semibold text-red-600">
-                          -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
-                        </span>
-                      </div>
+                      <>
+                        <div className="border-b border-gray-200" />
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-red-600">Notas de Crédito</span>
+                          <span className="font-semibold text-red-600">
+                            -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
+                          </span>
+                        </div>
+                      </>
                     )}
                     {invoice.balance_breakdown.total_debit_notes > 0 && (
-                      <div className="flex justify-between items-center py-1.5 border-t">
-                        <span className="text-sm text-green-600">Notas de Débito</span>
-                        <span className="font-semibold text-green-600">
-                          +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
-                        </span>
-                      </div>
+                      <>
+                        <div className="border-b border-gray-200" />
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-green-600">Notas de Débito</span>
+                          <span className="font-semibold text-green-600">
+                            +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className="flex justify-between items-center py-2 border-t-2">
+                    <div className="border-b border-gray-200" />
+                    <div className="flex justify-between items-center py-2">
                       <span className="font-bold">Saldo Pendiente</span>
                       <span className="font-bold text-lg text-primary">
                         {formatCurrency(invoice.balance_breakdown.balance_pending, invoice.currency)}
@@ -791,7 +809,7 @@ export default function InvoiceDetailPage() {
                         {invoice.balance_breakdown.credit_notes.map((nc: any) => (
                           <div 
                             key={nc.id} 
-                            className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                            className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                             onClick={() => router.push(`/company/${companyId}/invoices/${nc.id}`)}
                           >
                             <div>
@@ -816,7 +834,7 @@ export default function InvoiceDetailPage() {
                         {invoice.balance_breakdown.debit_notes.map((nd: any) => (
                           <div 
                             key={nd.id} 
-                            className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                            className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                             onClick={() => router.push(`/company/${companyId}/invoices/${nd.id}`)}
                           >
                             <div>
@@ -857,7 +875,7 @@ export default function InvoiceDetailPage() {
             <CardContent>
               <div className="space-y-3">
                 <div 
-                  className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)}
                 >
                   <div className="flex justify-between items-center">
@@ -873,7 +891,7 @@ export default function InvoiceDetailPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-4 border">
+                <div className="bg-muted/50 rounded-lg p-4 border border-gray-200">
                   <p className="text-sm font-medium">
                     {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) 
                       ? `Reduce el saldo en ${formatCurrency(parseFloat(invoice.total), invoice.currency)}`
@@ -896,16 +914,19 @@ export default function InvoiceDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {invoice.perceptions.map((perception: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
-                    <div>
-                      <p className="font-medium text-sm">{perception.name}</p>
-                      <p className="text-xs text-muted-foreground">{perception.rate}% sobre {perception.base_type === 'net' ? 'Neto' : perception.base_type === 'total' ? 'Total' : 'IVA'}</p>
+                  <div key={index}>
+                    <div className="flex justify-between items-center py-2">
+                      <div>
+                        <p className="font-medium text-sm">{perception.name}</p>
+                        <p className="text-xs text-muted-foreground">{perception.rate}% sobre {perception.base_type === 'net' ? 'Neto' : perception.base_type === 'total' ? 'Total' : 'IVA'}</p>
+                      </div>
+                      <span className="font-medium text-orange-600">
+                        {formatCurrency(parseFloat(perception.amount), invoice.currency)}
+                      </span>
                     </div>
-                    <span className="font-medium text-orange-600">
-                      {formatCurrency(parseFloat(perception.amount), invoice.currency)}
-                    </span>
+                    {index !== invoice.perceptions.length - 1 && <div className="border-b border-gray-200" />}
                   </div>
                 ))}
               </div>
