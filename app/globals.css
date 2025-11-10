@@ -273,4 +273,18 @@
   [data-radix-popover-content] {
     z-index: 50 !important;
   }
+  
+  /* Calendar selected day - global fix */
+  .rdp button[aria-selected="true"],
+  .rdp .rdp-day_selected {
+    background-color: hsl(var(--primary)) !important;
+    color: white !important;
+  }
+  
+  .rdp button[aria-selected="true"]:hover,
+  .rdp .rdp-day_selected:hover {
+    background-color: hsl(var(--primary)) !important;
+    color: white !important;
+    opacity: 0.9;
+  }
 }

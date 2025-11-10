@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { formatDateToLocal } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DateRange } from "react-day-picker"
@@ -59,8 +60,8 @@ export default function AnalyticsPage() {
       let endDate: string | undefined
       
       if (period === 'custom' && dateRange?.from && dateRange?.to) {
-        startDate = format(dateRange.from, 'yyyy-MM-dd')
-        endDate = format(dateRange.to, 'yyyy-MM-dd')
+        startDate = formatDateToLocal(dateRange.from)
+        endDate = formatDateToLocal(dateRange.to)
       }
       
       const [summaryData, trendData, clientsData, pendingData] = await Promise.all([
@@ -263,35 +264,43 @@ export default function AnalyticsPage() {
               </SelectContent>
             </Select>
             {period === 'custom' && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="lg">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "dd/MM/yyyy", { locale: es })} - {format(dateRange.to, "dd/MM/yyyy", { locale: es })}
-                        </>
-                      ) : (
-                        format(dateRange.from, "dd/MM/yyyy", { locale: es })
-                      )
-                    ) : (
-                      <span>Seleccionar fechas</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange?.from}
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={2}
-                    locale={es}
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[140px] justify-start bg-white dark:bg-slate-950">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? format(dateRange.from, "dd/MM/yyyy", { locale: es }) : "Desde"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange?.from}
+                      onSelect={(date) => setDateRange(prev => ({ from: date, to: prev?.to }))}
+                      locale={es}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[140px] justify-start bg-white dark:bg-slate-950">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.to ? format(dateRange.to, "dd/MM/yyyy", { locale: es }) : "Hasta"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange?.to}
+                      onSelect={(date) => setDateRange(prev => ({ from: prev?.from, to: date }))}
+                      disabled={(date) => dateRange?.from ? date < dateRange.from : false}
+                      locale={es}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             )}
             <Button 
               variant="outline" 

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Plus, Trash2, FileText, Receipt, Calculator, Loader2, Upload, Info } from "lucide-react"
 import { toast } from "sonner"
-
+import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import { invoiceService } from "@/services/invoice.service"
 import { clientService } from "@/services/client.service"
 import { supplierService } from "@/services/supplier.service"
@@ -611,16 +611,16 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
             <div className="space-y-2">
               <Label>Fecha de Emisión *</Label>
               <DatePicker
-                date={issueDate ? new Date(issueDate) : undefined}
-                onSelect={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : '')}
+                date={issueDate ? parseDateLocal(issueDate) || undefined : undefined}
+                onSelect={(date) => setIssueDate(date ? formatDateToLocal(date) : '')}
                 placeholder="Seleccionar fecha"
               />
             </div>
             <div className="space-y-2">
               <Label>Fecha de Vencimiento *</Label>
               <DatePicker
-                date={dueDate ? new Date(dueDate) : undefined}
-                onSelect={(date) => setDueDate(date ? date.toISOString().split('T')[0] : '')}
+                date={dueDate ? parseDateLocal(dueDate) || undefined : undefined}
+                onSelect={(date) => setDueDate(date ? formatDateToLocal(date) : '')}
                 placeholder="Seleccionar fecha"
               />
             </div>
@@ -700,8 +700,8 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               <div className="space-y-2">
                 <Label>Fecha Servicio Desde *</Label>
                 <DatePicker
-                  date={serviceDateFrom ? new Date(serviceDateFrom) : undefined}
-                  onSelect={(date) => setServiceDateFrom(date ? date.toISOString().split('T')[0] : '')}
+                  date={serviceDateFrom ? parseDateLocal(serviceDateFrom) || undefined : undefined}
+                  onSelect={(date) => setServiceDateFrom(date ? formatDateToLocal(date) : '')}
                   placeholder="Seleccionar fecha"
                   disabled={associateInvoice && !!selectedInvoice}
                 />
@@ -714,8 +714,8 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               <div className="space-y-2">
                 <Label>Fecha Servicio Hasta *</Label>
                 <DatePicker
-                  date={serviceDateTo ? new Date(serviceDateTo) : undefined}
-                  onSelect={(date) => setServiceDateTo(date ? date.toISOString().split('T')[0] : '')}
+                  date={serviceDateTo ? parseDateLocal(serviceDateTo) || undefined : undefined}
+                  onSelect={(date) => setServiceDateTo(date ? formatDateToLocal(date) : '')}
                   placeholder="Seleccionar fecha"
                   disabled={associateInvoice && !!selectedInvoice}
                 />
@@ -745,8 +745,8 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
             <div className="space-y-2">
               <Label>Vencimiento CAE</Label>
               <DatePicker
-                date={caeExpiration ? new Date(caeExpiration) : undefined}
-                onSelect={(date) => setCaeExpiration(date ? date.toISOString().split('T')[0] : '')}
+                date={caeExpiration ? parseDateLocal(caeExpiration) || undefined : undefined}
+                onSelect={(date) => setCaeExpiration(date ? formatDateToLocal(date) : '')}
                 placeholder="Seleccionar fecha"
               />
             </div>

@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { networkService } from "@/services/network.service"
 import type { CompanyConnection, ConnectionRequest, NetworkStats } from "@/types/network"
 import { Skeleton } from "@/components/ui/skeleton"
+import { parseDateLocal } from "@/lib/utils"
 
 export default function NetworkPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -349,7 +350,7 @@ export default function NetworkPage() {
                               </Button>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Conectado el {new Date(connection.connectedAt!).toLocaleDateString()}
+                              Conectado el {parseDateLocal(connection.connectedAt)?.toLocaleDateString('es-AR')}
                             </p>
                           </div>
                         </div>
@@ -428,7 +429,7 @@ export default function NetworkPage() {
                               </Button>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Solicitado el {new Date(request.requestedAt).toLocaleDateString()}
+                              Solicitado el {parseDateLocal(request.requestedAt)?.toLocaleDateString('es-AR')}
                             </p>
                             {request.message && (
                               <p className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-700">
@@ -532,7 +533,7 @@ export default function NetworkPage() {
                               </Button>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Enviado el {new Date(request.requestedAt).toLocaleDateString()}
+                              Enviado el {parseDateLocal(request.requestedAt)?.toLocaleDateString('es-AR')}
                             </p>
                             {request.message && (
                               <p className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-700 break-words">

@@ -19,6 +19,7 @@ import { afipVerificationService, type VerificationStatus } from "@/services/afi
 import { afipCertificateService, AfipCertificate } from "@/services/afip-certificate.service"
 import { companyService } from "@/services/company.service"
 import { Skeleton} from "@/components/ui/skeleton"
+import { parseDateLocal } from "@/lib/utils"
 
 export default function VerifyCompanyPage() {
   const { id } = useParams()
@@ -290,7 +291,7 @@ export default function VerifyCompanyPage() {
                     </p>
                     {certificate?.validUntil && (
                       <p className="text-xs text-green-600 mt-2">
-                        Válido hasta: {new Date(certificate.validUntil).toLocaleDateString()}
+                        Válido hasta: {parseDateLocal(certificate.validUntil)?.toLocaleDateString('es-AR')}
                         {certificate.isExpiringSoon && " ⚠️ Próximo a vencer"}
                       </p>
                     )}

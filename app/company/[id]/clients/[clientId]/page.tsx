@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Client } from "@/types/client"
+import { parseDateLocal } from "@/lib/utils"
 
 // Mock data
 const mockClient: Client = {
@@ -203,11 +204,11 @@ export default function ClientDetailPage() {
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Emisión: {new Date(invoice.issueDate).toLocaleDateString('es-AR')}
+                              Emisión: {parseDateLocal(invoice.issueDate)?.toLocaleDateString('es-AR')}
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Vencimiento: {new Date(invoice.dueDate).toLocaleDateString('es-AR')}
+                              Vencimiento: {parseDateLocal(invoice.dueDate)?.toLocaleDateString('es-AR')}
                             </span>
                           </div>
                         </div>

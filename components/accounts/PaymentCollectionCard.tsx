@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Calendar, CreditCard, FileText } from "lucide-react"
+import { parseDateLocal } from "@/lib/utils"
 
 interface PaymentCollectionCardProps {
   item: any
@@ -66,7 +67,7 @@ export function PaymentCollectionCard({ item, formatCurrency, type }: PaymentCol
       
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Calendar className="h-3 w-3" />
-        <span>{new Date(date).toLocaleDateString('es-AR')}</span>
+        <span>{parseDateLocal(date)?.toLocaleDateString('es-AR')}</span>
         <MethodIcon className="h-3 w-3 ml-2" />
         <span>{methodLabels[method] || method}</span>
       </div>

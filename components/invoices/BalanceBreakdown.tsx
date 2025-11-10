@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Minus } from 'lucide-react';
 import Link from 'next/link';
+import { parseDateLocal } from '@/lib/utils';
 
 interface CreditNote {
   id: string;
@@ -76,7 +77,7 @@ export function BalanceBreakdown({ breakdown, companyId, currency = 'ARS' }: Bal
                   <FileText className="h-4 w-4 text-red-600" />
                   <span className="text-sm">{nc.number}</span>
                   <Badge variant="outline" className="text-xs">
-                    {new Date(nc.issue_date).toLocaleDateString('es-AR')}
+                    {parseDateLocal(nc.issue_date)?.toLocaleDateString('es-AR')}
                   </Badge>
                 </div>
                 <span className="text-sm font-medium text-red-600">-{formatCurrency(nc.amount)}</span>
@@ -105,7 +106,7 @@ export function BalanceBreakdown({ breakdown, companyId, currency = 'ARS' }: Bal
                   <FileText className="h-4 w-4 text-green-600" />
                   <span className="text-sm">{nd.number}</span>
                   <Badge variant="outline" className="text-xs">
-                    {new Date(nd.issue_date).toLocaleDateString('es-AR')}
+                    {parseDateLocal(nd.issue_date)?.toLocaleDateString('es-AR')}
                   </Badge>
                 </div>
                 <span className="text-sm font-medium text-green-600">+{formatCurrency(nd.amount)}</span>

@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { InvoiceListSkeleton } from "@/components/accounts/InvoiceListSkeleton"
@@ -553,8 +554,8 @@ export default function InvoicesPage() {
                     <div className="space-y-2">
                       <Label>Fecha Desde</Label>
                       <DatePicker
-                        date={dateFromFilter ? new Date(dateFromFilter) : undefined}
-                        onSelect={(date) => setDateFromFilter(date ? date.toISOString().split('T')[0] : '')}
+                        date={dateFromFilter ? parseDateLocal(dateFromFilter) || undefined : undefined}
+                        onSelect={(date) => setDateFromFilter(date ? formatDateToLocal(date) : '')}
                         placeholder="Seleccionar fecha"
                       />
                     </div>
@@ -562,10 +563,10 @@ export default function InvoicesPage() {
                     <div className="space-y-2">
                       <Label>Fecha Hasta</Label>
                       <DatePicker
-                        date={dateToFilter ? new Date(dateToFilter) : undefined}
-                        onSelect={(date) => setDateToFilter(date ? date.toISOString().split('T')[0] : '')}
+                        date={dateToFilter ? parseDateLocal(dateToFilter) || undefined : undefined}
+                        onSelect={(date) => setDateToFilter(date ? formatDateToLocal(date) : '')}
                         placeholder="Seleccionar fecha"
-                        minDate={dateFromFilter ? new Date(dateFromFilter) : undefined}
+                        minDate={dateFromFilter ? parseDateLocal(dateFromFilter) || undefined : undefined}
                       />
                     </div>
                   </div>
@@ -638,7 +639,7 @@ export default function InvoicesPage() {
                             ) : null}
                           </div>
                         </div>
-                        <div>{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
+                        <div>{parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}</div>
                         <div className="font-medium">
                           {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                         </div>

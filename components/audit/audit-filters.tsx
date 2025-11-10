@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon, Filter, X, Download, Search } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { DatePicker } from '@/components/ui/date-picker'
+import { formatDateToLocal, parseDateLocal } from '@/lib/utils'
 import type { AuditFilters } from '@/services/audit.service'
 
 interface AuditFiltersProps {
@@ -37,8 +36,8 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
   const applyFilters = () => {
     const formattedFilters = {
       ...filters,
-      start_date: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
-      end_date: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined
+      start_date: dateFrom ? formatDateToLocal(dateFrom) : undefined,
+      end_date: dateTo ? formatDateToLocal(dateTo) : undefined
     }
     onFiltersChange(formattedFilters)
   }
@@ -164,46 +163,21 @@ export function AuditFilters({ companyId, onFiltersChange, onExport, availableAc
 
             <div className="space-y-2">
               <Label>Fecha Desde</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 
-                     <span>Seleccionar fecha</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dateFrom}
-                    onSelect={setDateFrom}
-                    locale={es}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                date={dateFrom}
+                onSelect={setDateFrom}
+                placeholder="Seleccionar fecha"
+              />
             </div>
 
             <div className="space-y-2">
               <Label>Fecha Hasta</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateTo ? format(dateTo, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 
-                     <span>Seleccionar fecha</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dateTo}
-                    onSelect={setDateTo}
-                    locale={es}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                date={dateTo}
+                onSelect={setDateTo}
+                placeholder="Seleccionar fecha"
+                minDate={dateFrom}
+              />
             </div>
           </div>
 

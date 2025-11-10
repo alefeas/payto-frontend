@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, TrendingDown, TrendingUp, FileText } from "lucide-react"
+import { parseDateLocal } from "@/lib/utils"
 
 interface BalanceItem {
   id: string
@@ -174,9 +175,9 @@ export function BalancesTab({
                     {type === 'receivable' ? nc.client_name : nc.supplier_name}
                   </div>
                   <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>Emisión: {new Date(nc.issue_date).toLocaleDateString('es-AR')}</span>
+                    <span>Emisión: {parseDateLocal(nc.issue_date)?.toLocaleDateString('es-AR')}</span>
                     {nc.due_date && (
-                      <span>Vencimiento: {new Date(nc.due_date).toLocaleDateString('es-AR')}</span>
+                      <span>Vencimiento: {parseDateLocal(nc.due_date)?.toLocaleDateString('es-AR')}</span>
                     )}
                   </div>
                 </div>
@@ -240,9 +241,9 @@ export function BalancesTab({
                     {type === 'receivable' ? nd.client_name : nd.supplier_name}
                   </div>
                   <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>Emisión: {new Date(nd.issue_date).toLocaleDateString('es-AR')}</span>
+                    <span>Emisión: {parseDateLocal(nd.issue_date)?.toLocaleDateString('es-AR')}</span>
                     {nd.due_date && (
-                      <span>Vencimiento: {new Date(nd.due_date).toLocaleDateString('es-AR')}</span>
+                      <span>Vencimiento: {parseDateLocal(nd.due_date)?.toLocaleDateString('es-AR')}</span>
                     )}
                   </div>
                 </div>

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { parseDateLocal, formatDateToLocal } from "@/lib/utils"
 
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -66,6 +67,13 @@ export default function InvoiceDetailPage() {
       setIsLoading(true)
       try {
         const data = await invoiceService.getInvoice(companyId, invoiceId)
+        console.log('[InvoiceDetail] Fechas recibidas:', {
+          issue_date: data.issue_date,
+          due_date: data.due_date,
+          service_date_from: data.service_date_from,
+          service_date_to: data.service_date_to,
+          afip_cae_due_date: data.afip_cae_due_date
+        })
         setInvoice(data)
       } catch (error: any) {
         toast.error('Error al cargar comprobante', {
@@ -83,10 +91,13 @@ export default function InvoiceDetailPage() {
   }, [isAuthenticated, companyId, invoiceId, router])
 
   const startEditing = () => {
+    const dateFrom = invoice.service_date_from ? parseDateLocal(invoice.service_date_from) : null
+    const dateTo = invoice.service_date_to ? parseDateLocal(invoice.service_date_to) : null
+    
     setEditForm({
       concept: invoice.concept || 'products',
-      service_date_from: invoice.service_date_from ? new Date(invoice.service_date_from).toISOString().split('T')[0] : '',
-      service_date_to: invoice.service_date_to ? new Date(invoice.service_date_to).toISOString().split('T')[0] : '',
+      service_date_from: dateFrom ? formatDateToLocal(dateFrom) : '',
+      service_date_to: dateTo ? formatDateToLocal(dateTo) : '',
       items: invoice.items?.map((item: any) => ({ description: item.description })) || []
     })
     setIsEditing(true)
@@ -431,11 +442,11 @@ export default function InvoiceDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Emisión</p>
-                  <p className="font-medium text-sm">{new Date(invoice.issue_date).toLocaleDateString('es-AR')}</p>
+                  <p className="font-medium text-sm">{parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Vencimiento</p>
-                  <p className="font-medium text-sm">{new Date(invoice.due_date).toLocaleDateString('es-AR')}</p>
+                  <p className="font-medium text-sm">{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR') || 'N/A'}</p>
                 </div>
                 {(isEditing && (editForm.concept === 'services' || editForm.concept === 'products_services')) || (!isEditing && invoice.service_date_from && invoice.service_date_to) ? (
                   <div>
@@ -457,7 +468,7 @@ export default function InvoiceDetailPage() {
                       </div>
                     ) : (
                       <p className="font-medium text-xs">
-                        {new Date(invoice.service_date_from).toLocaleDateString('es-AR')} - {new Date(invoice.service_date_to).toLocaleDateString('es-AR')}
+                        {parseDateLocal(invoice.service_date_from)?.toLocaleDateString('es-AR') || 'N/A'} - {parseDateLocal(invoice.service_date_to)?.toLocaleDateString('es-AR') || 'N/A'}
                       </p>
                     )}
                   </div>
@@ -516,7 +527,7 @@ export default function InvoiceDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Vencimiento</p>
-                      <p className="font-medium text-sm">{new Date(invoice.afip_cae_due_date).toLocaleDateString('es-AR')}</p>
+                      <p className="font-medium text-sm">{parseDateLocal(invoice.afip_cae_due_date)?.toLocaleDateString('es-AR') || 'N/A'}</p>
                     </div>
                   </>
                 ) : (
@@ -786,7 +797,7 @@ export default function InvoiceDetailPage() {
                             <div>
                               <p className="font-medium text-sm">{nc.number}</p>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(nc.issue_date).toLocaleDateString('es-AR')}
+                                {parseDateLocal(nc.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}
                               </p>
                             </div>
                             <span className="font-semibold text-sm text-red-600">
@@ -811,7 +822,7 @@ export default function InvoiceDetailPage() {
                             <div>
                               <p className="font-medium text-sm">{nd.number}</p>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(nd.issue_date).toLocaleDateString('es-AR')}
+                                {parseDateLocal(nd.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}
                               </p>
                             </div>
                             <span className="font-semibold text-sm text-green-600">

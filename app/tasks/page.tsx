@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { parseDateLocal } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { Plus, Calendar, Clock, CheckSquare, Trash2, Edit3, ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -339,13 +340,13 @@ export default function TasksPage() {
                             {task.due_date && (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Calendar className="h-3 w-3" />
-                                {new Date(task.due_date).toLocaleDateString()}
+                                {parseDateLocal(task.due_date)?.toLocaleDateString('es-AR')}
                               </div>
                             )}
                             {task.completed_at && (
                               <div className="flex items-center gap-1 text-xs text-green-600">
                                 <CheckSquare className="h-3 w-3" />
-                                Completada {new Date(task.completed_at).toLocaleDateString()}
+                                Completada {parseDateLocal(task.completed_at)?.toLocaleDateString('es-AR')}
                               </div>
                             )}
                           </div>

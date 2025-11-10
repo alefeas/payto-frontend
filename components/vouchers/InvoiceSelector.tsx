@@ -9,7 +9,7 @@ import { Loader2, FileText, AlertCircle, Check, ChevronsUpDown, Search } from "l
 import { voucherService } from "@/services/voucher.service"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+import { cn, parseDateLocal } from "@/lib/utils"
 
 interface Invoice {
   id: string
@@ -239,14 +239,14 @@ export function InvoiceSelector({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha Emisión:</span>
-                <span>{new Date(inv.issue_date).toLocaleDateString('es-AR')}</span>
+                <span>{parseDateLocal(inv.issue_date)?.toLocaleDateString('es-AR')}</span>
               </div>
               {(inv.concept === 'services' || inv.concept === 'products_services') && 
                inv.service_date_from && inv.service_date_to && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Período Servicio:</span>
                   <span>
-                    {new Date(inv.service_date_from).toLocaleDateString('es-AR')} - {new Date(inv.service_date_to).toLocaleDateString('es-AR')}
+                    {parseDateLocal(inv.service_date_from)?.toLocaleDateString('es-AR')} - {parseDateLocal(inv.service_date_to)?.toLocaleDateString('es-AR')}
                   </span>
                 </div>
               )}

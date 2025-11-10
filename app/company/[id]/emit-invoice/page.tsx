@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import type { Currency, InvoiceItem, InvoicePerception, InvoiceConcept } from "@/types/invoice"
 import { EntitySelector } from "@/components/invoices/EntitySelector"
 import { InvoiceSelector } from "@/components/vouchers/InvoiceSelector"
@@ -365,16 +366,20 @@ export default function CreateInvoicePage() {
     calculateTotals()
   }, [items, perceptions, calculateTotals])
 
-  // Auto-calculate due date (30 days after emission date)
+  // Auto-calculate due date (30 days after emission date) - ONLY on initial load
+  const [initialEmissionDate, setInitialEmissionDate] = useState<string | null>(null)
+  
   useEffect(() => {
-    if (formData.emissionDate) {
-      const emissionDate = new Date(formData.emissionDate)
-      const dueDate = new Date(emissionDate)
-      dueDate.setDate(dueDate.getDate() + 30)
-      const dueDateStr = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`
-      setFormData(prev => ({ ...prev, dueDate: dueDateStr }))
+    if (formData.emissionDate && initialEmissionDate === null) {
+      setInitialEmissionDate(formData.emissionDate)
+      const emissionDate = parseDateLocal(formData.emissionDate)
+      if (emissionDate) {
+        const dueDate = new Date(emissionDate)
+        dueDate.setDate(dueDate.getDate() + 30)
+        setFormData(prev => ({ ...prev, dueDate: formatDateToLocal(dueDate) }))
+      }
     }
-  }, [formData.emissionDate])
+  }, [formData.emissionDate, initialEmissionDate])
 
   // Limpiar fechas de servicio si el concepto cambia a productos
   useEffect(() => {
@@ -913,19 +918,10 @@ export default function CreateInvoicePage() {
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="emissionDate">Fecha de Emisión *</Label>
                 <DatePicker
-                  date={formData.emissionDate ? new Date(formData.emissionDate + 'T00:00:00') : undefined}
-                  onSelect={(date) => {
-                    if (date) {
-                      const year = date.getFullYear()
-                      const month = String(date.getMonth() + 1).padStart(2, '0')
-                      const day = String(date.getDate()).padStart(2, '0')
-                      setFormData({...formData, emissionDate: `${year}-${month}-${day}`})
-                    } else {
-                      setFormData({...formData, emissionDate: ''})
-                    }
-                  }}
+                  date={formData.emissionDate ? parseDateLocal(formData.emissionDate) || undefined : undefined}
+                  onSelect={(date) => setFormData({...formData, emissionDate: date ? formatDateToLocal(date) : ''})}
                   placeholder="Seleccionar fecha"
-                  minDate={selectedInvoice ? new Date(selectedInvoice.issue_date + 'T00:00:00') : undefined}
+                  minDate={selectedInvoice?.issue_date ? parseDateLocal(selectedInvoice.issue_date) || undefined : undefined}
                   maxDate={new Date()}
                 />
                 <p className="text-xs text-blue-600">
@@ -936,19 +932,10 @@ export default function CreateInvoicePage() {
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
                 <DatePicker
-                  date={formData.dueDate ? new Date(formData.dueDate + 'T00:00:00') : undefined}
-                  onSelect={(date) => {
-                    if (date) {
-                      const year = date.getFullYear()
-                      const month = String(date.getMonth() + 1).padStart(2, '0')
-                      const day = String(date.getDate()).padStart(2, '0')
-                      setFormData({...formData, dueDate: `${year}-${month}-${day}`})
-                    } else {
-                      setFormData({...formData, dueDate: ''})
-                    }
-                  }}
+                  date={formData.dueDate ? parseDateLocal(formData.dueDate) || undefined : undefined}
+                  onSelect={(date) => setFormData({...formData, dueDate: date ? formatDateToLocal(date) : ''})}
                   placeholder="Seleccionar fecha"
-                  minDate={formData.emissionDate ? new Date(formData.emissionDate + 'T00:00:00') : new Date()}
+                  minDate={formData.emissionDate ? parseDateLocal(formData.emissionDate) || new Date() : new Date()}
                 />
               </div>
             </div>
@@ -959,17 +946,8 @@ export default function CreateInvoicePage() {
                 <div className="space-y-2">
                   <Label htmlFor="serviceDateFrom">Fecha Servicio Desde *</Label>
                     <DatePicker
-                      date={formData.serviceDateFrom ? new Date(formData.serviceDateFrom + 'T00:00:00') : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const year = date.getFullYear()
-                          const month = String(date.getMonth() + 1).padStart(2, '0')
-                          const day = String(date.getDate()).padStart(2, '0')
-                          setFormData({...formData, serviceDateFrom: `${year}-${month}-${day}`})
-                        } else {
-                          setFormData({...formData, serviceDateFrom: ''})
-                        }
-                      }}
+                      date={formData.serviceDateFrom ? parseDateLocal(formData.serviceDateFrom) || undefined : undefined}
+                      onSelect={(date) => setFormData({...formData, serviceDateFrom: date ? formatDateToLocal(date) : ''})}
                       placeholder="Fecha inicio del servicio"
                       disabled={isNoteType && associateInvoice && !!selectedInvoice}
                     />
@@ -983,19 +961,10 @@ export default function CreateInvoicePage() {
                 <div className="space-y-2">
                   <Label htmlFor="serviceDateTo">Fecha Servicio Hasta *</Label>
                   <DatePicker
-                    date={formData.serviceDateTo ? new Date(formData.serviceDateTo + 'T00:00:00') : undefined}
-                    onSelect={(date) => {
-                      if (date) {
-                        const year = date.getFullYear()
-                        const month = String(date.getMonth() + 1).padStart(2, '0')
-                        const day = String(date.getDate()).padStart(2, '0')
-                        setFormData({...formData, serviceDateTo: `${year}-${month}-${day}`})
-                      } else {
-                        setFormData({...formData, serviceDateTo: ''})
-                      }
-                    }}
+                    date={formData.serviceDateTo ? parseDateLocal(formData.serviceDateTo) || undefined : undefined}
+                    onSelect={(date) => setFormData({...formData, serviceDateTo: date ? formatDateToLocal(date) : ''})}
                     placeholder="Fecha fin del servicio"
-                    minDate={formData.serviceDateFrom ? new Date(formData.serviceDateFrom + 'T00:00:00') : undefined}
+                    minDate={formData.serviceDateFrom ? parseDateLocal(formData.serviceDateFrom) || undefined : undefined}
                     disabled={isNoteType && associateInvoice && !!selectedInvoice}
                   />
                   {isNoteType && associateInvoice && selectedInvoice && (

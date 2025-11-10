@@ -15,15 +15,51 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  const [currentMonth, setCurrentMonth] = React.useState<Date>(props.month || new Date())
+
+  React.useEffect(() => {
+    if (props.month) {
+      setCurrentMonth(props.month)
+    }
+  }, [props.month])
+
+  const handleMonthChange = (newMonth: string) => {
+    const date = new Date(currentMonth)
+    date.setMonth(parseInt(newMonth))
+    setCurrentMonth(date)
+    props.onMonthChange?.(date)
+  }
+
+  const handleYearChange = (newYear: string) => {
+    const date = new Date(currentMonth)
+    date.setFullYear(parseInt(newYear))
+    setCurrentMonth(date)
+    props.onMonthChange?.(date)
+  }
+
+  const handleNavigation = (date: Date) => {
+    setCurrentMonth(date)
+    props.onMonthChange?.(date)
+  }
+
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i)
+  const months = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ]
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      month={currentMonth}
+      onMonthChange={handleNavigation}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
+        caption: "flex justify-center pt-1 relative items-center gap-1",
+        caption_label: "text-sm font-medium hidden",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -52,7 +88,40 @@ function Calendar({
       components={{
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-
+        Caption: ({ displayMonth }) => (
+          <div className="flex justify-center gap-1 items-center">
+            <Select
+              value={displayMonth.getMonth().toString()}
+              onValueChange={handleMonthChange}
+            >
+              <SelectTrigger className="h-7 w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((monthName, index) => (
+                  <SelectItem key={index} value={index.toString()}>
+                    {monthName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={displayMonth.getFullYear().toString()}
+              onValueChange={handleYearChange}
+            >
+              <SelectTrigger className="h-7 w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ),
       }}
       {...props}
     />

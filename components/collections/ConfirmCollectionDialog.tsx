@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import collectionService, { InvoiceCollection } from '@/services/collection.service';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, parseDateLocal } from '@/lib/utils';
 
 interface ConfirmCollectionDialogProps {
   open: boolean;
@@ -81,7 +81,7 @@ export default function ConfirmCollectionDialog({
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Fecha de cobro:</span>
               <span className="font-medium">
-                {new Date(collection.collection_date).toLocaleDateString()}
+                {parseDateLocal(collection.collection_date)?.toLocaleDateString('es-AR')}
               </span>
             </div>
             <div className="flex justify-between">

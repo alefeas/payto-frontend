@@ -265,8 +265,17 @@ export default function SignupForm() {
               <div className="space-y-2">
                 <Label>Fecha de Nacimiento</Label>
                 <DatePicker
-                  date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
-                  onSelect={(date) => setFormData({...formData, dateOfBirth: date ? date.toISOString().split('T')[0] : ''})}
+                  date={formData.dateOfBirth ? new Date(formData.dateOfBirth + 'T00:00:00') : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear()
+                      const month = String(date.getMonth() + 1).padStart(2, '0')
+                      const day = String(date.getDate()).padStart(2, '0')
+                      setFormData({...formData, dateOfBirth: `${year}-${month}-${day}`})
+                    } else {
+                      setFormData({...formData, dateOfBirth: ''})
+                    }
+                  }}
                   placeholder="Seleccionar fecha"
                   maxDate={new Date()}
                 />

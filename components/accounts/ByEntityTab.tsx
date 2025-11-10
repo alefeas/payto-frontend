@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { parseDateLocal } from "@/lib/utils"
 
 interface ByEntityTabProps {
   invoices: any[]
@@ -223,8 +224,8 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
                       {invoice.type || 'FC'} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Emisión: {new Date(invoice.issue_date).toLocaleDateString('es-AR')} • 
-                      Vencimiento: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
+                      Emisión: {parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR')} • 
+                      Vencimiento: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

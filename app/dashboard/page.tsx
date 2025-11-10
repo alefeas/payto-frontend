@@ -18,6 +18,7 @@ import { taskService, type Task } from "@/services/task.service"
 import { toast } from "sonner"
 import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
+import { parseDateLocal } from "@/lib/utils"
 import type { CompanyRole } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -285,7 +286,7 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">{task.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {task.due_date ? `Vence: ${new Date(task.due_date).toLocaleDateString()}` : 'Sin fecha límite'}
+                            {task.due_date ? `Vence: ${parseDateLocal(task.due_date)?.toLocaleDateString('es-AR')}` : 'Sin fecha límite'}
                           </p>
                         </div>
                       </div>
@@ -411,7 +412,7 @@ export default function DashboardPage() {
                             <p className="text-sm break-words">{task.title}</p>
                             {task.due_date && (
                               <p className="text-xs text-muted-foreground">
-                                Vence: {new Date(task.due_date).toLocaleDateString()}
+                                Vence: {parseDateLocal(task.due_date)?.toLocaleDateString('es-AR')}
                               </p>
                             )}
                           </div>

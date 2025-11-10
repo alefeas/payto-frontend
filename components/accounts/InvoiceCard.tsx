@@ -3,6 +3,7 @@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock } from "lucide-react"
+import { parseDateLocal } from "@/lib/utils"
 
 interface InvoiceCardProps {
   invoice: any
@@ -79,7 +80,7 @@ export function InvoiceCard({
           <Clock className="h-3 w-3" />
           <span>{daysText}</span>
           <Calendar className="h-3 w-3 ml-2" />
-          <span>{new Date(invoice.due_date).toLocaleDateString('es-AR')}</span>
+          <span>{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}</span>
           {showBadge && (
             <Badge variant="destructive" className="ml-2">Vencida</Badge>
           )}

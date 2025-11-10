@@ -18,6 +18,7 @@ import { CompanyRole, CompanyMember } from "@/types"
 import { companyMemberService } from "@/services/company-member.service"
 import { companyService, Company } from "@/services/company.service"
 import { translateRole, getRoleDescription } from "@/lib/role-utils"
+import { parseDateLocal } from "@/lib/utils"
 
 export default function MembersPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -442,9 +443,9 @@ export default function MembersPage() {
                       </div>
                       <p className="text-sm text-muted-foreground">{member.email}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                        <span>Unido: {new Date(member.joinedAt).toLocaleDateString()}</span>
+                        <span>Unido: {parseDateLocal(member.joinedAt)?.toLocaleDateString('es-AR')}</span>
                         <span>•</span>
-                        <span>Último acceso: {new Date(member.lastActive).toLocaleDateString()}</span>
+                        <span>Último acceso: {parseDateLocal(member.lastActive)?.toLocaleDateString('es-AR')}</span>
                       </div>
                     </div>
                   </div>

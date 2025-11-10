@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { invoiceService, Invoice } from "@/services/invoice.service"
 import { companyService } from "@/services/company.service"
+import { parseDateLocal } from "@/lib/utils"
 
 export default function ApproveInvoicesPage() {
   const { id } = useParams()
@@ -274,7 +275,7 @@ export default function ApproveInvoicesPage() {
                         
                         <div className="text-right flex-shrink-0 hidden md:block">
                           <p className="text-sm text-muted-foreground">Vencimiento</p>
-                          <p className="text-sm font-medium">{new Date(invoice.due_date).toLocaleDateString('es-AR')}</p>
+                          <p className="text-sm font-medium">{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}</p>
                         </div>
                       </div>
                       

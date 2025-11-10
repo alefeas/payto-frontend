@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import { accountsPayableService } from "@/services/accounts-payable.service"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -533,15 +534,15 @@ export default function AccountsPayablePage() {
           </Select>
           <div className="w-40">
             <DatePicker
-              date={filters.from_date ? new Date(filters.from_date) : undefined}
-              onSelect={(date) => setFilters({...filters, from_date: date ? date.toISOString().split('T')[0] : ''})}
+              date={filters.from_date ? parseDateLocal(filters.from_date) || undefined : undefined}
+              onSelect={(date) => setFilters({...filters, from_date: date ? formatDateToLocal(date) : ''})}
               placeholder="Desde"
             />
           </div>
           <div className="w-40">
             <DatePicker
-              date={filters.to_date ? new Date(filters.to_date) : undefined}
-              onSelect={(date) => setFilters({...filters, to_date: date ? date.toISOString().split('T')[0] : ''})}
+              date={filters.to_date ? parseDateLocal(filters.to_date) || undefined : undefined}
+              onSelect={(date) => setFilters({...filters, to_date: date ? formatDateToLocal(date) : ''})}
               placeholder="Hasta"
             />
           </div>
@@ -806,8 +807,8 @@ export default function AccountsPayablePage() {
                     <div className="space-y-2">
                       <Label>Fecha de Pago *</Label>
                       <DatePicker
-                        date={paymentForm.payment_date ? new Date(paymentForm.payment_date) : undefined}
-                        onSelect={(date) => setPaymentForm({...paymentForm, payment_date: date ? date.toISOString().split('T')[0] : ''})}
+                        date={paymentForm.payment_date ? parseDateLocal(paymentForm.payment_date) || undefined : undefined}
+                        onSelect={(date) => setPaymentForm({...paymentForm, payment_date: date ? formatDateToLocal(date) : ''})}
                         placeholder="Seleccionar fecha"
                       />
                     </div>
@@ -1059,8 +1060,8 @@ export default function AccountsPayablePage() {
                               <p className="font-semibold">{formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}</p>
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                              <div>Emisión: {new Date(invoice.issue_date).toLocaleDateString('es-AR')}</div>
-                              <div>Vencimiento: {new Date(invoice.due_date).toLocaleDateString('es-AR')}</div>
+                              <div>Emisión: {parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR')}</div>
+                              <div>Vencimiento: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}</div>
                               <div>Subtotal: {formatCurrency(invoice.subtotal || 0, invoice.currency)}</div>
                               <div>IVA: {formatCurrency(invoice.total_taxes || 0, invoice.currency)}</div>
                             </div>

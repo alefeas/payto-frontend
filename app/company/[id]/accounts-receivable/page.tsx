@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { BackButton } from "@/components/ui/back-button"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -393,15 +394,15 @@ export default function AccountsReceivablePage() {
           </Select>
           <div className="w-40">
             <DatePicker
-              date={filters.from_date ? new Date(filters.from_date) : undefined}
-              onSelect={(date) => setFilters({...filters, from_date: date ? date.toISOString().split('T')[0] : ''})}
+              date={filters.from_date ? parseDateLocal(filters.from_date) || undefined : undefined}
+              onSelect={(date) => setFilters({...filters, from_date: date ? formatDateToLocal(date) : ''})}
               placeholder="Desde"
             />
           </div>
           <div className="w-40">
             <DatePicker
-              date={filters.to_date ? new Date(filters.to_date) : undefined}
-              onSelect={(date) => setFilters({...filters, to_date: date ? date.toISOString().split('T')[0] : ''})}
+              date={filters.to_date ? parseDateLocal(filters.to_date) || undefined : undefined}
+              onSelect={(date) => setFilters({...filters, to_date: date ? formatDateToLocal(date) : ''})}
               placeholder="Hasta"
             />
           </div>
@@ -575,8 +576,8 @@ export default function AccountsReceivablePage() {
                 <div className="space-y-2">
                   <Label>Fecha de Cobro *</Label>
                   <DatePicker
-                    date={collectionForm.collection_date ? new Date(collectionForm.collection_date) : undefined}
-                    onSelect={(date) => setCollectionForm({...collectionForm, collection_date: date ? date.toISOString().split('T')[0] : ''})}
+                    date={collectionForm.collection_date ? parseDateLocal(collectionForm.collection_date) || undefined : undefined}
+                    onSelect={(date) => setCollectionForm({...collectionForm, collection_date: date ? formatDateToLocal(date) : ''})}
                     placeholder="Seleccionar fecha"
                   />
                 </div>

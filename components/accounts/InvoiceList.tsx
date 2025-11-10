@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { parseDateLocal } from "@/lib/utils"
 
 interface InvoiceListProps {
   invoices: any[]
@@ -175,7 +176,7 @@ export function InvoiceList({
                       </div>
                     )}
                     <div className="text-sm text-muted-foreground mt-1">
-                      Vence: {new Date(invoice.due_date).toLocaleDateString('es-AR')}
+                      Vence: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
                     </div>
                   </div>
                   <Button size="sm" variant="ghost" onClick={(e) => {
