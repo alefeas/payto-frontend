@@ -759,17 +759,62 @@ export default function InvoiceDetailPage() {
                 <CardTitle className="text-amber-700">{isIssuer ? 'Pendiente de Cobro' : 'Pendiente de Pago'}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-2">
-                    {isIssuer ? 'Este comprobante aún no ha sido cobrado' : 'Este comprobante aún no ha sido pagado'}
-                  </p>
-                  <p className="text-2xl font-bold text-amber-700">
-                    {formatCurrency(parseFloat(invoice.total), invoice.currency)}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    {isIssuer ? 'Las retenciones se registrarán al momento del cobro' : 'Las retenciones se registrarán al momento del pago'}
-                  </p>
-                </div>
+                {invoice.balance_breakdown && (invoice.balance_breakdown.credit_notes?.length > 0 || invoice.balance_breakdown.debit_notes?.length > 0) ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-muted-foreground">Monto Original</span>
+                      <span className="font-medium">
+                        {formatCurrency(invoice.balance_breakdown.original_amount, invoice.currency)}
+                      </span>
+                    </div>
+                    {invoice.balance_breakdown.total_credit_notes > 0 && (
+                      <>
+                        <div className="border-b border-gray-200" />
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-red-600">Notas de Crédito</span>
+                          <span className="font-medium text-red-600">
+                            -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {invoice.balance_breakdown.total_debit_notes > 0 && (
+                      <>
+                        <div className="border-b border-gray-200" />
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-green-600">Notas de Débito</span>
+                          <span className="font-medium text-green-600">
+                            +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className="border-b border-gray-200" />
+                    <div className="flex justify-between items-center py-3">
+                      <span className="font-bold text-amber-700">Saldo Pendiente</span>
+                      <span className="font-bold text-2xl text-amber-700">
+                        {formatCurrency(invoice.balance_breakdown.balance_pending, invoice.currency)}
+                      </span>
+                    </div>
+                    <div className="border-t border-gray-200 pt-3">
+                      <p className="text-sm text-muted-foreground text-center">
+                        {isIssuer ? 'Las retenciones se registrarán al momento del cobro' : 'Las retenciones se registrarán al momento del pago'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground mb-2">
+                      {isIssuer ? 'Este comprobante aún no ha sido cobrado' : 'Este comprobante aún no ha sido pagado'}
+                    </p>
+                    <p className="text-2xl font-bold text-amber-700">
+                      {formatCurrency(parseFloat(invoice.total), invoice.currency)}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-4">
+                      {isIssuer ? 'Las retenciones se registrarán al momento del cobro' : 'Las retenciones se registrarán al momento del pago'}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

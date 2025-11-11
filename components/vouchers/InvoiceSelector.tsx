@@ -149,7 +149,7 @@ export function InvoiceSelector({
                                        invoice.concept === 'products_services' ? 'Productos y Servicios' : 'Productos'
                   const number = invoice.number || invoice.invoice_number || ''
                   const type = invoice.type || invoice.invoice_type || ''
-                  const name = invoice.receiver_name || invoice.issuer_name || invoice.client_name || ''
+                  const name = invoice.receiver_name || invoice.issuer_name || invoice.client_name || 'Sin nombre'
                   const total = invoice.total || invoice.total_amount || 0
                   const balance = invoice.available_balance || invoice.balance_pending || 0
                   
@@ -173,8 +173,6 @@ export function InvoiceSelector({
                           <div className="flex items-center gap-1.5">
                             {invoice.origin && <span className="text-blue-600">{invoice.origin}</span>}
                             {invoice.origin && <span>•</span>}
-                            {invoice.status_label && <span className="text-green-600">{invoice.status_label}</span>}
-                            {(invoice.origin || invoice.status_label) && <span>•</span>}
                             <span>Concepto: {conceptLabel}</span>
                             <span>•</span>
                             <span className="font-medium">Saldo: {invoice.currency || 'ARS'} ${balance.toLocaleString('es-AR')} de ${total.toLocaleString('es-AR')}</span>
