@@ -1,36 +1,4 @@
 import ContactForm from "@/components/contact/contact-form";
-import { colors } from "@/styles/colors";
-import { FluidGradient } from "@/components/ui/fluid-gradient";
-import AnimatedTextCarousel from "@/components/auth/animated-text-carousel";
-import SlantedPanel from "@/components/ui/slanted-panel";
-
-const messages = [
-  [
-    { text: "Let's " },
-    { text: "talk", bold: true },
-    { text: "." },
-  ],
-  [
-    { text: "We're here to " },
-    { text: "help", bold: true },
-    { text: "." },
-  ],
-  [
-    { text: "Got " },
-    { text: "questions", bold: true },
-    { text: "?" },
-  ],
-  [
-    { text: "Reach " },
-    { text: "out", bold: true },
-    { text: " to us." },
-  ],
-  [
-    { text: "Start the " },
-    { text: "conversation", bold: true },
-    { text: "." },
-  ],
-];
 
 export default function ContactPage() {
   return (
@@ -43,25 +11,39 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Right Side - Image/Visual */}
-        <SlantedPanel 
-          direction="right" 
-          className="hidden lg:flex lg:w-[58%] order-1 lg:order-2"
-          id="contactClip"
-        >
-          <FluidGradient 
-            color1={colors.gradient.topLeft}
-            color2={colors.gradient.topRight}
-            color3={colors.gradient.bottomRight}
-            color4={colors.gradient.bottomLeft}
-          />
-          
-          {/* Gradient overlay and text at top right */}
-          <div className="absolute inset-0 bg-gradient-to-bl from-black/40 via-transparent to-transparent" />
-          <div className="absolute top-0 right-0 p-16 z-10 max-w-2xl text-right">
-            <AnimatedTextCarousel messages={messages} />
+        {/* Right Side - Google Maps */}
+        <div className="flex-1 lg:w-[58%] order-1 lg:order-2 rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+          <div className="relative w-full h-full min-h-[400px] lg:min-h-[600px]">
+            {/* Location info overlay */}
+            <div className="absolute top-6 left-6 z-10 bg-white rounded-xl shadow-lg p-6 max-w-sm">
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                Nuestra Ubicación
+              </h3>
+              <p className="text-sm text-muted-foreground mb-1">
+                <strong>UTN - Facultad Regional Buenos Aires</strong>
+              </p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Sede Haedo
+              </p>
+              <p className="text-sm text-muted-foreground">
+                París 532, Haedo, Buenos Aires
+              </p>
+            </div>
+
+            {/* Google Maps iframe - UTN Haedo with marker */}
+            <iframe
+              src="https://www.google.com/maps?q=UTN+Facultad+Regional+Buenos+Aires+Sede+Haedo,+Paris+532,+Haedo,+Buenos+Aires&output=embed&z=16"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Ubicación UTN Haedo"
+              className="absolute inset-0"
+            />
           </div>
-        </SlantedPanel>
+        </div>
       </div>
     </div>
   );
