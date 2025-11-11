@@ -48,6 +48,11 @@ export function PaymentCollectionCard({ item, formatCurrency, type }: PaymentCol
 
   const method = item.collection_method || item.payment_method
   const MethodIcon = methodIcons[method] || FileText
+  
+  // Obtener NC/ND aplicadas a esta factura
+  const creditNotes = item.invoice?.credit_notes_applied || []
+  const debitNotes = item.invoice?.debit_notes_applied || []
+  const hasNotes = creditNotes.length > 0 || debitNotes.length > 0
 
   return (
     <div className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50/50 transition-colors">
@@ -59,11 +64,83 @@ export function PaymentCollectionCard({ item, formatCurrency, type }: PaymentCol
             {item.invoice?.type || 'FC'} {String(item.invoice?.sales_point || 0).padStart(4, '0')}-{String(item.invoice?.voucher_number || item.voucher_number || 0).padStart(8, '0')}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="font-bold text-lg text-green-600">{formatCurrency(parseFloat(item.amount) || 0, item.currency || item.invoice?.currency)}</div>
-          <Badge className="bg-green-600 text-white text-xs">{actionLabel}</Badge>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <div className="font-bold text-lg text-green-600">{formatCurrency((parseFloat(item.amount) || 0) - totalWithholdings, item.currency || item.invoice?.currency)}</div>
+            <Badge className="bg-green-600 text-white text-xs">{actionLabel}</Badge>
+          </div>
+          {totalWithholdings > 0 && (
+            <div className="text-xs text-muted-foreground">Bruto: {formatCurrency(parseFloat(item.amount) || 0, item.currency || item.invoice?.currency)}</div>
+          )}
         </div>
       </div>
+      
+      {hasNotes && (
+        <div className="mb-2 pl-2 border-l-2 border-gray-300 space-y-1">
+          {creditNotes.map((nc: any) => (
+            <div key={nc.id} className="flex justify-between text-xs text-red-600">
+              <span>NC {String(nc.sales_point || 0).padStart(4, '0')}-{String(nc.voucher_number || 0).padStart(8, '0')}</span>
+              <span>-{formatCurrency(nc.total || 0, item.invoice?.currency)}</span>
+            </div>
+          ))}
+          {debitNotes.map((nd: any) => (
+            <div key={nd.id} className="flex justify-between text-xs text-orange-600">
+              <span>ND {String(nd.sales_point || 0).padStart(4, '0')}-{String(nd.voucher_number || 0).padStart(8, '0')}</span>
+              <span>+{formatCurrency(nd.total || 0, item.invoice?.currency)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {totalWithholdings > 0 && (
+        <div className="mb-2 pl-2 border-l-2 border-orange-300 space-y-1">
+          {Array.isArray(item.retentions) ? (
+            item.retentions.map((ret: any, idx: number) => (
+              <div key={idx} className="flex justify-between text-xs text-orange-700">
+                <span>{ret.name || ret.type}</span>
+                <span>-{formatCurrency(parseFloat(ret.amount) || 0, item.currency || item.invoice?.currency)}</span>
+              </div>
+            ))
+          ) : (
+            <>
+              {parseFloat(item.withholding_iva || 0) > 0 && (
+                <div className="flex justify-between text-xs text-orange-700">
+                  <span>Retención IVA</span>
+                  <span>-{formatCurrency(parseFloat(item.withholding_iva), item.currency || item.invoice?.currency)}</span>
+                </div>
+              )}
+              {parseFloat(item.withholding_ganancias || 0) > 0 && (
+                <div className="flex justify-between text-xs text-orange-700">
+                  <span>Retención Ganancias</span>
+                  <span>-{formatCurrency(parseFloat(item.withholding_ganancias), item.currency || item.invoice?.currency)}</span>
+                </div>
+              )}
+              {parseFloat(item.withholding_iibb || 0) > 0 && (
+                <div className="flex justify-between text-xs text-orange-700">
+                  <span>Retención IIBB</span>
+                  <span>-{formatCurrency(parseFloat(item.withholding_iibb), item.currency || item.invoice?.currency)}</span>
+                </div>
+              )}
+              {parseFloat(item.withholding_suss || 0) > 0 && (
+                <div className="flex justify-between text-xs text-orange-700">
+                  <span>Retención SUSS</span>
+                  <span>-{formatCurrency(parseFloat(item.withholding_suss), item.currency || item.invoice?.currency)}</span>
+                </div>
+              )}
+              {parseFloat(item.withholding_other || 0) > 0 && (
+                <div className="flex justify-between text-xs text-orange-700">
+                  <span>Otra Retención</span>
+                  <span>-{formatCurrency(parseFloat(item.withholding_other), item.currency || item.invoice?.currency)}</span>
+                </div>
+              )}
+            </>
+          )}
+          <div className="flex justify-between text-xs font-semibold text-orange-800 pt-1 border-t border-orange-200">
+            <span>Total Retenciones:</span>
+            <span>-{formatCurrency(totalWithholdings, item.currency || item.invoice?.currency)}</span>
+          </div>
+        </div>
+      )}
       
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <Calendar className="h-3 w-3" />

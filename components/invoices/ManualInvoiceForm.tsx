@@ -345,9 +345,9 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
       return
     }
 
-    // Validar saldo disponible solo para ND/NC
-    const isNCND = (invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '002' || invoiceType === '007' || invoiceType === '012' || invoiceType === '052');
-    if (isNCND && associateInvoice && selectedInvoice && parseFloat(calculatedTotals.total) > selectedInvoice.available_balance) {
+    // Validar saldo disponible solo para NC (que restan)
+    const isNC = invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '021'
+    if (isNC && associateInvoice && selectedInvoice && parseFloat(calculatedTotals.total) > selectedInvoice.available_balance) {
       toast.error(`El monto no puede exceder el saldo disponible ($${selectedInvoice.available_balance.toLocaleString('es-AR')})`)
       return
     }
@@ -1222,14 +1222,18 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                 {getCurrencySymbol(currency)}{totals.total}
               </span>
             </div>
-            {selectedInvoice && (invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '002' || invoiceType === '007' || invoiceType === '012' || invoiceType === '052') && (
-              <div className="flex justify-between text-sm text-muted-foreground border-t border-gray-200 pt-2">
-                <span>Saldo Disponible:</span>
-                <span className={parseFloat(totals.total) > selectedInvoice.available_balance ? 'text-red-600 font-bold' : 'text-green-600'}>
-                  {getCurrencySymbol(currency)}{selectedInvoice.available_balance.toLocaleString('es-AR')}
-                </span>
-              </div>
-            )}
+            {selectedInvoice && (invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '021' || invoiceType === '002' || invoiceType === '007' || invoiceType === '012' || invoiceType === '052' || invoiceType === '020') && (() => {
+              const isNC = invoiceType === '003' || invoiceType === '008' || invoiceType === '013' || invoiceType === '053' || invoiceType === '021'
+              const exceedsBalance = isNC && parseFloat(totals.total) > selectedInvoice.available_balance
+              return (
+                <div className="flex justify-between text-sm text-muted-foreground border-t border-gray-200 pt-2">
+                  <span>Saldo {isNC ? 'Disponible' : 'Actual'}:</span>
+                  <span className={exceedsBalance ? 'text-red-600 font-bold' : isNC ? 'text-red-600' : 'text-green-600'}>
+                    {getCurrencySymbol(currency)}{selectedInvoice.available_balance.toLocaleString('es-AR')}
+                  </span>
+                </div>
+              )
+            })()}
           </div>
         </CardContent>
       </Card>

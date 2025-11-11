@@ -90,42 +90,81 @@ export default function CompanyPage() {
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           
-          // Por Cobrar: facturas emitidas por esta empresa que no están pagadas
+          // Pendientes de Aprobar: solo facturas con estado pending_approval
+          const pendingApproval = data.filter((inv: any) => {
+            const status = inv.display_status || inv.status
+            return status === 'pending_approval'
+          }).length
+          
+          // Por Cobrar: facturas emitidas por esta empresa que no están pagadas/cobradas
           const receivable = data.filter((inv: any) => {
-            if (inv.issuer_company_id !== companyId) return false
+            if (String(inv.issuer_company_id) !== String(companyId)) return false
             if (inv.supplier_id) return false
             const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
             const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
             if (isCreditNote || isDebitNote) return false
-            if (inv.status === 'cancelled') return false
+            
+            const status = inv.display_status || inv.status
             const companyStatus = inv.company_statuses?.[companyId]
-            if (companyStatus === 'paid' || companyStatus === 'collected') return false
+            
+            // Excluir anuladas
+            if (status === 'cancelled' || inv.payment_status === 'cancelled') return false
+            // Excluir cobradas completamente
+            if (companyStatus === 'collected' || status === 'collected' || inv.payment_status === 'collected' || inv.payment_status === 'paid') return false
+            // Excluir rechazadas
+            if (status === 'rejected') return false
+            
             return true
           }).length
           
           // Por Pagar: facturas recibidas de proveedores que no están pagadas
           const payable = data.filter((inv: any) => {
-            if (inv.issuer_company_id === companyId) return false
-            if (inv.status === 'cancelled') return false
+            if (String(inv.issuer_company_id) === String(companyId)) return false
+            
+            const status = inv.display_status || inv.status
             const companyStatus = inv.company_statuses?.[companyId]
-            if (companyStatus === 'paid') return false
+            
+            // Excluir anuladas
+            if (status === 'cancelled' || inv.payment_status === 'cancelled') return false
+            // Excluir pagadas completamente
+            if (companyStatus === 'paid' || status === 'paid' || inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
+            // Excluir rechazadas
+            if (status === 'rejected') return false
+            
+            return true
+          }).length
+          
+          // Vencidas: facturas con fecha de vencimiento pasada que no están pagadas/cobradas/anuladas/rechazadas
+          const overdue = data.filter((inv: any) => {
+            if (!inv.due_date) return false
+            
+            const dueDate = new Date(inv.due_date)
+            dueDate.setHours(0, 0, 0, 0)
+            if (dueDate >= today) return false
+            
+            const status = inv.display_status || inv.status
+            const companyStatus = inv.company_statuses?.[companyId]
+            const isIssuer = String(inv.issuer_company_id) === String(companyId)
+            
+            // Excluir anuladas
+            if (status === 'cancelled' || inv.payment_status === 'cancelled') return false
+            // Excluir rechazadas
+            if (status === 'rejected') return false
+            // Excluir pagadas/cobradas
+            if (isIssuer) {
+              if (companyStatus === 'collected' || status === 'collected' || inv.payment_status === 'paid') return false
+            } else {
+              if (companyStatus === 'paid' || status === 'paid' || inv.payment_status === 'paid') return false
+            }
+            
             return true
           }).length
           
           setStats({
-            pendingApproval: data.filter((inv: any) => 
-              inv.display_status === 'pending_approval' || inv.status === 'pending_approval'
-            ).length,
+            pendingApproval,
             receivable,
             payable,
-            overdue: data.filter((inv: any) => {
-              const status = inv.display_status || inv.status
-              if (status === 'paid' || status === 'cancelled' || status === 'void') return false
-              if (!inv.due_date) return false
-              const dueDate = new Date(inv.due_date)
-              dueDate.setHours(0, 0, 0, 0)
-              return dueDate < today
-            }).length
+            overdue
           })
         } catch {
           // Keep default stats

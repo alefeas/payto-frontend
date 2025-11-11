@@ -808,7 +808,7 @@ export default function InvoiceDetailPage() {
                       {isIssuer ? 'Este comprobante aún no ha sido cobrado' : 'Este comprobante aún no ha sido pagado'}
                     </p>
                     <p className="text-2xl font-bold text-amber-700">
-                      {formatCurrency(parseFloat(invoice.total), invoice.currency)}
+                      {formatCurrency(parseFloat(invoice.pending_amount || invoice.total), invoice.currency)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-4">
                       {isIssuer ? 'Las retenciones se registrarán al momento del cobro' : 'Las retenciones se registrarán al momento del pago'}

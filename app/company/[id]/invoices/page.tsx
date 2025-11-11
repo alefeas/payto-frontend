@@ -263,7 +263,8 @@ export default function InvoicesPage() {
     // PRIORIDAD 1: Anulada (tiene prioridad sobre todo)
     if (status === 'cancelled' || invoice.payment_status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-500 text-white">Anulada</Badge>)
-    } else if (companyStatus === 'collected' || companyStatus === 'paid' || invoice.payment_status === 'paid' || status === 'collected' || status === 'paid') {
+    } else if (invoice.payment_status === 'collected' || invoice.payment_status === 'paid' || companyStatus === 'collected' || companyStatus === 'paid' || status === 'collected' || status === 'paid') {
+      // PRIORIDAD 2: payment_status tiene prioridad sobre display_status
       // Si la compañía actual es receptora, mostrar "Pagada"; si es emisora, "Cobrada"
       const label = isReceiver ? 'Pagada' : 'Cobrada'
       badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)

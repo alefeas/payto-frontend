@@ -8,6 +8,7 @@ interface CollectionsTabProps {
   formatCurrency: (amount: number, currency?: string) => string
   filters: { from_date: string; to_date: string; search?: string; currency?: string }
   type: 'receivable' | 'payable'
+  invoices?: any[]
 }
 
 export function CollectionsTab({ collections, formatCurrency, filters, type }: CollectionsTabProps) {

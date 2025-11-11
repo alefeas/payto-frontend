@@ -64,9 +64,10 @@ export function InvoiceSelector({
         } else {
           data = await voucherService.getCompatibleInvoices(companyId, voucherType)
         }
-        setInvoices(data)
         
-        if (data.length === 0) {
+        setInvoices(Array.isArray(data) ? data : [])
+        
+        if (!data || (Array.isArray(data) && data.length === 0)) {
           setError("No hay facturas compatibles para este tipo de comprobante")
         }
       } catch (err: any) {
@@ -87,7 +88,7 @@ export function InvoiceSelector({
     setSearchTerm("")
   }
 
-  const filteredInvoices = invoices.filter((inv: any) =>
+  const filteredInvoices = (Array.isArray(invoices) ? invoices : []).filter((inv: any) =>
     (inv.number || inv.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (inv.receiver_name || inv.issuer_name || inv.client_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   )

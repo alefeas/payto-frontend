@@ -84,8 +84,22 @@ export default function AccountsPayablePage() {
   
   const loadInvoices = async () => {
     try {
-      const response = await accountsPayableService.getInvoices(companyId, { page: 1 })
-      setAllInvoices(response.data || [])
+      let allData: any[] = []
+      let page = 1
+      let hasMore = true
+      
+      while (hasMore) {
+        const response = await accountsPayableService.getInvoices(companyId, { page })
+        const data = response.data || []
+        if (Array.isArray(data) && data.length > 0) {
+          allData = [...allData, ...data]
+          page++
+        } else {
+          hasMore = false
+        }
+      }
+      
+      setAllInvoices(allData)
     } catch (error: any) {
       console.error('Error loading invoices:', error)
       toast.error('Error al cargar facturas')
@@ -296,6 +310,8 @@ export default function AccountsPayablePage() {
       if (inv.status === 'cancelled') return false
       const companyStatus = inv.company_statuses?.[companyId]
       if (companyStatus === 'paid') return false
+      // Excluir facturas completamente pagadas
+      if (inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
       if (filters.currency !== 'all' && inv.currency !== filters.currency) return false
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)
@@ -631,6 +647,7 @@ export default function AccountsPayablePage() {
               formatCurrency={(amount, currency) => formatCurrency(amount, currency)}
               filters={filters}
               type="payable"
+              invoices={allInvoices}
             />
           </TabsContent>
 

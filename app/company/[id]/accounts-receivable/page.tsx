@@ -76,21 +76,33 @@ export default function AccountsReceivablePage() {
   
   const loadInvoices = async () => {
     try {
-      const response = await invoiceService.getInvoices(companyId, 1)
-      const data = response.data || []
+      let allData: any[] = []
+      let page = 1
+      let hasMore = true
       
-      const filtered = Array.isArray(data) ? data.filter((inv: any) => {
+      while (hasMore) {
+        const response = await invoiceService.getInvoices(companyId, page)
+        const data = response.data || []
+        if (Array.isArray(data) && data.length > 0) {
+          allData = [...allData, ...data]
+          page++
+        } else {
+          hasMore = false
+        }
+      }
+      
+      const filtered = allData.filter((inv: any) => {
         if (inv.issuer_company_id !== companyId) return false
         if (inv.supplier_id) return false
         const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
         const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
-        // Excluir TODAS las ND/NC (asociadas y standalone)
         if (isCreditNote || isDebitNote) return false
         if (inv.status === 'cancelled') return false
         const companyStatus = inv.company_statuses?.[companyId]
         if (companyStatus === 'paid' || companyStatus === 'collected') return false
+        if (inv.payment_status === 'collected' || inv.payment_status === 'paid') return false
         return true
-      }) : []
+      })
       setAllInvoices(filtered)
     } catch (error: any) {
       console.error('Error loading invoices:', error)
@@ -480,6 +492,7 @@ export default function AccountsReceivablePage() {
               formatCurrency={formatCurrency}
               filters={filters}
               type="receivable"
+              invoices={allInvoices}
             />
           </TabsContent>
 
