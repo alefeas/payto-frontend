@@ -27,7 +27,11 @@ import {
   Check,
   ChevronRight,
   Search,
-  CheckSquare
+  CheckSquare,
+  BarChart3,
+  ClipboardCheck,
+  Truck,
+  UserCog
 } from "lucide-react"
 import {
   Sidebar,
@@ -167,23 +171,23 @@ export function AppSidebar() {
       label: "Contactos",
       items: [
         { title: "Clientes", icon: Users, url: `/company/${selectedCompanyId}/clients` },
-        { title: "Proveedores", icon: Building2, url: `/company/${selectedCompanyId}/suppliers` },
+        { title: "Proveedores", icon: Truck, url: `/company/${selectedCompanyId}/suppliers` },
         { title: "Red PayTo", icon: Network, url: `/company/${selectedCompanyId}/network` },
       ]
     },
     {
       label: "Reportes",
       items: [
-        { title: "Analíticas", icon: TrendingUp, url: `/company/${selectedCompanyId}/analytics` },
+        { title: "Analíticas", icon: BarChart3, url: `/company/${selectedCompanyId}/analytics` },
         { title: "Libro IVA", icon: BookOpen, url: `/company/${selectedCompanyId}/iva-book` },
-        { title: "Auditoría", icon: FileText, url: `/company/${selectedCompanyId}/audit-log` },
+        { title: "Auditoría", icon: ClipboardCheck, url: `/company/${selectedCompanyId}/audit-log` },
       ]
     },
     {
       label: "Configuración",
       items: [
         { title: "Certificado AFIP", icon: Shield, url: `/company/${selectedCompanyId}/verify` },
-        { title: "Miembros", icon: Users, url: `/company/${selectedCompanyId}/members` },
+        { title: "Miembros", icon: UserCog, url: `/company/${selectedCompanyId}/members` },
         { title: "Ajustes", icon: Settings, url: `/company/${selectedCompanyId}/settings` },
       ]
     }

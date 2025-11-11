@@ -198,6 +198,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
               const dueDate = new Date(invoice.due_date)
               dueDate.setHours(0, 0, 0, 0)
               const isOverdue = dueDate < today
+              const hasNotes = (invoice.credit_notes_applied?.length > 0 || invoice.debit_notes_applied?.length > 0)
               
               const isSelected = selectedInvoices.includes(invoice.id)
               
@@ -227,10 +228,27 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
                       Emisión: {parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR')} • 
                       Vencimiento: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
                     </div>
+                    {hasNotes && (
+                      <div className="text-xs mt-2 space-y-0.5 pl-2 border-l-2 border-gray-300">
+                        {invoice.credit_notes_applied?.map((nc: any) => (
+                          <div key={nc.id} className="text-green-600">
+                            NC {String(nc.sales_point || 0).padStart(4, '0')}-{String(nc.voucher_number || 0).padStart(8, '0')}: -{formatCurrency(nc.total || 0, invoice.currency)}
+                          </div>
+                        ))}
+                        {invoice.debit_notes_applied?.map((nd: any) => (
+                          <div key={nd.id} className="text-orange-600">
+                            ND {String(nd.sales_point || 0).padStart(4, '0')}-{String(nd.voucher_number || 0).padStart(8, '0')}: +{formatCurrency(nd.total || 0, invoice.currency)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="font-bold text-lg">{formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}</div>
+                      {hasNotes && (
+                        <div className="text-xs text-muted-foreground mb-1">Total: {formatCurrency(invoice.total, invoice.currency)}</div>
+                      )}
+                      <div className="font-bold text-lg">{formatCurrency(invoice.pending_amount || invoice.balance_pending || invoice.total, invoice.currency)}</div>
                       {isOverdue && <Badge className="mt-1 bg-red-100 text-red-700 font-medium">Vencida</Badge>}
                     </div>
                     <Button size="sm" variant="ghost" onClick={(e) => {

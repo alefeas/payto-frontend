@@ -58,6 +58,7 @@ export function InvoiceCard({
   }
 
   const showBadge = variant === 'overdue'
+  const hasNotes = (invoice.credit_notes_applied?.length > 0 || invoice.debit_notes_applied?.length > 0)
 
   return (
     <div 
@@ -86,8 +87,29 @@ export function InvoiceCard({
           )}
         </div>
       </div>
-      <div className={`font-bold text-lg ${amountColor[variant]}`}>
-        {formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}
+      <div className="text-right">
+        {hasNotes ? (
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">Total: {formatCurrency(invoice.total, invoice.currency)}</div>
+            {invoice.credit_notes_applied?.map((nc: any) => (
+              <div key={nc.id} className="text-xs text-green-600">
+                NC {String(nc.sales_point || 0).padStart(4, '0')}-{String(nc.voucher_number || 0).padStart(8, '0')}: -{formatCurrency(nc.total || 0, invoice.currency)}
+              </div>
+            ))}
+            {invoice.debit_notes_applied?.map((nd: any) => (
+              <div key={nd.id} className="text-xs text-orange-600">
+                ND {String(nd.sales_point || 0).padStart(4, '0')}-{String(nd.voucher_number || 0).padStart(8, '0')}: +{formatCurrency(nd.total || 0, invoice.currency)}
+              </div>
+            ))}
+            <div className={`font-bold text-lg ${amountColor[variant]}`}>
+              {formatCurrency(invoice.pending_amount || invoice.balance_pending || invoice.total, invoice.currency)}
+            </div>
+          </div>
+        ) : (
+          <div className={`font-bold text-lg ${amountColor[variant]}`}>
+            {formatCurrency(invoice.pending_amount || invoice.total, invoice.currency)}
+          </div>
+        )}
       </div>
     </div>
   )

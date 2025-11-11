@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
@@ -729,12 +730,12 @@ export default function CreateInvoicePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datos Básicos */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold">Información General</h2>
-              <p className="text-sm text-muted-foreground">Seleccione el tipo de comprobante</p>
-            </div>
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Información General</CardTitle>
+              <CardDescription>Seleccione el tipo de comprobante</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="h-4 flex items-center">Tipo de Comprobante *</Label>
@@ -1049,8 +1050,6 @@ export default function CreateInvoicePage() {
                 />
               )}
 
-            </div>
-
             {showClientSelector && (
               <div className="space-y-2">
                 <Label>Cliente *</Label>
@@ -1114,23 +1113,24 @@ export default function CreateInvoicePage() {
                 )}
               </div>
             )}
-          </div>
-
-
+            </CardContent>
+          </Card>
 
           {/* Ítems */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Ítems de la Factura</h2>
-                <p className="text-sm text-muted-foreground">Detalle de productos o servicios</p>
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>Ítems de la Factura</CardTitle>
+                  <CardDescription>Detalle de productos o servicios</CardDescription>
+                </div>
+                <Button type="button" onClick={addItem} size="sm" variant="outline">
+                  <Plus className="h-4 w-4" />
+                  Agregar Ítem
+                </Button>
               </div>
-              <Button type="button" onClick={addItem} size="sm" variant="outline">
-                <Plus className="h-4 w-4" />
-                Agregar Ítem
-              </Button>
-            </div>
-            <div className="space-y-4">
+            </CardHeader>
+            <CardContent className="space-y-4">
               {items.map((item, index) => {
                 const itemTotals = calculateItemTotal(item)
                 return (
@@ -1249,28 +1249,30 @@ export default function CreateInvoicePage() {
                 </div>
               )
               })}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Percepciones */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Percepciones</h2>
-                <p className="text-sm text-muted-foreground">Percepciones aplicables según jurisdicción</p>
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>Percepciones</CardTitle>
+                  <CardDescription>Percepciones aplicables según jurisdicción</CardDescription>
+                </div>
+                <Button 
+                  type="button" 
+                  onClick={addPerception} 
+                  size="sm" 
+                  variant="outline"
+                  disabled={formData.clientData?.tax_condition === 'final_consumer'}
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar Percepción
+                </Button>
               </div>
-              <Button 
-                type="button" 
-                onClick={addPerception} 
-                size="sm" 
-                variant="outline"
-                disabled={formData.clientData?.tax_condition === 'final_consumer'}
-              >
-                <Plus className="h-4 w-4" />
-                Agregar Percepción
-              </Button>
-            </div>
-            <div className="space-y-4">
+            </CardHeader>
+            <CardContent className="space-y-4">
               {formData.clientData?.tax_condition === 'final_consumer' ? (
                 <div className="text-center py-6 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-sm text-amber-800 font-medium">No se pueden aplicar percepciones a Consumidores Finales</p>
@@ -1413,16 +1415,18 @@ export default function CreateInvoicePage() {
                   )
                 })
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Totales */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              <h2 className="text-xl font-semibold">Resumen de Totales</h2>
-            </div>
-            <div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                <CardTitle>Resumen de Totales</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
@@ -1459,16 +1463,16 @@ export default function CreateInvoicePage() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Notas */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold">Información Adicional</h2>
-              <p className="text-sm text-muted-foreground">Notas y observaciones</p>
-            </div>
-            <div className="space-y-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Información Adicional</CardTitle>
+              <CardDescription>Notas y observaciones</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
               <Label htmlFor="notes">Notas Internas</Label>
               <Textarea
                 id="notes"
@@ -1478,8 +1482,8 @@ export default function CreateInvoicePage() {
                 maxLength={500}
                 rows={3}
               />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
             {/* Acciones */}
             <div className="flex gap-4">

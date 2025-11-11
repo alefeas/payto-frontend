@@ -30,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { OverdueTab } from "@/components/accounts/OverdueTab"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { DatePicker } from "@/components/ui/date-picker"
+import { AccountsPayableSkeleton } from "@/components/accounts/AccountsPageSkeleton"
 
 export default function AccountsPayablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -117,7 +118,6 @@ export default function AccountsPayablePage() {
       
       setPayments(paymentsData.data || [])
       setBalances(balancesData)
-      setDashboard({ summary: { upcoming_count: 0, upcoming_amount: 0 } })
       
       await loadInvoices()
     } catch (error: any) {
@@ -333,9 +333,16 @@ export default function AccountsPayablePage() {
   const summary = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const byCurrency = { ARS: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0 }, USD: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0 }, EUR: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0 } }
+    const in30Days = new Date(today)
+    in30Days.setDate(in30Days.getDate() + 30)
+    const byCurrency = { ARS: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0, upcoming: 0, upcoming_count: 0 }, USD: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0, upcoming: 0, upcoming_count: 0 }, EUR: { pending: 0, paid: 0, paid_count: 0, overdue: 0, overdue_count: 0, upcoming: 0, upcoming_count: 0 } }
     
-    allInvoices.filter(inv => inv.status !== 'cancelled').forEach(inv => {
+    allInvoices.filter(inv => {
+      if (inv.status === 'cancelled') return false
+      const isNC = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+      const isND = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+      return !isNC && !isND
+    }).forEach(inv => {
       const curr = inv.currency || 'ARS'
       const amount = parseFloat(inv.pending_amount) || 0
       if (curr in byCurrency) {
@@ -345,6 +352,9 @@ export default function AccountsPayablePage() {
         if (dueDate < today && amount > 0) {
           byCurrency[curr as keyof typeof byCurrency].overdue += amount
           byCurrency[curr as keyof typeof byCurrency].overdue_count++
+        } else if (dueDate >= today && dueDate <= in30Days && amount > 0) {
+          byCurrency[curr as keyof typeof byCurrency].upcoming += amount
+          byCurrency[curr as keyof typeof byCurrency].upcoming_count++
         }
       }
     })
@@ -357,7 +367,7 @@ export default function AccountsPayablePage() {
       }
     })
     
-    return { byCurrency, overdue_count: byCurrency.ARS.overdue_count + byCurrency.USD.overdue_count + byCurrency.EUR.overdue_count, paid_count: byCurrency.ARS.paid_count + byCurrency.USD.paid_count + byCurrency.EUR.paid_count }
+    return { byCurrency, overdue_count: byCurrency.ARS.overdue_count + byCurrency.USD.overdue_count + byCurrency.EUR.overdue_count, upcoming_count: byCurrency.ARS.upcoming_count + byCurrency.USD.upcoming_count + byCurrency.EUR.upcoming_count, paid_count: byCurrency.ARS.paid_count + byCurrency.USD.paid_count + byCurrency.EUR.paid_count }
   }, [allInvoices, payments])
 
   const getInvoiceStatusBadges = (invoice: any) => {
@@ -392,43 +402,7 @@ export default function AccountsPayablePage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-                <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="h-10 w-48 bg-muted rounded animate-pulse"></div>
-              <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-            </div>
-          </div>
-          <DashboardCardsSkeleton />
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-2">
-                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-                <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-              <InvoiceListSkeleton count={5} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <AccountsPayableSkeleton />
   }
   if (!isAuthenticated) return null
 
@@ -474,8 +448,7 @@ export default function AccountsPayablePage() {
         </div>
 
         {/* Dashboard Cards */}
-        {dashboard && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pendiente de Pago</CardTitle>
@@ -487,6 +460,7 @@ export default function AccountsPayablePage() {
                     <span>USD $ {summary.byCurrency.USD.pending.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
                     <span>EUR € {summary.byCurrency.EUR.pending.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">{filteredInvoices.length} factura{filteredInvoices.length !== 1 ? 's' : ''}</p>
                 </CardContent>
               </Card>
 
@@ -511,10 +485,12 @@ export default function AccountsPayablePage() {
                   <Calendar className="h-4 w-4 text-yellow-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{dashboard.summary.upcoming_count}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {formatCurrency(dashboard.summary.upcoming_amount, 'ARS')}
-                  </p>
+                  <div className="text-2xl font-bold text-yellow-600">{summary.upcoming_count}</div>
+                  <div className="text-sm font-semibold mb-1">$ {summary.byCurrency.ARS.upcoming.toLocaleString('es-AR', {minimumFractionDigits: 2})}</div>
+                  <div className="flex gap-3 text-xs text-muted-foreground">
+                    <span>USD $ {summary.byCurrency.USD.upcoming.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                    <span>EUR € {summary.byCurrency.EUR.upcoming.toLocaleString('es-AR', {minimumFractionDigits: 2})}</span>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -533,7 +509,6 @@ export default function AccountsPayablePage() {
                 </CardContent>
               </Card>
             </div>
-        )}
 
         {/* Filtros Globales */}
         <div className="flex gap-2">

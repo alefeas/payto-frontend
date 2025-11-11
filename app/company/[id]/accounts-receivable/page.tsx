@@ -31,6 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { DatePicker } from "@/components/ui/date-picker"
 import { InvoiceListSkeleton, DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AccountsReceivableSkeleton } from "@/components/accounts/AccountsPageSkeleton"
 
 export default function AccountsReceivablePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -43,6 +44,7 @@ export default function AccountsReceivablePage() {
   const [allInvoices, setAllInvoices] = useState<any[]>([])
   const [collections, setCollections] = useState<any[]>([])
   const [balances, setBalances] = useState<any>(null)
+  const [balancesError, setBalancesError] = useState<string | null>(null)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [showCollectionDialog, setShowCollectionDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('invoices')
@@ -116,7 +118,11 @@ export default function AccountsReceivablePage() {
       
       const [collectionsData, balancesData] = await Promise.all([
         collectionService.getCollections(companyId),
-        accountsReceivableService.getBalances(companyId).catch(() => null),
+        accountsReceivableService.getBalances(companyId).catch((error) => {
+          console.error('Error loading balances:', error)
+          setBalancesError(error.response?.data?.message || error.message || 'Error al cargar saldos')
+          return null
+        }),
       ])
       
       setCollections(collectionsData.filter((c: any) => c.status === 'confirmed') || [])
@@ -246,11 +252,15 @@ export default function AccountsReceivablePage() {
   const summary = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const in7Days = new Date(today)
-    in7Days.setDate(in7Days.getDate() + 7)
+    const in30Days = new Date(today)
+    in30Days.setDate(in30Days.getDate() + 30)
     const byCurrency = { ARS: { receivable: 0, collected: 0, collected_count: 0, upcoming: 0, upcoming_count: 0, overdue: 0, overdue_count: 0 }, USD: { receivable: 0, collected: 0, collected_count: 0, upcoming: 0, upcoming_count: 0, overdue: 0, overdue_count: 0 }, EUR: { receivable: 0, collected: 0, collected_count: 0, upcoming: 0, upcoming_count: 0, overdue: 0, overdue_count: 0 } }
     
-    allInvoices.forEach(inv => {
+    allInvoices.filter(inv => {
+      const isNC = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+      const isND = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+      return !isNC && !isND
+    }).forEach(inv => {
       const curr = inv.currency || 'ARS'
       const amount = parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.pending_amount ?? inv.total) || 0
       if (curr in byCurrency) {
@@ -260,7 +270,7 @@ export default function AccountsReceivablePage() {
         if (dueDate < today) {
           byCurrency[curr as keyof typeof byCurrency].overdue += amount
           byCurrency[curr as keyof typeof byCurrency].overdue_count++
-        } else if (dueDate <= in7Days) {
+        } else if (dueDate >= today && dueDate <= in30Days) {
           byCurrency[curr as keyof typeof byCurrency].upcoming += amount
           byCurrency[curr as keyof typeof byCurrency].upcoming_count++
         }
@@ -279,40 +289,7 @@ export default function AccountsReceivablePage() {
   }, [allInvoices, collections])
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-24 bg-muted rounded animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
-                <div className="h-4 w-96 bg-muted rounded animate-pulse"></div>
-              </div>
-            </div>
-            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-          </div>
-          <DashboardCardsSkeleton />
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-2">
-                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-                <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
-                <div className="h-10 flex-1 bg-muted rounded animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-              <InvoiceListSkeleton count={5} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <AccountsReceivableSkeleton />
   }
   if (!isAuthenticated) return null
 
@@ -524,6 +501,14 @@ export default function AccountsReceivablePage() {
                 type="receivable"
                 filters={filters}
               />
+            ) : balancesError ? (
+              <Card>
+                <CardContent className="py-12 text-center space-y-2">
+                  <p className="text-destructive font-medium">Error al cargar saldos</p>
+                  <p className="text-sm text-muted-foreground">{balancesError}</p>
+                  <Button onClick={loadData} variant="outline" size="sm">Reintentar</Button>
+                </CardContent>
+              </Card>
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
