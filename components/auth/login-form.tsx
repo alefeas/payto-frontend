@@ -54,10 +54,18 @@ export default function LoginForm() {
       toast.success('¡Bienvenido!');
       router.push('/dashboard');
     } catch (error: any) {
-      if (error.response?.status === 401) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      
+      if (error.code === 'ECONNABORTED') {
+        toast.error('Tiempo de espera agotado. Verifica tu conexión.');
+      } else if (error.response?.status === 401) {
         toast.error('Credenciales inválidas');
       } else if (error.response?.data?.message) {
         toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(`Error: ${error.message}`);
       } else {
         toast.error('Error al iniciar sesión. Por favor, intente nuevamente.');
       }

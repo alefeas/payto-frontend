@@ -58,7 +58,7 @@ export default function NetworkPage() {
       try {
         const { companyService } = await import('@/services/company.service')
         const company = await companyService.getCompanyById(companyId)
-        setMyCompanyId(company.uniqueId)
+        setMyCompanyId(company.uniqueId || '')
       } catch (error) {
         console.error('Error al cargar ID de empresa:', error)
       }

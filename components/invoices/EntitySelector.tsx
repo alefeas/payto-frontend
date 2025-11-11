@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
@@ -35,8 +35,10 @@ interface EntitySelectorProps {
   savedEntities: Entity[]
   connectedCompanies?: ConnectedCompany[]
   isLoading?: boolean
+  selectedEntityId?: string
   onSelect: (data: any) => void
-  onEntityCreated?: () => void
+  onEntityCreated?: (entityId?: string) => void
+  autoSelectEntity?: { id: string, trigger: number }
 }
 
 export function EntitySelector({ 
@@ -44,15 +46,27 @@ export function EntitySelector({
   companyId, 
   savedEntities = [], 
   connectedCompanies = [], 
-  isLoading, 
+  isLoading,
+  selectedEntityId,
   onSelect, 
-  onEntityCreated 
+  onEntityCreated,
+  autoSelectEntity
 }: EntitySelectorProps) {
-  const [entityType, setEntityType] = useState<EntityType>(mode === 'client' ? 'registered' : 'saved')
-  const [selectedEntity, setSelectedEntity] = useState('')
+  const [entityType, setEntityType] = useState<EntityType>('saved')
+  const [selectedEntity, setSelectedEntity] = useState(selectedEntityId || '')
   const [selectedCompany, setSelectedCompany] = useState('')
   const [isNewEntityDialogOpen, setIsNewEntityDialogOpen] = useState(false)
-  const [isCreatingEntity, setIsCreatingEntity] = useState(false)
+  const hasCalledCreatedRef = useRef(false)
+  
+  useEffect(() => {
+    if (autoSelectEntity && savedEntities.length > 0) {
+      const entity = savedEntities.find(e => e.id === autoSelectEntity.id)
+      if (entity) {
+        console.log('[EntitySelector] Auto-seleccionando:', autoSelectEntity.id)
+        handleEntitySelect(autoSelectEntity.id)
+      }
+    }
+  }, [autoSelectEntity?.trigger, savedEntities])
 
   const labels = {
     client: {
@@ -131,38 +145,17 @@ export function EntitySelector({
     }
   }
 
-  const handleNewEntitySuccess = async (createdEntity?: any) => {
-    if (createdEntity) {
-      setIsCreatingEntity(true)
-      setEntityType('saved')
-      
-      setTimeout(() => {
-        const entityId = mode === 'supplier' ? createdEntity.id.toString() : createdEntity.id
-        setSelectedEntity(entityId)
-        
-        if (mode === 'client') {
-          onSelect({ 
-            entity_id: entityId,
-            entity_data: {
-              document_type: createdEntity.documentType,
-              document_number: createdEntity.documentNumber,
-              business_name: createdEntity.businessName || `${createdEntity.firstName} ${createdEntity.lastName}`,
-              email: createdEntity.email,
-              tax_condition: createdEntity.taxCondition
-            }
-          })
-        } else {
-          onSelect({ entity_id: entityId })
-        }
-        
-        if (onEntityCreated) {
-          onEntityCreated()
-        }
-        
-        setIsCreatingEntity(false)
-      }, 300)
-    }
+  const handleNewEntitySuccess = (createdEntity?: any) => {
     setIsNewEntityDialogOpen(false)
+    
+    if (createdEntity?.id && onEntityCreated && !hasCalledCreatedRef.current) {
+      console.log('[EntitySelector] Llamando onEntityCreated con ID:', createdEntity.id)
+      hasCalledCreatedRef.current = true
+      onEntityCreated(createdEntity.id)
+      setTimeout(() => {
+        hasCalledCreatedRef.current = false
+      }, 1000)
+    }
   }
 
   return (

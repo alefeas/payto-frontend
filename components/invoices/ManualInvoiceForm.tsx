@@ -81,6 +81,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
   const [associateInvoice, setAssociateInvoice] = useState(false)
   const [relatedInvoiceId, setRelatedInvoiceId] = useState("")
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+  const [receiverTaxCondition, setReceiverTaxCondition] = useState<string | null>(null)
 
   useEffect(() => {
     const initializeData = async () => {
@@ -304,6 +305,15 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
         toast.error("Debe seleccionar el proveedor o empresa emisora")
         return
       }
+
+      // Validar que la empresa receptora tenga condición IVA configurada (solo para emitidas)
+      if (mode === "issued" && selectedCompany) {
+        const receiverCompany = connectedCompanies.find(c => c.id === selectedCompany)
+        if (!receiverCompany || !receiverCompany.tax_condition || receiverCompany.tax_condition === 'null') {
+          toast.error("La empresa receptora no tiene condición IVA configurada. Pedile que complete su perfil fiscal en PayTo.")
+          return
+        }
+      }
     }
 
     if (items.some(item => !item.description || item.quantity <= 0 || item.unit_price <= 0)) {
@@ -314,6 +324,18 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
     if (perceptions.some(p => !p.rate || p.rate <= 0)) {
       toast.error("Las percepciones deben tener una alícuota mayor a 0")
       return
+    }
+
+    // Validar percepciones en CF (solo para emitidas)
+    if (mode === "issued" && perceptions.length > 0) {
+      const receiverTaxCondition = selectedCompany 
+        ? connectedCompanies.find(c => c.id === selectedCompany)?.tax_condition
+        : null
+      
+      if (receiverTaxCondition === 'final_consumer') {
+        toast.error("No se pueden aplicar percepciones a Consumidores Finales")
+        return
+      }
     }
 
     // Validar que el total no sea $0
@@ -465,6 +487,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                     setSelectedCompany(data.issuer_company_id)
                     setSelectedSupplier('')
                   }
+                  setReceiverTaxCondition(null)
                 }}
                 onEntityCreated={loadSuppliers}
                 />
@@ -504,15 +527,34 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                 savedEntities={clients}
                 isLoading={loadingClients}
                 onSelect={(data) => {
+                  let taxCondition = null
+                  
                   if (data.receiver_company_id) {
+                    const company = connectedCompanies.find(c => c.id === data.receiver_company_id)
+                    taxCondition = company?.tax_condition || null
                     setSelectedCompany(data.receiver_company_id)
                     setSelectedClient('')
                   } else if (data.entity_id) {
+                    const client = clients.find(c => c.id === data.entity_id)
+                    taxCondition = client?.tax_condition || data.entity_data?.tax_condition || null
                     setSelectedClient(data.entity_id)
+                    setSelectedCompany('')
+                  } else if (data.entity_data) {
+                    taxCondition = data.entity_data.tax_condition || null
+                    setSelectedClient('')
                     setSelectedCompany('')
                   } else {
                     setSelectedClient('')
                     setSelectedCompany('')
+                  }
+                  
+                  console.log('[ManualInvoiceForm] Tax condition updated:', taxCondition)
+                  setReceiverTaxCondition(taxCondition)
+                  
+                  // Limpiar percepciones si es CF
+                  if (taxCondition === 'final_consumer') {
+                    console.log('[ManualInvoiceForm] Clearing perceptions for CF')
+                    setPerceptions([])
                   }
                 }}
                 onEntityCreated={loadClients}
@@ -974,14 +1016,25 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               <CardTitle>Percepciones</CardTitle>
               <CardDescription>Percepciones aplicables según jurisdicción</CardDescription>
             </div>
-            <Button type="button" onClick={addPerception} size="sm" variant="outline">
+            <Button 
+              type="button" 
+              onClick={addPerception} 
+              size="sm" 
+              variant="outline"
+              disabled={mode === "issued" && receiverTaxCondition === 'final_consumer'}
+            >
               <Plus className="h-4 w-4" />
               Agregar Percepción
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {perceptions.length === 0 ? (
+          {mode === "issued" && receiverTaxCondition === 'final_consumer' ? (
+            <div className="text-center py-6 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800 font-medium">No se pueden aplicar percepciones a Consumidores Finales</p>
+              <p className="text-xs text-amber-600 mt-1">Según normativa AFIP, las percepciones no aplican para esta condición fiscal</p>
+            </div>
+          ) : perceptions.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               <p className="text-sm">No hay percepciones aplicadas</p>
               <p className="text-xs">Las percepciones se agregan según la jurisdicción</p>

@@ -62,6 +62,7 @@ export interface CreateCompanyData {
   apartment?: string;
   postal_code: string;
   province: string;
+  city?: string;
 }
 
 export const companyService = {

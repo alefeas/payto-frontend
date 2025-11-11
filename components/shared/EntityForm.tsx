@@ -151,7 +151,10 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className={`space-y-4 ${showBankFields ? 'max-h-[70vh] overflow-y-auto pr-2' : ''}`}>
+      <form onSubmit={(e) => {
+        e.stopPropagation()
+        form.handleSubmit(handleSubmit)(e)
+      }} className={`space-y-4 ${showBankFields ? 'max-h-[70vh] overflow-y-auto pr-2' : ''}`}>
       {taxCondition === 'final_consumer' ? (
         <FormField
           control={form.control}

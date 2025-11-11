@@ -350,7 +350,7 @@ export default function MembersPage() {
                           try {
                             setRegenerating(true)
                             const result = await companyService.regenerateInviteCode(companyId)
-                            setCompany(prev => prev ? { ...prev, inviteCode: result } : null)
+                            setCompany(prev => prev ? { ...prev, inviteCode: result.inviteCode } : null)
                             toast.success('Código regenerado exitosamente')
                           } catch (error: any) {
                             toast.error(error.response?.data?.message || 'Error al regenerar código')

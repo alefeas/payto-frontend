@@ -25,7 +25,7 @@ export function SearchInput({
   ...props
 }: SearchInputProps) {
   const [localValue, setLocalValue] = React.useState(value)
-  const timeoutRef = React.useRef<NodeJS.Timeout>()
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   React.useEffect(() => {
     setLocalValue(value)

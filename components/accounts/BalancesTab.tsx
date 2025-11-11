@@ -69,11 +69,11 @@ export function BalancesTab({
   
   const summaryByCurrency = { ARS: { credits: 0, debits: 0 }, USD: { credits: 0, debits: 0 }, EUR: { credits: 0, debits: 0 } }
   filteredCreditNotes.forEach(nc => {
-    const curr = nc.currency || 'ARS'
+    const curr = (nc.currency || 'ARS') as 'ARS' | 'USD' | 'EUR'
     summaryByCurrency[curr].credits += nc.pending_amount || 0
   })
   filteredDebitNotes.forEach(nd => {
-    const curr = nd.currency || 'ARS'
+    const curr = (nd.currency || 'ARS') as 'ARS' | 'USD' | 'EUR'
     summaryByCurrency[curr].debits += nd.pending_amount || 0
   })
   

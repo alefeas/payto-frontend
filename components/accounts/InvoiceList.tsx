@@ -13,7 +13,7 @@ interface InvoiceListProps {
   onSelectionChange: (ids: string[]) => void
   onAction: (id: string) => void
   onView: (id: string) => void
-  formatCurrency: (amount: number) => string
+  formatCurrency: (amount: number, currency?: string) => string
   actionLabel: string
   type: 'receivable' | 'payable'
   loading?: boolean

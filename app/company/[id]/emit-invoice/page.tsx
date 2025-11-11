@@ -64,6 +64,8 @@ export default function CreateInvoicePage() {
   const [connectedCompanies, setConnectedCompanies] = useState<CompanyData[]>([])
   const [savedClients, setSavedClients] = useState<Client[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [autoSelectClient, setAutoSelectClient] = useState<{ id: string, trigger: number } | null>(null)
+  const [isLoadingNewClient, setIsLoadingNewClient] = useState(false)
   const [isSyncingSalesPoints, setIsSyncingSalesPoints] = useState(false)
   const [cert, setCert] = useState<{ isActive: boolean } | null>(null)
   const [certLoaded, setCertLoaded] = useState(false)
@@ -141,15 +143,22 @@ export default function CreateInvoicePage() {
   }, [isAuthenticated, authLoading, router])
 
   // Load company and clients data
-  const loadClientsData = async () => {
+  const loadClientsData = async (clientIdToSelect?: string) => {
     if (!companyId) return
     
     try {
       const { clientService } = await import('@/services/client.service')
       const clients = await clientService.getClients(companyId)
       setSavedClients(clients)
+      
+      if (clientIdToSelect) {
+        console.log('[emit-invoice] Activando auto-selección para:', clientIdToSelect)
+        setAutoSelectClient({ id: clientIdToSelect, trigger: Date.now() })
+      }
     } catch (error) {
       console.error('Error loading clients:', error)
+    } finally {
+      setIsLoadingNewClient(false)
     }
   }
   
@@ -493,6 +502,15 @@ export default function CreateInvoicePage() {
       return
     }
 
+    // Validar que la empresa receptora tenga condición IVA configurada
+    if (formData.receiverCompanyId) {
+      const receiverCompany = connectedCompanies.find(c => c.id === formData.receiverCompanyId)
+      if (!receiverCompany || !receiverCompany.taxCondition || receiverCompany.taxCondition === 'null') {
+        toast.error('La empresa receptora no tiene condición IVA configurada. Pedile que complete su perfil fiscal en PayTo.')
+        return
+      }
+    }
+
     if (!formData.emissionDate || !formData.dueDate) {
       toast.error('Complete las fechas requeridas')
       return
@@ -525,6 +543,11 @@ export default function CreateInvoicePage() {
 
     if (perceptions.some(p => !p.rate || p.rate <= 0)) {
       toast.error('Las percepciones deben tener una alícuota mayor a 0')
+      return
+    }
+
+    if (formData.clientData?.tax_condition === 'final_consumer' && perceptions.length > 0) {
+      toast.error('No se pueden aplicar percepciones a Consumidores Finales')
       return
     }
 
@@ -1031,40 +1054,64 @@ export default function CreateInvoicePage() {
             {showClientSelector && (
               <div className="space-y-2">
                 <Label>Cliente *</Label>
-                <EntitySelector
-                  mode="client"
-                  companyId={companyId}
-                  connectedCompanies={connectedCompanies.map(c => ({
-                    ...c,
-                    cuit: c.cuit || ''
-                  }))}
-                  savedEntities={savedClients}
-                  isLoading={isLoadingData}
-                  onSelect={(data) => {
-                    if (data.receiver_company_id) {
-                      setFormData({
-                        ...formData,
-                        receiverCompanyId: data.receiver_company_id,
-                        clientData: null,
-                        saveClient: false
-                      })
-                    } else if (data.entity_id) {
-                      setFormData({
-                        ...formData,
-                        receiverCompanyId: '',
-                        clientData: { client_id: data.entity_id, ...data.entity_data },
-                        saveClient: false
-                      })
-                    } else if (data.entity_data) {
-                      setFormData({
-                        ...formData,
-                        receiverCompanyId: '',
-                        clientData: data.entity_data,
-                        saveClient: data.save_entity || false
-                      })
-                    }
-                  }}
-                />
+                {isLoadingNewClient ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-blue-200 bg-blue-50">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-900">Cargando cliente creado...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <EntitySelector
+                    mode="client"
+                    companyId={companyId}
+                    connectedCompanies={connectedCompanies.map(c => ({
+                      ...c,
+                      cuit: c.cuit || ''
+                    }))}
+                    savedEntities={savedClients}
+                    isLoading={isLoadingData}
+                    autoSelectEntity={autoSelectClient || undefined}
+                    onEntityCreated={(clientId) => {
+                      console.log('[emit-invoice] Cliente creado:', clientId)
+                      if (clientId) {
+                        setIsLoadingNewClient(true)
+                        loadClientsData(clientId)
+                      }
+                    }}
+                    onSelect={(data) => {
+                      const isFinalConsumer = data.entity_data?.tax_condition === 'final_consumer'
+                      
+                      if (data.receiver_company_id) {
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: data.receiver_company_id,
+                          clientData: null,
+                          saveClient: false
+                        })
+                      } else if (data.entity_id) {
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: '',
+                          clientData: { client_id: data.entity_id, ...data.entity_data },
+                          saveClient: false
+                        })
+                      } else if (data.entity_data) {
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: '',
+                          clientData: data.entity_data,
+                          saveClient: data.save_entity || false
+                        })
+                      }
+                      
+                      // Clear perceptions if final consumer
+                      if (isFinalConsumer) {
+                        setPerceptions([])
+                      }
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -1519,7 +1566,7 @@ export default function CreateInvoicePage() {
                     setSalesPoints(prev => [...prev, newSalesPoint].sort((a, b) => a.point_number - b.point_number))
                     setFormData(prev => ({...prev, salesPoint: newSalesPoint.point_number}))
                     if (selectedInvoice) {
-                      setSelectedInvoice(prev => ({ ...prev, sales_point: newSalesPoint.point_number }))
+                      setSelectedInvoice((prev: any) => ({ ...prev, sales_point: newSalesPoint.point_number }))
                     }
                     toast.success('Punto de venta agregado y seleccionado')
                     setShowAddSalesPointDialog(false)
