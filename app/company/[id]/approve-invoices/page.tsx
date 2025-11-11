@@ -53,9 +53,24 @@ export default function ApproveInvoicesPage() {
         setCurrentUserId(user.id)
       }
       
-      const result = await invoiceService.getInvoices(id as string)
+      // Fetch all invoices across all pages
+      let allInvoices: Invoice[] = []
+      let page = 1
+      let hasMore = true
+      
+      while (hasMore) {
+        const result = await invoiceService.getInvoices(id as string, page)
+        const data = result.data || []
+        if (Array.isArray(data) && data.length > 0) {
+          allInvoices = [...allInvoices, ...data]
+          page++
+        } else {
+          hasMore = false
+        }
+      }
+      
       // Filtrar facturas normales y ND/NC no asociadas que necesitan aprobación
-      const pendingInvoices = (result.data || []).filter((inv: Invoice) => {
+      const pendingInvoices = allInvoices.filter((inv: Invoice) => {
         const status = inv.display_status || inv.status
         if (status !== 'pending_approval') return false
         

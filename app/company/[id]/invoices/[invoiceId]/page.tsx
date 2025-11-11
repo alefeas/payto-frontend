@@ -949,28 +949,37 @@ export default function InvoiceDetailPage() {
             <CardContent>
               <div className="space-y-3">
                 <div 
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)}
                 >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">Factura {invoice.relatedInvoice?.number || invoice.related_invoice_id}</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Click para ver el detalle completo
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver
-                    </Button>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm mb-1">Factura {invoice.relatedInvoice?.number || invoice.related_invoice_id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Click para ver el detalle completo
+                    </p>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver
+                  </Button>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm font-medium">
-                    {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) 
-                      ? `Reduce el saldo en ${formatCurrency(parseFloat(invoice.total), invoice.currency)}`
-                      : `Aumenta el saldo en ${formatCurrency(parseFloat(invoice.total), invoice.currency)}`
-                    }
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-gray-200">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) ? 'Reduce' : 'Aumenta'} el saldo en
+                  </p>
+                  <p className={`text-lg font-bold ${
+                    ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type)
+                      ? 'text-red-600'
+                      : 'text-green-600'
+                  }`}>
+                    {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                   </p>
                 </div>
               </div>

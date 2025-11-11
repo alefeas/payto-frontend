@@ -85,15 +85,44 @@ export default function CompanyPage() {
         // Load invoice stats
         try {
           const { invoiceService } = await import('@/services/invoice.service')
-          const invoices = await invoiceService.getInvoices(companyId)
-          const data = invoices.data || []
+          
+          // Fetch all invoices across all pages
+          let allInvoices: any[] = []
+          let page = 1
+          let hasMore = true
+          
+          while (hasMore) {
+            const response = await invoiceService.getInvoices(companyId, page)
+            const pageData = response.data || []
+            if (Array.isArray(pageData) && pageData.length > 0) {
+              allInvoices = [...allInvoices, ...pageData]
+              page++
+            } else {
+              hasMore = false
+            }
+          }
+          
+          const data = allInvoices
           const today = new Date()
           today.setHours(0, 0, 0, 0)
           
-          // Pendientes de Aprobar: solo facturas con estado pending_approval
+          // Pendientes de Aprobar: solo facturas normales y ND/NC no asociadas con estado pending_approval
           const pendingApproval = data.filter((inv: any) => {
             const status = inv.display_status || inv.status
-            return status === 'pending_approval'
+            if (status !== 'pending_approval') return false
+            
+            const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+            const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+            
+            // Si es factura normal, incluir
+            if (!isCreditNote && !isDebitNote) return true
+            
+            // Si es ND/NC, solo incluir si NO está asociada a una factura
+            if (isCreditNote || isDebitNote) {
+              return !(inv as any).related_invoice_id
+            }
+            
+            return false
           }).length
           
           // Por Cobrar: facturas emitidas por esta empresa que no están pagadas/cobradas
@@ -119,7 +148,13 @@ export default function CompanyPage() {
           
           // Por Pagar: facturas recibidas de proveedores que no están pagadas
           const payable = data.filter((inv: any) => {
+            // Debe ser emitida por otra empresa (proveedor)
             if (String(inv.issuer_company_id) === String(companyId)) return false
+            
+            // Excluir ND/NC
+            const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+            const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+            if (isCreditNote || isDebitNote) return false
             
             const status = inv.display_status || inv.status
             const companyStatus = inv.company_statuses?.[companyId]

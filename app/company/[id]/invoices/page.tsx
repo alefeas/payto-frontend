@@ -1060,7 +1060,7 @@ export default function InvoicesPage() {
                         if (newInvoices > 0) {
                           // Reload invoices in background
                           try {
-                            const response = await invoiceService.getInvoices(companyId)
+                            const response = await invoiceService.getInvoices(companyId, currentPage, {})
                             setInvoices(response.data || [])
                             const clientMsg = (result.auto_created_clients && result.auto_created_clients > 0) 
                               ? ` Se crearon ${result.auto_created_clients} cliente(s) archivado(s) con datos incompletos que debes completar en Clientes Archivados.`
