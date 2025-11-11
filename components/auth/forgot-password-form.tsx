@@ -49,7 +49,7 @@ export default function ForgotPasswordForm() {
 
         <div className="space-y-6 text-center">
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold">Revisa tu correo</h2>
+            <h2 className="text-lg md:text-xl lg:text-2xl font-medium">Revisa tu correo</h2>
             <p className="text-gray-600">
               Hemos enviado un enlace de recuperación a <span className="font-medium">{email}</span>
             </p>
@@ -92,7 +92,7 @@ export default function ForgotPasswordForm() {
 
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-semibold">¿Olvidaste tu contraseña?</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-medium">¿Olvidaste tu contraseña?</h2>
           <p className="text-gray-600">
             Ingresa tu correo electrónico y te enviaremos un enlace para recuperar tu cuenta.
           </p>

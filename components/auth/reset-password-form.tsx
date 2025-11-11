@@ -114,7 +114,7 @@ export default function ResetPasswordForm() {
 
         <div className="space-y-6 text-center">
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold">Token inválido</h2>
+            <h2 className="text-lg md:text-xl lg:text-2xl font-medium">Token inválido</h2>
             <p className="text-gray-600">
               El enlace de recuperación no es válido o ha expirado.
             </p>
@@ -146,7 +146,7 @@ export default function ResetPasswordForm() {
 
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-semibold">Nueva contraseña</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-medium">Nueva contraseña</h2>
           <p className="text-gray-600">
             Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta.
           </p>

@@ -55,7 +55,7 @@ export default function AnimatedTextCarousel({
   return (
     <div className="relative">
       <p
-        className="text-6xl md:text-7xl lg:text-8xl text-white transition-opacity duration-600 break-words leading-none"
+        className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white transition-opacity duration-600 break-words leading-none"
         style={{
           opacity: isVisible ? 1 : 0,
           transitionDuration: `${fadeDuration}ms`,

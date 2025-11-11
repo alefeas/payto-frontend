@@ -72,14 +72,14 @@ export default function FAQPage() {
     <>
       <Navbar />
       <main className="min-h-screen overflow-x-hidden flex flex-col pt-20">
-        <section className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 py-16">
-          <div className="w-full max-w-4xl mx-auto px-6">
+        <section className="flex-1 bg-white py-16">
+          <div className="w-full max-w-6xl mx-auto px-6">
             {/* Header */}
             <div className="text-center mb-12">
-            <h1 className="text-5xl font-medium text-foreground mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-foreground mb-4">
               Preguntas Frecuentes
             </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
                 Encuentra respuestas a las preguntas más comunes sobre PayTo
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function FAQPage() {
                     onClick={() => toggleFAQ(index)}
                     className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                   >
-                    <span className="text-lg font-medium text-foreground pr-4">
+                    <span className="text-base md:text-lg font-medium text-foreground pr-4">
                       {faq.question}
                     </span>
                     <ChevronDown
@@ -121,7 +121,7 @@ export default function FAQPage() {
 
             {/* Contact CTA */}
             <div className="mt-16 text-center bg-white rounded-2xl border-2 border-gray-200 p-8">
-              <h2 className="text-2xl font-medium text-foreground mb-2">
+              <h2 className="text-xl md:text-2xl font-medium text-foreground mb-2">
                 ¿No encontraste lo que buscabas?
               </h2>
               <p className="text-muted-foreground mb-6">

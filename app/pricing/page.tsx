@@ -10,7 +10,7 @@ export default function PricingPage() {
     <>
       <Navbar />
       <main className="min-h-screen overflow-x-hidden flex flex-col">
-        <section className="flex-1 pt-32 pb-16 bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+        <section className="flex-1 pt-32 pb-16 bg-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <PricingHeader />
             <div className="grid md:grid-cols-2 gap-6 mt-16">

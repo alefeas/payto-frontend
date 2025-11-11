@@ -6,8 +6,8 @@ export default function PrivacyPolicy() {
     <>
       <Navbar />
       <main className="min-h-screen bg-white pt-32 pb-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <h1 className="text-4xl font-medium text-foreground mb-4">
+        <div className="max-w-6xl mx-auto px-6">
+          <h1 className="text-3xl md:text-4xl font-medium text-foreground mb-4">
             Política de Privacidad
           </h1>
           <p className="text-muted-foreground mb-12">
@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
 
           <div className="space-y-8 text-foreground">
               <section>
-                <h2 className="text-2xl font-medium mb-4">1. Introducción</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">1. Introducción</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   En PayTo, respetamos su privacidad y nos comprometemos a proteger sus datos personales. Esta Política 
                   de Privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información en cumplimiento 
@@ -25,12 +25,12 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">2. Información que Recopilamos</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">2. Información que Recopilamos</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   Recopilamos la siguiente información:
                 </p>
                 
-                <h3 className="text-lg font-medium mt-4 mb-2">2.1 Información de Registro</h3>
+                <h3 className="text-base md:text-lg font-medium mt-4 mb-2">2.1 Información de Registro</h3>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
                   <li>Nombre completo y datos de contacto</li>
                   <li>Dirección de correo electrónico</li>
@@ -38,7 +38,7 @@ export default function PrivacyPolicy() {
                   <li>Información fiscal (CUIT/CUIL)</li>
                 </ul>
 
-                <h3 className="text-lg font-medium mt-4 mb-2">2.2 Información de la Empresa</h3>
+                <h3 className="text-base md:text-lg font-medium mt-4 mb-2">2.2 Información de la Empresa</h3>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
                   <li>Razón social y datos fiscales</li>
                   <li>Domicilio fiscal</li>
@@ -46,7 +46,7 @@ export default function PrivacyPolicy() {
                   <li>Información de facturación</li>
                 </ul>
 
-                <h3 className="text-lg font-medium mt-4 mb-2">2.3 Información de Uso</h3>
+                <h3 className="text-base md:text-lg font-medium mt-4 mb-2">2.3 Información de Uso</h3>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
                   <li>Direcciones IP y datos de navegación</li>
                   <li>Información del dispositivo y navegador</li>
@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">3. Cómo Utilizamos su Información</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">3. Cómo Utilizamos su Información</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   Utilizamos sus datos personales para:
                 </p>
@@ -72,7 +72,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">4. Base Legal para el Procesamiento</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">4. Base Legal para el Procesamiento</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   Procesamos sus datos personales bajo las siguientes bases legales:
                 </p>
@@ -85,7 +85,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">5. Compartir Información</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">5. Compartir Información</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   Podemos compartir su información con:
                 </p>
@@ -101,7 +101,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">6. Seguridad de los Datos</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">6. Seguridad de los Datos</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos:
                 </p>
@@ -116,7 +116,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">7. Retención de Datos</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">7. Retención de Datos</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Conservamos sus datos personales durante el tiempo necesario para cumplir con los fines descritos 
                   en esta política, incluyendo requisitos legales, contables y de reporte. Los datos fiscales se 
@@ -125,7 +125,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">8. Sus Derechos</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">8. Sus Derechos</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   De acuerdo con la Ley 25.326, usted tiene derecho a:
                 </p>
@@ -143,7 +143,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">9. Cookies y Tecnologías Similares</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">9. Cookies y Tecnologías Similares</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Utilizamos cookies y tecnologías similares para mejorar su experiencia, analizar el uso del servicio 
                   y personalizar contenido. Puede controlar las cookies a través de la configuración de su navegador.
@@ -151,7 +151,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">10. Transferencias Internacionales</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">10. Transferencias Internacionales</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Sus datos se almacenan y procesan principalmente en Argentina. Si se requiere transferir datos 
                   fuera del país, implementamos salvaguardas apropiadas para proteger su información.
@@ -159,7 +159,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">11. Privacidad de Menores</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">11. Privacidad de Menores</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Nuestro servicio no está dirigido a menores de 18 años. No recopilamos intencionalmente información 
                   de menores. Si descubrimos que hemos recopilado datos de un menor, los eliminaremos inmediatamente.
@@ -167,7 +167,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">12. Cambios a esta Política</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">12. Cambios a esta Política</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Podemos actualizar esta Política de Privacidad periódicamente. Le notificaremos sobre cambios 
                   significativos publicando la nueva política en nuestro sitio web y actualizando la fecha de 
@@ -176,7 +176,7 @@ export default function PrivacyPolicy() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-medium mb-4">13. Autoridad de Control</h2>
+                <h2 className="text-xl md:text-2xl font-medium mb-4">13. Autoridad de Control</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Tiene derecho a presentar una queja ante la Agencia de Acceso a la Información Pública (AAIP), 
                   la autoridad de protección de datos de Argentina.

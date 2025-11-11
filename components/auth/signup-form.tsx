@@ -180,7 +180,7 @@ export default function SignupForm() {
       <div className="flex items-center justify-center gap-2 mb-6">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
               s === step ? 'bg-blue-600 text-white' :
               s < step ? 'bg-blue-100 text-blue-600' :
               'bg-gray-200 text-gray-500'
@@ -196,7 +196,7 @@ export default function SignupForm() {
 
       {/* Step Title */}
       <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-lg md:text-xl font-medium">
           {step === 1 && 'Información Personal'}
           {step === 2 && 'Seguridad'}
           {step === 3 && 'Información Adicional (Opcional)'}

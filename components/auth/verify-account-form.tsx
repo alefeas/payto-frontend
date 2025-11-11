@@ -187,10 +187,10 @@ export default function VerifyAccountForm() {
 
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-semibold">Verifica tu cuenta</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-medium">Verifica tu cuenta</h2>
           <p className="text-gray-600">
             Ingresa el código de 6 dígitos enviado a<br />
-            <span className="font-semibold text-foreground">{email}</span>
+            <span className="font-medium text-foreground">{email}</span>
           </p>
         </div>
 
@@ -211,7 +211,7 @@ export default function VerifyAccountForm() {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  className="w-12 h-14 text-center text-xl font-semibold"
+                  className="w-12 h-14 text-center text-xl font-medium"
                   disabled={isLoading}
                 />
               ))}
