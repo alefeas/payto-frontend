@@ -1,89 +1,102 @@
+import Image from "next/image";
+
 export default function Footer() {
   return (
-    <footer className="bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col md:flex-row items-start justify-between gap-12">
-          {/* Descripción y Copyright */}
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Simplificamos los pagos empresariales con soluciones seguras y eficientes para tu negocio.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              © 2025 PayTo. Todos los derechos reservados.
-            </p>
-          </div>
-
-          {/* Navegación y Legal */}
-          <div className="flex gap-16">
-            {/* Navegación */}
+    <footer>
+      <div className="bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            {/* Logo and Description */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-foreground">Navegación</h3>
-              <nav className="flex flex-col space-y-3">
+              <div className="flex items-center gap-2 h-8">
+                <Image
+                  src="/brand/payto.png"
+                  alt="Payto Logo"
+                  width={120}
+                  height={120}
+                  className="h-full w-auto object-contain"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Simplificamos los pagos empresariales con soluciones seguras y eficientes.
+              </p>
+            </div>
+
+            {/* Características */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-foreground">Características</h3>
+              <nav className="flex flex-col space-y-2">
                 <a
-                  href="/"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
+                  href="/features"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Inicio
-                  </span>
+                  Facturación
                 </a>
                 <a
                   href="/features"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Características
-                  </span>
+                  Cuentas
+                </a>
+                <a
+                  href="/features"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  Red PayTo
                 </a>
                 <a
                   href="/pricing"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Precios
-                  </span>
-                </a>
-                <a
-                  href="/contact"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
-                >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Contacto
-                  </span>
-                </a>
-                <a
-                  href="/faq"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
-                >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Preguntas Frecuentes
-                  </span>
+                  Precios
                 </a>
               </nav>
             </div>
 
-            {/* Enlaces legales */}
+            {/* Soporte */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-foreground">Legal</h3>
-              <nav className="flex flex-col space-y-3">
+              <h3 className="font-semibold text-sm text-foreground">Soporte</h3>
+              <nav className="flex flex-col space-y-2">
                 <a
-                  href="/terms-of-service"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
+                  href="/faq"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Términos de Servicio
-                  </span>
+                  Preguntas Frecuentes
                 </a>
                 <a
-                  href="/privacy-policy"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer inline-flex items-center group"
+                  href="/contact"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  <span className="group-hover:translate-x-0.5 transition-transform">
-                    Política de Privacidad
-                  </span>
+                  Contacto
                 </a>
               </nav>
             </div>
+
+            {/* Legal */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-foreground">Legal</h3>
+              <nav className="flex flex-col space-y-2">
+                <a
+                  href="/privacy-policy"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  Política de Privacidad
+                </a>
+                <a
+                  href="/terms-of-service"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  Términos de Servicio
+                </a>
+              </nav>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t border-gray-200 mt-8">
+            <p className="pt-8 text-xs text-muted-foreground text-center">
+              © 2025 PayTo. Todos los derechos reservados.
+            </p>
           </div>
         </div>
       </div>
