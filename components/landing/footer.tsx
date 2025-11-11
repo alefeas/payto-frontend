@@ -24,7 +24,7 @@ export default function Footer() {
 
             {/* Características */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-foreground">Características</h3>
+              <h3 className="font-medium text-sm text-foreground">Características</h3>
               <nav className="flex flex-col space-y-2">
                 <a
                   href="/features"
@@ -55,7 +55,7 @@ export default function Footer() {
 
             {/* Soporte */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-foreground">Soporte</h3>
+              <h3 className="font-medium text-sm text-foreground">Soporte</h3>
               <nav className="flex flex-col space-y-2">
                 <a
                   href="/faq"
@@ -74,7 +74,7 @@ export default function Footer() {
 
             {/* Legal */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-foreground">Legal</h3>
+              <h3 className="font-medium text-sm text-foreground">Legal</h3>
               <nav className="flex flex-col space-y-2">
                 <a
                   href="/privacy-policy"

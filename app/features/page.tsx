@@ -87,7 +87,7 @@ export default function FeaturesPage() {
         <div className="max-w-6xl mx-auto px-6">
           {/* Hero Section */}
           <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold text-foreground mb-4">
+            <h1 className="text-5xl font-medium text-foreground mb-4">
               Características de PayTo
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -110,7 +110,7 @@ export default function FeaturesPage() {
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                    <h3 className="text-lg font-medium text-foreground mb-2">
                       {feature.title}
                     </h3>
                     <p className="text-muted-foreground text-sm leading-relaxed">
@@ -124,7 +124,7 @@ export default function FeaturesPage() {
 
           {/* CTA Section */}
           <div className="rounded-3xl p-12 text-center">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl font-medium text-foreground mb-4">
               ¿Listo para comenzar?
             </h2>
             <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">

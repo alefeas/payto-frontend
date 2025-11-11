@@ -44,7 +44,7 @@ export default function PricingCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h3 className="text-xl font-bold mb-1">{title}</h3>
+            <h3 className="text-xl font-medium mb-1">{title}</h3>
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function PricingCard({
       <CardContent className="pt-0 space-y-4">
         <div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold">{monthlyPrice}</span>
+            <span className="text-3xl font-medium">{monthlyPrice}</span>
             <span className="text-sm text-muted-foreground">/mes</span>
           </div>
         </div>

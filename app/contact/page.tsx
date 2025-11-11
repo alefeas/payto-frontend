@@ -16,7 +16,7 @@ export default function ContactPage() {
           <div className="relative w-full h-full min-h-[400px] lg:min-h-[600px]">
             {/* Location info overlay */}
             <div className="absolute top-6 left-6 z-10 bg-white rounded-xl shadow-lg p-6 max-w-sm">
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 Nuestra Ubicación
               </h3>
               <p className="text-sm text-muted-foreground mb-1">

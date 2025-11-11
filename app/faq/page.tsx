@@ -76,9 +76,9 @@ export default function FAQPage() {
           <div className="w-full max-w-4xl mx-auto px-6">
             {/* Header */}
             <div className="text-center mb-12">
-              <h1 className="text-5xl font-bold text-foreground mb-4">
-                Preguntas Frecuentes
-              </h1>
+            <h1 className="text-5xl font-medium text-foreground mb-4">
+              Preguntas Frecuentes
+            </h1>
               <p className="text-xl text-muted-foreground">
                 Encuentra respuestas a las preguntas más comunes sobre PayTo
               </p>
@@ -95,7 +95,7 @@ export default function FAQPage() {
                     onClick={() => toggleFAQ(index)}
                     className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                   >
-                    <span className="text-lg font-semibold text-foreground pr-4">
+                    <span className="text-lg font-medium text-foreground pr-4">
                       {faq.question}
                     </span>
                     <ChevronDown
@@ -121,7 +121,7 @@ export default function FAQPage() {
 
             {/* Contact CTA */}
             <div className="mt-16 text-center bg-white rounded-2xl border-2 border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">
+              <h2 className="text-2xl font-medium text-foreground mb-2">
                 ¿No encontraste lo que buscabas?
               </h2>
               <p className="text-muted-foreground mb-6">
@@ -129,7 +129,7 @@ export default function FAQPage() {
               </p>
               <a
                 href="/contact"
-                className="inline-block px-8 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+                className="inline-block px-8 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
               >
                 Contáctanos
               </a>
