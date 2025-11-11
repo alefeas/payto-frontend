@@ -26,14 +26,14 @@ export default function TermsOfService() {
               <section>
                 <h2 className="text-2xl font-medium mb-4">2. Descripción del Servicio</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
-                  PayTo proporciona una plataforma de gestión empresarial que incluye:
+                  PayTo proporciona una plataforma especializada en facturación electrónica con ARCA que incluye:
                 </p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-                  <li>Facturación electrónica y gestión de comprobantes</li>
+                  <li>Facturación electrónica y emisión de comprobantes ARCA</li>
                   <li>Gestión de cuentas por cobrar y por pagar</li>
-                  <li>Integración con AFIP y sistemas tributarios argentinos</li>
+                  <li>Integración directa con ARCA y cumplimiento de obligaciones fiscales</li>
                   <li>Gestión de proveedores y clientes</li>
-                  <li>Reportes y análisis financieros</li>
+                  <li>Generación automática de libro IVA y reportes fiscales</li>
                 </ul>
               </section>
 

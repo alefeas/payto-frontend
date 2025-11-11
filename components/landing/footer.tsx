@@ -18,7 +18,7 @@ export default function Footer() {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                Simplificamos los pagos empresariales con soluciones seguras y eficientes.
+                Plataforma especializada en facturación electrónica con ARCA para contadores y empresas argentinas.
               </p>
             </div>
 

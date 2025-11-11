@@ -20,7 +20,7 @@ const features = [
   {
     icon: FileText,
     title: "Facturación Electrónica",
-    description: "Emite facturas electrónicas conformes a AFIP de forma rápida y sencilla. Compatible con todos los tipos de comprobantes."
+    description: "Emite facturas electrónicas conformes a ARCA de forma rápida y sencilla. Compatible con todos los tipos de comprobantes."
   },
   {
     icon: TrendingUp,
@@ -49,8 +49,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Integración AFIP",
-    description: "Conexión directa con AFIP para validar certificados, consultar padrón y cumplir con todas las obligaciones fiscales."
+    title: "Integración ARCA",
+    description: "Conexión directa con ARCA para validar certificados, consultar padrón y cumplir con todas las obligaciones fiscales."
   },
   {
     icon: BarChart3,
@@ -91,8 +91,8 @@ export default function FeaturesPage() {
               Características de PayTo
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Todo lo que necesitas para gestionar tu empresa de forma profesional y eficiente. 
-              Una plataforma completa diseñada para empresas argentinas.
+              Plataforma completa para gestionar facturación electrónica, emisión de comprobantes ARCA y libro IVA. 
+              Diseñada específicamente para contadores, estudios contables y empresas argentinas.
             </p>
           </div>
 
@@ -128,7 +128,7 @@ export default function FeaturesPage() {
               ¿Listo para comenzar?
             </h2>
             <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-              Únete a las empresas que ya están optimizando su gestión empresarial con PayTo. 
+              Únete a los contadores y empresas que ya están optimizando su gestión de facturación con PayTo. 
               Comienza gratis hoy mismo.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

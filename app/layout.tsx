@@ -17,8 +17,8 @@ const poppinsThin = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "PayTo",
-  description: "Sistema de gestión de workspaces empresariales",
+  title: "PayTo - Facturación Electrónica ARCA",
+  description: "Plataforma de facturación electrónica con ARCA para contadores, estudios contables y empresas argentinas. Emisión de comprobantes, libro IVA y gestión fiscal.",
 };
 
 export default function RootLayout({

@@ -4,15 +4,15 @@ export default function Hero() {
   return (
     <div className="space-y-3">
       <p className="text-primary font-medium-heading text-sm tracking-wide">
-        Para empresas
+        Para contadores y empresas
       </p>
 
       <h1 className="text-5xl lg:text-6xl font-medium text-foreground leading-none">
-        Pagos empresariales simplificados.
+        Facturación electrónica con ARCA.
       </h1>
 
       <p className="text-muted-foreground text-lg leading-normal max-w-xl pt-1">
-        Optimiza los pagos a tus proveedores y socios. Procesamiento de pagos rápido, seguro y confiable para las necesidades de tu negocio.
+        Plataforma especializada para gestionar facturación electrónica, emisión de comprobantes y libro IVA. Integración directa con ARCA para estudios contables y empresas argentinas.
       </p>
 
       <div className="flex items-center gap-4 pt-1">
