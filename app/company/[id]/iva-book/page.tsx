@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
+import { colors, fontSizes } from "@/styles"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -222,18 +223,18 @@ export default function IvaBookPage() {
               <CardContent>
                 {summary.debito_fiscal_by_currency ? (
                   <>
-                    <div className="text-2xl font-bold text-green-600 mb-2">
+                    <div className={fontSizes.h1.desktop}>
                       $ {summary.debito_fiscal_by_currency.ARS?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                     </div>
-                    <div className="flex gap-3 text-xs text-muted-foreground">
-                      <span>USD $ {summary.debito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
-                      <span>EUR € {summary.debito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                    <div className="flex gap-3 text-sm text-gray-600">
+                      <span>US$ {summary.debito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                      <span>€ {summary.debito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
                     </div>
                   </>
                 ) : (
-                  <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.debito_fiscal)}</div>
+                  <div className={fontSizes.h1.desktop}>{formatCurrency(summary.debito_fiscal)}</div>
                 )}
-                <p className="text-xs text-muted-foreground mt-2">IVA de facturas emitidas</p>
+                <p className="text-sm text-gray-600 mt-2">IVA de facturas emitidas</p>
               </CardContent>
             </Card>
 
@@ -245,26 +246,24 @@ export default function IvaBookPage() {
               <CardContent>
                 {summary.credito_fiscal_by_currency ? (
                   <>
-                    <div className="text-2xl font-bold text-blue-600 mb-2">
+                    <div className={fontSizes.h1.desktop}>
                       $ {summary.credito_fiscal_by_currency.ARS?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                     </div>
-                    <div className="flex gap-3 text-xs text-muted-foreground">
-                      <span>USD $ {summary.credito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
-                      <span>EUR € {summary.credito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                    <div className="flex gap-3 text-sm text-gray-600">
+                      <span>US$ {summary.credito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                      <span>€ {summary.credito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
                     </div>
                   </>
                 ) : (
-                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.credito_fiscal)}</div>
+                  <div className={fontSizes.h1.desktop}>{formatCurrency(summary.credito_fiscal)}</div>
                 )}
-                <p className="text-xs text-muted-foreground mt-2">IVA de facturas recibidas</p>
+                <p className="text-sm text-gray-600 mt-2">IVA de facturas recibidas</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {summary.saldo >= 0 ? 'Saldo a Pagar' : 'Saldo a Favor'}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Saldo IVA</CardTitle>
                 {summary.saldo >= 0 ? (
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 ) : (
@@ -274,20 +273,20 @@ export default function IvaBookPage() {
               <CardContent>
                 {summary.saldo_by_currency ? (
                   <>
-                    <div className={`text-2xl font-bold mb-2 ${summary.saldo_by_currency.ARS >= 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                      $ {Math.abs(summary.saldo_by_currency.ARS || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <div className={fontSizes.h1.desktop}>
+                      {(summary.saldo_by_currency.ARS ?? 0) < 0 ? '-' : ''}$ {Math.abs(summary.saldo_by_currency.ARS || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <div className="flex gap-3 text-xs text-muted-foreground">
-                      <span>USD $ {Math.abs(summary.saldo_by_currency.USD || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span>EUR € {Math.abs(summary.saldo_by_currency.EUR || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div className="flex gap-3 text-sm text-gray-600">
+                      <span>US$ {(summary.saldo_by_currency.USD ?? 0) < 0 ? '-' : ''}{Math.abs(summary.saldo_by_currency.USD || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span>€ {(summary.saldo_by_currency.EUR ?? 0) < 0 ? '-' : ''}{Math.abs(summary.saldo_by_currency.EUR || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </>
                 ) : (
-                  <div className={`text-2xl font-bold ${summary.saldo >= 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                    {formatCurrency(Math.abs(summary.saldo))}
+                  <div className={fontSizes.h1.desktop}>
+                    {summary.saldo < 0 ? '-' : ''}$ {Math.abs(summary.saldo).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-sm text-gray-600 mt-2">
                   {summary.saldo >= 0 ? 'A pagar a AFIP' : 'A favor del contribuyente'}
                 </p>
               </CardContent>
@@ -296,10 +295,16 @@ export default function IvaBookPage() {
         )}
 
         <Tabs defaultValue="sales" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11">
-            <TabsTrigger value="sales" className="text-base">Ventas</TabsTrigger>
-            <TabsTrigger value="purchases" className="text-base">Compras</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="inline-flex h-9 rounded-md border border-gray-200 bg-muted/30 px-1">
+              <TabsTrigger value="sales" className="text-sm">Ventas</TabsTrigger>
+              <TabsTrigger value="purchases" className="text-sm">Compras</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Periodo:</span>
+              <span className="font-medium">{selectedMonth}/{selectedYear}</span>
+            </div>
+          </div>
 
           <TabsContent value="sales" className="space-y-4">
             <Card>
@@ -361,12 +366,12 @@ export default function IvaBookPage() {
               </CardHeader>
               <CardContent>
                 {salesBook?.warnings && salesBook.warnings.length > 0 && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-muted/30">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <AlertTriangle className="h-4 w-4 mt-0.5" style={{ color: colors.accent }} />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-yellow-900">Advertencias</p>
-                        <ul className="text-sm text-yellow-800 mt-1 space-y-1">
+                        <p className="text-sm font-medium" style={{ color: colors.accent }}>Advertencias</p>
+                        <ul className="text-sm text-muted-foreground mt-1 space-y-1">
                           {salesBook.warnings.map((warning: string, idx: number) => (
                             <li key={idx}>{warning}</li>
                           ))}
@@ -403,7 +408,7 @@ export default function IvaBookPage() {
                       </TableHeader>
                       <TableBody>
                         {salesBook?.records?.map((record: any, idx: number) => (
-                          <TableRow key={idx} className="border-b border-gray-200">
+                          <TableRow key={idx} className="border-b border-gray-200 odd:bg-muted/20 hover:bg-muted/30">
                             <TableCell className="font-medium">{record.fecha}</TableCell>
                             <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
                             <TableCell className="max-w-[150px] truncate">{record.cliente}</TableCell>
@@ -503,12 +508,12 @@ export default function IvaBookPage() {
               </CardHeader>
               <CardContent>
                 {purchasesBook?.warnings && purchasesBook.warnings.length > 0 && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="mb-4 p-3 rounded-lg border border-gray-200 bg-muted/30">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <AlertTriangle className="h-4 w-4 mt-0.5" style={{ color: colors.accent }} />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-yellow-900">Advertencias</p>
-                        <ul className="text-sm text-yellow-800 mt-1 space-y-1">
+                        <p className="text-sm font-medium" style={{ color: colors.accent }}>Advertencias</p>
+                        <ul className="text-sm text-muted-foreground mt-1 space-y-1">
                           {purchasesBook.warnings.map((warning: string, idx: number) => (
                             <li key={idx}>{warning}</li>
                           ))}
@@ -545,7 +550,7 @@ export default function IvaBookPage() {
                       </TableHeader>
                       <TableBody>
                         {purchasesBook?.records?.map((record: any, idx: number) => (
-                          <TableRow key={idx} className="border-b border-gray-200">
+                          <TableRow key={idx} className="border-b border-gray-200 odd:bg-muted/20 hover:bg-muted/30">
                             <TableCell className="font-medium">{record.fecha}</TableCell>
                             <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
                             <TableCell className="max-w-[150px] truncate">{record.proveedor}</TableCell>

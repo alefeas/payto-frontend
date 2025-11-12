@@ -20,6 +20,7 @@ import { afipCertificateService, AfipCertificate } from "@/services/afip-certifi
 import { companyService } from "@/services/company.service"
 import { Skeleton} from "@/components/ui/skeleton"
 import { parseDateLocal } from "@/lib/utils"
+import { colors } from "@/styles"
 
 export default function VerifyCompanyPage() {
   const { id } = useParams()
@@ -264,7 +265,7 @@ export default function VerifyCompanyPage() {
             <p className="text-muted-foreground">{companyName}</p>
           </div>
           {isVerified && (
-            <Badge className="bg-green-500">
+            <Badge style={{ backgroundColor: colors.accent, color: '#fff' }}>
               <CheckCircle2 className="h-3 w-3 mr-1" />
               Verificado
             </Badge>
@@ -282,15 +283,15 @@ export default function VerifyCompanyPage() {
           <CardContent>
             {isVerified ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-green-50 border border-gray-200 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 mt-0.5" style={{ color: colors.accent }} />
                   <div className="flex-1">
-                    <p className="font-medium text-green-900">Certificado Activo</p>
-                    <p className="text-sm text-green-700 mt-1">
+                    <p className="font-medium">Certificado Activo</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Facturación electrónica habilitada y consultas AFIP disponibles
                     </p>
                     {certificate?.validUntil && (
-                      <p className="text-xs text-green-600 mt-2">
+                      <p className="text-xs text-muted-foreground mt-2">
                         Válido hasta: {parseDateLocal(certificate.validUntil)?.toLocaleDateString('es-AR')}
                         {certificate.isExpiringSoon && " ⚠️ Próximo a vencer"}
                       </p>
@@ -320,11 +321,11 @@ export default function VerifyCompanyPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-gray-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                <AlertCircle className="h-5 w-5 mt-0.5" style={{ color: colors.accent }} />
                 <div>
-                  <p className="font-medium text-amber-900">Sin Certificado AFIP</p>
-                  <p className="text-sm text-amber-700 mt-1">
+                  <p className="font-medium">Sin Certificado AFIP</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     No podrás usar facturación electrónica ni consultar datos automáticos de clientes/proveedores
                   </p>
                 </div>
@@ -541,20 +542,20 @@ export default function VerifyCompanyPage() {
         )}
 
         {/* Autorizaciones AFIP */}
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+        <Card className="border-gray-200 bg-white dark:bg-slate-950 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
-              <Shield className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" style={{ color: colors.accent }} />
               Autorizaciones Requeridas en AFIP
             </CardTitle>
-            <CardDescription className="text-blue-700 dark:text-blue-300">
+            <CardDescription>
               Tu certificado debe tener estas autorizaciones para que PayTo funcione correctamente
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: colors.accent }} />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">WSFE - Facturación Electrónica</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -564,7 +565,7 @@ export default function VerifyCompanyPage() {
               </div>
 
               <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: colors.accent }} />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">WS SR PADRON A5 - Padrón de Contribuyentes</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -575,7 +576,7 @@ export default function VerifyCompanyPage() {
             </div>
 
             <div className="border-t pt-4 space-y-3">
-              <p className="font-semibold text-sm text-blue-900 dark:text-blue-100">📋 Cómo autorizar los servicios:</p>
+              <p className="font-semibold text-sm">📋 Cómo autorizar los servicios:</p>
               <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
                 <li>Ingresá a <strong>AFIP con Clave Fiscal</strong></li>
                 <li>Buscá <strong>"Administrador de Relaciones de Clave Fiscal"</strong></li>
@@ -586,9 +587,9 @@ export default function VerifyCompanyPage() {
               </ol>
             </div>
 
-            <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-xs text-amber-900 dark:text-amber-100">
+            <Alert className="bg-muted/30 border-gray-200 dark:bg-slate-950 dark:border-gray-800">
+              <AlertCircle className="h-4 w-4" style={{ color: colors.accent }} />
+              <AlertDescription className="text-xs">
                 <strong>Importante:</strong> Sin estas autorizaciones, el certificado no funcionará correctamente. El servicio de Padrón (WS SR PADRON A5) solo funciona en ambiente de producción, no en homologación.
               </AlertDescription>
             </Alert>

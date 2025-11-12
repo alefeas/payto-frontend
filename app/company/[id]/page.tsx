@@ -19,8 +19,10 @@ import {
   BookOpen
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { colors } from "@/styles"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard } from "@/components/company/stat-card"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { afipCertificateService } from "@/services/afip-certificate.service"
@@ -436,47 +438,31 @@ export default function CompanyPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendientes de Aprobar</CardTitle>
-              <CheckSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.pendingApproval}</div>
-              <p className="text-xs text-muted-foreground">Requieren aprobación</p>
-            </CardContent>
-          </Card>
-          <Card className="border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Por Cobrar</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.receivable}</div>
-              <p className="text-xs text-muted-foreground">Facturas emitidas sin pagar</p>
-            </CardContent>
-          </Card>
-          <Card className="border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Por Pagar</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{stats.payable}</div>
-              <p className="text-xs text-muted-foreground">Facturas de proveedores</p>
-            </CardContent>
-          </Card>
-          <Card className="border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Facturas Vencidas</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
-              <p className="text-xs text-muted-foreground">Requieren gestión de cobro/pago</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            title="Por Cobrar"
+            value={stats.receivable}
+            description="Facturas emitidas sin pagar"
+            icon={Eye}
+          />
+          <StatCard 
+            title="Por Pagar"
+            value={stats.payable}
+            description="Facturas de proveedores"
+            icon={CreditCard}
+          />
+          <StatCard 
+            title="Facturas Vencidas"
+            value={stats.overdue}
+            description="Requieren gestión de cobro/pago"
+            icon={AlertTriangle}
+          />
+          <StatCard 
+            title="Pendientes de Aprobar"
+            value={stats.pendingApproval}
+            description="Requieren aprobación"
+            icon={CheckSquare}
+          />
         </div>
 
         {/* Recordatorio para sincronizar condición IVA - Solo si tiene certificado pero aún no sincronizó */}
@@ -502,13 +488,13 @@ export default function CompanyPage() {
 
         {/* Banner de Estado de Verificación AFIP - Visible para todos */}
         {isAfipVerified ? (
-          <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
+            <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-blue-900 text-sm">
+              <p className="font-medium text-sm" style={{ color: colors.accent }}>
                 ✓ Cuenta Verificada con AFIP
               </p>
-              <p className="text-xs text-blue-800 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Todas las funciones están habilitadas. Podés emitir facturas electrónicas oficiales y consultar datos fiscales automáticamente.
               </p>
             </div>
@@ -516,7 +502,8 @@ export default function CompanyPage() {
               <Button 
                 size="sm" 
                 variant="outline"
-                className="border-blue-600 text-blue-700 hover:bg-blue-100 flex-shrink-0"
+                className="flex-shrink-0"
+                style={{ borderColor: colors.accent, color: colors.accent }}
                 onClick={() => router.push(`/company/${company.id}/verify`)}
               >
                 Ver Detalles
@@ -524,19 +511,20 @@ export default function CompanyPage() {
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <Eye className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
+            <Eye className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-blue-900 text-sm">🔓 Modo Vista Previa Activo</p>
-              <p className="text-xs text-blue-800 mt-1">
+              <p className="font-medium text-sm" style={{ color: colors.accent }}>🔓 Modo Vista Previa Activo</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Podés explorar el sistema y ver cómo funciona cada sección, pero todas las acciones están bloqueadas hasta que verifiques tu cuenta con AFIP.
               </p>
-              <p className="text-xs text-blue-700 mt-2 font-medium">
+              <p className="text-xs text-muted-foreground mt-2 font-medium">
                 La verificación con AFIP garantiza la seguridad y legalidad de todas las operaciones en el sistema.
               </p>
             </div>
             <Button 
               size="sm"
+              style={{ backgroundColor: colors.accent, color: '#fff' }}
               onClick={() => router.push(`/company/${company.id}/verify`)}
             >
               Verificar Ahora

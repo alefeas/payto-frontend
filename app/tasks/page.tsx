@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import { parseDateLocal } from "@/lib/utils"
 import { useRouter } from "next/navigation"
-import { Plus, Calendar, Clock, CheckSquare, Trash2, Edit3, ArrowLeft } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Calendar, CheckSquare, Trash2, Edit3, ArrowLeft, Loader2 } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { taskService, type Task } from "@/services/task.service"
 import { toast } from "sonner"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/dashboard/app-sidebar"
 
 export default function TasksPage() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -23,6 +25,7 @@ export default function TasksPage() {
   const [loadingTasks, setLoadingTasks] = useState(true)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -65,6 +68,7 @@ export default function TasksPage() {
     }
 
     try {
+      setIsSubmitting(true)
       if (editingTask) {
         await taskService.updateTask(editingTask.id, formData)
         toast.success('Tarea actualizada')
@@ -77,8 +81,11 @@ export default function TasksPage() {
       setIsCreateDialogOpen(false)
       setEditingTask(null)
       loadTasks()
-    } catch (error) {
-      toast.error(editingTask ? 'Error al actualizar tarea' : 'Error al crear tarea')
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || (editingTask ? 'Error al actualizar tarea' : 'Error al crear tarea')
+      toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -147,43 +154,27 @@ export default function TasksPage() {
   })
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-64"></div>
-            <div className="h-6 bg-muted rounded w-96"></div>
-            <div className="space-y-4 mt-8">
-              <div className="h-32 bg-muted rounded"></div>
-              <div className="h-32 bg-muted rounded"></div>
-              <div className="h-32 bg-muted rounded"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return null
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <SidebarProvider defaultOpen={false}>
+      <AppSidebar />
+      <SidebarInset>
+        <div className="min-h-screen bg-white p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Mis Tareas</h1>
-              <p className="text-muted-foreground">Gestiona tu lista de tareas pendientes</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-medium">Mis Tareas</h1>
+            <p className="text-gray-500 mt-1 font-light">Gestiona tu lista de tareas pendientes</p>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
             setIsCreateDialogOpen(open)
             if (!open) resetForm()
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-[#0078ff] hover:bg-[#0066dd]">
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Tarea
               </Button>
@@ -246,11 +237,18 @@ export default function TasksPage() {
                   <Button type="button" variant="outline" onClick={() => {
                     setIsCreateDialogOpen(false)
                     resetForm()
-                  }}>
+                  }} disabled={isSubmitting}>
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    {editingTask ? 'Actualizar' : 'Crear'} Tarea
+                  <Button type="submit" disabled={isSubmitting} className="bg-[#0078ff] hover:bg-[#0066dd]">
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {editingTask ? 'Actualizando...' : 'Creando...'}
+                      </>
+                    ) : (
+                      <>{editingTask ? 'Actualizar' : 'Crear'} Tarea</>
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
@@ -264,6 +262,7 @@ export default function TasksPage() {
             variant={filter === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("all")}
+            className={filter === "all" ? "bg-[#0078ff] hover:bg-[#0066dd]" : ""}
           >
             Todas ({tasks.length})
           </Button>
@@ -271,6 +270,7 @@ export default function TasksPage() {
             variant={filter === "pending" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("pending")}
+            className={filter === "pending" ? "bg-[#0078ff] hover:bg-[#0066dd]" : ""}
           >
             Pendientes ({tasks.filter(t => !t.is_completed).length})
           </Button>
@@ -278,34 +278,35 @@ export default function TasksPage() {
             variant={filter === "completed" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("completed")}
+            className={filter === "completed" ? "bg-[#0078ff] hover:bg-[#0066dd]" : ""}
           >
             Completadas ({tasks.filter(t => t.is_completed).length})
           </Button>
         </div>
 
         {/* Tasks List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {loadingTasks ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Cargando tareas...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-[#0078ff] mx-auto" />
+              <p className="text-gray-500 mt-2">Cargando tareas...</p>
             </div>
           ) : filteredTasks.length === 0 ? (
-            <Card>
+            <Card className="border-gray-200">
               <CardContent className="text-center py-12">
-                <CheckSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <CheckSquare className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium mb-2">
                   {filter === "all" ? "No tienes tareas" : 
                    filter === "pending" ? "No tienes tareas pendientes" : 
                    "No tienes tareas completadas"}
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-gray-500 mb-4 font-light">
                   {filter === "all" ? "Crea tu primera tarea para comenzar" : 
                    filter === "pending" ? "¡Excelente! Has completado todas tus tareas" : 
                    "Completa algunas tareas para verlas aquí"}
                 </p>
                 {filter === "all" && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-[#0078ff] hover:bg-[#0066dd]">
                     <Plus className="h-4 w-4 mr-2" />
                     Crear primera tarea
                   </Button>
@@ -314,9 +315,9 @@ export default function TasksPage() {
             </Card>
           ) : (
             filteredTasks.map((task) => (
-              <Card key={task.id} className={`transition-all ${task.is_completed ? 'opacity-75' : ''}`}>
+              <Card key={task.id} className={`border-gray-200 transition-all hover:shadow-md ${task.is_completed ? 'opacity-60' : ''}`}>
                 <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <Checkbox
                       checked={task.is_completed}
                       onCheckedChange={() => handleToggleComplete(task)}
@@ -325,27 +326,27 @@ export default function TasksPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <h3 className={`font-medium ${task.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                          <h3 className={`font-medium text-base ${task.is_completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
                             {task.title}
                           </h3>
                           {task.description && (
-                            <p className={`text-sm mt-1 ${task.is_completed ? 'line-through text-muted-foreground' : 'text-muted-foreground'}`}>
+                            <p className={`text-sm mt-1.5 ${task.is_completed ? 'line-through text-gray-400' : 'text-gray-600'}`}>
                               {task.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-3 mt-3">
                             <Badge className={getPriorityColor(task.priority)}>
                               {getPriorityLabel(task.priority)}
                             </Badge>
                             {task.due_date && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Calendar className="h-3 w-3" />
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                <Calendar className="h-3.5 w-3.5" />
                                 {parseDateLocal(task.due_date)?.toLocaleDateString('es-AR')}
                               </div>
                             )}
                             {task.completed_at && (
-                              <div className="flex items-center gap-1 text-xs text-green-600">
-                                <CheckSquare className="h-3 w-3" />
+                              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <CheckSquare className="h-3.5 w-3.5" />
                                 Completada {parseDateLocal(task.completed_at)?.toLocaleDateString('es-AR')}
                               </div>
                             )}
@@ -356,15 +357,17 @@ export default function TasksPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(task)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Edit3 className="h-4 w-4" />
+                            <Edit3 className="h-4 w-4 text-gray-600" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(task.id)}
+                            className="h-8 w-8 p-0 hover:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
                       </div>
@@ -375,7 +378,9 @@ export default function TasksPage() {
             ))
           )}
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

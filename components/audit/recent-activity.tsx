@@ -9,6 +9,7 @@ import { auditService, AuditLog } from '@/services/audit.service'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
+import { colors } from '@/styles'
 
 interface RecentActivityProps {
   companyId: string
@@ -35,18 +36,8 @@ export function RecentActivity({ companyId, limit = 5 }: RecentActivityProps) {
     }
   }
 
-  const getActionColor = (action: string) => {
-    const colors: Record<string, string> = {
-      'create': 'bg-green-100 text-green-800',
-      'update': 'bg-blue-100 text-blue-800',
-      'delete': 'bg-red-100 text-red-800',
-      'login': 'bg-purple-100 text-purple-800',
-      'logout': 'bg-gray-100 text-gray-800',
-      'view': 'bg-yellow-100 text-yellow-800',
-      'export': 'bg-indigo-100 text-indigo-800',
-      'import': 'bg-pink-100 text-pink-800',
-    }
-    return colors[action.toLowerCase()] || 'bg-gray-100 text-gray-800'
+  const getActionColor = (_action: string) => {
+    return 'bg-white text-foreground border border-gray-200'
   }
 
   const getActionLabel = (action: string) => {
@@ -116,7 +107,7 @@ export function RecentActivity({ companyId, limit = 5 }: RecentActivityProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge className={getActionColor(activity.action)}>
+                  <Badge className={getActionColor(activity.action)} style={{ color: colors.accent }}>
                     {getActionLabel(activity.action)}
                   </Badge>
                   <span className="text-sm text-muted-foreground truncate">

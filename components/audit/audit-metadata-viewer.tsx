@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Eye, Code, Copy, Check } from 'lucide-react'
+import { colors } from '@/styles'
 
 interface AuditMetadataViewerProps {
   metadata: Record<string, any>
@@ -36,7 +37,7 @@ export function AuditMetadataViewer({ metadata, trigger }: AuditMetadataViewerPr
     }
 
     if (typeof data === 'number') {
-      return <span className="text-blue-600 font-mono">{data}</span>
+      return <span className="font-mono" style={{ color: colors.accent }}>{data}</span>
     }
 
     if (typeof data === 'string') {
@@ -47,7 +48,7 @@ export function AuditMetadataViewer({ metadata, trigger }: AuditMetadataViewerPr
           </div>
         )
       }
-      return <span className="text-green-600">"{data}"</span>
+      return <span className="text-muted-foreground">"{data}"</span>
     }
 
     if (Array.isArray(data)) {

@@ -281,7 +281,7 @@ export default function TestingDashboardPage() {
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Cuentas a cobrar</CardDescription>
-                  <CardTitle className={`${fontSizes.h1.desktop} font-medium-heading`}>
+                  <CardTitle className={fontSizes.h1.desktop}>
                     ${Math.round(baseAmountReceivable * kpiMultiplier).toLocaleString()}.00
                   </CardTitle>
                 </CardHeader>
@@ -297,7 +297,7 @@ export default function TestingDashboardPage() {
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Cuentas por pagar</CardDescription>
-                  <CardTitle className={`${fontSizes.h1.desktop} font-medium-heading`}>
+                  <CardTitle className={fontSizes.h1.desktop}>
                     ${Math.round(baseAmountPayable * kpiMultiplier).toLocaleString()}.00
                   </CardTitle>
                 </CardHeader>
@@ -313,8 +313,8 @@ export default function TestingDashboardPage() {
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Saldo IVA</CardDescription>
-                  <CardTitle className={`${fontSizes.h1.desktop} font-medium-heading`}>
-                    ${Math.round(baseVATBalance * kpiMultiplier).toLocaleString()}.00
+                  <CardTitle className={fontSizes.h1.desktop}>
+                    ${Math.round(baseAmountVat * kpiMultiplier).toLocaleString()}.00
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -336,7 +336,7 @@ export default function TestingDashboardPage() {
                   <Card className="shadow-sm border border-gray-200">
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                      <CardTitle className="text-xl font-medium-heading">
+                      <CardTitle className="text-xl">
                         Tendencia de Flujo de Caja
                       </CardTitle>
                     </div>
@@ -412,7 +412,7 @@ export default function TestingDashboardPage() {
                   <Card className="shadow-sm border border-gray-200 flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle className="text-xl font-medium-heading">
+                        <CardTitle className="text-xl">
                           Tareas Pendientes
                         </CardTitle>
                         <CardDescription className="mt-1 font-light">
@@ -504,7 +504,7 @@ export default function TestingDashboardPage() {
                   <Card className="shadow-sm border border-gray-200 flex flex-col flex-1">
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle className="text-xl font-medium-heading">
+                        <CardTitle className="text-xl">
                           Facturas a Pagar
                         </CardTitle>
                       </div>
@@ -559,7 +559,7 @@ export default function TestingDashboardPage() {
                   <Card className="shadow-sm border border-gray-200">
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle className="text-xl font-medium-heading">
+                        <CardTitle className="text-xl">
                           Facturas a Cobrar
                         </CardTitle>
                       </div>

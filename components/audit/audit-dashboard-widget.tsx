@@ -8,6 +8,7 @@ import { Activity, Users, Clock, TrendingUp } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
+import { colors } from '@/styles'
 
 interface AuditDashboardWidgetProps {
   companyId: string
@@ -52,19 +53,8 @@ export function AuditDashboardWidget({ companyId }: AuditDashboardWidgetProps) {
     }
   }
 
-  const getActionColor = (action: string) => {
-    const colors = {
-      'create': 'bg-green-100 text-green-800',
-      'update': 'bg-blue-100 text-blue-800',
-      'delete': 'bg-red-100 text-red-800',
-      'login': 'bg-purple-100 text-purple-800',
-      'logout': 'bg-gray-100 text-gray-800',
-      'export': 'bg-yellow-100 text-yellow-800',
-      'import': 'bg-orange-100 text-orange-800'
-    }
-    
-    const actionLower = action.toLowerCase()
-    return Object.entries(colors).find(([key]) => actionLower.includes(key))?.[1] || 'bg-gray-100 text-gray-800'
+  const getActionColor = (_action: string) => {
+    return 'bg-white text-foreground border border-gray-200'
   }
 
   if (loading) {
@@ -143,38 +133,38 @@ export function AuditDashboardWidget({ companyId }: AuditDashboardWidgetProps) {
       <CardContent>
         {/* Estadísticas principales */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600">Eventos Totales</p>
-                  <p className="text-2xl font-bold text-blue-900">{(stats.total_logs || 0).toLocaleString()}</p>
+                  <p className="text-sm font-medium" style={{ color: colors.accent }}>Eventos Totales</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.accent }}>{(stats.total_logs || 0).toLocaleString()}</p>
                 </div>
-                <Activity className="h-8 w-8 text-blue-500" />
+                <Activity className="h-8 w-8" style={{ color: colors.accent }} />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600">Acciones Únicas</p>
-                  <p className="text-2xl font-bold text-green-900">{stats.unique_actions || 0}</p>
+                  <p className="text-sm font-medium" style={{ color: colors.accent }}>Acciones Únicas</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.accent }}>{stats.unique_actions || 0}</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
+                <TrendingUp className="h-8 w-8" style={{ color: colors.accent }} />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-600">Usuarios Activos</p>
-                  <p className="text-2xl font-bold text-purple-900">{stats.unique_users || 0}</p>
+                  <p className="text-sm font-medium" style={{ color: colors.accent }}>Usuarios Activos</p>
+                  <p className="text-2xl font-bold" style={{ color: colors.accent }}>{stats.unique_users || 0}</p>
                 </div>
-                <Users className="h-8 w-8 text-purple-500" />
+                <Users className="h-8 w-8" style={{ color: colors.accent }} />
               </div>
             </CardContent>
           </Card>
@@ -205,13 +195,13 @@ export function AuditDashboardWidget({ companyId }: AuditDashboardWidgetProps) {
           </h4>
           <div className="space-y-3">
             {recentLogs.map((log) => (
-              <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div key={log.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-all">
                 <div className="flex items-center gap-3">
-                  <Badge className={getActionColor(log.action)}>
+                  <Badge className={getActionColor(log.action)} style={{ color: colors.accent }}>
                     {log.action}
                   </Badge>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium">
                       {log.entityType || 'Sistema'}
                     </p>
                     <p className="text-xs text-gray-500">

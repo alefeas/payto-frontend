@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { invoiceService, Invoice } from "@/services/invoice.service"
 import { companyService } from "@/services/company.service"
 import { parseDateLocal } from "@/lib/utils"
+import { colors } from "@/styles"
 
 export default function ApproveInvoicesPage() {
   const { id } = useParams()
@@ -234,9 +235,9 @@ export default function ApproveInvoicesPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-          <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-          <p className="text-sm text-blue-900">
+        <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
+          <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
+          <p className="text-sm" style={{ color: colors.accent }}>
             {requiredApprovals === 0 ? (
               <span>Las facturas se <strong>aprueban automáticamente</strong> (sin control). Cambia esto en Configuración.</span>
             ) : (
@@ -255,7 +256,7 @@ export default function ApproveInvoicesPage() {
           <CardContent>
             {invoices.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <CheckCircle className="h-12 w-12 mx-auto mb-4" style={{ color: colors.accent }} />
                 <p className="text-lg font-medium">No hay facturas pendientes</p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Todas las facturas están aprobadas o no requieren aprobación
@@ -303,16 +304,16 @@ export default function ApproveInvoicesPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         {invoice.approvals?.some(a => a.user?.id === currentUserId) ? (
-                          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-medium text-green-700">Ya aprobaste</span>
+                          <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md">
+                            <CheckCircle className="h-4 w-4" style={{ color: colors.accent }} />
+                            <span className="text-sm font-medium" style={{ color: colors.accent }}>Ya aprobaste</span>
                           </div>
                         ) : (
                           <>
                             <Button 
                               size="sm" 
                               onClick={() => openApproveDialog(invoice)}
-                              className="bg-green-600 hover:bg-green-700"
+                              style={{ backgroundColor: colors.accent }}
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Aprobar
@@ -380,7 +381,7 @@ export default function ApproveInvoicesPage() {
             <Button variant="outline" onClick={() => setShowApproveDialog(false)} disabled={processing}>
               Cancelar
             </Button>
-            <Button onClick={handleApprove} disabled={processing} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleApprove} disabled={processing} style={{ backgroundColor: colors.accent }}>
               {processing ? 'Aprobando...' : 'Aprobar'}
             </Button>
           </DialogFooter>

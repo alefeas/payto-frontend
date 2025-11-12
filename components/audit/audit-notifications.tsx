@@ -8,6 +8,7 @@ import { Bell, AlertTriangle, Shield, Activity, User, Clock } from 'lucide-react
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
+import { colors } from '@/styles'
 
 interface AuditNotification {
   id: string
@@ -121,11 +122,11 @@ export function AuditNotifications({ companyId, limit = 10 }: AuditNotifications
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200'
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200'
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'critical': return '#dc2626' // red-600
+      case 'high': return '#b45309' // amber-700
+      case 'medium': return '#ca8a04' // amber-600
+      case 'low': return colors.accent
+      default: return '#6b7280' // gray-500
     }
   }
 
@@ -234,29 +235,27 @@ export function AuditNotifications({ companyId, limit = 10 }: AuditNotifications
             filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${
-                  notification.read ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-300'
-                }`}
+                className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm bg-white border-gray-200`}
                 onClick={() => markAsRead(notification.id)}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-full ${getSeverityColor(notification.severity)}`}>
+                  <div className="p-2 rounded-full border border-gray-200 bg-white">
                     {getTypeIcon(notification.type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-medium text-gray-900">
+                      <h4 className="text-sm font-medium" style={{ color: getSeverityColor(notification.severity) }}>
                         {notification.title}
                       </h4>
                       {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.accent }}></div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       {notification.message}
                     </p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{notification.user_email}</span>
                         <span>•</span>
                         <span>{notification.entity_type}</span>

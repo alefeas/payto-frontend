@@ -24,18 +24,9 @@ export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const getActionColor = (action: string) => {
-    const colors: Record<string, string> = {
-      'create': 'bg-green-100 text-green-800 hover:bg-green-200',
-      'update': 'bg-blue-100 text-blue-800 hover:bg-blue-200',
-      'delete': 'bg-red-100 text-red-800 hover:bg-red-200',
-      'login': 'bg-purple-100 text-purple-800 hover:bg-purple-200',
-      'logout': 'bg-gray-100 text-gray-800 hover:bg-gray-200',
-      'view': 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-      'export': 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
-      'import': 'bg-pink-100 text-pink-800 hover:bg-pink-200',
-    }
-    return colors[action.toLowerCase()] || 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+  const getActionColor = (_action: string) => {
+    // Fondo y borde neutro; el color se indica por el texto/acento
+    return 'bg-white text-foreground border border-gray-200'
   }
 
   const getActionLabel = (action: string) => {
@@ -108,7 +99,7 @@ export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8 w-64"
               />
-              <Eye className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <Eye className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
         </div>
@@ -135,7 +126,7 @@ export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
               {filteredLogs.map((log) => (
                 <TableRow key={log.id} className="border-b border-gray-200">
                   <TableCell>
-                    <Badge className={getActionColor(log.action)}>
+                    <Badge className={getActionColor(log.action)} style={{ color: 'var(--accent)' }}>
                       {getActionLabel(log.action)}
                     </Badge>
                   </TableCell>
@@ -218,7 +209,7 @@ export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
                               </div>
                               <div>
                                 <Label className="font-semibold">Acción</Label>
-                                <Badge className={getActionColor(log.action)}>
+                                <Badge className={getActionColor(log.action)} style={{ color: 'var(--accent)' }}>
                                   {getActionLabel(log.action)}
                                 </Badge>
                               </div>

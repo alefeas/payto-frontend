@@ -1,16 +1,17 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { colors } from "@/styles"
 
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "relative w-full rounded-xl border-2 px-4 py-3.5 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-5 [&>svg]:translate-y-0.5 [&>svg]:text-current shadow-sm",
+  "relative w-full rounded-xl border px-4 py-3.5 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-5 [&>svg]:translate-y-0.5 [&>svg]:text-current shadow-sm",
   {
     variants: {
       variant: {
-        default: "bg-blue-50 border-blue-200 text-blue-900 [&>svg]:text-blue-600",
+        default: "bg-white border-gray-200 text-foreground",
         destructive:
-          "bg-red-50 border-red-200 text-red-900 [&>svg]:text-red-600 *:data-[slot=alert-description]:text-red-800",
+          "bg-white border-gray-200 text-foreground",
       },
     },
     defaultVariants: {
@@ -29,6 +30,7 @@ function Alert({
       data-slot="alert"
       role="alert"
       className={cn(alertVariants({ variant }), className)}
+      style={{ color: colors.accent }}
       {...props}
     />
   )

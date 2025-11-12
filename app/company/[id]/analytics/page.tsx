@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, 
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AnalyticsCard } from "@/components/analytics/analytics-card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -18,6 +19,8 @@ import { analyticsService, type AnalyticsSummary, type RevenueTrend, type TopCli
 import { toast } from "sonner"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { Skeleton } from "@/components/ui/skeleton"
+import { AnalyticsSkeleton } from "@/components/analytics/AnalyticsSkeleton"
+import { colors } from "@/styles"
 
 export default function AnalyticsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -85,83 +88,7 @@ export default function AnalyticsPage() {
   }
 
   if (authLoading || (loading && !summary)) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-10 w-10 rounded" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-4 w-96" />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-[120px]" />
-              <Skeleton className="h-10 w-[180px]" />
-              <Skeleton className="h-10 w-[100px]" />
-              <Skeleton className="h-10 w-32" />
-            </div>
-          </div>
-          
-          {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-4 rounded" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-7 w-32 mb-1" />
-                  <Skeleton className="h-3 w-20" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Charts Grid Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-gray-200">
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-64 w-full rounded" />
-              </CardContent>
-            </Card>
-            <Card className="border-gray-200">
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-64 w-full rounded" />
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Alert Card Skeleton */}
-          <Card className="border-gray-200">
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="p-4 border border-gray-200 rounded-lg">
-                    <Skeleton className="h-4 w-32 mb-2" />
-                    <Skeleton className="h-8 w-16" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <AnalyticsSkeleton />
   }
 
   if (!isAuthenticated || !summary) return null
@@ -338,7 +265,7 @@ export default function AnalyticsPage() {
 
         {/* KPIs Principales */}
         {isRefreshing && summary ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="border-gray-200">
                 <CardContent className="p-6">
@@ -352,132 +279,55 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="transition-all duration-300 ease-in-out border-gray-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="w-full transition-all duration-300 ease-in-out">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Ventas {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
-                  </p>
-                  {selectedCurrency === 'ALL' && summary.sales_by_currency ? (
-                    <>
-                      <p className="text-2xl font-bold text-green-600 mb-2">
-                        $ {summary.sales_by_currency.ARS.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-muted-foreground">
-                          USD $ {summary.sales_by_currency.USD.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          EUR € {summary.sales_by_currency.EUR.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold text-green-600">
-                        {currencySymbols[selectedCurrency]} {currencyData.sales.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {currencyData.sales.count} facturas
-                      </p>
-                    </>
-                  )}
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <AnalyticsCard
+            title={`Ventas ${period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}`}
+            mainValue={selectedCurrency === 'ALL' && summary.sales_by_currency 
+              ? `$ ${summary.sales_by_currency.ARS.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `${currencySymbols[selectedCurrency]} ${currencyData.sales.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            }
+            secondaryValues={selectedCurrency === 'ALL' && summary.sales_by_currency ? [
+              { label: 'USD', value: `$ ${summary.sales_by_currency.USD.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+              { label: 'EUR', value: `€ ${summary.sales_by_currency.EUR.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+            ] : undefined}
+            tertiaryValue={`${selectedCurrency === 'ALL' ? summary.sales.count : currencyData.sales.count} facturas`}
+            icon={TrendingUp}
+            isPositive={true}
+          />
 
-          <Card className="transition-all duration-300 ease-in-out border-gray-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="w-full transition-all duration-300 ease-in-out">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Compras {period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}
-                  </p>
-                  {selectedCurrency === 'ALL' && summary.purchases_by_currency ? (
-                    <>
-                      <p className="text-2xl font-bold text-red-600 mb-2">
-                        $ {summary.purchases_by_currency.ARS.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-muted-foreground">
-                          USD $ {summary.purchases_by_currency.USD.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          EUR € {summary.purchases_by_currency.EUR.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold text-red-600">
-                        {currencySymbols[selectedCurrency]} {currencyData.purchases.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {currencyData.purchases.count} facturas
-                      </p>
-                    </>
-                  )}
-                </div>
-                <TrendingDown className="h-8 w-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsCard
+            title={`Compras ${period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}`}
+            mainValue={selectedCurrency === 'ALL' && summary.purchases_by_currency 
+              ? `$ ${summary.purchases_by_currency.ARS.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `${currencySymbols[selectedCurrency]} ${currencyData.purchases.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            }
+            secondaryValues={selectedCurrency === 'ALL' && summary.purchases_by_currency ? [
+              { label: 'USD', value: `$ ${summary.purchases_by_currency.USD.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+              { label: 'EUR', value: `€ ${summary.purchases_by_currency.EUR.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+            ] : undefined}
+            tertiaryValue={`${selectedCurrency === 'ALL' ? summary.purchases.count : currencyData.purchases.count} facturas`}
+            icon={TrendingDown}
+            isPositive={false}
+          />
 
-          <Card className="transition-all duration-300 ease-in-out border-gray-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="w-full transition-all duration-300 ease-in-out">
-                  <p className="text-sm text-muted-foreground mb-2">Balance Neto</p>
-                  {selectedCurrency === 'ALL' && summary.sales_by_currency && summary.purchases_by_currency ? (
-                    <>
-                      <p className={`text-2xl font-bold mb-2 ${(summary.sales_by_currency.ARS.total - summary.purchases_by_currency.ARS.total) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        $ {(summary.sales_by_currency.ARS.total - summary.purchases_by_currency.ARS.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-muted-foreground">
-                          USD $ {(summary.sales_by_currency.USD.total - summary.purchases_by_currency.USD.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          EUR € {(summary.sales_by_currency.EUR.total - summary.purchases_by_currency.EUR.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className={`text-2xl font-bold ${currencyData.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {currencySymbols[selectedCurrency]} {currencyData.balance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Ventas - Compras
-                      </p>
-                    </>
-                  )}
-                </div>
-                <DollarSign className={`h-8 w-8 ${currencyData.balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsCard
+            title={`Balance ${period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}`}
+            mainValue={`${currencySymbols[selectedCurrency]} ${currencyData.balance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            secondaryValues={selectedCurrency === 'ALL' && summary.sales_by_currency && summary.purchases_by_currency ? [
+              { label: 'USD', value: `$ ${(summary.sales_by_currency.USD.total - summary.purchases_by_currency.USD.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+              { label: 'EUR', value: `€ ${(summary.sales_by_currency.EUR.total - summary.purchases_by_currency.EUR.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+            ] : undefined}
+            icon={DollarSign}
+            isPositive={currencyData.balance >= 0}
+          />
 
-          <Card className="transition-all duration-300 ease-in-out border-gray-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="transition-all duration-300 ease-in-out">
-                  <p className="text-sm text-muted-foreground">Margen</p>
-                  <p className={`text-2xl font-bold ${currencyData.margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {currencyData.margin.toFixed(1)}%
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Rentabilidad
-                  </p>
-                </div>
-                <BarChart3 className={`h-8 w-8 ${currencyData.margin >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsCard
+            title="Margen"
+            mainValue={`${currencyData.margin.toFixed(1)}%`}
+            tertiaryValue="Rentabilidad"
+            icon={BarChart3}
+            isPositive={currencyData.margin >= 0}
+          />
         </div>
         )}
 
@@ -516,12 +366,12 @@ export default function AnalyticsPage() {
                       return `${currency} ${Number(value).toLocaleString('es-AR')}`
                     }} />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    <Line type="monotone" dataKey="sales_ARS" stroke="#10b981" name="Ventas ARS" strokeWidth={2} />
-                    <Line type="monotone" dataKey="sales_USD" stroke="#059669" name="Ventas USD" strokeWidth={2} strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="sales_EUR" stroke="#047857" name="Ventas EUR" strokeWidth={2} strokeDasharray="3 3" />
-                    <Line type="monotone" dataKey="purchases_ARS" stroke="#ef4444" name="Compras ARS" strokeWidth={2} />
-                    <Line type="monotone" dataKey="purchases_USD" stroke="#dc2626" name="Compras USD" strokeWidth={2} strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="purchases_EUR" stroke="#b91c1c" name="Compras EUR" strokeWidth={2} strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="sales_ARS" stroke={colors.gradient.topLeft} name="Ventas ARS" strokeWidth={2} />
+                    <Line type="monotone" dataKey="sales_USD" stroke={colors.gradient.topRight} name="Ventas USD" strokeWidth={2} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="sales_EUR" stroke={colors.gradient.bottomLeft} name="Ventas EUR" strokeWidth={2} strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="purchases_ARS" stroke={colors.gradient.bottomRight} name="Compras ARS" strokeWidth={2} />
+                    <Line type="monotone" dataKey="purchases_USD" stroke={colors.accent} name="Compras USD" strokeWidth={2} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="purchases_EUR" stroke={colors.gradient.bottomRight} name="Compras EUR" strokeWidth={2} strokeDasharray="3 3" />
                   </LineChart>
                 ) : (
                   <LineChart data={revenueTrend}>
@@ -530,8 +380,8 @@ export default function AnalyticsPage() {
                     <YAxis />
                     <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} />
                     <Legend />
-                    <Line type="monotone" dataKey={`sales_${selectedCurrency}`} stroke="#10b981" name="Ventas" strokeWidth={2} />
-                    <Line type="monotone" dataKey={`purchases_${selectedCurrency}`} stroke="#ef4444" name="Compras" strokeWidth={2} />
+                    <Line type="monotone" dataKey={`sales_${selectedCurrency}`} stroke={colors.gradient.topLeft} name="Ventas" strokeWidth={2} />
+                    <Line type="monotone" dataKey={`purchases_${selectedCurrency}`} stroke={colors.gradient.bottomRight} name="Compras" strokeWidth={2} />
                   </LineChart>
                 )}
               </ResponsiveContainer>
@@ -567,9 +417,9 @@ export default function AnalyticsPage() {
                       return `${currency} ${Number(value).toLocaleString('es-AR')}`
                     }} />
                     <Legend />
-                    <Line type="monotone" dataKey="balance_ARS" stroke="#6366f1" name="Balance ARS" strokeWidth={2} />
-                    <Line type="monotone" dataKey="balance_USD" stroke="#4f46e5" name="Balance USD" strokeWidth={2} strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="balance_EUR" stroke="#4338ca" name="Balance EUR" strokeWidth={2} strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="balance_ARS" stroke={colors.gradient.topLeft} name="Balance ARS" strokeWidth={2} />
+                    <Line type="monotone" dataKey="balance_USD" stroke={colors.gradient.topRight} name="Balance USD" strokeWidth={2} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="balance_EUR" stroke={colors.gradient.bottomRight} name="Balance EUR" strokeWidth={2} strokeDasharray="3 3" />
                   </LineChart>
                 ) : (
                   <LineChart data={revenueTrend.map((item, index, arr) => {
@@ -588,7 +438,7 @@ export default function AnalyticsPage() {
                     <YAxis />
                     <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} />
                     <Legend />
-                    <Line type="monotone" dataKey="balance" stroke="#6366f1" name="Balance Acumulado" strokeWidth={2} />
+                    <Line type="monotone" dataKey="balance" stroke={colors.gradient.topLeft} name="Balance Acumulado" strokeWidth={2} />
                   </LineChart>
                 )}
               </ResponsiveContainer>
@@ -601,49 +451,49 @@ export default function AnalyticsPage() {
         <Card className="border-gray-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <AlertTriangle className="h-5 w-5" style={{ color: colors.accent }} />
               Alertas de Vencimientos
             </CardTitle>
           </CardHeader>
           <CardContent>
             {pendingInvoices && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-yellow-50 rounded-lg">
+                <div className="p-4 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-yellow-800">Facturas a Cobrar</p>
-                      <p className="text-xs text-yellow-600">Pendientes de pago</p>
+                      <p className="font-semibold text-gray-800">Facturas a Cobrar</p>
+                      <p className="text-xs text-muted-foreground">Pendientes de pago</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-yellow-700">
+                      <p className="text-2xl font-bold">
                         {pendingInvoices.to_collect}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-orange-50 rounded-lg">
+                <div className="p-4 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-orange-800">Facturas a Pagar</p>
-                      <p className="text-xs text-orange-600">Aprobadas sin pagar</p>
+                      <p className="font-semibold text-gray-800">Facturas a Pagar</p>
+                      <p className="text-xs text-muted-foreground">Aprobadas sin pagar</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-orange-700">
+                      <p className="text-2xl font-bold">
                         {pendingInvoices.to_pay}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-green-50 rounded-lg">
+                <div className="p-4 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-green-800">Pendientes de Aprobar</p>
-                      <p className="text-xs text-green-600">Requieren revisión</p>
+                      <p className="font-semibold text-gray-800">Pendientes de Aprobar</p>
+                      <p className="text-xs text-muted-foreground">Requieren revisión</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-green-700">
+                      <p className="text-2xl font-bold">
                         {pendingInvoices.pending_approvals}
                       </p>
                     </div>

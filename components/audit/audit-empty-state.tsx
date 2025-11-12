@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react'
+import { colors } from '@/styles'
 
 interface AuditEmptyStateProps {
   title?: string
@@ -41,16 +42,14 @@ export function AuditEmptyState({
           icon: AlertCircle,
           title: title || 'Sin Permisos',
           description: description || 'No tienes permisos para ver los registros de auditoría de esta empresa.',
-          color: 'text-red-500',
-          bgColor: 'bg-red-50'
+          iconColor: '#dc2626'
         }
       case 'no-logs':
         return {
           icon: FileText,
           title: title || 'Sin Registros',
           description: description || 'Aún no hay actividad registrada en esta empresa.',
-          color: 'text-blue-500',
-          bgColor: 'bg-blue-50'
+          iconColor: colors.accent
         }
       case 'no-results':
       default:
@@ -58,8 +57,7 @@ export function AuditEmptyState({
           icon: Search,
           title: title || 'Sin Resultados',
           description: description || 'No se encontraron registros que coincidan con tus filtros.',
-          color: 'text-gray-500',
-          bgColor: 'bg-gray-50'
+          iconColor: '#6b7280'
         }
     }
   }
@@ -71,11 +69,11 @@ export function AuditEmptyState({
     <Card className="border-dashed">
       <CardContent className="p-8">
         <div className="text-center">
-          <div className={`mx-auto h-12 w-12 ${content.bgColor} rounded-full flex items-center justify-center mb-4`}>
-            <Icon className={`h-6 w-6 ${content.color}`} />
+          <div className="mx-auto h-12 w-12 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4">
+            <Icon className="h-6 w-6" style={{ color: content.iconColor }} />
           </div>
           
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold mb-2" style={{ color: content.iconColor }}>
             {content.title}
           </h3>
           

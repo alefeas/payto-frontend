@@ -94,7 +94,7 @@ export function AuditSearchAdvanced({ companyId, onSearch, loading }: AuditSearc
       {/* Barra de búsqueda principal */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar en registros de auditoría..."
             value={query}
@@ -117,7 +117,7 @@ export function AuditSearchAdvanced({ companyId, onSearch, loading }: AuditSearc
         <Button
           variant="outline"
           onClick={() => setShowFilters(!showFilters)}
-          className={showFilters ? 'bg-blue-50 border-blue-200' : ''}
+          className={showFilters ? 'bg-white border-gray-200' : ''}
         >
           <Filter className="h-4 w-4 mr-2" />
           Filtros
