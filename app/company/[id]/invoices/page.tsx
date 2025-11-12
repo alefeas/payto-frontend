@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { FileText, Download, Filter, Search, CheckSquare, Square, Eye, ExternalLink, Loader2, RefreshCw, Trash2 } from "lucide-react"
+import { FileText, Download, Filter, Search, Loader2, RefreshCw } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,9 +16,13 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
+import { colors } from "@/styles"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Skeleton } from "@/components/ui/skeleton"
-import { InvoiceListSkeleton } from "@/components/accounts/InvoiceListSkeleton"
+
+import { InvoiceCard } from "@/components/invoices/InvoiceCard"
+import { InvoicesPageSkeleton, InvoiceCardSkeleton } from "@/components/invoices/InvoicesSkeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -63,6 +67,8 @@ export default function InvoicesPage() {
   })
   const [syncResults, setSyncResults] = useState<any>(null)
   const [syncProgress, setSyncProgress] = useState<string>('')
+  const [downloadingTXT, setDownloadingTXT] = useState(false)
+  const [downloadingPDF, setDownloadingPDF] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -237,161 +243,41 @@ export default function InvoicesPage() {
     }
   }
 
-  const getInvoiceStatusBadges = (invoice: any) => {
-    const badges = []
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const dueDate = new Date(invoice.due_date)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    // Asegurar comparación robusta (string) para distinguir emisor vs receptor
-    const isIssuer = String(invoice.issuer_company_id) === String(companyId)
-    const isReceiver = String(invoice.receiver_company_id) === String(companyId)
-    const isRejected = invoice.display_status === 'rejected' || invoice.status === 'rejected'
-    const companyStatus = invoice.company_statuses?.[companyId]
-    const status = invoice.display_status || invoice.status
-    
-    // Verificar si está pagada/cobrada
-    // Para el badge de vencida: mostrar si pasó la fecha Y no está pagada/cobrada/anulada/rechazada
-    // Incluye NC/ND porque es solo informativo
-    const isPaidOrCollected = invoice.payment_status === 'collected' || 
-                              invoice.payment_status === 'paid' || 
-                              companyStatus === 'collected' || 
-                              companyStatus === 'paid' || 
-                              status === 'collected' || 
-                              status === 'paid'
-    
-    const isOverdue = dueDate < today && !isPaidOrCollected && status !== 'cancelled' && !isRejected
-    
-    // 1. Vencimiento (solo si no está pagada/cobrada/rechazada/anulada)
-    if (isOverdue) {
-      badges.push(<Badge key="overdue" className="bg-red-600 hover:bg-red-600 text-white border-red-600">Vencida</Badge>)
-    }
-    
-    // 2. Estado principal (cancelled tiene prioridad absoluta)
-    // PRIORIDAD 1: Anulada (tiene prioridad sobre todo)
-    if (status === 'cancelled' || invoice.payment_status === 'cancelled') {
-      badges.push(<Badge key="status" className="bg-gray-500 text-white">Anulada</Badge>)
-    } else if (invoice.payment_status === 'collected' || invoice.payment_status === 'paid' || companyStatus === 'collected' || companyStatus === 'paid' || status === 'collected' || status === 'paid') {
-      // PRIORIDAD 2: payment_status tiene prioridad sobre display_status
-      // Si la compañía actual es receptora, mostrar "Pagada"; si es emisora, "Cobrada"
-      const label = isReceiver ? 'Pagada' : 'Cobrada'
-      badges.push(<Badge key="status" className="bg-green-500 text-white">{label}</Badge>)
-    } else if (invoice.payment_status === 'partial') {
-      const label = isReceiver ? 'Pago Parcial' : 'Cobro Parcial'
-      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">{label}</Badge>)
-    } else if (status === 'partially_cancelled') {
-      badges.push(<Badge key="status" className="bg-orange-100 text-orange-800">Parc. Anulada</Badge>)
-    } else if (status === 'pending_approval') {
-      badges.push(<Badge key="status" className="bg-yellow-100 text-yellow-800">Pend. Aprobación</Badge>)
-    } else if (status === 'rejected') {
-      badges.push(<Badge key="status" className="bg-red-100 text-red-800">Rechazada</Badge>)
-    } else if (status === 'approved') {
-      badges.push(<Badge key="status" className="bg-green-100 text-green-800">Aprobada</Badge>)
-    } else if (status === 'issued') {
-      badges.push(<Badge key="status" className="bg-blue-100 text-blue-800">Emitida</Badge>)
-    }
-    
-    return <div className="flex gap-1.5 flex-wrap items-center">{badges}</div>
-  }
+
 
   const filteredInvoices = getFilteredInvoices()
 
   if (authLoading || initialLoad) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-          </div>
-          
-          {/* Action Buttons Skeleton */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-8 w-48" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-                <div className="flex gap-2">
-                  <Skeleton className="h-10 w-32" />
-                  <Skeleton className="h-10 w-40" />
-                  <Skeleton className="h-10 w-36" />
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-          
-          {/* Filters Skeleton */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-10 w-64" />
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-10 w-24" />
-              </div>
-            </CardHeader>
-          </Card>
-          
-          {/* Invoice List Skeleton */}
-          <InvoiceListSkeleton count={8} />
-        </div>
-      </div>
-    )
+    return <InvoicesPageSkeleton />
   }
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         <div className="flex items-center gap-4">
           <BackButton href={`/company/${companyId}`} />
           <div>
-            <h1 className="text-3xl font-bold">Ver Comprobantes</h1>
-            <p className="text-muted-foreground">Gestionar todos los comprobantes de la empresa</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Ver Comprobantes</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Gestionar todos los comprobantes de la empresa</p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold">Comprobantes</h2>
-              {!isLoading && <p className="text-sm text-muted-foreground">{total} comprobantes en total</p>}
+              <h2 className="text-xl sm:text-2xl font-semibold">Comprobantes</h2>
             </div>
-            <div className="flex gap-2">
-              <span>Comprobantes {!isLoading && `(${total} total)`}</span>
-              <div className="flex gap-2">
-                <Button
-                  onClick={async () => {
-                    if (!confirm('⚠️ ATENCIÓN: Esto eliminará TODOS los comprobantes de esta empresa.\n\n¿Estás seguro? Esta acción no se puede deshacer.')) return
-                    if (!confirm('¿REALMENTE estás seguro? Se eliminarán ' + total + ' comprobantes.')) return
-                    try {
-                      await invoiceService.deleteAllInvoices(companyId)
-                      toast.success('Todos los comprobantes fueron eliminados')
-                      window.location.reload()
-                    } catch (error: any) {
-                      toast.error(error.response?.data?.message || 'Error al eliminar comprobantes')
-                    }
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  size="sm"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar Todas
-                </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={() => setShowSyncDialog(true)}
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Sincronizar con AFIP
+                  Sinc. AFIP
                 </Button>
                 <Button 
                   onClick={async () => {
@@ -400,8 +286,8 @@ export default function InvoicesPage() {
                       return
                     }
                     
+                    setDownloadingTXT(true)
                     try {
-                      toast.info('Generando TXT...')
                       const blob = await invoiceService.downloadBulk(companyId, selectedInvoices, 'txt')
                       const url = window.URL.createObjectURL(blob)
                       const a = document.createElement('a')
@@ -415,13 +301,25 @@ export default function InvoicesPage() {
                     } catch (error: any) {
                       console.error('Download error:', error)
                       toast.error(error.response?.data?.error || 'Error al descargar archivos')
+                    } finally {
+                      setDownloadingTXT(false)
                     }
                   }}
-                  disabled={selectedInvoices.length === 0}
+                  disabled={selectedInvoices.length === 0 || downloadingTXT}
                   size="sm"
+                  className="w-full sm:w-auto"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar TXT ({selectedInvoices.length})
+                  {downloadingTXT ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      TXT...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      TXT ({selectedInvoices.length})
+                    </>
+                  )}
                 </Button>
                 <Button 
                   onClick={async () => {
@@ -430,8 +328,8 @@ export default function InvoicesPage() {
                       return
                     }
                     
+                    setDownloadingPDF(true)
                     try {
-                      toast.info('Generando PDF...')
                       const blob = await invoiceService.downloadBulk(companyId, selectedInvoices, 'pdf')
                       const url = window.URL.createObjectURL(blob)
                       const a = document.createElement('a')
@@ -445,30 +343,38 @@ export default function InvoicesPage() {
                     } catch (error: any) {
                       console.error('Download error:', error)
                       toast.error(error.response?.data?.error || 'Error al descargar archivos')
+                    } finally {
+                      setDownloadingPDF(false)
                     }
                   }}
-                  disabled={selectedInvoices.length === 0}
+                  disabled={selectedInvoices.length === 0 || downloadingPDF}
                   size="sm"
                   variant="outline"
+                  className="w-full sm:w-auto"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Descargar PDF ({selectedInvoices.length})
+                  {downloadingPDF ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      PDF...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      PDF ({selectedInvoices.length})
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
           </div>
-          {selectedInvoices.length > 0 && (
-            <p className="text-sm text-blue-600">
-              {selectedInvoices.length}/50 comprobantes seleccionados
-            </p>
-          )}
+
           <div>
             <div className="space-y-4 mb-6">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por número de factura..."
+                    placeholder="Buscar por número..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10"
@@ -482,7 +388,7 @@ export default function InvoicesPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   <Filter className="h-4 w-4" />
                   Filtros
@@ -499,8 +405,7 @@ export default function InvoicesPage() {
               </div>
               
               {showFilters && (
-                <div className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="space-y-2">
                       <Label>Estado</Label>
                       <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -579,144 +484,71 @@ export default function InvoicesPage() {
                         minDate={dateFromFilter ? parseDateLocal(dateFromFilter) || undefined : undefined}
                       />
                     </div>
-                  </div>
                 </div>
               )}
             </div>
 
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-              <div className="grid grid-cols-[40px_120px_140px_1fr_100px_120px_180px_140px] gap-4 p-4 border-b border-gray-200 bg-gray-50 font-medium text-sm">
-                <div className="flex items-center justify-center">
+            {/* Header con seleccionar todos */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg mb-4 p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Checkbox
                     checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
                     onCheckedChange={handleSelectAll}
+                    className="flex-shrink-0"
                   />
-                </div>
-                <div>Número</div>
-                <div>Tipo</div>
-                <div>Cliente</div>
-                <div>Fecha</div>
-                <div>Total</div>
-                <div>Estado</div>
-                <div>Acciones</div>
-              </div>
-
-              {isLoading && !initialLoad ? (
-                // Skeleton para búsquedas, filtros y paginación
-                Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-[40px_120px_140px_1fr_100px_120px_180px_140px] gap-4 p-4 border-b border-gray-200">
-                    <div className="h-5 w-5 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 bg-muted rounded animate-pulse"></div>
-                    <div className="flex gap-1">
-                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
-                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
-                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
-                      <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-gray-700 truncate">
+                      {selectedInvoices.length > 0 
+                        ? `${selectedInvoices.length} seleccionado${selectedInvoices.length > 1 ? 's' : ''}`
+                        : 'Seleccionar todos'
+                      }
+                    </div>
+                    <div className="text-xs text-gray-500 sm:hidden">
+                      {total} total
                     </div>
                   </div>
+                </div>
+                <div className="text-sm text-gray-500 hidden sm:block flex-shrink-0">
+                  {total} comprobante{total !== 1 ? 's' : ''} en total
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de facturas */}
+            <div className="space-y-3">
+              {isLoading && !initialLoad ? (
+                // Skeleton para búsquedas, filtros y paginación
+                Array.from({ length: 8 }).map((_, i) => (
+                  <InvoiceCardSkeleton key={i} />
                 ))
-              ) : filteredInvoices.map((invoice) => {
-                    const clientName = invoice.receiver_name || invoice.client?.business_name || 
-                                      (invoice.client?.first_name && invoice.client?.last_name 
-                                        ? `${invoice.client.first_name} ${invoice.client.last_name}` 
-                                        : 'Sin cliente')
-                    return (
-                      <div key={invoice.id} className="grid grid-cols-[40px_120px_140px_1fr_100px_120px_180px_140px] gap-4 p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center justify-center">
-                          <Checkbox
-                            checked={selectedInvoices.includes(invoice.id)}
-                            onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                          />
-                        </div>
-                        <div className="text-sm">{invoice.number}</div>
-                        <div>
-                          <Badge className="bg-gray-100 text-gray-700 border-gray-200">Tipo {invoice.type}</Badge>
-                        </div>
-                        <div className="truncate" title={clientName}>
-                          {clientName}
-                          <div className="flex gap-1 mt-1">
-                            {invoice.is_manual_load ? (
-                              <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50 text-xs">Carga Manual</Badge>
-                            ) : invoice.synced_from_afip ? (
-                              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs">Sinc. AFIP</Badge>
-                            ) : invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip ? (
-                              <Badge className="bg-green-50 text-green-700 border border-green-200 text-xs">Subidas a AFIP</Badge>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div>{parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}</div>
-                        <div className="font-medium">
-                          {formatCurrency(parseFloat(invoice.total), invoice.currency)}
-                        </div>
-                        <div>{getInvoiceStatusBadges(invoice)}</div>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => router.push(`/company/${companyId}/invoices/${invoice.id}`)}
-                            title="Ver detalle"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => downloadPDF(invoice.id)}
-                            title="Descargar PDF"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => downloadTXT(invoice.id)}
-                            title="Descargar TXT AFIP"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={async () => {
-                              if (confirm('¿Estás seguro de eliminar este comprobante? Solo se borrará de tu sistema, no de AFIP.')) {
-                                try {
-                                  await invoiceService.deleteInvoice(companyId, invoice.id)
-                                  toast.success('Comprobante eliminado')
-                                  window.location.reload()
-                                } catch (error: any) {
-                                  toast.error(error.response?.data?.message || 'Error al eliminar comprobante')
-                                }
-                              }
-                            }}
-                            title="Eliminar (solo en homologación)"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-              })}
+              ) : filteredInvoices.map((invoice) => (
+                <InvoiceCard
+                  key={invoice.id}
+                  invoice={invoice}
+                  companyId={companyId}
+                  isSelected={selectedInvoices.includes(invoice.id)}
+                  onSelect={handleSelectInvoice}
+                  onDownloadPDF={downloadPDF}
+                  onDownloadTXT={downloadTXT}
+                />
+              ))}
 
               {!isLoading && filteredInvoices.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No se encontraron comprobantes</p>
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium mb-2">No se encontraron comprobantes</p>
+                  <p className="text-sm">Intenta ajustar los filtros o crear un nuevo comprobante</p>
                 </div>
               )}
             </div>
             
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 pt-4 border-t border-gray-200 gap-3 sm:gap-0">
+                <div className="text-sm text-muted-foreground text-center sm:text-left">
                   Página {currentPage} de {totalPages}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center sm:justify-end">
                   <Button
                     variant="outline"
                     size="sm"
@@ -753,16 +585,16 @@ export default function InvoicesPage() {
           {!syncResults ? (
             <div className="space-y-4">
               {syncing && syncProgress && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <div className="bg-muted/30 border border-muted p-4 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: colors.accent }} />
                     <div>
-                      <p className="font-medium text-blue-900">Sincronizando con AFIP</p>
-                      <p className="text-sm text-blue-700">{syncProgress}</p>
+                      <p className="font-medium text-foreground">Sincronizando con AFIP</p>
+                      <p className="text-sm text-muted-foreground">{syncProgress}</p>
                     </div>
                   </div>
-                  <div className="mt-3 bg-blue-100 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                  <div className="mt-3 rounded-full h-2 bg-muted">
+                    <div className="h-2 rounded-full animate-pulse" style={{ width: '60%', backgroundColor: colors.accent }}></div>
                   </div>
                 </div>
               )}
@@ -772,9 +604,10 @@ export default function InvoicesPage() {
                   onClick={() => setSyncMode('single')}
                   className={`p-4 border-2 rounded-lg text-left transition-all ${
                     syncMode === 'single' 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'bg-muted/30' 
+                      : 'border-border/40 hover:border-border'
                   }`}
+                  style={syncMode === 'single' ? { borderColor: colors.accent } : undefined}
                 >
                   <div className="font-medium mb-1">Un comprobante específico</div>
                   <div className="text-sm text-muted-foreground">Consultar por número de comprobante</div>
@@ -784,9 +617,10 @@ export default function InvoicesPage() {
                   onClick={() => setSyncMode('date_range')}
                   className={`p-4 border-2 rounded-lg text-left transition-all ${
                     syncMode === 'date_range' 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'bg-muted/30' 
+                      : 'border-border/40 hover:border-border'
                   }`}
+                  style={syncMode === 'date_range' ? { borderColor: colors.accent } : undefined}
                 >
                   <div className="font-medium mb-1">Rango de fechas</div>
                   <div className="text-sm text-muted-foreground">Traer todos los comprobantes de un período</div>
@@ -855,7 +689,7 @@ export default function InvoicesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-sm text-gray-800 space-y-2">
                     <p className="font-medium">Qué hace la sincronización:</p>
                     <ul className="list-disc list-inside space-y-1 text-xs">
                       <li>Consulta el comprobante específico en AFIP</li>
@@ -874,26 +708,29 @@ export default function InvoicesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Fecha Desde *</Label>
-                      <Input
-                        type="date"
-                        value={syncForm.date_from}
-                        onChange={(e) => setSyncForm({...syncForm, date_from: e.target.value})}
+                      <DatePicker
+                        date={syncForm.date_from ? new Date(syncForm.date_from) : undefined}
+                        onSelect={(date) => setSyncForm({...syncForm, date_from: date ? date.toISOString().split('T')[0] : ''})}
+                        placeholder="Seleccionar fecha"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Fecha Hasta *</Label>
-                      <Input
-                        type="date"
-                        value={syncForm.date_to}
-                        min={syncForm.date_from}
-                        onChange={(e) => setSyncForm({...syncForm, date_to: e.target.value})}
+                      <DatePicker
+                        date={syncForm.date_to ? new Date(syncForm.date_to) : undefined}
+                        onSelect={(date) => setSyncForm({...syncForm, date_to: date ? date.toISOString().split('T')[0] : ''})}
+                        placeholder="Seleccionar fecha"
+                        minDate={syncForm.date_from ? new Date(syncForm.date_from) : undefined}
                       />
                     </div>
                   </div>
-                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-800">
-                    <p><strong>⚠️ Límite:</strong> El rango máximo permitido es de 90 días (3 meses).</p>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-blue-900 space-y-2">
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Límite:</strong> El rango máximo permitido es de 90 días (3 meses).
+                    </AlertDescription>
+                  </Alert>
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-sm text-gray-800 space-y-2">
                     <p className="font-medium">Qué hace la sincronización masiva:</p>
                     <ul className="list-disc list-inside space-y-1 text-xs">
                       <li>Consulta todos los puntos de venta autorizados en AFIP</li>
@@ -907,7 +744,7 @@ export default function InvoicesPage() {
                       <li>NO podrás editar: montos, cantidades ni precios (deben coincidir con AFIP)</li>
                       <li>Los comprobantes se marcan como "Sincronizado AFIP"</li>
                     </ul>
-                    <p className="text-xs mt-2 font-medium text-blue-800">Nota: Este proceso puede tardar varios minutos según la cantidad de comprobantes.</p>
+                    <p className="text-xs mt-2 font-medium text-muted-foreground">Nota: Este proceso puede tardar varios minutos según la cantidad de comprobantes.</p>
                   </div>
                 </div>
               )}
@@ -917,28 +754,28 @@ export default function InvoicesPage() {
               <div className="grid grid-cols-3 gap-4">
                 <Card className="p-4">
                   <p className="text-sm text-muted-foreground">Total Encontradas</p>
-                  <p className="text-3xl font-bold text-blue-600">{syncResults.imported_count}</p>
+                  <p className="text-3xl font-bold text-foreground">{syncResults.imported_count}</p>
                 </Card>
                 <Card className="p-4">
                   <p className="text-sm text-muted-foreground">Nuevos Importados</p>
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className="text-3xl font-bold text-foreground">
                     {syncResults.invoices?.filter((inv: any) => inv.saved).length || 0}
                   </p>
                 </Card>
                 <Card className="p-4">
                   <p className="text-sm text-muted-foreground">Ya Existían</p>
-                  <p className="text-3xl font-bold text-orange-600">
+                  <p className="text-3xl font-bold text-foreground">
                     {syncResults.invoices?.filter((inv: any) => !inv.saved).length || 0}
                   </p>
                 </Card>
               </div>
               
               {syncResults.auto_created_clients && syncResults.auto_created_clients > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm font-medium text-yellow-800">
+                <div className="bg-muted/30 border border-muted p-3 rounded-lg mb-4">
+                  <p className="text-sm font-medium text-foreground">
                     ⚠️ Se crearon {syncResults.auto_created_clients} clientes archivados
                   </p>
-                  <p className="text-xs text-yellow-700 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Estos clientes requieren revisión en la sección de Clientes para completar sus datos.
                   </p>
                 </div>
@@ -959,12 +796,12 @@ export default function InvoicesPage() {
                               </p>
                             )}
                             {!inv.saved && (
-                              <p className="text-xs text-orange-600 mt-1">
+                              <p className="text-xs text-muted-foreground mt-1">
                                 ⚠️ Este comprobante ya se encuentra en tu sistema
                               </p>
                             )}
                           </div>
-                          <Badge className={inv.saved ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}>
+                          <Badge variant="outline">
                             {inv.saved ? 'Importada' : 'Ya existe'}
                           </Badge>
                         </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2, Eye } from "lucide-react"
+import { Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2, Eye, ShoppingCart, Calculator, Clock, MessageSquare } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { parseDateLocal, formatDateToLocal } from "@/lib/utils"
+import { colors } from "@/styles"
 
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -216,19 +217,35 @@ export default function InvoiceDetailPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      emitida: "bg-blue-500 text-white hover:bg-blue-600",
-      pagada: "bg-green-500 text-white hover:bg-green-600", 
-      vencida: "bg-red-500 text-white hover:bg-red-600",
-      pendiente: "bg-yellow-500 text-white hover:bg-yellow-600"
+    const variants: Record<string, { label: string; className: string }> = {
+      // Español - usando colores suaves originales
+      emitida: { label: "Emitida", className: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+      pagada: { label: "Pagada", className: "bg-green-50 text-green-700 border-green-200" },
+      cobrada: { label: "Cobrada", className: "bg-green-50 text-green-700 border-green-200" },
+      vencida: { label: "Vencida", className: "bg-red-50 text-red-700 border-red-200" },
+      pendiente: { label: "Pendiente", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+      aprobada: { label: "Aprobada", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+      rechazada: { label: "Rechazada", className: "bg-red-50 text-red-700 border-red-200" },
+      anulada: { label: "Anulada", className: "bg-gray-50 text-gray-600 border-gray-200" },
+      // Inglés mapeado a labels en español
+      issued: { label: "Emitida", className: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+      paid: { label: "Pagada", className: "bg-green-50 text-green-700 border-green-200" },
+      collected: { label: "Cobrada", className: "bg-green-50 text-green-700 border-green-200" },
+      pending: { label: "Pendiente", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+      approved: { label: "Aprobada", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+      rejected: { label: "Rechazada", className: "bg-red-50 text-red-700 border-red-200" },
+      cancelled: { label: "Anulada", className: "bg-gray-50 text-gray-600 border-gray-200" },
+      canceled: { label: "Anulada", className: "bg-gray-50 text-gray-600 border-gray-200" },
+      overdue: { label: "Vencida", className: "bg-red-50 text-red-700 border-red-200" },
+      expired: { label: "Vencida", className: "bg-red-50 text-red-700 border-red-200" },
+      // Estados adicionales que pueden aparecer como nombres de campo
+      pending_approval: { label: "Pend. Aprobación", className: "bg-blue-50 text-blue-700 border-blue-200" },
+      partially_cancelled: { label: "Parc. Anulada", className: "bg-orange-50 text-orange-700 border-orange-200" },
+      partial: { label: "Pago Parcial", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
     }
-    const labels = {
-      emitida: "Emitida",
-      pagada: "Pagada",
-      vencida: "Vencida",
-      pendiente: "Pendiente"
-    }
-    return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
+    const key = status?.toLowerCase().replace(/\s+/g, '_')
+    const conf = variants[key] || { label: status, className: "bg-gray-50 text-gray-600 border-gray-200" }
+    return <Badge className={conf.className}>{conf.label}</Badge>
   }
 
   if (authLoading || isLoading) {
@@ -302,18 +319,30 @@ export default function InvoiceDetailPage() {
               <BackButton onClick={handleBack} />
             </div>
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">{invoice.number}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">{invoice.number}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
                 {getStatusBadge(invoice.display_status || invoice.status)}
+                <Badge className="bg-gray-100 text-gray-700 border-gray-200">
+                  Tipo {invoice.type}
+                </Badge>
                 {invoice.is_manual_load ? (
-                  <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">Carga Manual</Badge>
+                  <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+                    Carga Manual
+                  </Badge>
                 ) : invoice.synced_from_afip ? (
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200">Sinc. AFIP</Badge>
+                  <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+                    Sinc. AFIP
+                  </Badge>
                 ) : invoice.afip_cae && !invoice.is_manual_load && !invoice.synced_from_afip ? (
-                  <Badge className="bg-green-50 text-green-700 border-green-200">Subidas a AFIP</Badge>
-                ) : null}
+                  <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+                    Subidas a AFIP
+                  </Badge>
+                ) : (
+                  <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+                    Manual
+                  </Badge>
+                )}
               </div>
-              <p className="text-muted-foreground">Comprobante Tipo {invoice.type}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -373,7 +402,7 @@ export default function InvoiceDetailPage() {
                   )}
                 </Button>
                 {invoice.attachment_path && (
-                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm border-blue-300 text-blue-700 hover:bg-blue-50">
+                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm">
                     {isDownloadingAttachment ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -405,12 +434,14 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
+
+
         {/* Alert for editing mode */}
         {isEditing && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-800">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
+              <div className="text-sm text-blue-800">
                 <strong>Limitación de AFIP:</strong> AFIP no proporciona el detalle de ítems, solo totales. 
                 Podés editar la descripción del ítem genérico, el concepto y las fechas de servicio para tu organización interna, 
                 pero los montos, cantidades y precios no se pueden modificar ya que deben coincidir con AFIP.
@@ -420,16 +451,16 @@ export default function InvoiceDetailPage() {
         )}
 
         {/* Información General */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Información del Comprobante</CardTitle>
+        <Card className="shadow-sm border-gray-200">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="text-gray-800">Información del Comprobante</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-primary mb-2">
-                  <Building2 className="h-4 w-4" />
-                  <h3 className="font-semibold text-sm">Cliente</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="h-4 w-4" style={{ color: colors.accent }} />
+                  <h3 className="font-semibold text-sm text-gray-800">Cliente</h3>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Razón Social</p>
@@ -442,9 +473,9 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-primary mb-2">
-                  <Calendar className="h-4 w-4" />
-                  <h3 className="font-semibold text-sm">Fechas</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4" style={{ color: colors.accent }} />
+                  <h3 className="font-semibold text-sm text-gray-800">Fechas</h3>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Emisión</p>
@@ -482,9 +513,9 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-primary mb-2">
-                  <Hash className="h-4 w-4" />
-                  <h3 className="font-semibold text-sm">Datos AFIP</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <Hash className="h-4 w-4" style={{ color: colors.accent }} />
+                  <h3 className="font-semibold text-sm text-gray-800">Datos AFIP</h3>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Punto de Venta</p>
@@ -521,15 +552,15 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-green-600 mb-2">
-                  <FileText className="h-4 w-4" />
-                  <h3 className="font-semibold text-sm">CAE</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4" style={{ color: colors.accent }} />
+                  <h3 className="font-semibold text-sm text-gray-800">CAE</h3>
                 </div>
                 {invoice.afip_cae ? (
                   <>
                     <div>
                       <p className="text-xs text-muted-foreground">Número</p>
-                      <p className="font-mono text-sm font-semibold text-green-700">{invoice.afip_cae}</p>
+                      <p className="font-mono text-sm font-semibold text-foreground">{invoice.afip_cae}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Vencimiento</p>
@@ -545,14 +576,17 @@ export default function InvoiceDetailPage() {
         </Card>
 
         {/* Ítems */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Detalle de Ítems</CardTitle>
+        <Card className="shadow-sm border-gray-200">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="flex items-center gap-2 text-gray-800">
+              <ShoppingCart className="h-5 w-5" style={{ color: colors.accent }} />
+              Detalle de Ítems
+            </CardTitle>
             <CardDescription>Productos y servicios del comprobante</CardDescription>
           </CardHeader>
           <CardContent>
             <div>
-              <div className="grid grid-cols-7 gap-3 py-2 mb-3 border-b border-gray-200">
+              <div className="grid grid-cols-7 gap-3 py-2 mb-3 border-b border-border/40">
                 <div className="col-span-2">
                   <p className="text-xs font-semibold text-muted-foreground">Descripción</p>
                 </div>
@@ -630,7 +664,7 @@ export default function InvoiceDetailPage() {
                           <p className="font-semibold text-sm">{formatCurrency(total, invoice.currency)}</p>
                         </div>
                       </div>
-                      {index !== invoice.items.length - 1 && <div className="border-b border-gray-200" />}
+{index !== invoice.items.length - 1 && <div className="border-b border-gray-100" />}
                     </div>
                   )
                 })}
@@ -641,40 +675,43 @@ export default function InvoiceDetailPage() {
 
         {/* Totales y Estado de Pago */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Resumen de Totales</CardTitle>
+          <Card className="shadow-sm border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <Calculator className="h-5 w-5" style={{ color: colors.accent }} />
+                Resumen de Totales
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-muted-foreground">Subtotal</span>
-                  <span className="font-medium text-sm">
+                  <span className="text-sm text-gray-600">Subtotal</span>
+                  <span className="font-medium text-sm text-gray-900">
                     {formatCurrency(parseFloat(invoice.subtotal), invoice.currency)}
                   </span>
                 </div>
-                <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-muted-foreground">Impuestos (IVA)</span>
-                  <span className="font-medium text-sm">
-                    {formatCurrency(parseFloat(invoice.total_taxes), invoice.currency)}
+                  <span className="text-sm text-gray-600">Impuestos (IVA)</span>
+                  <span className="font-medium text-sm text-red-600">
+                    +{formatCurrency(parseFloat(invoice.total_taxes), invoice.currency)}
                   </span>
                 </div>
                 {parseFloat(invoice.total_perceptions || 0) > 0 && (
                   <>
-                    <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-orange-600">Percepciones</span>
-                      <span className="font-medium text-sm text-orange-600">
-                        {formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
+                      <span className="text-sm text-gray-600">Percepciones</span>
+                      <span className="font-medium text-sm text-red-600">
+                        +{formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
                       </span>
                     </div>
                   </>
                 )}
-                <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                 <div className="flex justify-between items-center py-2">
-                  <span className="font-bold">Total Comprobante</span>
-                  <span className="font-bold text-lg text-primary">
+                  <span className="font-bold text-gray-900">Total Comprobante</span>
+                  <span className="font-bold text-lg text-gray-900">
                     {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                   </span>
                 </div>
@@ -684,33 +721,36 @@ export default function InvoiceDetailPage() {
 
           {/* Estado de Pago / Retenciones */}
           {isPaid ? (
-            <Card className="shadow-sm border-green-200 bg-green-50/50">
-              <CardHeader>
-                <CardTitle className="text-green-700">{isIssuer ? 'Pago Recibido' : 'Pago Realizado'}</CardTitle>
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="border-b border-gray-100">
+                <CardTitle className="flex items-center gap-2 text-gray-800">
+                  <DollarSign className="h-5 w-5" style={{ color: colors.accent }} />
+                  {isIssuer ? 'Pago Recibido' : 'Pago Realizado'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">Total Comprobante</span>
-                    <span className="font-medium">
+                    <span className="text-gray-600">Total Comprobante</span>
+                    <span className="font-medium text-gray-900">
                       {formatCurrency(parseFloat(invoice.total), invoice.currency)}
                     </span>
                   </div>
                   {totalWithholdings > 0 && (
                     <>
-                      <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                       <div className="flex justify-between items-center py-2">
-                        <span className="text-orange-600">Retenciones</span>
-                        <span className="font-medium text-orange-600">
+                        <span className="text-gray-600">Retenciones</span>
+                        <span className="font-medium text-blue-600">
                           -{formatCurrency(totalWithholdings, invoice.currency)}
                         </span>
                       </div>
                     </>
                   )}
-                  <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                   <div className="flex justify-between items-center py-3 text-lg font-bold">
-                    <span className="text-green-700">{isIssuer ? 'Total Cobrado' : 'Total Pagado'}</span>
-                    <span className="text-green-700">
+                    <span className="text-gray-900">{isIssuer ? 'Total Cobrado' : 'Total Pagado'}</span>
+                    <span className="text-green-600">
                       {formatCurrency(
                         parseFloat(invoice.total) - totalWithholdings,
                         invoice.currency
@@ -719,20 +759,20 @@ export default function InvoiceDetailPage() {
                   </div>
                   {withholdingsArray.length > 0 ? (
                     <div>
-                      <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                       <div className="pt-3 space-y-2">
-                        <h4 className="font-semibold text-sm text-orange-700 mb-3 flex items-center gap-2">
-                          <Percent className="h-4 w-4" />
+                        <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
+                          <Percent className="h-4 w-4" style={{ color: colors.accent }} />
                           Detalle de Retenciones
                         </h4>
                         <div className="space-y-2">
                           {withholdingsArray.map((withholding: any, index: number) => (
-                            <div key={index} className="flex justify-between items-center py-2.5 px-3 bg-gradient-to-r from-orange-50 to-orange-100/50 border border-orange-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <div key={index} className="flex justify-between items-center py-2.5 px-3 bg-muted/30 border border-muted rounded-lg shadow-sm hover:shadow-md transition-shadow">
                               <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-8 bg-orange-500 rounded-full"></div>
+                                <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: colors.accent }}></div>
                                 <p className="font-medium text-sm text-gray-800">{withholding.name}</p>
                               </div>
-                              <span className="font-bold text-sm text-orange-700 bg-white px-3 py-1 rounded-md shadow-sm">
+                              <span className="font-bold text-sm text-foreground bg-white px-3 py-1 rounded-md shadow-sm">
                                 {formatCurrency(parseFloat(withholding.amount), invoice.currency)}
                               </span>
                             </div>
@@ -742,7 +782,7 @@ export default function InvoiceDetailPage() {
                     </div>
                   ) : (
                     <div>
-                      <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                       <div className="pt-3">
                         <p className="text-sm text-muted-foreground text-center py-2">
                           {isIssuer ? 'No se aplicaron retenciones en este cobro' : 'No se aplicaron retenciones en este pago'}
@@ -754,25 +794,28 @@ export default function InvoiceDetailPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="shadow-sm border-amber-200 bg-amber-50/50">
-              <CardHeader>
-                <CardTitle className="text-amber-700">{isIssuer ? 'Pendiente de Cobro' : 'Pendiente de Pago'}</CardTitle>
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="border-b border-gray-100">
+                <CardTitle className="flex items-center gap-2 text-gray-800">
+                  <Clock className="h-5 w-5" style={{ color: colors.accent }} />
+                  {isIssuer ? 'Pendiente de Cobro' : 'Pendiente de Pago'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {invoice.balance_breakdown && (invoice.balance_breakdown.credit_notes?.length > 0 || invoice.balance_breakdown.debit_notes?.length > 0) ? (
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-muted-foreground">Monto Original</span>
-                      <span className="font-medium">
+                      <span className="text-sm text-gray-600">Monto Original</span>
+                      <span className="font-medium text-gray-900">
                         {formatCurrency(invoice.balance_breakdown.original_amount, invoice.currency)}
                       </span>
                     </div>
                     {invoice.balance_breakdown.total_credit_notes > 0 && (
                       <>
-                        <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-red-600">Notas de Crédito</span>
-                          <span className="font-medium text-red-600">
+                          <span className="text-sm text-gray-600">Notas de Crédito</span>
+                          <span className="font-medium text-blue-600">
                             -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
                           </span>
                         </div>
@@ -780,10 +823,10 @@ export default function InvoiceDetailPage() {
                     )}
                     {invoice.balance_breakdown.total_debit_notes > 0 && (
                       <>
-                        <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-green-600">Notas de Débito</span>
-                          <span className="font-medium text-green-600">
+                          <span className="text-sm text-gray-600">Notas de Débito</span>
+                          <span className="font-medium text-red-600">
                             +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
                           </span>
                         </div>
@@ -791,12 +834,12 @@ export default function InvoiceDetailPage() {
                     )}
                     <div className="border-b border-gray-200" />
                     <div className="flex justify-between items-center py-3">
-                      <span className="font-bold text-amber-700">Saldo Pendiente</span>
-                      <span className="font-bold text-2xl text-amber-700">
+                      <span className="font-bold text-gray-900">Saldo Pendiente</span>
+                      <span className="font-bold text-2xl text-gray-900">
                         {formatCurrency(invoice.balance_breakdown.balance_pending, invoice.currency)}
                       </span>
                     </div>
-                    <div className="border-t border-gray-200 pt-3">
+<div className="border-t border-gray-100 pt-3">
                       <p className="text-sm text-muted-foreground text-center">
                         {isIssuer ? 'Las retenciones se registrarán al momento del cobro' : 'Las retenciones se registrarán al momento del pago'}
                       </p>
@@ -807,7 +850,7 @@ export default function InvoiceDetailPage() {
                     <p className="text-muted-foreground mb-2">
                       {isIssuer ? 'Este comprobante aún no ha sido cobrado' : 'Este comprobante aún no ha sido pagado'}
                     </p>
-                    <p className="text-2xl font-bold text-amber-700">
+                    <p className="text-2xl font-bold text-gray-900">
                       {formatCurrency(parseFloat(invoice.pending_amount || invoice.total), invoice.currency)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-4">
@@ -823,10 +866,10 @@ export default function InvoiceDetailPage() {
         {/* NC/ND Aplicadas - Solo para facturas normales */}
         {invoice.balance_breakdown && !['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type) && 
          (invoice.balance_breakdown.credit_notes?.length > 0 || invoice.balance_breakdown.debit_notes?.length > 0) && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+          <Card className="shadow-sm border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <FileText className="h-5 w-5" style={{ color: colors.accent }} />
                 Ajustes Aplicados
               </CardTitle>
               <CardDescription>Notas de crédito y débito que modifican el saldo de esta factura</CardDescription>
@@ -834,20 +877,20 @@ export default function InvoiceDetailPage() {
             <CardContent>
               <div className="space-y-4">
                 {/* Cálculo Visual */}
-                <div className="bg-muted/30 rounded-lg p-4 border border-gray-200">
+<div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-muted-foreground">Monto Original</span>
-                      <span className="font-semibold">
+                      <span className="text-sm text-gray-600">Monto Original</span>
+                      <span className="font-semibold text-gray-900">
                         {formatCurrency(invoice.balance_breakdown.original_amount, invoice.currency)}
                       </span>
                     </div>
                     {invoice.balance_breakdown.total_credit_notes > 0 && (
                       <>
-                        <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-red-600">Notas de Crédito</span>
-                          <span className="font-semibold text-red-600">
+                          <span className="text-sm text-gray-600">Notas de Crédito</span>
+                          <span className="font-semibold text-blue-600">
                             -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
                           </span>
                         </div>
@@ -855,19 +898,19 @@ export default function InvoiceDetailPage() {
                     )}
                     {invoice.balance_breakdown.total_debit_notes > 0 && (
                       <>
-                        <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-green-600">Notas de Débito</span>
-                          <span className="font-semibold text-green-600">
+                          <span className="text-sm text-gray-600">Notas de Débito</span>
+                          <span className="font-semibold text-red-600">
                             +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
                           </span>
                         </div>
                       </>
                     )}
-                    <div className="border-b border-gray-200" />
+<div className="border-b border-gray-100" />
                     <div className="flex justify-between items-center py-2">
-                      <span className="font-bold">Saldo Pendiente</span>
-                      <span className="font-bold text-lg text-primary">
+                      <span className="font-bold text-gray-900">Saldo Pendiente</span>
+                      <span className="font-bold text-lg text-gray-900">
                         {formatCurrency(invoice.balance_breakdown.balance_pending, invoice.currency)}
                       </span>
                     </div>
@@ -883,7 +926,7 @@ export default function InvoiceDetailPage() {
                         {invoice.balance_breakdown.credit_notes.map((nc: any) => (
                           <div 
                             key={nc.id} 
-                            className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                             onClick={() => router.push(`/company/${companyId}/invoices/${nc.id}`)}
                           >
                             <div>
@@ -892,7 +935,7 @@ export default function InvoiceDetailPage() {
                                 {parseDateLocal(nc.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}
                               </p>
                             </div>
-                            <span className="font-semibold text-sm text-red-600">
+                            <span className="font-semibold text-sm text-blue-600">
                               -{formatCurrency(nc.amount, invoice.currency)}
                             </span>
                           </div>
@@ -908,7 +951,7 @@ export default function InvoiceDetailPage() {
                         {invoice.balance_breakdown.debit_notes.map((nd: any) => (
                           <div 
                             key={nd.id} 
-                            className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+className="flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                             onClick={() => router.push(`/company/${companyId}/invoices/${nd.id}`)}
                           >
                             <div>
@@ -917,7 +960,7 @@ export default function InvoiceDetailPage() {
                                 {parseDateLocal(nd.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}
                               </p>
                             </div>
-                            <span className="font-semibold text-sm text-green-600">
+                            <span className="font-semibold text-sm text-red-600">
                               +{formatCurrency(nd.amount, invoice.currency)}
                             </span>
                           </div>
@@ -933,55 +976,42 @@ export default function InvoiceDetailPage() {
 
         {/* Factura Relacionada - Solo para NC/ND */}
         {invoice.related_invoice_id && ['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type) && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+          <Card className="shadow-sm border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <FileText className="h-5 w-5" style={{ color: colors.accent }} />
                 Factura Relacionada
               </CardTitle>
               <CardDescription>
                 {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) 
-                  ? 'Esta nota de crédito ajusta el saldo de la siguiente factura'
-                  : 'Esta nota de débito ajusta el saldo de la siguiente factura'
+                  ? 'Esta nota de crédito modifica el saldo de una factura'
+                  : 'Esta nota de débito modifica el saldo de una factura'
                 }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div 
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)}
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)}
+              >
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {invoice.relatedInvoice?.number ? `Factura ${invoice.relatedInvoice.number}` : 'Factura relacionada'}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) ? 'Reduce' : 'Aumenta'} el saldo en {formatCurrency(parseFloat(invoice.total), invoice.currency)}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)
+                  }}
                 >
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm mb-1">Factura {invoice.relatedInvoice?.number || invoice.related_invoice_id}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Click para ver el detalle completo
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      router.push(`/company/${companyId}/invoices/${invoice.related_invoice_id}`)
-                    }}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ver
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-gray-200">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type) ? 'Reduce' : 'Aumenta'} el saldo en
-                  </p>
-                  <p className={`text-lg font-bold ${
-                    ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(invoice.type)
-                      ? 'text-red-600'
-                      : 'text-green-600'
-                  }`}>
-                    {formatCurrency(parseFloat(invoice.total), invoice.currency)}
-                  </p>
-                </div>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver Detalle
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -989,10 +1019,10 @@ export default function InvoiceDetailPage() {
 
         {/* Percepciones Detail */}
         {invoice.perceptions && invoice.perceptions.length > 0 && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Percent className="h-5 w-5 text-orange-600" />
+          <Card className="shadow-sm border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <Percent className="h-5 w-5" style={{ color: colors.accent }} />
                 Detalle de Percepciones
               </CardTitle>
             </CardHeader>
@@ -1005,11 +1035,11 @@ export default function InvoiceDetailPage() {
                         <p className="font-medium text-sm">{perception.name}</p>
                         <p className="text-xs text-muted-foreground">{perception.rate}% sobre {perception.base_type === 'net' ? 'Neto' : perception.base_type === 'total' ? 'Total' : 'IVA'}</p>
                       </div>
-                      <span className="font-medium text-orange-600">
+                      <span className="font-medium text-foreground">
                         {formatCurrency(parseFloat(perception.amount), invoice.currency)}
                       </span>
                     </div>
-                    {index !== invoice.perceptions.length - 1 && <div className="border-b border-gray-200" />}
+{index !== invoice.perceptions.length - 1 && <div className="border-b border-gray-100" />}
                   </div>
                 ))}
               </div>
@@ -1019,9 +1049,12 @@ export default function InvoiceDetailPage() {
 
         {/* Notas */}
         {invoice.notes && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Observaciones</CardTitle>
+          <Card className="shadow-sm border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <MessageSquare className="h-5 w-5" style={{ color: colors.accent }} />
+                Observaciones
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">{invoice.notes}</p>

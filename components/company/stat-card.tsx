@@ -23,12 +23,12 @@ export function StatCard({ title, value, description, icon: Icon, secondaryValue
         <div className="flex flex-col h-full">
           <div className="space-y-1 flex-1">
             {secondaryValue && (
-              <div className="text-sm text-gray-600 font-medium-heading">
+              <div className="text-sm text-gray-900 font-medium-heading">
                 {secondaryValue}
               </div>
             )}
             {tertiaryValue && (
-              <div className="text-sm text-gray-600 font-medium-heading">
+              <div className="text-sm text-gray-900 font-medium-heading">
                 {tertiaryValue}
               </div>
             )}
