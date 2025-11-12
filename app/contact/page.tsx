@@ -3,16 +3,17 @@ import ContactForm from "@/components/contact/contact-form";
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white p-8 lg:p-12">
-      <div className="h-full min-h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-8 lg:gap-12">
+      <div className="max-w-6xl mx-auto">
+        <div className="h-full min-h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-8 lg:gap-12">
         {/* Left Side - Form */}
-        <div className="flex-1 flex items-center justify-center order-2 lg:order-1">
+        <div className="flex-1 flex items-center justify-center order-1 lg:order-1">
           <div className="w-full max-w-md">
             <ContactForm />
           </div>
         </div>
 
         {/* Right Side - Google Maps */}
-        <div className="flex-1 lg:w-[58%] order-1 lg:order-2 rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+        <div className="flex-1 lg:w-[58%] order-2 lg:order-2 rounded-2xl overflow-hidden shadow-lg border border-gray-200">
           <div className="relative w-full h-full min-h-[400px] lg:min-h-[600px]">
             {/* Location info overlay */}
             <div className="absolute top-6 left-6 z-10 bg-white rounded-xl shadow-lg p-6 max-w-sm">
@@ -44,6 +45,7 @@ export default function ContactPage() {
             />
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

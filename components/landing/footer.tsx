@@ -5,86 +5,86 @@ export default function Footer() {
     <footer>
       <div className="bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Logo and Description */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 h-8">
+            <div>
+              <div className="h-8 flex items-start mb-4">
                 <Image
                   src="/brand/payto.png"
                   alt="Payto Logo"
                   width={120}
-                  height={120}
+                  height={32}
                   className="h-full w-auto object-contain"
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Simplificamos los pagos empresariales con soluciones seguras y eficientes.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Plataforma especializada en facturación electrónica con ARCA y pago a proveedores.
               </p>
             </div>
 
             {/* Características */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-sm text-foreground">Características</h3>
-              <nav className="flex flex-col space-y-2">
+            <div>
+              <div className="h-8 flex items-start mb-4">
+                <h3 className="font-medium text-sm text-foreground">Características</h3>
+              </div>
+              <nav className="flex flex-col space-y-3">
                 <a
                   href="/features"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Facturación
                 </a>
                 <a
                   href="/features"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  Cuentas
-                </a>
-                <a
-                  href="/features"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Red PayTo
-                </a>
-                <a
-                  href="/pricing"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  Precios
                 </a>
               </nav>
             </div>
 
             {/* Soporte */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-sm text-foreground">Soporte</h3>
-              <nav className="flex flex-col space-y-2">
+            <div>
+              <div className="h-8 flex items-start mb-4">
+                <h3 className="font-medium text-sm text-foreground">Soporte</h3>
+              </div>
+              <nav className="flex flex-col space-y-3">
                 <a
                   href="/faq"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Preguntas Frecuentes
                 </a>
                 <a
                   href="/contact"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Contacto
+                </a>
+                <a
+                  href="/contact"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  0800-444-2222
                 </a>
               </nav>
             </div>
 
             {/* Legal */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-sm text-foreground">Legal</h3>
-              <nav className="flex flex-col space-y-2">
+            <div>
+              <div className="h-8 flex items-start mb-4">
+                <h3 className="font-medium text-sm text-foreground">Legal</h3>
+              </div>
+              <nav className="flex flex-col space-y-3">
                 <a
                   href="/privacy-policy"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Política de Privacidad
                 </a>
                 <a
                   href="/terms-of-service"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Términos de Servicio
                 </a>

@@ -13,15 +13,15 @@ interface FAQItem {
 const faqs: FAQItem[] = [
   {
     question: "¿Qué es PayTo y cómo funciona?",
-    answer: "PayTo es una plataforma integral de gestión empresarial que te permite facturar electrónicamente, gestionar tus cuentas por cobrar y pagar, administrar clientes y proveedores, y generar reportes fiscales. Todo integrado con AFIP para cumplir con las normativas argentinas."
+    answer: "PayTo es una plataforma especializada en facturación electrónica con ARCA. Te permite emitir comprobantes electrónicos, gestionar facturas, generar libro IVA automático y administrar tus obligaciones fiscales. Está diseñada específicamente para contadores, estudios contables y empresas que necesitan facturar de forma profesional y cumplir con las normativas de ARCA."
   },
   {
     question: "¿Necesito conocimientos técnicos para usar PayTo?",
     answer: "No, PayTo está diseñado para ser intuitivo y fácil de usar. Nuestra interfaz es amigable y no requiere conocimientos técnicos avanzados. Además, ofrecemos soporte para ayudarte en cualquier momento."
   },
   {
-    question: "¿Cómo funciona la integración con AFIP?",
-    answer: "PayTo se integra directamente con AFIP mediante certificados digitales. Una vez que configures tu certificado, podrás emitir facturas electrónicas, consultar el padrón de contribuyentes y cumplir con todas tus obligaciones fiscales desde nuestra plataforma."
+    question: "¿Cómo funciona la integración con ARCA?",
+    answer: "PayTo se integra directamente con ARCA mediante certificados digitales. Una vez que configures tu certificado, podrás emitir facturas electrónicas, consultar el padrón de contribuyentes y cumplir con todas tus obligaciones fiscales desde nuestra plataforma."
   },
   {
     question: "¿Puedo gestionar múltiples empresas desde una cuenta?",
@@ -37,7 +37,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "¿Qué tipos de comprobantes puedo emitir?",
-    answer: "Puedes emitir todos los tipos de comprobantes fiscales de AFIP: Facturas A, B, C, Notas de Crédito, Notas de Débito, Recibos, y más. Todos los comprobantes son electrónicos y válidos ante AFIP."
+    answer: "Puedes emitir todos los tipos de comprobantes fiscales de ARCA: Facturas A, B, C, Notas de Crédito, Notas de Débito, Recibos, y más. Todos los comprobantes son electrónicos y válidos ante ARCA."
   },
   {
     question: "¿Ofrecen soporte técnico?",
@@ -57,7 +57,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "¿PayTo funciona en dispositivos móviles?",
-    answer: "Sí, PayTo es totalmente responsive y funciona perfectamente en computadoras, tablets y smartphones. Puedes gestionar tu negocio desde cualquier dispositivo con conexión a internet."
+    answer: "Sí, PayTo es totalmente responsive y funciona perfectamente en computadoras, tablets y smartphones. Puedes gestionar tu facturación desde cualquier dispositivo con conexión a internet."
   }
 ];
 
@@ -72,14 +72,14 @@ export default function FAQPage() {
     <>
       <Navbar />
       <main className="min-h-screen overflow-x-hidden flex flex-col pt-20">
-        <section className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 py-16">
-          <div className="w-full max-w-4xl mx-auto px-6">
+        <section className="flex-1 bg-white py-16">
+          <div className="w-full max-w-6xl mx-auto px-6">
             {/* Header */}
             <div className="text-center mb-12">
-            <h1 className="text-5xl font-medium text-foreground mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-foreground mb-4">
               Preguntas Frecuentes
             </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
                 Encuentra respuestas a las preguntas más comunes sobre PayTo
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function FAQPage() {
                     onClick={() => toggleFAQ(index)}
                     className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                   >
-                    <span className="text-lg font-medium text-foreground pr-4">
+                    <span className="text-base md:text-lg font-medium text-foreground pr-4">
                       {faq.question}
                     </span>
                     <ChevronDown
@@ -121,7 +121,7 @@ export default function FAQPage() {
 
             {/* Contact CTA */}
             <div className="mt-16 text-center bg-white rounded-2xl border-2 border-gray-200 p-8">
-              <h2 className="text-2xl font-medium text-foreground mb-2">
+              <h2 className="text-xl md:text-2xl font-medium text-foreground mb-2">
                 ¿No encontraste lo que buscabas?
               </h2>
               <p className="text-muted-foreground mb-6">

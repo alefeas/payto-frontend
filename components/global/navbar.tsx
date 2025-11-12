@@ -1,7 +1,14 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
+  const [open, setOpen] = useState(false);
+
   return (
     <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[95%] max-w-6xl">
       <div className="bg-white/60 backdrop-blur-md border border-[#eeeeee] rounded-2xl px-6 py-4 flex items-center justify-between">
@@ -15,6 +22,7 @@ export default function Navbar() {
           />
         </a>
 
+        {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           <a
             href="/pricing"
@@ -36,7 +44,8 @@ export default function Navbar() {
           </a>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Desktop Auth Buttons */}
+        <div className="hidden md:flex items-center gap-4">
           <a
             href="/log-in"
             className="text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"
@@ -47,6 +56,72 @@ export default function Navbar() {
             <Button size="lg">Registrarse</Button>
           </a>
         </div>
+
+        {/* Mobile Menu Button */}
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild className="md:hidden">
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <Menu className="h-6 w-6 text-foreground" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[60vw] sm:w-[350px] bg-white/80 backdrop-blur-xl border-l border-[#eeeeee] p-6">
+            <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
+            <SheetDescription className="sr-only">
+              Navegación principal de PayTo con enlaces a Precios, Características y Contacto
+            </SheetDescription>
+            <div className="flex flex-col h-full mt-8">
+              {/* Logo */}
+              <div className="flex items-center gap-2 h-10 mb-8">
+                <Image
+                  src="/brand/payto.png"
+                  alt="Payto Logo"
+                  width={120}
+                  height={120}
+                  className="h-full w-auto object-contain"
+                />
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-4">
+                <a
+                  href="/pricing"
+                  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => setOpen(false)}
+                >
+                  Precios
+                </a>
+                <a
+                  href="/features"
+                  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => setOpen(false)}
+                >
+                  Características
+                </a>
+                <a
+                  href="/contact"
+                  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => setOpen(false)}
+                >
+                  Contacto
+                </a>
+              </nav>
+
+              {/* Auth Buttons */}
+              <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-200">
+                <a href="/log-in" onClick={() => setOpen(false)}>
+                  <Button variant="outline" className="w-full" size="lg">
+                    Iniciar sesión
+                  </Button>
+                </a>
+                <a href="/sign-up" onClick={() => setOpen(false)}>
+                  <Button className="w-full" size="lg">
+                    Registrarse
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );

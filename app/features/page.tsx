@@ -20,7 +20,7 @@ const features = [
   {
     icon: FileText,
     title: "Facturación Electrónica",
-    description: "Emite facturas electrónicas conformes a AFIP de forma rápida y sencilla. Compatible con todos los tipos de comprobantes."
+    description: "Emite facturas electrónicas conformes a ARCA de forma rápida y sencilla. Compatible con todos los tipos de comprobantes."
   },
   {
     icon: TrendingUp,
@@ -49,8 +49,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Integración AFIP",
-    description: "Conexión directa con AFIP para validar certificados, consultar padrón y cumplir con todas las obligaciones fiscales."
+    title: "Integración ARCA",
+    description: "Conexión directa con ARCA para validar certificados, consultar padrón y cumplir con todas las obligaciones fiscales."
   },
   {
     icon: BarChart3,
@@ -83,16 +83,16 @@ export default function FeaturesPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 pt-32 pb-16">
+      <main className="min-h-screen bg-white pt-32 pb-16">
         <div className="max-w-6xl mx-auto px-6">
           {/* Hero Section */}
           <div className="text-center mb-16">
-            <h1 className="text-5xl font-medium text-foreground mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-foreground mb-4">
               Características de PayTo
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Todo lo que necesitas para gestionar tu empresa de forma profesional y eficiente. 
-              Una plataforma completa diseñada para empresas argentinas.
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
+              Plataforma completa para gestionar facturación electrónica, emisión de comprobantes ARCA y libro IVA. 
+              Diseñada específicamente para contadores, estudios contables y empresas argentinas.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export default function FeaturesPage() {
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground mb-2">
+                    <h3 className="text-base md:text-lg font-medium text-foreground mb-2">
                       {feature.title}
                     </h3>
                     <p className="text-muted-foreground text-sm leading-relaxed">
@@ -124,11 +124,11 @@ export default function FeaturesPage() {
 
           {/* CTA Section */}
           <div className="rounded-3xl p-12 text-center">
-            <h2 className="text-3xl font-medium text-foreground mb-4">
+            <h2 className="text-2xl md:text-3xl font-medium text-foreground mb-4">
               ¿Listo para comenzar?
             </h2>
             <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-              Únete a las empresas que ya están optimizando su gestión empresarial con PayTo. 
+              Únete a los contadores y empresas que ya están optimizando su gestión de facturación con PayTo. 
               Comienza gratis hoy mismo.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
