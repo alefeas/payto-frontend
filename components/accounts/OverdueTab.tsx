@@ -15,11 +15,31 @@ interface OverdueTabProps {
 
 export function OverdueTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange }: OverdueTabProps) {
   const overdueInvoices = invoices.filter(inv => {
+    if (!inv.due_date) return false
+    
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(inv.due_date)
     dueDate.setHours(0, 0, 0, 0)
-    return dueDate < today
+    if (dueDate >= today) return false
+    
+    // Excluir TODAS las NC/ND (no se pueden cobrar/pagar en el sistema)
+    const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+    const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+    if (isCreditNote || isDebitNote) return false
+    
+    const status = inv.display_status || inv.status
+    const isPaidOrCollected = inv.payment_status === 'collected' || 
+                              inv.payment_status === 'paid' || 
+                              status === 'collected' || 
+                              status === 'paid'
+    
+    // Excluir anuladas, rechazadas y pagadas/cobradas
+    if (status === 'cancelled' || inv.payment_status === 'cancelled') return false
+    if (status === 'rejected') return false
+    if (isPaidOrCollected) return false
+    
+    return true
   })
 
   return (

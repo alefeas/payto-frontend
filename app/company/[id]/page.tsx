@@ -177,6 +177,11 @@ export default function CompanyPage() {
             dueDate.setHours(0, 0, 0, 0)
             if (dueDate >= today) return false
             
+            // Excluir TODAS las NC/ND (no se pueden cobrar/pagar en el sistema)
+            const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
+            const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
+            if (isCreditNote || isDebitNote) return false
+            
             const status = inv.display_status || inv.status
             const companyStatus = inv.company_statuses?.[companyId]
             const isIssuer = String(inv.issuer_company_id) === String(companyId)
@@ -187,9 +192,9 @@ export default function CompanyPage() {
             if (status === 'rejected') return false
             // Excluir pagadas/cobradas
             if (isIssuer) {
-              if (companyStatus === 'collected' || status === 'collected' || inv.payment_status === 'paid') return false
+              if (companyStatus === 'collected' || status === 'collected' || inv.payment_status === 'collected' || inv.payment_status === 'paid') return false
             } else {
-              if (companyStatus === 'paid' || status === 'paid' || inv.payment_status === 'paid') return false
+              if (companyStatus === 'paid' || status === 'paid' || inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
             }
             
             return true
@@ -464,12 +469,12 @@ export default function CompanyPage() {
           </Card>
           <Card className="border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vencidas</CardTitle>
+              <CardTitle className="text-sm font-medium">Facturas Vencidas</CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
-              <p className="text-xs text-muted-foreground">Pasaron fecha de vencimiento</p>
+              <p className="text-xs text-muted-foreground">Requieren gestión de cobro/pago</p>
             </CardContent>
           </Card>
         </div>

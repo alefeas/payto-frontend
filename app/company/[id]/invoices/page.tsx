@@ -243,23 +243,32 @@ export default function InvoicesPage() {
     today.setHours(0, 0, 0, 0)
     const dueDate = new Date(invoice.due_date)
     dueDate.setHours(0, 0, 0, 0)
-    const isOverdue = dueDate < today && invoice.payment_status !== 'paid' && invoice.status !== 'cancelled'
+    
     // Asegurar comparación robusta (string) para distinguir emisor vs receptor
     const isIssuer = String(invoice.issuer_company_id) === String(companyId)
     const isReceiver = String(invoice.receiver_company_id) === String(companyId)
     const isRejected = invoice.display_status === 'rejected' || invoice.status === 'rejected'
+    const companyStatus = invoice.company_statuses?.[companyId]
+    const status = invoice.display_status || invoice.status
     
-    // 1. Vencimiento (solo si no está pagada/cobrada/rechazada)
-    if (isOverdue && !isRejected) {
+    // Verificar si está pagada/cobrada
+    // Para el badge de vencida: mostrar si pasó la fecha Y no está pagada/cobrada/anulada/rechazada
+    // Incluye NC/ND porque es solo informativo
+    const isPaidOrCollected = invoice.payment_status === 'collected' || 
+                              invoice.payment_status === 'paid' || 
+                              companyStatus === 'collected' || 
+                              companyStatus === 'paid' || 
+                              status === 'collected' || 
+                              status === 'paid'
+    
+    const isOverdue = dueDate < today && !isPaidOrCollected && status !== 'cancelled' && !isRejected
+    
+    // 1. Vencimiento (solo si no está pagada/cobrada/rechazada/anulada)
+    if (isOverdue) {
       badges.push(<Badge key="overdue" className="bg-red-600 hover:bg-red-600 text-white border-red-600">Vencida</Badge>)
     }
     
     // 2. Estado principal (cancelled tiene prioridad absoluta)
-    const status = invoice.display_status || invoice.status
-    
-    // Verificar company_statuses JSON primero
-    const companyStatus = invoice.company_statuses?.[companyId]
-    
     // PRIORIDAD 1: Anulada (tiene prioridad sobre todo)
     if (status === 'cancelled' || invoice.payment_status === 'cancelled') {
       badges.push(<Badge key="status" className="bg-gray-500 text-white">Anulada</Badge>)
