@@ -18,7 +18,7 @@ export default function Footer() {
                 />
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Plataforma especializada en facturación electrónica con ARCA para contadores y empresas argentinas.
+                Plataforma especializada en facturación electrónica con ARCA y pago a proveedores.
               </p>
             </div>
 
@@ -38,19 +38,7 @@ export default function Footer() {
                   href="/features"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  Cuentas
-                </a>
-                <a
-                  href="/features"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
                   Red PayTo
-                </a>
-                <a
-                  href="/pricing"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  Precios
                 </a>
               </nav>
             </div>
@@ -72,6 +60,12 @@ export default function Footer() {
                   className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Contacto
+                </a>
+                <a
+                  href="/contact"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  0800-444-2222
                 </a>
               </nav>
             </div>

@@ -1,19 +1,25 @@
 import { Button } from "@/components/ui/button";
+import AnimatedHeroContent from "./animated-hero-content";
+
+const heroContents = [
+  {
+    title: "Gestioná los pagos a tus proveedores.",
+    description: "Aplicación desarrollada para el control, seguimiento y gestión del pago de facturas a proveedores, permitiendo optimizar los procesos administrativos.",
+  },
+  {
+    title: "Facturación electrónica con ARCA.",
+    description: "Plataforma especializada para gestionar facturación electrónica, emisión de comprobantes y libro IVA. Integración directa con ARCA.",
+  },
+];
 
 export default function Hero() {
   return (
     <div className="space-y-3">
-      <p className="text-primary font-medium-heading text-sm tracking-wide">
-        Para contadores y empresas
+      <p className="text-primary font-light-heading text-sm tracking-wide">
+        Para monotributistas y empresas
       </p>
 
-      <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-foreground leading-none">
-        Facturación electrónica con ARCA.
-      </h1>
-
-      <p className="text-muted-foreground text-sm md:text-base lg:text-lg leading-normal max-w-xl pt-1">
-        Plataforma especializada para gestionar facturación electrónica, emisión de comprobantes y libro IVA. Integración directa con ARCA para estudios contables y empresas argentinas.
-      </p>
+      <AnimatedHeroContent contents={heroContents} />
 
       <div className="flex items-center gap-4 pt-1">
         <Button size="lg" className="cursor-pointer" asChild>
