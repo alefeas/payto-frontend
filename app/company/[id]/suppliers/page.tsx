@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { supplierService, Supplier } from "@/services/supplier.service"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipGuard } from "@/components/afip/afip-guard"
 
@@ -198,8 +199,8 @@ export default function SuppliersPage() {
         <div className="flex items-center gap-4">
           <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">Mis Proveedores</h1>
-            <p className="text-muted-foreground">Gestiona tus proveedores externos</p>
+            <ResponsiveHeading level="h1">Mis Proveedores</ResponsiveHeading>
+            <ResponsiveText className="text-muted-foreground">Gestiona tus proveedores externos</ResponsiveText>
           </div>
           <div className="flex gap-2">
             <Button

@@ -49,6 +49,7 @@ import {
   SidebarMenuSubItem,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -66,6 +67,25 @@ import { companyService, Company } from "@/services/company.service"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+
+// Custom SidebarTrigger que siempre usa setOpen (no toggleSidebar)
+function CustomSidebarTrigger({ className, ...props }: React.ComponentProps<"button">) {
+  const { open, setOpen } = useSidebar()
+  
+  return (
+    <button
+      className={cn("size-7 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer", className)}
+      onClick={() => setOpen(!open)}
+      {...props}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+        <rect width="18" height="18" x="3" y="3" rx="2"/>
+        <path d="M9 3v18"/>
+      </svg>
+      <span className="sr-only">Toggle Sidebar</span>
+    </button>
+  )
+}
 
 export function AppSidebar() {
   const [companies, setCompanies] = useState<Company[]>([])
@@ -206,7 +226,7 @@ export function AppSidebar() {
               className="h-8 w-auto object-contain cursor-pointer group-data-[collapsible=icon]:hidden"
               onClick={() => router.push("/dashboard")}
             />
-            <SidebarTrigger className="group-data-[collapsible=icon]:mx-auto" />
+            <CustomSidebarTrigger className="group-data-[collapsible=icon]:mx-auto" />
           </div>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -221,7 +241,7 @@ export function AppSidebar() {
             ))}
           </div>
         </SidebarContent>
-        <div className="mx-2 my-2 h-px bg-gray-200" />
+        <SidebarSeparator />
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -245,7 +265,7 @@ export function AppSidebar() {
             className="h-8 w-auto object-contain cursor-pointer group-data-[collapsible=icon]:hidden"
             onClick={() => router.push("/dashboard")}
           />
-          <SidebarTrigger className="group-data-[collapsible=icon]:mx-auto" />
+          <CustomSidebarTrigger className="group-data-[collapsible=icon]:mx-auto" />
         </div>
 
         <SidebarMenu>
@@ -340,9 +360,9 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      <div className="mx-2 my-2 h-px bg-gray-200" />
+      <SidebarSeparator />
 
-      <SidebarContent>
+      <SidebarContent className="overflow-y-auto">
         {selectedCompanyId && (
           <>
             {/* Vista expandida con grupos */}
@@ -409,7 +429,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <div className="mx-2 my-2 h-px bg-gray-200" />
+      <SidebarSeparator />
 
       <SidebarFooter>
         <SidebarMenu>

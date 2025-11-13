@@ -35,3 +35,9 @@ export const fontSizes = {
 } as const;
 
 export type FontWeight = keyof typeof fonts.weights;
+
+// Helper function to get responsive font classes
+export const getResponsiveFontSize = (size: keyof typeof fontSizes) => {
+  const sizeConfig = fontSizes[size];
+  return `${sizeConfig.mobile} md:${sizeConfig.tablet} lg:${sizeConfig.desktop}`;
+};

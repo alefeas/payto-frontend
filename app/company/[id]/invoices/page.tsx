@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipButton } from "@/components/afip/afip-guard"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -263,8 +264,8 @@ export default function InvoicesPage() {
         <div className="flex items-center gap-4">
           <BackButton href={`/company/${companyId}`} />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Ver Comprobantes</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">Gestionar todos los comprobantes de la empresa</p>
+            <ResponsiveHeading level="h1">Ver Comprobantes</ResponsiveHeading>
+            <ResponsiveText className="text-muted-foreground">Gestionar todos los comprobantes de la empresa</ResponsiveText>
           </div>
         </div>
 
@@ -292,7 +293,7 @@ export default function InvoicesPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-semibold">Comprobantes</h2>
+              <ResponsiveHeading level="h2" as="h2">Comprobantes</ResponsiveHeading>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex flex-col sm:flex-row gap-2">

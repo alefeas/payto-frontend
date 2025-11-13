@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { 
   TrendingUp,
   TrendingDown,
-  MoreHorizontal,
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
@@ -13,11 +12,13 @@ import {
   Clock
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { Button } from "@/components/ui/button"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/dashboard/app-sidebar"
+import { CardCarousel } from "@/components/ui/card-carousel"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
-import { colors, fontSizes } from "@/styles"
+import { colors, getResponsiveFontSize } from "@/styles"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { taskService, type Task } from "@/services/task.service"
@@ -37,6 +38,23 @@ import {
 
 type TimeFilter = '24h' | '7d' | '28d' | '3m' | '12m' | 'all'
 
+// Función para formatear montos de manera compacta
+const formatCompactAmount = (amount: number, currency: string = 'ARS') => {
+  const absAmount = Math.abs(amount)
+  const sign = amount < 0 ? '-' : ''
+  const symbol = currency === 'USD' ? 'US$' : currency === 'EUR' ? '€' : '$'
+  
+  if (absAmount >= 1000000000) {
+    return `${sign}${symbol}${(absAmount / 1000000000).toFixed(1)}B`
+  } else if (absAmount >= 1000000) {
+    return `${sign}${symbol}${(absAmount / 1000000).toFixed(1)}M`
+  } else if (absAmount >= 1000) {
+    return `${sign}${symbol}${(absAmount / 1000).toFixed(1)}K`
+  } else {
+    return `${sign}${symbol}${absAmount.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+  }
+}
+
 export default function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
@@ -50,6 +68,8 @@ export default function DashboardPage() {
   const [currentPageToPay, setCurrentPageToPay] = useState(0)
   const [currentPageToCollect, setCurrentPageToCollect] = useState(0)
   const [currentPageTasks, setCurrentPageTasks] = useState(0)
+  
+
   
   const itemsPerPage = 3
   const tasksPerPage = 5
@@ -111,6 +131,19 @@ export default function DashboardPage() {
     } catch (error) {
       toast.error('Error al actualizar tarea')
     }
+  }
+
+  // Funciones de paginación sin delay artificial
+  const handleTasksPagination = (newPage: number) => {
+    setCurrentPageTasks(newPage)
+  }
+
+  const handleToPayPagination = (newPage: number) => {
+    setCurrentPageToPay(newPage)
+  }
+
+  const handleToCollectPagination = (newPage: number) => {
+    setCurrentPageToCollect(newPage)
   }
 
   // Calculate real KPIs with period comparison
@@ -468,14 +501,7 @@ export default function DashboardPage() {
   }, [selectedTimeFilter, invoices, companies])
 
   if (authLoading || loading) {
-    return (
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar />
-        <SidebarInset>
-          <DashboardSkeleton />
-        </SidebarInset>
-      </SidebarProvider>
-    )
+    return <DashboardSkeleton />
   }
 
   if (!isAuthenticated) return null
@@ -485,97 +511,63 @@ export default function DashboardPage() {
   const totalPagesTasks = Math.ceil(pendingTasks.length / tasksPerPage)
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-white p-3 sm:p-4 lg:p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className={`${fontSizes.h1.desktop} font-medium text-gray-900`}>
+        <div className="min-h-screen bg-white overflow-x-hidden">
+          <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 pb-8">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
+              <div className="flex-1 min-w-0">
+                <ResponsiveHeading level="h1">
                   Mi Dashboard
-                </h1>
-                <p className="text-gray-500 mt-1 font-light">Bienvenido de vuelta. Aquí está tu resumen financiero.</p>
+                </ResponsiveHeading>
+                <ResponsiveText className="mt-1">
+                  Bienvenido de vuelta. Aquí está tu resumen financiero.
+                </ResponsiveText>
               </div>
               
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={selectedTimeFilter === '24h' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTimeFilter('24h')}
-                  className="text-sm focus:outline-none focus:ring-2 focus:ring-offset-0"
-                  style={selectedTimeFilter === '24h' ? { backgroundColor: colors.accent } : {}}
+              {/* Filtros - responsive: arriba a la derecha en desktop, abajo en mobile */}
+              <div className="flex-shrink-0 lg:mt-0">
+                <Tabs 
+                  value={selectedTimeFilter} 
+                  onValueChange={(value) => setSelectedTimeFilter(value as TimeFilter)}
                 >
-                  24 horas
-                </Button>
-                <Button
-                  variant={selectedTimeFilter === '7d' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTimeFilter('7d')}
-                  className="text-sm focus:outline-none focus:ring-2 focus:ring-offset-0"
-                  style={selectedTimeFilter === '7d' ? { backgroundColor: colors.accent } : {}}
-                >
-                  7 días
-                </Button>
-                <Button
-                  variant={selectedTimeFilter === '28d' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTimeFilter('28d')}
-                  className="text-sm focus:outline-none focus:ring-2 focus:ring-offset-0"
-                  style={selectedTimeFilter === '28d' ? { backgroundColor: colors.accent } : {}}
-                >
-                  28 días
-                </Button>
-                <Button
-                  variant={selectedTimeFilter === '3m' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTimeFilter('3m')}
-                  className="text-sm focus:outline-none focus:ring-2 focus:ring-offset-0"
-                  style={selectedTimeFilter === '3m' ? { backgroundColor: colors.accent } : {}}
-                >
-                  3 meses
-                </Button>
-                <Button
-                  variant={selectedTimeFilter === '12m' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTimeFilter('12m')}
-                  className="text-sm focus:outline-none focus:ring-2 focus:ring-offset-0"
-                  style={selectedTimeFilter === '12m' ? { backgroundColor: colors.accent } : {}}
-                >
-                  12 meses
-                </Button>
-                <Button
-                  variant={selectedTimeFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedTimeFilter('all')}
-                  className="text-sm focus:outline-none focus:ring-2 focus:ring-offset-0"
-                  style={selectedTimeFilter === 'all' ? { backgroundColor: colors.accent } : {}}
-                >
-                  Todo el tiempo
-                </Button>
+                  <TabsList className="flex-wrap justify-start lg:justify-end gap-2 [&]:max-[377px]:mb-2">
+                    <TabsTrigger value="7d">
+                      7 días
+                    </TabsTrigger>
+                    <TabsTrigger value="28d">
+                      28 días
+                    </TabsTrigger>
+                    <TabsTrigger value="3m">
+                      3 meses
+                    </TabsTrigger>
+                    <TabsTrigger value="12m">
+                      12 meses
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-6">
+            <CardCarousel desktopCols={3} mobileBreakpoint="md">
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Cuentas a cobrar</CardDescription>
-                  <CardTitle className={fontSizes.h1.desktop}>
-                    ${kpis.receivable.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  <CardTitle className={`${getResponsiveFontSize('h2')} truncate`}>
+                    {formatCompactAmount(kpis.receivable)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col h-full">
                     <div className="space-y-1 flex-1">
-                      <div className="text-sm text-gray-600 font-medium-heading">
-                        US$ {kpis.receivableByCurrency.USD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      <div className="text-sm text-gray-600 font-medium-heading truncate">
+                        {formatCompactAmount(kpis.receivableByCurrency.USD, 'USD')}
                       </div>
-                      <div className="text-sm text-gray-600 font-medium-heading">
-                        € {kpis.receivableByCurrency.EUR.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      <div className="text-sm text-gray-600 font-medium-heading truncate">
+                        {formatCompactAmount(kpis.receivableByCurrency.EUR, 'EUR')}
                       </div>
                     </div>
-                    <div className={`flex items-center text-sm font-light mt-2 ${kpis.receivableChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {kpis.receivableChange <= 0 ? <TrendingDown className="h-4 w-4 mr-1" /> : <TrendingUp className="h-4 w-4 mr-1" />}
+                    <div className={`flex items-center text-sm font-light mt-2 ${kpis.receivableChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {kpis.receivableChange >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
                       <span>{kpis.receivableChange >= 0 ? '+' : ''}{kpis.receivableChange.toFixed(1)}% {kpis.periodLabel}</span>
                     </div>
                   </div>
@@ -585,22 +577,22 @@ export default function DashboardPage() {
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Cuentas por pagar</CardDescription>
-                  <CardTitle className={fontSizes.h1.desktop}>
-                    ${kpis.payable.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  <CardTitle className={`${getResponsiveFontSize('h2')} truncate`}>
+                    {formatCompactAmount(kpis.payable)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col h-full">
                     <div className="space-y-1 flex-1">
-                      <div className="text-sm text-gray-600 font-medium-heading">
-                        US$ {kpis.payableByCurrency.USD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      <div className="text-sm text-gray-600 font-medium-heading truncate">
+                        {formatCompactAmount(kpis.payableByCurrency.USD, 'USD')}
                       </div>
-                      <div className="text-sm text-gray-600 font-medium-heading">
-                        € {kpis.payableByCurrency.EUR.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      <div className="text-sm text-gray-600 font-medium-heading truncate">
+                        {formatCompactAmount(kpis.payableByCurrency.EUR, 'EUR')}
                       </div>
                     </div>
-                    <div className={`flex items-center text-sm font-light mt-2 ${kpis.payableChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {kpis.payableChange <= 0 ? <TrendingDown className="h-4 w-4 mr-1" /> : <TrendingUp className="h-4 w-4 mr-1" />}
+                    <div className={`flex items-center text-sm font-light mt-2 ${kpis.payableChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {kpis.payableChange >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
                       <span>{kpis.payableChange >= 0 ? '+' : ''}{kpis.payableChange.toFixed(1)}% {kpis.periodLabel}</span>
                     </div>
                   </div>
@@ -610,8 +602,8 @@ export default function DashboardPage() {
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Saldo IVA</CardDescription>
-                  <CardTitle className={fontSizes.h1.desktop}>
-                    ${kpis.vatBalance.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  <CardTitle className={`${getResponsiveFontSize('h2')} truncate`}>
+                    {formatCompactAmount(kpis.vatBalance)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -624,26 +616,28 @@ export default function DashboardPage() {
                         € 0.00
                       </div>
                     </div>
-                    <div className={`flex items-center text-sm font-light ${kpis.vatBalanceChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {kpis.vatBalanceChange <= 0 ? <TrendingDown className="h-4 w-4 mr-1" /> : <TrendingUp className="h-4 w-4 mr-1" />}
+                    <div className={`flex items-center text-sm font-light ${kpis.vatBalanceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {kpis.vatBalanceChange >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
                       <span>{kpis.vatBalanceChange >= 0 ? '+' : ''}{kpis.vatBalanceChange.toFixed(1)}% {kpis.periodLabel}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </CardCarousel>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start min-h-0">
                 <div className="flex flex-col gap-6 lg:col-span-2">
                   <Card className="shadow-sm border border-gray-200">
                     <CardHeader>
-                      <CardTitle className="text-xl">
+                      <ResponsiveHeading level="h3" as="h2" className="text-gray-900">
                         Tendencia de Flujo de Caja
-                      </CardTitle>
+                      </ResponsiveHeading>
                     </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={280}>
+                    <CardContent className="overflow-hidden">
+                      <div className="w-full overflow-x-auto">
+                        <div className="min-w-[300px]">
+                          <ResponsiveContainer width="100%" height={280}>
                         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                           <defs>
                             <linearGradient id="colorFacturacion" x1="0" y1="0" x2="0" y2="1">
@@ -703,15 +697,17 @@ export default function DashboardPage() {
                           />
                         </LineChart>
                       </ResponsiveContainer>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="shadow-sm border border-gray-200">
+                  <Card className="shadow-sm border border-gray-200 min-w-0">
                     <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle className="text-xl">
+                      <div className="min-w-0">
+                        <ResponsiveHeading level="h3" as="h2" className="text-gray-900">
                           Tareas Pendientes
-                        </CardTitle>
+                        </ResponsiveHeading>
                         <CardDescription className="mt-1 font-light">
                           {pendingTasks.length} tareas por completar
                         </CardDescription>
@@ -720,7 +716,7 @@ export default function DashboardPage() {
                         Ver tareas
                       </Button>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="min-w-0">
                       <div className="space-y-2">
                         {paginatedTasks.length === 0 ? (
                           <p className="text-center py-8 text-gray-500">No hay tareas pendientes</p>
@@ -739,7 +735,7 @@ export default function DashboardPage() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className={`font-medium-heading text-sm ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                <p className={`font-medium-heading text-sm truncate ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                                   {task.title}
                                 </p>
                                 <div className="flex items-center gap-3 mt-1">
@@ -779,9 +775,9 @@ export default function DashboardPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setCurrentPageTasks(Math.max(0, currentPageTasks - 1))}
+                          onClick={() => handleTasksPagination(Math.max(0, currentPageTasks - 1))}
                           disabled={currentPageTasks === 0}
-                          className="h-9 px-3"
+                          className="h-9 px-3 transition-none"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -791,9 +787,9 @@ export default function DashboardPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setCurrentPageTasks(Math.min(totalPagesTasks - 1, currentPageTasks + 1))}
+                          onClick={() => handleTasksPagination(Math.min(totalPagesTasks - 1, currentPageTasks + 1))}
                           disabled={currentPageTasks === totalPagesTasks - 1 || totalPagesTasks <= 1}
-                          className="h-9 px-3"
+                          className="h-9 px-3 transition-none"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -802,14 +798,14 @@ export default function DashboardPage() {
                   </Card>
                 </div>
 
-                <div className="flex flex-col gap-6 lg:col-span-1">
-                  <Card className="shadow-sm border border-gray-200 flex flex-col flex-1">
+                <div className="flex flex-col gap-6 lg:col-span-1 min-h-0 min-w-0">
+                  <Card className="shadow-sm border border-gray-200 flex flex-col flex-1 min-w-0">
                     <CardHeader>
-                      <CardTitle className="text-xl">
+                      <ResponsiveHeading level="h3" as="h2" className="text-gray-900">
                         Facturas a Pagar
-                      </CardTitle>
+                      </ResponsiveHeading>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="min-w-0">
                       <div>
                         {invoicesToPay.length === 0 ? (
                           <p className="text-center py-8 text-gray-500">No hay facturas por pagar</p>
@@ -827,12 +823,12 @@ export default function DashboardPage() {
                             return (
                             <div key={invoice.id} className="py-3 border-b border-gray-100 last:border-0">
                               <div className="space-y-1.5">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <p className="font-medium-heading text-gray-900 text-sm">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium-heading text-gray-900 text-sm truncate">
                                       {invoice.issuer_name || invoice.supplier?.business_name || (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) || invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || 'Proveedor'}
                                     </p>
-                                    <p className="text-sm text-gray-500 font-light">
+                                    <p className="text-sm text-gray-500 font-light truncate">
                                       {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                                     </p>
                                     <p className="text-sm text-gray-400 font-light">
@@ -867,24 +863,24 @@ export default function DashboardPage() {
                       </div>
                       
                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
-                        <Button variant="ghost" size="sm" onClick={() => setCurrentPageToPay(Math.max(0, currentPageToPay - 1))} disabled={currentPageToPay === 0} className="h-9 px-3">
+                        <Button variant="ghost" size="sm" onClick={() => handleToPayPagination(Math.max(0, currentPageToPay - 1))} disabled={currentPageToPay === 0} className="h-9 px-3 transition-none">
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="text-sm text-gray-500 font-light">{currentPageToPay + 1} / {totalPagesToPay || 1}</span>
-                        <Button variant="ghost" size="sm" onClick={() => setCurrentPageToPay(Math.min(totalPagesToPay - 1, currentPageToPay + 1))} disabled={currentPageToPay === totalPagesToPay - 1 || totalPagesToPay <= 1} className="h-9 px-3">
+                        <Button variant="ghost" size="sm" onClick={() => handleToPayPagination(Math.min(totalPagesToPay - 1, currentPageToPay + 1))} disabled={currentPageToPay === totalPagesToPay - 1 || totalPagesToPay <= 1} className="h-9 px-3 transition-none">
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="shadow-sm border border-gray-200">
+                  <Card className="shadow-sm border border-gray-200 min-w-0">
                     <CardHeader>
-                      <CardTitle className="text-xl">
+                      <ResponsiveHeading level="h3" as="h2" className="text-gray-900">
                         Facturas a Cobrar
-                      </CardTitle>
+                      </ResponsiveHeading>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="min-w-0">
                       <div>
                         {invoicesToCollect.length === 0 ? (
                           <p className="text-center py-8 text-gray-500">No hay facturas por cobrar</p>
@@ -902,12 +898,12 @@ export default function DashboardPage() {
                             return (
                             <div key={invoice.id} className="py-3 border-b border-gray-100 last:border-0">
                               <div className="space-y-1.5">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <p className="font-medium-heading text-gray-900 text-sm">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium-heading text-gray-900 text-sm truncate">
                                       {invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}
                                     </p>
-                                    <p className="text-sm text-gray-500 font-light">
+                                    <p className="text-sm text-gray-500 font-light truncate">
                                       {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
                                     </p>
                                     <p className="text-sm text-gray-400 font-light">
@@ -942,11 +938,11 @@ export default function DashboardPage() {
                       </div>
                       
                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
-                        <Button variant="ghost" size="sm" onClick={() => setCurrentPageToCollect(Math.max(0, currentPageToCollect - 1))} disabled={currentPageToCollect === 0} className="h-9 px-3">
+                        <Button variant="ghost" size="sm" onClick={() => handleToCollectPagination(Math.max(0, currentPageToCollect - 1))} disabled={currentPageToCollect === 0} className="h-9 px-3 transition-none">
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="text-sm text-gray-500 font-light">{currentPageToCollect + 1} / {totalPagesToCollect || 1}</span>
-                        <Button variant="ghost" size="sm" onClick={() => setCurrentPageToCollect(Math.min(totalPagesToCollect - 1, currentPageToCollect + 1))} disabled={currentPageToCollect === totalPagesToCollect - 1 || totalPagesToCollect <= 1} className="h-9 px-3">
+                        <Button variant="ghost" size="sm" onClick={() => handleToCollectPagination(Math.min(totalPagesToCollect - 1, currentPageToCollect + 1))} disabled={currentPageToCollect === totalPagesToCollect - 1 || totalPagesToCollect <= 1} className="h-9 px-3 transition-none">
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </div>
@@ -955,9 +951,8 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

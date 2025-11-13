@@ -23,6 +23,7 @@ import { colors } from "@/styles"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/company/stat-card"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { afipCertificateService } from "@/services/afip-certificate.service"
@@ -282,7 +283,7 @@ export default function CompanyPage() {
     return (
       <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-xl sm:text-2xl font-bold mb-4">Perfil Fiscal no encontrado</h1>
+          <ResponsiveHeading level="h2" className="mb-4">Perfil Fiscal no encontrado</ResponsiveHeading>
           <Button onClick={() => router.push('/dashboard')} className="w-full sm:w-auto">Volver al Dashboard</Button>
         </div>
       </div>
@@ -394,10 +395,10 @@ export default function CompanyPage() {
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <BackButton href="/dashboard" />
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold truncate">{company.name}</h1>
-              <p className="text-sm sm:text-base text-muted-foreground truncate">
+              <ResponsiveHeading level="h1" className="truncate">{company.name}</ResponsiveHeading>
+              <ResponsiveText className="text-muted-foreground truncate">
                 Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}
-              </p>
+              </ResponsiveText>
               <p className="text-xs text-muted-foreground mt-1 truncate">
                 ID de Conexión: <span className="font-mono font-semibold">{company.uniqueId}</span>
               </p>

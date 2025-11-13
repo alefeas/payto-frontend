@@ -21,6 +21,7 @@ import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { formatPhone, formatCBU } from "@/lib/input-formatters"
 import { AfipFiscalDataButton } from "@/components/company/AfipFiscalDataButton"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipButton } from "@/components/afip/afip-guard"
@@ -491,8 +492,8 @@ export default function SettingsPage() {
           <div className="flex items-center gap-4">
             <BackButton href={`/company/${companyId}`} />
             <div>
-              <h1 className="text-3xl font-bold">Configuración de Perfil Fiscal</h1>
-              <p className="text-muted-foreground">Gestionar configuración y preferencias</p>
+              <ResponsiveHeading level="h1">Configuración de Perfil Fiscal</ResponsiveHeading>
+              <ResponsiveText className="text-muted-foreground">Gestionar configuración y preferencias</ResponsiveText>
             </div>
           </div>
           

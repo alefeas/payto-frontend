@@ -18,6 +18,7 @@ import { ClientForm } from "@/components/clients/ClientForm"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipGuard } from "@/components/afip/afip-guard"
+import { PageHeader } from "@/components/layouts/PageHeader"
             
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
@@ -204,48 +205,43 @@ export default function ClientsPage() {
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-            <BackButton href={`/company/${companyId}`} />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold">Mis Clientes</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">Gestiona tus clientes externos para facturación</p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
-              variant={showArchived ? "outline" : "default"}
-              onClick={() => {
-                setShowArchived(!showArchived)
-                if (!showArchived && archivedClients.length === 0) {
-                  loadArchivedClients()
-                }
-              }}
-            >
-              <Archive className="h-4 w-4 mr-2" />
-              {showArchived ? "Ver Activos" : "Ver Archivados"}
-            </Button>
-            {!showArchived && (
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nuevo Cliente
-                  </Button>
-                </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Crear Nuevo Cliente</DialogTitle>
-                <DialogDescription>
-                  Agrega un cliente externo para emitir facturas más rápido
-                </DialogDescription>
-              </DialogHeader>
-              <ClientForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadClients} />
-            </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
+        <PageHeader 
+          title="Mis Clientes"
+          description="Gestiona tus clientes externos para facturación"
+          backHref={`/company/${companyId}`}
+        >
+          <Button
+            variant={showArchived ? "outline" : "default"}
+            onClick={() => {
+              setShowArchived(!showArchived)
+              if (!showArchived && archivedClients.length === 0) {
+                loadArchivedClients()
+              }
+            }}
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            {showArchived ? "Ver Activos" : "Ver Archivados"}
+          </Button>
+          {!showArchived && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Cliente
+                </Button>
+              </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+              <DialogDescription>
+                Agrega un cliente externo para emitir facturas más rápido
+              </DialogDescription>
+            </DialogHeader>
+            <ClientForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadClients} />
+          </DialogContent>
+            </Dialog>
+          )}
+        </PageHeader>
 
         {/* Mensaje de certificado AFIP requerido */}
         {!isAfipVerified && (
