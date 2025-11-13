@@ -29,16 +29,16 @@ export default function LoadInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
         {/* Skeleton Loading - visible mientras carga */}
         <div style={{ display: isFormReady ? 'none' : 'block' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Skeleton className="h-10 w-10 rounded" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-4 w-96" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-7 sm:h-8 w-48 sm:w-64" />
+                <Skeleton className="h-4 w-64 sm:w-96" />
               </div>
             </div>
           </div>
@@ -52,12 +52,12 @@ export default function LoadInvoicePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <Skeleton className="h-10 w-full" />
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
               </div>
@@ -69,12 +69,12 @@ export default function LoadInvoicePage() {
         {/* Contenido real - visible cuando está listo */}
         <div style={{ display: isFormReady ? 'block' : 'none' }}>
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
               <BackButton href={`/company/${companyId}`} />
-              <div>
-                <h1 className="text-3xl font-bold">Carga Manual de Facturas</h1>
-                <p className="text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold">Carga Manual de Facturas</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Registrá facturas recibidas o emitidas históricas
                 </p>
               </div>

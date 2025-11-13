@@ -2,7 +2,7 @@ import ContactForm from "@/components/contact/contact-form";
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-white p-8 lg:p-12">
+    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-12">
       <div className="max-w-6xl mx-auto">
         <div className="h-full min-h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-8 lg:gap-12">
         {/* Left Side - Form */}

@@ -141,7 +141,7 @@ export default function ClientsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header Skeleton */}
           <div className="flex items-center gap-4">
@@ -201,16 +201,18 @@ export default function ClientsPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">Mis Clientes</h1>
-            <p className="text-muted-foreground">Gestiona tus clientes externos para facturación</p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            <BackButton href={`/company/${companyId}`} />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Mis Clientes</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">Gestiona tus clientes externos para facturación</p>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button
               variant={showArchived ? "outline" : "default"}
               onClick={() => {

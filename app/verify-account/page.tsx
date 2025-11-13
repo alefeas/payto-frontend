@@ -34,7 +34,7 @@ const messages = [
 
 function VerifyAccountContent() {
   return (
-    <div className="min-h-screen bg-white p-8 lg:p-12">
+    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-12">
       <div className="h-full min-h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-8 lg:gap-12">
         {/* Left Side - Form */}
         <div className="flex-1 flex items-center justify-center order-2 lg:order-1">

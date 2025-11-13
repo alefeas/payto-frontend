@@ -724,13 +724,13 @@ export default function CreateInvoicePage() {
   // Show loading skeleton while initial data loads
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-muted rounded animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-muted rounded animate-pulse" />
-              <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+            <div className="space-y-2 flex-1">
+              <div className="h-7 sm:h-8 w-48 sm:w-64 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-32 sm:w-48 bg-muted rounded animate-pulse" />
             </div>
           </div>
           <div className="h-32 bg-muted rounded animate-pulse" />
@@ -741,13 +741,15 @@ export default function CreateInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">Emitir Comprobante</h1>
-            <p className="text-muted-foreground">Facturas, Notas de Crédito/Débito, Recibos</p>
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            <BackButton href={`/company/${companyId}`} />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Emitir Comprobante</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">Facturas, Notas de Crédito/Débito, Recibos</p>
+            </div>
           </div>
         </div>
 
@@ -779,7 +781,7 @@ export default function CreateInvoicePage() {
               <CardDescription>Seleccione el tipo de comprobante</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="h-4 flex items-center">Tipo de Comprobante *</Label>
                   <Select 
@@ -925,8 +927,8 @@ export default function CreateInvoicePage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
+                <div className="space-y-2 sm:col-span-2 md:col-span-1">
                 <Label>Moneda *</Label>
                 <Select 
                   value={formData.currency} 
@@ -950,7 +952,7 @@ export default function CreateInvoicePage() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2 md:col-span-1">
                 <Label>Cotización</Label>
                 <Input
                   type="number"
@@ -970,7 +972,7 @@ export default function CreateInvoicePage() {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2 sm:col-span-2 md:col-span-2">
                 <Label htmlFor="emissionDate">Fecha de Emisión *</Label>
                 <DatePicker
                   date={formData.emissionDate ? parseDateLocal(formData.emissionDate) || undefined : undefined}
@@ -984,7 +986,7 @@ export default function CreateInvoicePage() {
                 </p>
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2 sm:col-span-2 md:col-span-2">
                 <Label htmlFor="dueDate">Fecha de Vencimiento *</Label>
                 <DatePicker
                   date={formData.dueDate ? parseDateLocal(formData.dueDate) || undefined : undefined}
@@ -1213,7 +1215,7 @@ export default function CreateInvoicePage() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                   
-                  <div className="grid grid-cols-1 gap-4 pr-10">
+                  <div className="grid grid-cols-1 gap-4 pr-8 sm:pr-10">
                     <div className="space-y-2">
                       <Label>Descripción *</Label>
                       <Input
@@ -1224,7 +1226,7 @@ export default function CreateInvoicePage() {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
                       <div className="space-y-2">
                         <Label>Cantidad *</Label>
                         <Input
@@ -1274,7 +1276,7 @@ export default function CreateInvoicePage() {
                         />
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-2 col-span-2 sm:col-span-1">
                         <Label>IVA *</Label>
                         <Select 
                           value={(item.taxRate ?? currentCompany?.defaultVat ?? 21).toString()} 
@@ -1298,7 +1300,7 @@ export default function CreateInvoicePage() {
                         </Select>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-2 col-span-2 sm:col-span-3 md:col-span-1">
                         <Label className="text-xs">Total</Label>
                         <div className="h-10 flex items-center justify-end px-3 bg-muted rounded-md font-medium">
                           {getCurrencySymbol(formData.currency)}{itemTotals.total.toFixed(2)}
@@ -1374,7 +1376,7 @@ export default function CreateInvoicePage() {
                     </Button>
                     
                     <div className="grid grid-cols-1 gap-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-8 sm:pr-10">
                         <div className="space-y-2">
                           <Label>Tipo de Percepción *</Label>
                           <Select 
@@ -1429,7 +1431,7 @@ export default function CreateInvoicePage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label>Alícuota (%) *</Label>
                           <Input
@@ -1552,10 +1554,10 @@ export default function CreateInvoicePage() {
           </Card>
 
             {/* Acciones */}
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button 
                 type="submit" 
-                className="flex-1" 
+                className="w-full sm:flex-1" 
                 disabled={isSubmitting || (cert ? !cert.isActive : false)}
               >
                 {isSubmitting ? (
@@ -1574,6 +1576,7 @@ export default function CreateInvoicePage() {
                 type="button" 
                 variant="outline" 
                 onClick={() => router.push(`/company/${companyId}`)}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>

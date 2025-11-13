@@ -172,6 +172,24 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+
+  /* Responsive Design Utilities */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  .container-responsive {
+    @apply px-3 sm:px-4 lg:px-6;
+  }
+
+  /* Horizontal scroll for tables */
+  .table-scroll {
+    @apply overflow-x-auto -mx-3 sm:-mx-0;
+  }
+
+  .table-scroll > * {
+    @apply min-w-[640px];
+  }
 }
 
 @theme inline {

@@ -161,7 +161,7 @@ export default function TasksPage() {
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset>
-        <div className="min-h-screen bg-white p-6">
+        <div className="min-h-screen bg-white p-3 sm:p-4 lg:p-6">
           <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

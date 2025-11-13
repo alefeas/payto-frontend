@@ -204,7 +204,7 @@ export default function MembersPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header Skeleton */}
           <div className="flex items-center gap-4">
@@ -298,7 +298,7 @@ export default function MembersPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <BackButton href={`/company/${companyId}`} />

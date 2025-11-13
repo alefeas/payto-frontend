@@ -221,21 +221,21 @@ export default function CompanyPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
           {/* Header Skeleton */}
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-8 w-48 sm:w-64" />
+              <Skeleton className="h-4 w-64 sm:w-96 hidden sm:block" />
             </div>
           </div>
           
           {/* Company Info Card Skeleton */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <Skeleton className="h-12 w-12 rounded" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-6 w-48" />
@@ -245,13 +245,13 @@ export default function CompanyPage() {
                     <Skeleton className="h-4 w-32" />
                   </div>
                 </div>
-                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-full sm:w-24" />
               </div>
             </CardHeader>
           </Card>
           
           {/* Menu Grid Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i}>
                 <CardHeader>
@@ -280,10 +280,10 @@ export default function CompanyPage() {
   if (!isAuthenticated) return null
   if (!company) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-4">Perfil Fiscal no encontrado</h1>
-          <Button onClick={() => router.push('/dashboard')}>Volver al Dashboard</Button>
+          <h1 className="text-xl sm:text-2xl font-bold mb-4">Perfil Fiscal no encontrado</h1>
+          <Button onClick={() => router.push('/dashboard')} className="w-full sm:w-auto">Volver al Dashboard</Button>
         </div>
       </div>
     )
@@ -387,30 +387,33 @@ export default function CompanyPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <BackButton href="/dashboard" />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">{company.name}</h1>
-            <p className="text-muted-foreground">
-              Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              ID de Conexión: <span className="font-mono font-semibold">{company.uniqueId}</span>
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <BackButton href="/dashboard" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold truncate">{company.name}</h1>
+              <p className="text-sm sm:text-base text-muted-foreground truncate">
+                Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                ID de Conexión: <span className="font-mono font-semibold">{company.uniqueId}</span>
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
             <NotificationBell companyId={company.id} />
             {hasPermission(userRole, 'members.view') && (
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => router.push(`/company/${company.id}/members`)}
+                className="w-full sm:w-auto"
               >
                 <Users className="h-4 w-4 mr-2" />
-                Miembros
+                <span className="sm:inline">Miembros</span>
               </Button>
             )}
             {hasPermission(userRole, 'company.view_settings') && (
@@ -419,18 +422,21 @@ export default function CompanyPage() {
                   variant="outline" 
                   size="sm"
                   onClick={() => router.push(`/company/${company.id}/verify`)}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 w-full sm:w-auto"
                 >
                   <Shield className="h-4 w-4 mr-2" />
-                  Verificar AFIP
+                  <span className="hidden sm:inline">Verificar AFIP</span>
+                  <span className="sm:hidden">AFIP</span>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => router.push(`/company/${company.id}/settings`)}
+                  className="w-full sm:w-auto"
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Configurar
+                  <span className="hidden sm:inline">Configurar</span>
+                  <span className="sm:hidden">Config</span>
                 </Button>
               </>
             )}
@@ -438,7 +444,7 @@ export default function CompanyPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard 
             title="Por Cobrar"
             value={stats.receivable}
@@ -537,19 +543,19 @@ export default function CompanyPage() {
         {/* Main Menu */}
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold mb-1.5">Gestión de Comprobantes</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-1.5">Gestión de Comprobantes</h2>
             <p className="text-sm text-muted-foreground">
               Selecciona una opción para gestionar los comprobantes de {company.name}
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {menuItems.map((item: MenuItem, index) => (
               <div
                 key={index}
-                className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
+                className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
                 onClick={item.action}
               >
-                <div className="p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
+                <div className="p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
                   <item.icon className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -564,19 +570,19 @@ export default function CompanyPage() {
         {/* Additional Features */}
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold mb-1.5">Funcionalidades Adicionales</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-1.5">Funcionalidades Adicionales</h2>
             <p className="text-sm text-muted-foreground">
               Herramientas avanzadas para optimizar tu gestión de facturación
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {additionalItems.map((item, index) => (
               <div
                 key={index}
-                className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
+                className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
                 onClick={item.action}
               >
-                <div className="p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
+                <div className="p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
                   <item.icon className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">

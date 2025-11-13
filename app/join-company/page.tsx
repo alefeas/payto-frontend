@@ -19,7 +19,7 @@ export default function JoinCompanyPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-white p-8 lg:p-12">
+    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-12">
       <div className="h-full min-h-[calc(100vh-6rem)] flex items-center justify-center">
         <div className="w-full max-w-md">
           <JoinCompanyForm />

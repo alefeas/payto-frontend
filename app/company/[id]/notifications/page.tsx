@@ -53,25 +53,25 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded" />
             <div className="flex-1 space-y-2">
-              <Skeleton className="h-9 w-64" />
-              <Skeleton className="h-5 w-96" />
+              <Skeleton className="h-7 sm:h-9 w-48 sm:w-64" />
+              <Skeleton className="h-4 sm:h-5 w-64 sm:w-96" />
             </div>
           </div>
           <Card className="border-gray-200">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <Skeleton className="h-6 w-48" />
                   <Skeleton className="h-4 w-64" />
                 </div>
                 <div className="flex gap-2">
-                  <Skeleton className="h-9 w-20" />
-                  <Skeleton className="h-9 w-28" />
+                  <Skeleton className="h-9 w-full sm:w-20" />
+                  <Skeleton className="h-9 w-full sm:w-28" />
                 </div>
               </div>
             </CardHeader>
@@ -80,8 +80,8 @@ export default function NotificationsPage() {
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="p-3 rounded-lg border border-gray-200">
                     <div className="flex items-start gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="flex-1 space-y-2">
+                      <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+                      <div className="flex-1 space-y-2 min-w-0">
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-3 w-full" />
                         <Skeleton className="h-3 w-1/2" />
@@ -125,35 +125,39 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">Notificaciones</h1>
-            <p className="text-muted-foreground">
-              {unreadCount > 0 
-                ? `Tienes ${unreadCount} notificación${unreadCount > 1 ? 'es' : ''} sin leer`
-                : 'Todas tus notificaciones están al día'
-              }
-            </p>
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <BackButton href={`/company/${companyId}`} />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Notificaciones</h1>
+              <p className="text-sm sm:text-base text-muted-foreground truncate">
+                {unreadCount > 0 
+                  ? `Tienes ${unreadCount} notificación${unreadCount > 1 ? 'es' : ''} sin leer`
+                  : 'Todas tus notificaciones están al día'
+                }
+              </p>
+            </div>
           </div>
           {notifications.length > 0 && (
             <Button
               onClick={handleMarkAllAsRead}
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
             >
               <CheckCheck className="h-4 w-4 mr-2" />
-              Marcar todas como leídas
+              <span className="hidden sm:inline">Marcar todas como leídas</span>
+              <span className="sm:hidden">Marcar leídas</span>
             </Button>
           )}
         </div>
 
         <Card className="border-gray-200">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5" />
                   Mis Notificaciones
@@ -162,11 +166,12 @@ export default function NotificationsPage() {
                   Mantente informado sobre eventos importantes de tu empresa
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button
                   variant={filter === 'all' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setFilter('all')}
+                  className="w-full sm:w-auto"
                 >
                   Todas
                 </Button>
@@ -174,6 +179,7 @@ export default function NotificationsPage() {
                   variant={filter === 'unread' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setFilter('unread')}
+                  className="w-full sm:w-auto"
                 >
                   No leídas {unreadCount > 0 && `(${unreadCount})`}
                 </Button>

@@ -171,7 +171,7 @@ export default function ApproveInvoicesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header Skeleton */}
           <div className="flex items-center gap-4">
@@ -225,13 +225,15 @@ export default function ApproveInvoicesPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${id}`} />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">Aprobar Facturas</h1>
-            <p className="text-muted-foreground">{companyName}</p>
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            <BackButton href={`/company/${id}`} />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Aprobar Facturas</h1>
+              <p className="text-sm sm:text-base text-muted-foreground truncate">{companyName}</p>
+            </div>
           </div>
         </div>
 

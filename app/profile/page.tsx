@@ -176,18 +176,20 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <BackButton href="/dashboard" />
-          <div>
-            <h1 className="text-3xl font-bold">Mi Perfil</h1>
-            <p className="text-muted-foreground">Gestiona tu información personal y preferencias</p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            <BackButton href="/dashboard" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Mi Perfil</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">Gestiona tu información personal y preferencias</p>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Profile Summary */}
           <Card>
             <CardHeader className="text-center">
