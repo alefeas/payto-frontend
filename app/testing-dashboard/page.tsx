@@ -314,7 +314,7 @@ export default function TestingDashboardPage() {
                 <CardHeader className="pb-3">
                   <CardDescription className="text-sm text-gray-500 font-light">Saldo IVA</CardDescription>
                   <CardTitle className={fontSizes.h1.desktop}>
-                    ${Math.round(baseAmountVat * kpiMultiplier).toLocaleString()}.00
+                    ${Math.round(baseVATBalance * kpiMultiplier).toLocaleString()}.00
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
