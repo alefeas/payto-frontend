@@ -24,6 +24,8 @@ import { companyService } from "@/services/company.service"
 import { invoiceService } from "@/services/invoice.service"
 import { voucherService } from "@/services/voucher.service"
 import type { Client } from "@/services/client.service"
+import { useAfipCertificate } from "@/hooks/use-afip-certificate"
+import { AfipButton } from "@/components/afip/afip-guard"
 
 interface CompanyData {
   id: string
@@ -75,6 +77,9 @@ export default function CreateInvoicePage() {
   const [associateInvoice, setAssociateInvoice] = useState(false)
   const [salesPoints, setSalesPoints] = useState<{id: string, point_number: number, name: string | null}[]>([])
   const [invoiceSelectorKey, setInvoiceSelectorKey] = useState(0)
+
+  // AFIP Certificate validation
+  const { isVerified: isAfipVerified, isLoading: isLoadingCert } = useAfipCertificate(companyId)
 
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -714,7 +719,7 @@ export default function CreateInvoicePage() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
               <p className="text-xs text-red-700 mt-1">
-                No puedes emitir facturas electrónicas sin un certificado AFIP activo. Configura tu certificado para comenzar a facturar.
+                No puedes emitir facturas electrónicas ni sincronizar puntos de venta sin un certificado AFIP activo. Configura tu certificado para comenzar a facturar.
               </p>
             </div>
             <Button 
@@ -770,11 +775,14 @@ export default function CreateInvoicePage() {
                   <div className="flex items-center justify-between">
                     <Label className="h-4 flex items-center">Punto de Venta *</Label>
                     <div className="flex gap-1">
-                      <Button 
-                        type="button" 
+                      <AfipButton
+                        companyId={companyId}
                         size="icon" 
                         variant="ghost"
                         className="h-4 w-4 p-0 shrink-0"
+                        disabled={isSyncingSalesPoints}
+                        errorMessage="Certificado AFIP requerido para sincronizar puntos de venta"
+                        loadingText="Verificando..."
                         onClick={async () => {
                           setIsSyncingSalesPoints(true)
                           try {
@@ -789,11 +797,9 @@ export default function CreateInvoicePage() {
                             setIsSyncingSalesPoints(false)
                           }
                         }}
-                        disabled={isSyncingSalesPoints}
-                        title="Sincronizar con AFIP"
                       >
                         {isSyncingSalesPoints ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                      </Button>
+                      </AfipButton>
                       <Button 
                         type="button" 
                         size="icon" 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Settings, Building2, FileText, Shield, Bell, Trash2, Download, Upload, Key, Plus, CreditCard, Edit, Save } from "lucide-react"
+import { Building2, FileText, Shield, Bell, Trash2, Download, Key, Plus, CreditCard, Edit, Save, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,9 +19,11 @@ import { companyService, Company } from "@/services/company.service"
 import { bankAccountService, BankAccount } from "@/services/bank-account.service"
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
-import { formatCUIT, formatPhone, formatCBU } from "@/lib/input-formatters"
+import { formatPhone, formatCBU } from "@/lib/input-formatters"
 import { AfipFiscalDataButton } from "@/components/company/AfipFiscalDataButton"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAfipCertificate } from "@/hooks/use-afip-certificate"
+import { AfipButton } from "@/components/afip/afip-guard"
 
 const PROVINCIAS = [
   "Buenos Aires",
@@ -84,6 +86,11 @@ export default function SettingsPage() {
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [maxApprovals, setMaxApprovals] = useState(10)
   const [hasCertificate, setHasCertificate] = useState(false)
+  const [syncingSalesPoints, setSyncingSalesPoints] = useState(false)
+  const [syncingTaxCondition, setSyncingTaxCondition] = useState(false)
+
+  // AFIP Certificate validation
+  const { isVerified: isAfipVerified, isLoading: isLoadingCert } = useAfipCertificate(companyId)
   const [formData, setFormData] = useState({
     name: '',
     business_name: '',
@@ -497,6 +504,27 @@ export default function SettingsPage() {
           )}
         </div>
 
+        {/* Mensaje de certificado AFIP requerido */}
+        {!isAfipVerified && !isLoadingCert && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
+              <p className="text-xs text-red-700 mt-1">
+                No puedes sincronizar datos fiscales ni puntos de venta con AFIP sin un certificado activo. Configura tu certificado para acceder a todas las funcionalidades.
+              </p>
+            </div>
+            <Button 
+              type="button"
+              size="sm" 
+              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${companyId}/verify`)}
+            >
+              Configurar Ahora
+            </Button>
+          </div>
+        )}
+
         <Tabs defaultValue="general" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general">General</TabsTrigger>
@@ -628,12 +656,49 @@ export default function SettingsPage() {
                             disabled
                             className="bg-gray-100 dark:bg-gray-800"
                           />
-                          <AfipFiscalDataButton 
+                          <AfipButton
                             companyId={companyId}
-                            onDataFetched={(taxCondition) => {
-                              setFormData({...formData, tax_condition: taxCondition})
+                            variant="outline"
+                            size="default"
+                            disabled={syncingTaxCondition}
+                            className="flex-shrink-0"
+                            errorMessage="Certificado AFIP requerido para sincronizar datos fiscales"
+                            loadingText="Verificando AFIP..."
+                            onClick={async () => {
+                              try {
+                                setSyncingTaxCondition(true)
+                                const response = await (await import('@/services/afip-padron.service')).afipPadronService.syncTaxCondition(companyId)
+                                
+                                if (response.success) {
+                                  setFormData({...formData, tax_condition: response.tax_condition})
+                                  
+                                  const conditionLabel = {
+                                    'registered_taxpayer': 'Responsable Inscripto',
+                                    'monotax': 'Monotributo',
+                                    'exempt': 'Exento',
+                                    'final_consumer': 'Consumidor Final'
+                                  }[response.tax_condition] || response.tax_condition
+                                  
+                                  toast.success(response.message, {
+                                    description: response.mock_mode 
+                                      ? 'Datos simulados - El servicio de padrón AFIP solo funciona con certificado de producción'
+                                      : `Condición actualizada: ${conditionLabel}`
+                                  })
+                                }
+                              } catch (error: any) {
+                                const errorMsg = error.response?.data?.error || error.message || 'Error al sincronizar con AFIP'
+                                toast.error(errorMsg)
+                              } finally {
+                                setSyncingTaxCondition(false)
+                              }
                             }}
-                          />
+                          >
+                            {syncingTaxCondition ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Download className="h-4 w-4" />
+                            )}
+                          </AfipButton>
                         </div>
                         {hasCertificate ? (
                           <p className="text-xs text-amber-600 dark:text-amber-400">⚠️ Condición inferida del CUIT. Presioná el botón para sincronizar desde AFIP.</p>
@@ -670,20 +735,40 @@ export default function SettingsPage() {
                     <h3 className="font-medium">Puntos de Venta</h3>
                     {canUpdate && (
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={async () => {
-                          try {
-                            const apiClient = (await import('@/lib/api-client')).default
-                            await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
-                            const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
-                            setSalesPoints(spResponse.data.data || [])
-                            toast.success('Puntos de venta sincronizados con AFIP')
-                          } catch (error: any) {
-                            toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
-                          }
-                        }}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Sincronizar con AFIP
-                        </Button>
+                        <AfipButton
+                          companyId={companyId}
+                          size="sm" 
+                          variant="outline"
+                          disabled={syncingSalesPoints}
+                          errorMessage="Certificado AFIP requerido para sincronizar puntos de venta desde AFIP"
+                          loadingText="Verificando AFIP..."
+                          onClick={async () => {
+                            try {
+                              setSyncingSalesPoints(true)
+                              const apiClient = (await import('@/lib/api-client')).default
+                              await apiClient.post(`/companies/${companyId}/sales-points/sync-from-afip`)
+                              const spResponse = await apiClient.get(`/companies/${companyId}/sales-points`)
+                              setSalesPoints(spResponse.data.data || [])
+                              toast.success('Puntos de venta sincronizados con AFIP')
+                            } catch (error: any) {
+                              toast.error(error.response?.data?.error || 'Error al sincronizar con AFIP')
+                            } finally {
+                              setSyncingSalesPoints(false)
+                            }
+                          }}
+                        >
+                          {syncingSalesPoints ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Sincronizando...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4 mr-2" />
+                              Sincronizar con AFIP
+                            </>
+                          )}
+                        </AfipButton>
                         <Button size="sm" onClick={() => setShowAddSalesPointDialog(true)}>
                           <Plus className="h-4 w-4 mr-2" />
                           Agregar

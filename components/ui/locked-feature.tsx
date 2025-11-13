@@ -6,17 +6,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useRouter } from 'next/navigation';
 
 interface LockedFeatureProps {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   companyId: string;
   children?: React.ReactNode;
+  showOverlay?: boolean;
+  className?: string;
 }
 
-export function LockedFeature({ title, description, companyId, children }: LockedFeatureProps) {
+export function LockedFeature({ 
+  title = "Función Bloqueada", 
+  description = "Esta función requiere certificado AFIP activo", 
+  companyId, 
+  children, 
+  showOverlay = true,
+  className = ""
+}: LockedFeatureProps) {
   const router = useRouter();
 
+  if (!showOverlay) {
+    return (
+      <div className={`opacity-50 pointer-events-none ${className}`}>
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       {children}
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
         <Card className="max-w-md mx-4 text-center">

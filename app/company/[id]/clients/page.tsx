@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
+import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +16,8 @@ import { toast } from "sonner"
 import { clientService, Client } from "@/services/client.service"
 import { ClientForm } from "@/components/clients/ClientForm"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAfipCertificate } from "@/hooks/use-afip-certificate"
+import { AfipGuard } from "@/components/afip/afip-guard"
             
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
@@ -48,6 +50,9 @@ export default function ClientsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [archivedClients, setArchivedClients] = useState<Client[]>([])
   const [showArchived, setShowArchived] = useState(false)
+
+  // AFIP Certificate validation
+  const { isVerified: isAfipVerified } = useAfipCertificate(companyId)
   const [loadingArchived, setLoadingArchived] = useState(false)
   const [archivingId, setArchivingId] = useState<string | null>(null)
   const [restoringId, setRestoringId] = useState<string | null>(null)
@@ -239,6 +244,27 @@ export default function ClientsPage() {
             )}
           </div>
         </div>
+
+        {/* Mensaje de certificado AFIP requerido */}
+        {!isAfipVerified && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
+              <p className="text-xs text-red-700 mt-1">
+                No puedes buscar datos fiscales automáticamente en el padrón AFIP sin un certificado activo. Configura tu certificado para autocompletar datos de clientes.
+              </p>
+            </div>
+            <Button 
+              type="button"
+              size="sm" 
+              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${companyId}/verify`)}
+            >
+              Configurar Ahora
+            </Button>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="flex items-center gap-3">

@@ -11,6 +11,8 @@ import { clientService, Client } from "@/services/client.service"
 import { supplierService, Supplier } from "@/services/supplier.service"
 import { formatCUIT, formatPhone } from "@/lib/input-formatters"
 import { afipPadronService } from "@/services/afip-padron.service"
+import { useAfipGuard } from "@/components/afip/afip-guard"
+import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { Loader2, CheckCircle2 } from "lucide-react"
 
 type EntityType = "client" | "supplier"
@@ -26,6 +28,9 @@ interface EntityFormProps {
 }
 
 export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBankFields = false }: EntityFormProps) {
+  const { validateAndExecute } = useAfipGuard(companyId)
+  const { isVerified: hasAfipCertificate, isLoading: afipLoading } = useAfipCertificate(companyId)
+  
   const form = useForm({
     defaultValues: {
       documentType: entity?.documentType || "CUIT",
@@ -214,51 +219,60 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={async () => {
+                  onClick={() => {
                     if (documentNumber.replace(/\D/g, '').length !== 11) {
-                  toast.error('Ingresa un CUIT válido')
-                  return
-                }
-                try {
-                  setValidating(true)
-                  const result = await afipPadronService.searchByCuit(companyId, documentNumber)
-                  
-                  if (result.success && result.data) {
-                    const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
-                      'responsable_inscripto': 'registered_taxpayer',
-                      'monotributo': 'monotax',
-                      'exento': 'exempt',
-                      'consumidor_final': 'final_consumer'
+                      toast.error('Ingresa un CUIT válido')
+                      return
                     }
-                    
-                    form.setValue('businessName', result.data.business_name || result.data.name || form.getValues('businessName'))
-                    form.setValue('taxCondition', taxConditionMap[result.data.tax_condition] || form.getValues('taxCondition'))
-                    form.setValue('address', result.data.address || form.getValues('address'))
-                    setValidated(true)
-                    
-                    const message = result.mock_mode
-                      ? 'Datos simulados cargados (modo testing)'
-                      : 'Datos obtenidos de AFIP'
-                    
-                    toast.success(message, {
-                      description: result.mock_mode
-                        ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
-                        : undefined
-                    })
+
+                    validateAndExecute(async () => {
+                      try {
+                        setValidating(true)
+                        const result = await afipPadronService.searchByCuit(companyId, documentNumber)
+                        
+                        if (result.success && result.data) {
+                          const taxConditionMap: Record<string, "registered_taxpayer" | "monotax" | "exempt" | "final_consumer"> = {
+                            'responsable_inscripto': 'registered_taxpayer',
+                            'monotributo': 'monotax',
+                            'exento': 'exempt',
+                            'consumidor_final': 'final_consumer'
+                          }
+                          
+                          form.setValue('businessName', result.data.business_name || result.data.name || form.getValues('businessName'))
+                          form.setValue('taxCondition', taxConditionMap[result.data.tax_condition] || form.getValues('taxCondition'))
+                          form.setValue('address', result.data.address || form.getValues('address'))
+                          setValidated(true)
+                          
+                          const message = result.mock_mode
+                            ? 'Datos simulados cargados (modo testing)'
+                            : 'Datos obtenidos de AFIP'
+                          
+                          toast.success(message, {
+                            description: result.mock_mode
+                              ? 'El servicio de padrón AFIP solo funciona con certificado de producción'
+                              : undefined
+                          })
+                        }
+                      } catch (error: any) {
+                        if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
+                          toast.error('Configura un certificado AFIP primero', { duration: 6000 })
+                        } else {
+                          toast.error(error.response?.data?.error || 'Error al consultar AFIP')
+                        }
+                      } finally {
+                        setValidating(false)
+                      }
+                    }, 'Certificado AFIP requerido para buscar datos en el padrón')
+                  }}
+                  disabled={validating || afipLoading || !hasAfipCertificate}
+                  title={
+                    afipLoading 
+                      ? "Validando certificado AFIP..." 
+                      : !hasAfipCertificate 
+                        ? "Requiere certificado AFIP activo" 
+                        : "Buscar datos en AFIP"
                   }
-                } catch (error: any) {
-                  if (error.response?.status === 400 && error.response?.data?.error?.includes('certificado')) {
-                    toast.error('Configura un certificado AFIP primero', { duration: 6000 })
-                  } else {
-                    toast.error(error.response?.data?.error || 'Error al consultar AFIP')
-                  }
-                } finally {
-                  setValidating(false)
-                }
-              }}
-              disabled={validating}
-              title="Buscar datos en AFIP"
-            >
+                >
               {validating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : validated ? (

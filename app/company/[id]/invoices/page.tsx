@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { FileText, Download, Filter, Search, Loader2, RefreshCw } from "lucide-react"
+import { FileText, Download, Filter, Search, Loader2, RefreshCw, Shield } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
@@ -23,6 +23,8 @@ import { InvoiceCard } from "@/components/invoices/InvoiceCard"
 import { InvoicesPageSkeleton, InvoiceCardSkeleton } from "@/components/invoices/InvoicesSkeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
+import { useAfipCertificate } from "@/hooks/use-afip-certificate"
+import { AfipButton } from "@/components/afip/afip-guard"
 
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -69,6 +71,9 @@ export default function InvoicesPage() {
   const [syncProgress, setSyncProgress] = useState<string>('')
   const [downloadingTXT, setDownloadingTXT] = useState(false)
   const [downloadingPDF, setDownloadingPDF] = useState(false)
+
+  // AFIP Certificate validation
+  const { isVerified: isAfipVerified, isLoading: isLoadingCert } = useAfipCertificate(companyId)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -263,6 +268,27 @@ export default function InvoicesPage() {
           </div>
         </div>
 
+        {/* Mensaje de certificado AFIP requerido */}
+        {!isAfipVerified && !isLoadingCert && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
+              <p className="text-xs text-red-700 mt-1">
+                No puedes sincronizar comprobantes desde AFIP sin un certificado activo. Configura tu certificado para acceder a todas las funcionalidades.
+              </p>
+            </div>
+            <Button 
+              type="button"
+              size="sm" 
+              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${companyId}/verify`)}
+            >
+              Configurar Ahora
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -270,15 +296,18 @@ export default function InvoicesPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button
+                <AfipButton
+                  companyId={companyId}
                   onClick={() => setShowSyncDialog(true)}
                   variant="outline"
                   size="sm"
                   className="w-full sm:w-auto"
+                  errorMessage="Certificado AFIP requerido para sincronizar comprobantes desde AFIP"
+                  loadingText="Verificando AFIP..."
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Sinc. AFIP
-                </Button>
+                </AfipButton>
                 <Button 
                   onClick={async () => {
                     if (selectedInvoices.length === 0) {

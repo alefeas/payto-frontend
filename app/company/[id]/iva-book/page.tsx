@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
+import { BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle, Shield } from "lucide-react"
 import { colors, fontSizes } from "@/styles"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
@@ -17,6 +17,8 @@ import { toast } from "sonner"
 import apiClient from "@/lib/api-client"
 import { companyService } from "@/services/company.service"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
+import { useAfipCertificate } from "@/hooks/use-afip-certificate"
+import { AfipGuard, AfipButton } from "@/components/afip/afip-guard"
 
 // Normalizar condición IVA según AFIP (backend ya lo hace, pero por si acaso)
 const normalizeAfipTaxCondition = (condition: string | null | undefined): string => {
@@ -41,6 +43,9 @@ export default function IvaBookPage() {
   const [exportingSales, setExportingSales] = useState(false)
   const [exportingPurchases, setExportingPurchases] = useState(false)
   const [validationError, setValidationError] = useState<{message: string, type: 'sales' | 'purchases'} | null>(null)
+
+  // AFIP Certificate validation
+  const { isVerified: isAfipVerified, isLoading: isLoadingCert } = useAfipCertificate(companyId)
 
   const months = [
     { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
@@ -294,6 +299,27 @@ export default function IvaBookPage() {
           </div>
         )}
 
+        {/* Mensaje de certificado AFIP requerido */}
+        {!isAfipVerified && !isLoadingCert && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
+              <p className="text-xs text-red-700 mt-1">
+                No puedes exportar archivos oficiales para AFIP sin un certificado activo. Configura tu certificado para generar reportes válidos.
+              </p>
+            </div>
+            <Button 
+              type="button"
+              size="sm" 
+              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
+              onClick={() => router.push(`/company/${companyId}/verify`)}
+            >
+              Configurar Ahora
+            </Button>
+          </div>
+        )}
+
         <Tabs defaultValue="sales" className="space-y-6">
           <div className="flex items-center justify-between">
             <TabsList className="inline-flex h-9 rounded-md border border-gray-200 bg-muted/30 px-1">
@@ -316,10 +342,13 @@ export default function IvaBookPage() {
                       Facturas emitidas - {salesBook?.period?.month_name} {salesBook?.period?.year}
                     </CardDescription>
                   </div>
-                  <Button 
+                  <AfipButton
+                    companyId={companyId}
                     variant="outline" 
                     size="sm"
                     disabled={exportingSales}
+                    errorMessage="Certificado AFIP requerido para exportar archivos oficiales de libro IVA"
+                    loadingText="Verificando AFIP..."
                     onClick={async () => {
                       try {
                         setExportingSales(true)
@@ -361,7 +390,7 @@ export default function IvaBookPage() {
                   >
                     <Download className="h-4 w-4 mr-2" />
                     {exportingSales ? 'Exportando...' : 'Exportar para AFIP'}
-                  </Button>
+                  </AfipButton>
                 </div>
               </CardHeader>
               <CardContent>
@@ -458,10 +487,13 @@ export default function IvaBookPage() {
                       Facturas recibidas - {purchasesBook?.period?.month_name} {purchasesBook?.period?.year}
                     </CardDescription>
                   </div>
-                  <Button 
+                  <AfipButton
+                    companyId={companyId}
                     variant="outline" 
                     size="sm"
                     disabled={exportingPurchases}
+                    errorMessage="Certificado AFIP requerido para exportar archivos oficiales de libro IVA"
+                    loadingText="Verificando AFIP..."
                     onClick={async () => {
                       try {
                         setExportingPurchases(true)
@@ -503,7 +535,7 @@ export default function IvaBookPage() {
                   >
                     <Download className="h-4 w-4 mr-2" />
                     {exportingPurchases ? 'Exportando...' : 'Exportar para AFIP'}
-                  </Button>
+                  </AfipButton>
                 </div>
               </CardHeader>
               <CardContent>
