@@ -593,31 +593,17 @@ export default function CreateInvoicePage() {
     
     // Helper function to determine if perceptions should be included
     const shouldIncludePerceptions = () => {
-      console.log('[DEBUG] shouldIncludePerceptions check:', {
-        perceptionsLength: perceptions.length,
-        clientTaxCondition: formData.clientData?.tax_condition,
-        receiverCompanyId: formData.receiverCompanyId,
-        perceptions: perceptions
-      })
-      
       if (perceptions.length === 0) return false
       
       // Check if client is final consumer
-      if (formData.clientData?.tax_condition === 'final_consumer') {
-        console.log('[DEBUG] Blocking perceptions: client is final_consumer')
-        return false
-      }
+      if (formData.clientData?.tax_condition === 'final_consumer') return false
       
       // Check if receiver company is final consumer (though companies shouldn't be CF)
       if (formData.receiverCompanyId) {
         const receiverCompany = connectedCompanies.find(c => c.id === formData.receiverCompanyId)
-        if (receiverCompany?.taxCondition === 'final_consumer') {
-          console.log('[DEBUG] Blocking perceptions: receiver company is final_consumer')
-          return false
-        }
+        if (receiverCompany?.taxCondition === 'final_consumer') return false
       }
       
-      console.log('[DEBUG] Allowing perceptions')
       return true
     }
     
@@ -1172,26 +1158,16 @@ export default function CreateInvoicePage() {
                       }
                       
                       // Handle perceptions based on client type:
-                      console.log('[DEBUG] Client selection changed:', {
-                        isFinalConsumer,
-                        previousTaxCondition,
-                        newTaxCondition: data.entity_data?.tax_condition,
-                        currentPerceptions: perceptions.length
-                      })
-                      
                       if (isFinalConsumer) {
                         // Clear perceptions for CF
-                        console.log('[DEBUG] Clearing perceptions for CF client')
                         setPerceptions([])
                         toast.info('Las percepciones no aplican para Consumidores Finales')
                       } else if (previousTaxCondition === 'final_consumer' && data.entity_data) {
                         // Changing from CF to non-CF: clear and don't auto-apply (user must add manually)
-                        console.log('[DEBUG] Clearing perceptions when changing from CF to non-CF')
                         setPerceptions([])
                         toast.info('Percepciones limpiadas. Agregá manualmente las que correspondan.')
                       } else if (!data.entity_data) {
                         // Clearing client selection: restore auto-perceptions if configured
-                        console.log('[DEBUG] Clearing client selection')
                         if (currentCompany?.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
                           applyAutoPerceptions()
                         } else {
