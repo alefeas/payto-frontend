@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Download, FileText, Building2, Calendar, DollarSign, User, CreditCard, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2, Eye, ShoppingCart, Calculator, Clock, MessageSquare } from "lucide-react"
+import { Download, FileText, Building2, Calendar, DollarSign, Hash, Percent, Edit2, Save, X, AlertCircle, Trash2, Loader2, Eye, ShoppingCart, Calculator, Clock, MessageSquare, Shield, Receipt } from "lucide-react"
 import { invoiceService } from "@/services/invoice.service"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InvoiceDetailSkeleton } from "@/components/invoices/InvoiceDetailSkeleton"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -310,16 +310,16 @@ export default function InvoiceDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 lg:space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="mt-1">
               <BackButton onClick={handleBack} />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">{invoice.number}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 break-words">{invoice.number}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {getStatusBadge(invoice.display_status || invoice.status)}
                 <Badge className="bg-gray-100 text-gray-700 border-gray-200">
@@ -345,15 +345,16 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 lg:flex-nowrap">
             {invoice.is_manual_load && !isEditing ? (
               <Button 
                 onClick={() => setShowDeleteDialog(true)}
                 variant="destructive" 
                 className="shadow-sm"
+                size="sm"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar
+                <span className="hidden sm:inline">Eliminar</span>
               </Button>
             ) : null}
             {invoice.synced_from_afip && !isEditing ? (
@@ -361,9 +362,10 @@ export default function InvoiceDetailPage() {
                 onClick={startEditing}
                 variant="outline" 
                 className="shadow-sm"
+                size="sm"
               >
                 <Edit2 className="h-4 w-4 mr-2" />
-                Editar
+                <span className="hidden sm:inline">Editar</span>
               </Button>
             ) : null}
             {isEditing ? (
@@ -372,6 +374,7 @@ export default function InvoiceDetailPage() {
                   onClick={saveChanges}
                   disabled={isSaving}
                   className="shadow-sm"
+                  size="sm"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Guardando...' : 'Guardar'}
@@ -381,6 +384,7 @@ export default function InvoiceDetailPage() {
                   variant="outline"
                   disabled={isSaving}
                   className="shadow-sm"
+                  size="sm"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
@@ -388,39 +392,41 @@ export default function InvoiceDetailPage() {
               </>
             ) : (
               <>
-                <Button onClick={downloadPDF} disabled={isDownloadingPDF} className="shadow-sm">
+                <Button onClick={downloadPDF} disabled={isDownloadingPDF} className="shadow-sm" size="sm">
                   {isDownloadingPDF ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generando...
+                      <span className="hidden sm:inline">Generando...</span>
                     </>
                   ) : (
                     <>
                       <Download className="h-4 w-4 mr-2" />
-                      PDF Sistema
+                      <span className="hidden sm:inline">PDF Sistema</span>
+                      <span className="sm:hidden">PDF</span>
                     </>
                   )}
                 </Button>
                 {invoice.attachment_path && (
-                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm">
+                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm" size="sm">
                     {isDownloadingAttachment ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Descargando...
+                        <span className="hidden sm:inline">Descargando...</span>
                       </>
                     ) : (
                       <>
                         <FileText className="h-4 w-4 mr-2" />
-                        PDF Original
+                        <span className="hidden sm:inline">PDF Original</span>
+                        <span className="sm:hidden">Orig</span>
                       </>
                     )}
                   </Button>
                 )}
-                <Button onClick={downloadTXT} disabled={isDownloadingTXT} variant="outline" className="shadow-sm">
+                <Button onClick={downloadTXT} disabled={isDownloadingTXT} variant="outline" className="shadow-sm" size="sm">
                   {isDownloadingTXT ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generando...
+                      <span className="hidden sm:inline">Generando...</span>
                     </>
                   ) : (
                     <>
@@ -452,11 +458,14 @@ export default function InvoiceDetailPage() {
 
         {/* Información General */}
         <Card className="shadow-sm border-gray-200">
-          <CardHeader className="border-b border-gray-100">
-            <CardTitle className="text-gray-800">Información del Comprobante</CardTitle>
+          <CardHeader className="border-b border-gray-100/60">
+            <CardTitle className="flex items-center gap-2 text-gray-800">
+              <FileText className="h-5 w-5" style={{ color: colors.accent }} />
+              Información del Comprobante
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardContent className="p-4 lg:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Building2 className="h-4 w-4" style={{ color: colors.accent }} />
@@ -513,7 +522,7 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center justify-center gap-2 mb-2">
                   <Hash className="h-4 w-4" style={{ color: colors.accent }} />
                   <h3 className="font-semibold text-sm text-gray-800">Datos AFIP</h3>
                 </div>
@@ -552,8 +561,8 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4" style={{ color: colors.accent }} />
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Shield className="h-4 w-4" style={{ color: colors.accent }} />
                   <h3 className="font-semibold text-sm text-gray-800">CAE</h3>
                 </div>
                 {invoice.afip_cae ? (
@@ -577,16 +586,17 @@ export default function InvoiceDetailPage() {
 
         {/* Ítems */}
         <Card className="shadow-sm border-gray-200">
-          <CardHeader className="border-b border-gray-100">
+          <CardHeader className="border-b border-gray-100/60">
             <CardTitle className="flex items-center gap-2 text-gray-800">
               <ShoppingCart className="h-5 w-5" style={{ color: colors.accent }} />
               Detalle de Ítems
             </CardTitle>
             <CardDescription>Productos y servicios del comprobante</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div>
-              <div className="grid grid-cols-7 gap-3 py-2 mb-3 border-b border-border/40">
+          <CardContent className="p-4 lg:p-6">
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-7 gap-3 py-2 mb-3 border-b border-gray-200/60">
                 <div className="col-span-2">
                   <p className="text-xs font-semibold text-muted-foreground">Descripción</p>
                 </div>
@@ -664,25 +674,102 @@ export default function InvoiceDetailPage() {
                           <p className="font-semibold text-sm">{formatCurrency(total, invoice.currency)}</p>
                         </div>
                       </div>
-{index !== invoice.items.length - 1 && <div className="border-b border-gray-100" />}
+{index !== invoice.items.length - 1 && <div className="border-b border-gray-200/40" />}
                     </div>
                   )
                 })}
               </div>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {invoice.items?.map((item: any, index: number) => {
+                const qty = parseFloat(item.quantity)
+                const unitPrice = parseFloat(item.unit_price)
+                const discount = parseFloat(item.discount_percentage || 0)
+                const taxRate = parseFloat(item.tax_rate)
+                const subtotal = parseFloat(item.subtotal)
+                const taxAmount = parseFloat(item.tax_amount || 0)
+                const total = subtotal + taxAmount
+                
+                return (
+                  <div key={item.id} className="bg-gray-50/50 border border-gray-200/60 rounded-lg p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-1">Descripción</p>
+                        {isEditing ? (
+                          <Input
+                            type="text"
+                            value={editForm.items[index]?.description || ''}
+                            onChange={(e) => {
+                              const newItems = [...editForm.items]
+                              newItems[index] = { description: e.target.value }
+                              setEditForm({...editForm, items: newItems})
+                            }}
+                            className="h-9 text-sm bg-white border-gray-300 focus:ring-slate-500"
+                            placeholder="Descripción del ítem"
+                          />
+                        ) : (
+                          <p className="font-medium text-sm">{item.description}</p>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Cantidad</p>
+                          <p className="text-sm">{qty}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">P. Unit.</p>
+                          <p className="text-sm">{formatCurrency(unitPrice, invoice.currency)}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Bonificación</p>
+                          {discount > 0 ? (
+                            <Badge variant="secondary" className="text-xs">{discount}%</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">IVA</p>
+                          {item.tax_category === 'exempt' ? (
+                            <Badge variant="outline" className="text-xs">Exento</Badge>
+                          ) : item.tax_category === 'not_taxed' ? (
+                            <Badge variant="outline" className="text-xs">No Grav.</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">{taxRate}%</Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="border-t border-gray-200/60 pt-3">
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs font-semibold text-muted-foreground">Total</p>
+                          <p className="font-bold text-lg">{formatCurrency(total, invoice.currency)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
 
         {/* Totales y Estado de Pago */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           <Card className="shadow-sm border-gray-200">
-            <CardHeader className="border-b border-gray-100">
+            <CardHeader className="border-b border-gray-100/60">
               <CardTitle className="flex items-center gap-2 text-gray-800">
                 <Calculator className="h-5 w-5" style={{ color: colors.accent }} />
                 Resumen de Totales
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 lg:p-6">
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-gray-600">Subtotal</span>
@@ -690,25 +777,25 @@ export default function InvoiceDetailPage() {
                     {formatCurrency(parseFloat(invoice.subtotal), invoice.currency)}
                   </span>
                 </div>
-<div className="border-b border-gray-100" />
+                <div className="border-b border-gray-200/40" />
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-gray-600">Impuestos (IVA)</span>
-                  <span className="font-medium text-sm text-red-600">
+                  <span className="font-medium text-sm text-orange-600">
                     +{formatCurrency(parseFloat(invoice.total_taxes), invoice.currency)}
                   </span>
                 </div>
                 {parseFloat(invoice.total_perceptions || 0) > 0 && (
                   <>
-<div className="border-b border-gray-100" />
+                    <div className="border-b border-gray-200/40" />
                     <div className="flex justify-between items-center py-2">
                       <span className="text-sm text-gray-600">Percepciones</span>
-                      <span className="font-medium text-sm text-red-600">
+                      <span className="font-medium text-sm text-orange-600">
                         +{formatCurrency(parseFloat(invoice.total_perceptions), invoice.currency)}
                       </span>
                     </div>
                   </>
                 )}
-<div className="border-b border-gray-100" />
+                <div className="border-b border-gray-200/40" />
                 <div className="flex justify-between items-center py-2">
                   <span className="font-bold text-gray-900">Total Comprobante</span>
                   <span className="font-bold text-lg text-gray-900">
@@ -722,13 +809,13 @@ export default function InvoiceDetailPage() {
           {/* Estado de Pago / Retenciones */}
           {isPaid ? (
             <Card className="shadow-sm border-gray-200">
-              <CardHeader className="border-b border-gray-100">
+              <CardHeader className="border-b border-gray-100/60">
                 <CardTitle className="flex items-center gap-2 text-gray-800">
                   <DollarSign className="h-5 w-5" style={{ color: colors.accent }} />
                   {isIssuer ? 'Pago Recibido' : 'Pago Realizado'}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 lg:p-6">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600">Total Comprobante</span>
@@ -741,7 +828,7 @@ export default function InvoiceDetailPage() {
 <div className="border-b border-gray-100" />
                       <div className="flex justify-between items-center py-2">
                         <span className="text-gray-600">Retenciones</span>
-                        <span className="font-medium text-blue-600">
+                        <span className="font-medium text-red-600">
                           -{formatCurrency(totalWithholdings, invoice.currency)}
                         </span>
                       </div>
@@ -867,9 +954,9 @@ export default function InvoiceDetailPage() {
         {invoice.balance_breakdown && !['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type) && 
          (invoice.balance_breakdown.credit_notes?.length > 0 || invoice.balance_breakdown.debit_notes?.length > 0) && (
           <Card className="shadow-sm border-gray-200">
-            <CardHeader className="border-b border-gray-100">
+            <CardHeader className="border-b border-gray-100/60">
               <CardTitle className="flex items-center gap-2 text-gray-800">
-                <FileText className="h-5 w-5" style={{ color: colors.accent }} />
+                <Receipt className="h-5 w-5" style={{ color: colors.accent }} />
                 Ajustes Aplicados
               </CardTitle>
               <CardDescription>Notas de crédito y débito que modifican el saldo de esta factura</CardDescription>
@@ -890,7 +977,7 @@ export default function InvoiceDetailPage() {
 <div className="border-b border-gray-100" />
                         <div className="flex justify-between items-center py-2">
                           <span className="text-sm text-gray-600">Notas de Crédito</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-red-600">
                             -{formatCurrency(invoice.balance_breakdown.total_credit_notes, invoice.currency)}
                           </span>
                         </div>
@@ -901,7 +988,7 @@ export default function InvoiceDetailPage() {
 <div className="border-b border-gray-100" />
                         <div className="flex justify-between items-center py-2">
                           <span className="text-sm text-gray-600">Notas de Débito</span>
-                          <span className="font-semibold text-red-600">
+                          <span className="font-semibold text-orange-600">
                             +{formatCurrency(invoice.balance_breakdown.total_debit_notes, invoice.currency)}
                           </span>
                         </div>
@@ -935,7 +1022,7 @@ className="flex justify-between items-center p-3 border border-gray-200 rounded-
                                 {parseDateLocal(nc.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}
                               </p>
                             </div>
-                            <span className="font-semibold text-sm text-blue-600">
+                            <span className="font-semibold text-sm text-red-600">
                               -{formatCurrency(nc.amount, invoice.currency)}
                             </span>
                           </div>
@@ -960,7 +1047,7 @@ className="flex justify-between items-center p-3 border border-gray-200 rounded-
                                 {parseDateLocal(nd.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}
                               </p>
                             </div>
-                            <span className="font-semibold text-sm text-red-600">
+                            <span className="font-semibold text-sm text-orange-600">
                               +{formatCurrency(nd.amount, invoice.currency)}
                             </span>
                           </div>
@@ -977,9 +1064,9 @@ className="flex justify-between items-center p-3 border border-gray-200 rounded-
         {/* Factura Relacionada - Solo para NC/ND */}
         {invoice.related_invoice_id && ['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type) && (
           <Card className="shadow-sm border-gray-200">
-            <CardHeader className="border-b border-gray-100">
+            <CardHeader className="border-b border-gray-100/60">
               <CardTitle className="flex items-center gap-2 text-gray-800">
-                <FileText className="h-5 w-5" style={{ color: colors.accent }} />
+                <Receipt className="h-5 w-5" style={{ color: colors.accent }} />
                 Factura Relacionada
               </CardTitle>
               <CardDescription>

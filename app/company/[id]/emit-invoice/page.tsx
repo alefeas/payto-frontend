@@ -309,9 +309,8 @@ export default function CreateInvoicePage() {
     if (currentCompany && !isInitialized) {
       setItems([{ description: '', quantity: 1, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany.defaultVat || 21 }])
       
-      // Load auto-perceptions if company is perception agent with smooth animation
+      // Load auto-perceptions if company is perception agent (will be cleared if CF is selected)
       if (currentCompany.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
-        // Add perceptions one by one with delay for smooth animation
         const perceptionsToAdd = currentCompany.autoPerceptions.map((p: any) => ({
           type: p.type,
           name: p.name,
@@ -320,6 +319,7 @@ export default function CreateInvoicePage() {
           jurisdiction: p.jurisdiction
         }))
         
+        // Add perceptions one by one with delay for smooth animation
         perceptionsToAdd.forEach((perception, index) => {
           setTimeout(() => {
             setPerceptions(prev => [...prev, perception])
@@ -330,6 +330,31 @@ export default function CreateInvoicePage() {
       setIsInitialized(true)
     }
   }, [currentCompany, isInitialized])
+
+  // Helper function to apply auto-perceptions when appropriate
+  const applyAutoPerceptions = useCallback(() => {
+    if (currentCompany?.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
+      const perceptionsToAdd = currentCompany.autoPerceptions.map((p: any) => ({
+        type: p.type,
+        name: p.name,
+        rate: p.rate,
+        baseType: p.base_type || 'net',
+        jurisdiction: p.jurisdiction
+      }))
+      
+      // Clear existing perceptions first
+      setPerceptions([])
+      
+      // Add perceptions one by one with delay for smooth animation
+      perceptionsToAdd.forEach((perception, index) => {
+        setTimeout(() => {
+          setPerceptions(prev => [...prev, perception])
+        }, index * 100) // 100ms delay between each perception
+      })
+      
+      toast.info(`Se aplicaron ${perceptionsToAdd.length} percepción(es) automática(s)`)
+    }
+  }, [currentCompany])
 
   const calculateTotals = useCallback(() => {
     const subtotal = items.reduce((sum, item) => {
@@ -566,6 +591,43 @@ export default function CreateInvoicePage() {
 
     const isExistingClient = formData.clientData?.client_id
     
+    // Helper function to determine if perceptions should be included
+    const shouldIncludePerceptions = () => {
+      console.log('[DEBUG] shouldIncludePerceptions check:', {
+        perceptionsLength: perceptions.length,
+        clientTaxCondition: formData.clientData?.tax_condition,
+        receiverCompanyId: formData.receiverCompanyId,
+        perceptions: perceptions
+      })
+      
+      if (perceptions.length === 0) return false
+      
+      // Check if client is final consumer
+      if (formData.clientData?.tax_condition === 'final_consumer') {
+        console.log('[DEBUG] Blocking perceptions: client is final_consumer')
+        return false
+      }
+      
+      // Check if receiver company is final consumer (though companies shouldn't be CF)
+      if (formData.receiverCompanyId) {
+        const receiverCompany = connectedCompanies.find(c => c.id === formData.receiverCompanyId)
+        if (receiverCompany?.taxCondition === 'final_consumer') {
+          console.log('[DEBUG] Blocking perceptions: receiver company is final_consumer')
+          return false
+        }
+      }
+      
+      console.log('[DEBUG] Allowing perceptions')
+      return true
+    }
+    
+    const perceptionsPayload = shouldIncludePerceptions() ? perceptions.map(p => ({
+      type: p.type,
+      name: p.name,
+      rate: p.rate,
+      base_type: p.baseType || 'net'
+    })) : undefined
+    
     const payload = (isNoteType && associateInvoice) ? {
       voucher_type: formData.voucherType,
       related_invoice_id: formData.relatedInvoiceId,
@@ -585,12 +647,7 @@ export default function CreateInvoicePage() {
         discount_percentage: item.discountPercentage || 0,
         tax_rate: item.taxRate ?? 0
       })),
-      perceptions: perceptions.length > 0 ? perceptions.map(p => ({
-        type: p.type,
-        name: p.name,
-        rate: p.rate,
-        base_type: p.baseType || 'net'
-      })) : undefined
+      perceptions: perceptionsPayload
     } : {
       client_id: isExistingClient ? formData.clientData?.client_id : undefined,
       receiver_company_id: formData.receiverCompanyId || undefined,
@@ -614,12 +671,7 @@ export default function CreateInvoicePage() {
         discount_percentage: item.discountPercentage || 0,
         tax_rate: item.taxRate ?? 0
       })),
-      perceptions: perceptions.length > 0 ? perceptions.map(p => ({
-        type: p.type,
-        name: p.name,
-        rate: p.rate,
-        base_type: p.baseType || 'net'
-      })) : undefined
+      perceptions: perceptionsPayload
     }
 
     try {
@@ -1086,6 +1138,7 @@ export default function CreateInvoicePage() {
                     }}
                     onSelect={(data) => {
                       const isFinalConsumer = data.entity_data?.tax_condition === 'final_consumer'
+                      const previousTaxCondition = formData.clientData?.tax_condition
                       
                       if (data.receiver_company_id) {
                         setFormData({
@@ -1108,11 +1161,42 @@ export default function CreateInvoicePage() {
                           clientData: data.entity_data,
                           saveClient: data.save_entity || false
                         })
+                      } else {
+                        // Clear selection
+                        setFormData({
+                          ...formData,
+                          receiverCompanyId: '',
+                          clientData: null,
+                          saveClient: false
+                        })
                       }
                       
-                      // Clear perceptions if final consumer
+                      // Handle perceptions based on client type:
+                      console.log('[DEBUG] Client selection changed:', {
+                        isFinalConsumer,
+                        previousTaxCondition,
+                        newTaxCondition: data.entity_data?.tax_condition,
+                        currentPerceptions: perceptions.length
+                      })
+                      
                       if (isFinalConsumer) {
+                        // Clear perceptions for CF
+                        console.log('[DEBUG] Clearing perceptions for CF client')
                         setPerceptions([])
+                        toast.info('Las percepciones no aplican para Consumidores Finales')
+                      } else if (previousTaxCondition === 'final_consumer' && data.entity_data) {
+                        // Changing from CF to non-CF: clear and don't auto-apply (user must add manually)
+                        console.log('[DEBUG] Clearing perceptions when changing from CF to non-CF')
+                        setPerceptions([])
+                        toast.info('Percepciones limpiadas. Agregá manualmente las que correspondan.')
+                      } else if (!data.entity_data) {
+                        // Clearing client selection: restore auto-perceptions if configured
+                        console.log('[DEBUG] Clearing client selection')
+                        if (currentCompany?.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
+                          applyAutoPerceptions()
+                        } else {
+                          setPerceptions([])
+                        }
                       }
                     }}
                   />
