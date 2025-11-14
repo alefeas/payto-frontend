@@ -25,7 +25,7 @@ export function BackButton({ href, onClick, className }: BackButtonProps) {
     <Button
       variant="outline"
       onClick={handleClick}
-      className={`group ${className || ''}`}
+      className={`group font-medium-heading ${className || ''}`}
     >
       <ArrowLeft className="h-4 w-4 text-blue-600 group-hover:-translate-x-0.5 transition-transform" />
       <span className="hidden sm:inline ml-2">Volver</span>

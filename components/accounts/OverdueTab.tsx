@@ -11,9 +11,10 @@ interface OverdueTabProps {
   type: 'receivable' | 'payable'
   selectedInvoices?: string[]
   onSelectionChange?: (ids: string[]) => void
+  canPerformAction?: boolean
 }
 
-export function OverdueTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange }: OverdueTabProps) {
+export function OverdueTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange, canPerformAction = true }: OverdueTabProps) {
   const overdueInvoices = invoices.filter(inv => {
     if (!inv.due_date) return false
     

@@ -35,6 +35,19 @@ export type Permission =
   
   // Audit logs
   | 'audit.view'
+  
+  // IVA Book (NEW)
+  | 'iva_book.view'
+  | 'iva_book.export'
+  
+  // Contacts (NEW)
+  | 'contacts.view'
+  | 'contacts.create'
+  | 'contacts.update'
+  | 'contacts.delete'
+  
+  // Analytics (NEW)
+  | 'analytics.view'
 
 const rolePermissions: Record<CompanyRole, Permission[]> = {
   owner: [
@@ -62,6 +75,13 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'payments.delete',
     'payments.approve',
     'audit.view',
+    'iva_book.view',
+    'iva_book.export',
+    'contacts.view',
+    'contacts.create',
+    'contacts.update',
+    'contacts.delete',
+    'analytics.view',
   ],
   
   administrator: [
@@ -87,6 +107,13 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'payments.delete',
     'payments.approve',
     'audit.view',
+    'iva_book.view',
+    'iva_book.export',
+    'contacts.view',
+    'contacts.create',
+    'contacts.update',
+    'contacts.delete',
+    'analytics.view',
   ],
   
   financial_director: [
@@ -103,6 +130,13 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'payments.update',
     'payments.approve',
     'audit.view',
+    'iva_book.view',
+    'iva_book.export',
+    'contacts.view',
+    'contacts.create',
+    'contacts.update',
+    'contacts.delete',
+    'analytics.view',
   ],
   
   accountant: [
@@ -116,6 +150,12 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'payments.create',
     'payments.update',
     'payments.approve',
+    'iva_book.view',
+    'iva_book.export',
+    'contacts.view',
+    'contacts.create',
+    'contacts.update',
+    'analytics.view',
   ],
   
   approver: [
@@ -125,6 +165,8 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'invoices.approve',
     'payments.view',
     'payments.approve',
+    'contacts.view',
+    'analytics.view',
   ],
   
   operator: [
@@ -132,6 +174,8 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'bank_accounts.view',
     'invoices.view',
     'payments.view',
+    'contacts.view',
+    'analytics.view',
   ],
 }
 

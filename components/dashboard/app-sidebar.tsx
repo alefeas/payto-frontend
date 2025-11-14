@@ -67,15 +67,23 @@ import { companyService, Company } from "@/services/company.service"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 
-// Custom SidebarTrigger que siempre usa setOpen (no toggleSidebar)
+// Custom SidebarTrigger que funciona en desktop y móvil
 function CustomSidebarTrigger({ className, ...props }: React.ComponentProps<"button">) {
-  const { open, setOpen } = useSidebar()
+  const { open, setOpen, isMobile, setOpenMobile } = useSidebar()
   
   return (
     <button
       className={cn("size-7 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer", className)}
-      onClick={() => setOpen(!open)}
+      onClick={() => {
+        if (isMobile) {
+          setOpenMobile(false)
+        } else {
+          setOpen(!open)
+        }
+      }}
       {...props}
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
@@ -163,6 +171,9 @@ export function AppSidebar() {
     })
   }
 
+  // Obtener rol del usuario en la empresa seleccionada
+  const userRole = selectedCompany?.role as CompanyRole
+
   const navGroups = [
     {
       label: "General",
@@ -174,10 +185,17 @@ export function AppSidebar() {
     {
       label: "Facturación",
       items: [
-        { title: "Emitir Factura", icon: FileText, url: `/company/${selectedCompanyId}/emit-invoice` },
-        { title: "Cargar Factura", icon: Upload, url: `/company/${selectedCompanyId}/load-invoice` },
+        // Emitir y Cargar Factura - Solo si puede crear facturas
+        ...(selectedCompany && hasPermission(userRole, 'invoices.create') ? [
+          { title: "Emitir Factura", icon: FileText, url: `/company/${selectedCompanyId}/emit-invoice` },
+          { title: "Cargar Factura", icon: Upload, url: `/company/${selectedCompanyId}/load-invoice` },
+        ] : []),
+        // Mis Facturas - Todos pueden ver
         { title: "Mis Facturas", icon: BookOpen, url: `/company/${selectedCompanyId}/invoices` },
-        { title: "Aprobar Facturas", icon: UserCheck, url: `/company/${selectedCompanyId}/approve-invoices` },
+        // Aprobar Facturas - Solo si tiene permiso
+        ...(selectedCompany && hasPermission(userRole, 'invoices.approve') ? [
+          { title: "Aprobar Facturas", icon: UserCheck, url: `/company/${selectedCompanyId}/approve-invoices` }
+        ] : []),
       ]
     },
     {
@@ -199,19 +217,37 @@ export function AppSidebar() {
       label: "Reportes",
       items: [
         { title: "Analíticas", icon: BarChart3, url: `/company/${selectedCompanyId}/analytics` },
-        { title: "Libro IVA", icon: BookOpen, url: `/company/${selectedCompanyId}/iva-book` },
-        { title: "Auditoría", icon: ClipboardCheck, url: `/company/${selectedCompanyId}/audit-log` },
+        // Libro IVA - Solo si tiene permiso
+        ...(selectedCompany && hasPermission(userRole, 'iva_book.view') ? [
+          { title: "Libro IVA", icon: BookOpen, url: `/company/${selectedCompanyId}/iva-book` }
+        ] : []),
+        // Auditoría - Solo si tiene permiso
+        ...(selectedCompany && hasPermission(userRole, 'audit.view') ? [
+          { title: "Auditoría", icon: ClipboardCheck, url: `/company/${selectedCompanyId}/audit-log` }
+        ] : []),
       ]
     },
     {
       label: "Configuración",
       items: [
-        { title: "Certificado AFIP", icon: Shield, url: `/company/${selectedCompanyId}/verify` },
-        { title: "Miembros", icon: UserCog, url: `/company/${selectedCompanyId}/members` },
-        { title: "Ajustes", icon: Settings, url: `/company/${selectedCompanyId}/settings` },
+        // Certificado AFIP - Solo Accountant+ (necesitan configurar AFIP)
+        ...(selectedCompany && hasPermission(userRole, 'invoices.create') ? [
+          { title: "Certificado AFIP", icon: Shield, url: `/company/${selectedCompanyId}/verify` }
+        ] : []),
+        // Miembros - Solo si tiene permiso
+        ...(selectedCompany && hasPermission(userRole, 'members.view') ? [
+          { title: "Miembros", icon: UserCog, url: `/company/${selectedCompanyId}/members` }
+        ] : []),
+        // Ajustes - Solo Administrator/Owner
+        ...(selectedCompany && (userRole === 'administrator' || userRole === 'owner') ? [
+          { title: "Ajustes", icon: Settings, url: `/company/${selectedCompanyId}/settings` }
+        ] : []),
       ]
     }
-  ]
+  ].map(group => ({
+    ...group,
+    items: group.items.filter(item => item) // Filtrar items undefined
+  })).filter(group => group.items.length > 0) // Filtrar grupos vacíos
 
   if (loading) {
     return (

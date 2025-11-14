@@ -1,4 +1,4 @@
-"use client"
+  "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -348,9 +348,9 @@ export function InvoiceCard({
       className="border-gray-200 hover:border-gray-300 cursor-pointer transition-colors relative"
       onClick={() => onSelect(invoice.id)}
     >
-      <CardContent className="px-4 py-2.5 pl-12 relative">
+      <CardContent className="px-4 py-2.5 pl-11 sm:pl-12 relative">
         {/* Checkbox posicionado absolutamente */}
-        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+        <div className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2">
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onSelect(invoice.id)}

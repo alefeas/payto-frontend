@@ -133,7 +133,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full overflow-x-hidden",
             className
           )}
           {...props}
@@ -174,11 +174,31 @@ function Sidebar({
     )
   }
 
-  // Removed mobile-specific behavior - always use desktop layout
+  // Mobile: use Sheet (drawer overlay)
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+        <SheetContent
+          data-slot="sidebar"
+          data-mobile="true"
+          className="w-(--sidebar-width) bg-white p-0 text-sidebar-foreground [&>button]:hidden"
+          side={side}
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+            } as React.CSSProperties
+          }
+        >
+          <div className="flex h-full w-full flex-col bg-white">{children}</div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
 
+  // Desktop: fixed sidebar
   return (
     <div
-      className="group peer text-sidebar-foreground block"
+      className="group peer text-sidebar-foreground hidden md:block"
       data-state={state}
       data-collapsible={state === "collapsed" ? collapsible : ""}
       data-variant={variant}

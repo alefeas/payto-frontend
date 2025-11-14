@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 import { toast } from "sonner"
 import apiClient from "@/lib/api-client"
 import { companyService } from "@/services/company.service"
@@ -63,6 +65,17 @@ export default function IvaBookPage() {
       loadCompany()
     }
   }, [isAuthenticated, authLoading, router, companyId])
+
+  // Verificar permisos de acceso
+  useEffect(() => {
+    if (company) {
+      const userRole = company.role as CompanyRole
+      if (!hasPermission(userRole, 'iva_book.view')) {
+        toast.error('No tienes permisos para acceder al Libro IVA')
+        router.push(`/company/${companyId}`)
+      }
+    }
+  }, [company, router, companyId])
 
   useEffect(() => {
     if (company) {

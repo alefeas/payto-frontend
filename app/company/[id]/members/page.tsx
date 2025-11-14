@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Users, Crown, Calculator, User, MoreVertical, UserMinus, Settings, TrendingUp, Check } from "lucide-react"
+import { Users, Crown, Calculator, User, MoreVertical, UserMinus, Settings, TrendingUp, Check, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { CompanyRole, CompanyMember } from "@/types"
@@ -38,6 +39,7 @@ export default function MembersPage() {
   const [newRole, setNewRole] = useState<CompanyRole>("operator")
   const [updating, setUpdating] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -64,20 +66,30 @@ export default function MembersPage() {
     }
   }
 
+  // Orden de roles por jerarquía
+  const roleOrder: Record<CompanyRole, number> = {
+    owner: 1,
+    administrator: 2,
+    financial_director: 3,
+    accountant: 4,
+    approver: 5,
+    operator: 6,
+  }
+
   const getRoleIcon = (role: CompanyRole) => {
     switch (role) {
       case "owner":
-        return <Crown className="h-4 w-4 text-amber-600" />
+        return <Crown className="h-4 w-4 text-blue-600" />
       case "administrator":
-        return <Crown className="h-4 w-4 text-yellow-600" />
+        return <Settings className="h-4 w-4 text-blue-500" />
       case "financial_director":
-        return <TrendingUp className="h-4 w-4 text-purple-600" />
+        return <TrendingUp className="h-4 w-4 text-blue-500" />
       case "accountant":
-        return <Calculator className="h-4 w-4 text-blue-600" />
+        return <Calculator className="h-4 w-4 text-blue-400" />
       case "approver":
-        return <Check className="h-4 w-4 text-green-600" />
+        return <Check className="h-4 w-4 text-blue-400" />
       case "operator":
-        return <User className="h-4 w-4 text-gray-600" />
+        return <User className="h-4 w-4 text-gray-500" />
     }
   }
 
@@ -85,19 +97,38 @@ export default function MembersPage() {
     const label = translateRole(role)
     switch (role) {
       case "owner":
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-300">{label}</Badge>
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">{label}</Badge>
       case "administrator":
-        return <Badge className="bg-yellow-100 text-yellow-800">{label}</Badge>
+        return <Badge className="bg-blue-50 text-blue-700 border-blue-200">{label}</Badge>
       case "financial_director":
-        return <Badge className="bg-purple-100 text-purple-800">{label}</Badge>
+        return <Badge className="bg-sky-50 text-sky-700 border-sky-200">{label}</Badge>
       case "accountant":
-        return <Badge className="bg-blue-100 text-blue-800">{label}</Badge>
+        return <Badge className="bg-cyan-50 text-cyan-700 border-cyan-200">{label}</Badge>
       case "approver":
-        return <Badge className="bg-green-100 text-green-800">{label}</Badge>
+        return <Badge className="bg-teal-50 text-teal-700 border-teal-200">{label}</Badge>
       case "operator":
         return <Badge variant="secondary">{label}</Badge>
     }
   }
+
+  // Filtrar y ordenar miembros
+  const filteredAndSortedMembers = useMemo(() => {
+    let filtered = members
+    
+    // Filtrar por búsqueda
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = members.filter(member => 
+        member.name?.toLowerCase().includes(query) ||
+        member.email?.toLowerCase().includes(query)
+      )
+    }
+    
+    // Ordenar por jerarquía de rol
+    return [...filtered].sort((a, b) => {
+      return roleOrder[a.role] - roleOrder[b.role]
+    })
+  }, [members, searchQuery, roleOrder])
 
   const openRoleModal = (member: CompanyMember) => {
     setSelectedMember(member)
@@ -204,92 +235,79 @@ export default function MembersPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="min-h-screen bg-white overflow-x-hidden">
+        <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 pb-8 space-y-4 sm:space-y-6">
           {/* Header Skeleton */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-20 rounded" />
+            <div className="flex-1 min-w-0">
+              <Skeleton className="h-7 sm:h-8 w-32 mb-1" />
+              <Skeleton className="h-4 w-48" />
             </div>
           </div>
 
-          {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-8 w-16" />
-                  </div>
-                  <Skeleton className="h-8 w-8 rounded" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-10 flex-1" />
-                    <Skeleton className="h-10 w-20" />
-                    <Skeleton className="h-10 w-24" />
-                  </div>
-                  <Skeleton className="h-3 w-48" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Invite Code Skeleton */}
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <Skeleton className="h-4 w-32 mb-2" />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-full sm:w-20" />
+                <Skeleton className="h-10 w-full sm:w-24" />
+              </div>
+              <Skeleton className="h-3 w-64 mt-2" />
+            </CardContent>
+          </Card>
 
-          {/* Role Counts Skeleton */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          {/* Role Stats Skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-3 text-center">
-                  <Skeleton className="h-5 w-5 mx-auto mb-1" />
-                  <Skeleton className="h-6 w-8 mx-auto mb-1" />
-                  <Skeleton className="h-3 w-16 mx-auto" />
-                </CardContent>
-              </Card>
+              <div key={i} className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 text-center">
+                <Skeleton className="h-4 w-4 sm:h-5 sm:w-5 mx-auto mb-1" />
+                <Skeleton className="h-5 sm:h-6 w-6 mx-auto mb-1" />
+                <Skeleton className="h-3 w-16 mx-auto" />
+              </div>
             ))}
           </div>
 
           {/* Members List Skeleton */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-5 w-5" />
-                <Skeleton className="h-6 w-32" />
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Skeleton className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Skeleton className="h-5 sm:h-6 w-40" />
+                  <Skeleton className="h-4 w-8" />
+                </div>
+                <Skeleton className="h-4 w-48" />
               </div>
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-48" />
+              <Skeleton className="h-10 w-full sm:w-64" />
+            </div>
+
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="relative p-3 sm:p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-start gap-3 pr-10">
+                    <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-full shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Skeleton className="h-4 sm:h-5 flex-1" />
+                        <Skeleton className="h-4 w-4" />
+                      </div>
+                      <Skeleton className="h-3 sm:h-4 w-48 mb-2" />
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                        <Skeleton className="h-6 w-24" />
                         <div className="flex gap-2">
-                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-24" />
                           <Skeleton className="h-3 w-24" />
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-6 w-20" />
-                      <Skeleton className="h-8 w-8" />
-                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -298,165 +316,133 @@ export default function MembersPage() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div>
-            <h1 className="text-3xl font-bold">Miembros de la Empresa</h1>
-            <p className="text-muted-foreground">Gestionar usuarios y permisos</p>
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 pb-8 space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-2 w-full">
+          <BackButton href={`/company/${companyId}`} className="shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-medium text-gray-900 truncate">
+              Miembros
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 font-light mt-0.5 truncate">
+              Gestionar usuarios y permisos
+            </p>
           </div>
         </div>
+        
+        {/* Invite Code Card */}
+        <Card className="w-full">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-sm text-gray-500 font-light mb-2">Código de Invitación</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <code className="flex-1 min-w-0 px-2 sm:px-3 py-2 bg-gray-50 border border-gray-200 rounded font-mono text-xs sm:text-sm text-gray-900 break-all">
+                {company?.inviteCode || 'Cargando...'}
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full sm:w-auto shrink-0"
+                onClick={() => {
+                  navigator.clipboard.writeText(company?.inviteCode || '')
+                  toast.success('Código copiado al portapapeles')
+                }}
+              >
+                Copiar
+              </Button>
+              {canManageMembers && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full sm:w-auto shrink-0"
+                  disabled={regenerating}
+                  onClick={async () => {
+                    try {
+                      setRegenerating(true)
+                      const result = await companyService.regenerateInviteCode(companyId)
+                        setCompany(prev => prev ? { ...prev, inviteCode: result.inviteCode } : null)
+                      toast.success('Código regenerado exitosamente')
+                    } catch (error: any) {
+                      toast.error(error.response?.data?.message || 'Error al regenerar código')
+                    } finally {
+                      setRegenerating(false)
+                    }
+                  }}
+                >
+                  {regenerating ? 'Regenerando...' : 'Regenerar'}
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Comparte este código para invitar nuevos miembros
+            </p>
+          </CardContent>
+        </Card>
 
-        {/* Stats */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Miembros</p>
-                    <p className="text-2xl font-bold">{members.length}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Código de Invitación</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm">
-                      {company?.inviteCode || 'Cargando...'}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(company?.inviteCode || '')
-                        toast.success('Código copiado al portapapeles')
-                      }}
-                    >
-                      Copiar
-                    </Button>
-                    {canManageMembers && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={regenerating}
-                        onClick={async () => {
-                          try {
-                            setRegenerating(true)
-                            const result = await companyService.regenerateInviteCode(companyId)
-                            setCompany(prev => prev ? { ...prev, inviteCode: result.inviteCode } : null)
-                            toast.success('Código regenerado exitosamente')
-                          } catch (error: any) {
-                            toast.error(error.response?.data?.message || 'Error al regenerar código')
-                          } finally {
-                            setRegenerating(false)
-                          }
-                        }}
-                      >
-                        {regenerating ? 'Regenerando...' : 'Regenerar'}
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Comparte este código para invitar nuevos miembros
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
-              <Crown className="h-5 w-5 text-amber-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-amber-800">{members.filter(m => m.role === "owner").length}</p>
-              <p className="text-xs text-amber-600">Propietario</p>
+        
+        {/* Role Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          {[
+            { icon: Crown, role: "owner", label: "Propietario", color: "text-blue-600" },
+            { icon: Settings, role: "administrator", label: "Admins", color: "text-blue-500" },
+            { icon: TrendingUp, role: "financial_director", label: "Dir. Financiero", color: "text-blue-500" },
+            { icon: Calculator, role: "accountant", label: "Contadores", color: "text-blue-400" },
+            { icon: Check, role: "approver", label: "Aprobadores", color: "text-blue-400" },
+            { icon: User, role: "operator", label: "Operadores", color: "text-gray-400" }
+          ].map(({ icon: Icon, role, label, color }) => (
+            <div key={role} className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 text-center min-w-0">
+              <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${color} mx-auto mb-1 shrink-0`} />
+              <p className="text-sm sm:text-lg font-bold text-gray-900">{members.filter(m => m.role === role).length}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 truncate">{label}</p>
             </div>
-            
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
-              <Crown className="h-5 w-5 text-yellow-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-yellow-800">{members.filter(m => m.role === "administrator").length}</p>
-              <p className="text-xs text-yellow-600">Administradores</p>
-            </div>
-            
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
-              <TrendingUp className="h-5 w-5 text-purple-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-purple-800">{members.filter(m => m.role === "financial_director").length}</p>
-              <p className="text-xs text-purple-600">Dir. Financiero</p>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-              <Calculator className="h-5 w-5 text-blue-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-blue-800">{members.filter(m => m.role === "accountant").length}</p>
-              <p className="text-xs text-blue-600">Contadores</p>
-            </div>
-            
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-              <Check className="h-5 w-5 text-green-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-green-800">{members.filter(m => m.role === "approver").length}</p>
-              <p className="text-xs text-green-600">Aprobadores</p>
-            </div>
-            
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
-              <User className="h-5 w-5 text-gray-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-gray-800">{members.filter(m => m.role === "operator").length}</p>
-              <p className="text-xs text-gray-600">Operadores</p>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Members List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Lista de Miembros
-            </CardTitle>
-            <CardDescription>
-              {canManageMembers 
-                ? "Gestiona roles y permisos de los miembros"
-                : "Visualiza los miembros de la empresa"
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage src={member.avatar} />
-                      <AvatarFallback>
-                        {member.name?.split(' ').map(n => n[0]).join('') || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{member.name}</h3>
-                        {getRoleIcon(member.role)}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                        <span>Unido: {parseDateLocal(member.joinedAt)?.toLocaleDateString('es-AR')}</span>
-                        <span>•</span>
-                        <span>Último acceso: {parseDateLocal(member.lastActive)?.toLocaleDateString('es-AR')}</span>
-                      </div>
-                    </div>
-                  </div>
+        <div className="space-y-4">
+              {/* Header con título y búsqueda */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h2 className="flex items-center gap-2 text-base sm:text-lg font-medium text-black">
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                    <span className="truncate">Lista de Miembros</span>
+                    <span className="text-xs sm:text-sm font-normal text-gray-500 shrink-0">({members.length})</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-500 font-light mt-0.5 truncate">
+                    {canManageMembers ? "Gestiona roles y permisos" : "Visualiza los miembros"}
+                  </p>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-64 min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+              </div>
 
-                  <div className="flex items-center gap-3">
-                    {getRoleBadge(member.role)}
-                    
-                    {(canChangeRole(member) || canRemoveMember(member)) && (
+              {/* Lista de miembros */}
+              <div className="space-y-3">
+                {filteredAndSortedMembers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">
+                      {searchQuery ? 'No se encontraron miembros' : 'No hay miembros'}
+                    </p>
+                  </div>
+                ) : (
+                  filteredAndSortedMembers.map((member) => (
+                    <div key={member.id} className="relative p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      {/* Menu de 3 puntos - Posición absoluta arriba a la derecha */}
+                  {(canChangeRole(member) || canRemoveMember(member)) && (
+                    <div className="absolute top-3 right-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -479,13 +465,41 @@ export default function MembersPage() {
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    )}
-                  </div>
-                </div>
-              ))}
+                    </div>
+                  )}
+
+                      {/* Contenido del miembro */}
+                      <div className="flex items-start gap-3 pr-10">
+                        <Avatar className="shrink-0 h-10 w-10 sm:h-12 sm:w-12">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
+                            {member.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-sm sm:text-base text-gray-900 truncate flex-1 min-w-0">{member.name}</h3>
+                            <div className="shrink-0">{getRoleIcon(member.role)}</div>
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-500 mb-2 truncate">{member.email}</p>
+                          
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            {getRoleBadge(member.role)}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-gray-400">
+                              <span className="whitespace-nowrap">Unido: {parseDateLocal(member.joinedAt)?.toLocaleDateString('es-AR')}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="whitespace-nowrap">Último: {parseDateLocal(member.lastActive)?.toLocaleDateString('es-AR')}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
             </div>
-          </CardContent>
-        </Card>
+        </div>
+
 
         {/* Change Role Modal */}
         <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
@@ -541,7 +555,7 @@ export default function MembersPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-600" />
+                <Crown className="h-5 w-5 text-blue-600" />
                 Otorgar Permisos de Administrador
               </DialogTitle>
               <DialogDescription>
@@ -550,9 +564,9 @@ export default function MembersPage() {
             </DialogHeader>
             
             <div className="space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h4 className="font-medium text-yellow-900 mb-2">Permisos que se otorgarán:</h4>
-                <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Permisos que se otorgarán:</h4>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                   <li>Control total de la empresa</li>
                   <li>Gestión de miembros y roles</li>
                   <li>Acceso a configuración completa</li>
@@ -560,8 +574,8 @@ export default function MembersPage() {
                 </ul>
               </div>
               
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-900">
+              <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+                <p className="text-sm text-sky-900">
                   <strong>Importante:</strong> Los administradores tienen casi los mismos permisos que el propietario, excepto transferir la propiedad.
                 </p>
               </div>
@@ -577,7 +591,7 @@ export default function MembersPage() {
                   await executeRoleChange()
                 }} 
                 disabled={updating}
-                className="bg-yellow-600 hover:bg-yellow-700"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Sí, Otorgar Permisos
               </Button>
@@ -590,7 +604,7 @@ export default function MembersPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-amber-600" />
+                <Crown className="h-5 w-5 text-blue-600" />
                 Transferir Propiedad de la Empresa
               </DialogTitle>
               <DialogDescription>
@@ -610,15 +624,15 @@ export default function MembersPage() {
               </div>
               
               <div>
-                <label className="text-sm font-medium">Código de Confirmación</label>
+                <label className="text-sm font-medium text-gray-700">Código de Confirmación</label>
                 <input
                   type="password"
                   value={confirmationCode}
                   onChange={(e) => setConfirmationCode(e.target.value)}
                   placeholder="Ingresa el código de eliminación de la empresa"
-                  className="w-full mt-1 px-3 py-2 border rounded-md"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   Usa el mismo código que usarías para eliminar la empresa
                 </p>
               </div>
@@ -634,7 +648,7 @@ export default function MembersPage() {
               <Button 
                 onClick={() => executeRoleChange(confirmationCode)} 
                 disabled={updating || !confirmationCode}
-                className="bg-amber-600 hover:bg-amber-700"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {updating ? 'Transfiriendo...' : 'Transferir Propiedad'}
               </Button>

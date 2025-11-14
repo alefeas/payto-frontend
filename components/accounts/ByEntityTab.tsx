@@ -16,9 +16,10 @@ interface ByEntityTabProps {
   onActionInvoice: (id: string) => void
   onGenerateTxt?: (ids: string[]) => void | Promise<void>
   type: 'receivable' | 'payable'
+  canPerformAction?: boolean
 }
 
-export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewInvoice, onActionInvoice, onGenerateTxt, type }: ByEntityTabProps) {
+export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewInvoice, onActionInvoice, onGenerateTxt, type, canPerformAction = true }: ByEntityTabProps) {
   const [selectedEntity, setSelectedEntity] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
@@ -160,7 +161,7 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
                 {selectedInvoices.length === selectedEntity?.invoices?.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
               </Button>
               <div className="flex gap-2">
-              {type === 'payable' && onGenerateTxt && (
+              {canPerformAction && type === 'payable' && onGenerateTxt && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -178,16 +179,19 @@ export function ByEntityTab({ invoices, formatCurrency, onViewInvoices, onViewIn
                   {generatingTxt ? 'Generando...' : `Generar TXT ${selectedInvoices.length > 0 ? `(${selectedInvoices.length})` : ''}`}
                 </Button>
               )}
-              <Button 
-                size="sm" 
-                disabled={selectedInvoices.length === 0}
-                onClick={() => {
-                  selectedInvoices.forEach(id => onActionInvoice(id))
-                  setSelectedInvoices([])
-                }}
-              >
-                {type === 'receivable' ? 'Registrar Cobro' : 'Registrar Pago'} {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
-              </Button>
+              {canPerformAction && (
+                <Button 
+                  size="sm" 
+                  disabled={selectedInvoices.length === 0}
+                  onClick={() => {
+                    selectedInvoices.forEach(id => onActionInvoice(id))
+                    setSelectedInvoices([])
+                    setShowModal(false) // Cerrar el modal después de registrar
+                  }}
+                >
+                  {type === 'receivable' ? 'Registrar Cobro' : 'Registrar Pago'} {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+                </Button>
+              )}
               </div>
             </div>
           </div>

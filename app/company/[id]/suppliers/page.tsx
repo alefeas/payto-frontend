@@ -14,6 +14,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { supplierService, Supplier } from "@/services/supplier.service"
+import { companyService } from "@/services/company.service"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
@@ -51,9 +54,33 @@ export default function SuppliersPage() {
   const [loadingArchived, setLoadingArchived] = useState(false)
   const [archivingId, setArchivingId] = useState<number | null>(null)
   const [restoringId, setRestoringId] = useState<number | null>(null)
+  const [company, setCompany] = useState<any>(null)
 
   // AFIP Certificate validation
   const { isVerified: isAfipVerified } = useAfipCertificate(companyId)
+
+  // Cargar datos de la empresa
+  const loadCompany = async () => {
+    try {
+      const companyData = await companyService.getCompanyById(companyId)
+      setCompany(companyData)
+    } catch (error) {
+      console.error('Error loading company:', error)
+      toast.error('Error al cargar datos de la empresa')
+    }
+  }
+
+  useEffect(() => {
+    if (companyId) {
+      loadCompany()
+    }
+  }, [companyId])
+
+  // Obtener permisos del usuario
+  const userRole = company?.role as CompanyRole
+  const canCreate = company && hasPermission(userRole, 'contacts.create')
+  const canUpdate = company && hasPermission(userRole, 'contacts.update')
+  const canDelete = company && hasPermission(userRole, 'contacts.delete')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -215,7 +242,7 @@ export default function SuppliersPage() {
               <Archive className="h-4 w-4 mr-2" />
               {showArchived ? "Ver Activos" : "Ver Archivados"}
             </Button>
-            {!showArchived && (
+            {!showArchived && canCreate && (
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -413,27 +440,31 @@ export default function SuppliersPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => {
-                              setSelectedSupplier(supplier)
-                              setIsEditDialogOpen(true)
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                            onClick={() => {
-                              setSupplierToDelete(supplier)
-                              setIsDeleteDialogOpen(true)
-                            }}
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
+                          {canUpdate && (
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => {
+                                setSelectedSupplier(supplier)
+                                setIsEditDialogOpen(true)
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              onClick={() => {
+                                setSupplierToDelete(supplier)
+                                setIsDeleteDialogOpen(true)
+                              }}
+                            >
+                              <Archive className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                   </Card>

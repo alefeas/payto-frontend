@@ -9,6 +9,9 @@ import { BackButton } from "@/components/ui/back-button"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
+import { companyService } from "@/services/company.service"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -61,6 +64,28 @@ export default function AccountsReceivablePage() {
     to_date: '',
     currency: 'all' as string,
   })
+  const [company, setCompany] = useState<any>(null)
+
+  // Cargar datos de la empresa
+  const loadCompany = async () => {
+    try {
+      const companyData = await companyService.getCompanyById(companyId)
+      setCompany(companyData)
+    } catch (error) {
+      console.error('Error loading company:', error)
+      toast.error('Error al cargar datos de la empresa')
+    }
+  }
+
+  useEffect(() => {
+    if (companyId) {
+      loadCompany()
+    }
+  }, [companyId])
+
+  // Obtener permisos del usuario
+  const userRole = company?.role as CompanyRole
+  const canCreateCollection = company && hasPermission(userRole, 'payments.create')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -305,13 +330,15 @@ export default function AccountsReceivablePage() {
               <p className="text-muted-foreground">Gestión de facturas emitidas y cobros</p>
             </div>
           </div>
-          <Button 
-            onClick={() => selectedInvoices.length > 0 && handleCollectInvoices(selectedInvoices)}
-            disabled={selectedInvoices.length === 0}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Registrar Cobro {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
-          </Button>
+          {canCreateCollection && (
+            <Button 
+              onClick={() => selectedInvoices.length > 0 && handleCollectInvoices(selectedInvoices)}
+              disabled={selectedInvoices.length === 0}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Registrar Cobro {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -432,6 +459,7 @@ export default function AccountsReceivablePage() {
               actionLabel="Cobrar"
               type="receivable"
               loading={loading}
+              canPerformAction={canCreateCollection}
             />
           </TabsContent>
 
@@ -446,6 +474,7 @@ export default function AccountsReceivablePage() {
               type="receivable"
               selectedInvoices={selectedInvoices}
               onSelectionChange={setSelectedInvoices}
+              canPerformAction={canCreateCollection}
             />
           </TabsContent>
 
@@ -460,6 +489,7 @@ export default function AccountsReceivablePage() {
               type="receivable"
               selectedInvoices={selectedInvoices}
               onSelectionChange={setSelectedInvoices}
+              canPerformAction={canCreateCollection}
             />
           </TabsContent>
 
@@ -487,6 +517,7 @@ export default function AccountsReceivablePage() {
                 handleCollectInvoices([id])
               }}
               type="receivable"
+              canPerformAction={canCreateCollection}
             />
           </TabsContent>
 

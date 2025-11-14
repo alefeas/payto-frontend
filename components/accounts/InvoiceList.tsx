@@ -17,6 +17,7 @@ interface InvoiceListProps {
   actionLabel: string
   type: 'receivable' | 'payable'
   loading?: boolean
+  canPerformAction?: boolean
 }
 
 export function InvoiceList({
@@ -29,6 +30,7 @@ export function InvoiceList({
   actionLabel,
   type,
   loading = false,
+  canPerformAction = true,
 }: InvoiceListProps) {
   const getEntityName = (invoice: any) => {
     if (type === 'receivable') {

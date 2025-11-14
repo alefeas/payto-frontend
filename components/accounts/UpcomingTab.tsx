@@ -11,9 +11,10 @@ interface UpcomingTabProps {
   type: 'receivable' | 'payable'
   selectedInvoices?: string[]
   onSelectionChange?: (ids: string[]) => void
+  canPerformAction?: boolean
 }
 
-export function UpcomingTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange }: UpcomingTabProps) {
+export function UpcomingTab({ invoices, formatCurrency, onAction, type, selectedInvoices = [], onSelectionChange, canPerformAction = true }: UpcomingTabProps) {
   const upcomingInvoices = invoices.filter(inv => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)

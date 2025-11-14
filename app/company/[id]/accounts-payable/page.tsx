@@ -16,6 +16,9 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { formatDateToLocal, parseDateLocal } from "@/lib/utils"
 import { accountsPayableService } from "@/services/accounts-payable.service"
+import { companyService } from "@/services/company.service"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -68,6 +71,29 @@ export default function AccountsPayablePage() {
     to_date: '',
     currency: 'all' as string,
   })
+  const [company, setCompany] = useState<any>(null)
+
+  // Cargar datos de la empresa
+  const loadCompany = async () => {
+    try {
+      const companyData = await companyService.getCompanyById(companyId)
+      setCompany(companyData)
+    } catch (error) {
+      console.error('Error loading company:', error)
+      toast.error('Error al cargar datos de la empresa')
+    }
+  }
+
+  useEffect(() => {
+    if (companyId) {
+      loadCompany()
+    }
+  }, [companyId])
+
+  // Obtener permisos del usuario
+  const userRole = company?.role as CompanyRole
+  const canCreatePayment = company && hasPermission(userRole, 'payments.create')
+  const canApprovePayment = company && hasPermission(userRole, 'payments.approve')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -419,9 +445,10 @@ export default function AccountsPayablePage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => handleGenerateTxt()}
+            {canCreatePayment && (
+              <Button 
+                variant="outline" 
+                onClick={() => handleGenerateTxt()}
               disabled={generatingTxt || selectedInvoices.length === 0 || allInvoices.filter(inv => selectedInvoices.includes(inv.id)).some(inv => {
                 // Check has_bank_data flag or verify manually
                 if (inv.has_bank_data) return false
@@ -433,17 +460,20 @@ export default function AccountsPayablePage() {
               <Download className="h-4 w-4 mr-2" />
               {generatingTxt ? 'Generando...' : `Generar TXT Homebanking ${selectedInvoices.length > 0 ? `(${selectedInvoices.length})` : ''}`}
             </Button>
-            <Button 
-              onClick={() => {
-                if (selectedInvoices.length > 0) {
-                  handlePayInvoices(selectedInvoices)
-                }
-              }}
-              disabled={selectedInvoices.length === 0}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Registrar Pago {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
-            </Button>
+            )}
+            {canCreatePayment && (
+              <Button 
+                onClick={() => {
+                  if (selectedInvoices.length > 0) {
+                    handlePayInvoices(selectedInvoices)
+                  }
+                }}
+                disabled={selectedInvoices.length === 0}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Registrar Pago {selectedInvoices.length > 0 && `(${selectedInvoices.length})`}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -597,6 +627,7 @@ export default function AccountsPayablePage() {
               actionLabel="Pagar"
               type="payable"
               loading={loading}
+              canPerformAction={canCreatePayment}
             />
           </TabsContent>
 
@@ -657,6 +688,7 @@ export default function AccountsPayablePage() {
               }}
               onGenerateTxt={handleGenerateTxt}
               type="payable"
+              canPerformAction={canCreatePayment}
             />
           </TabsContent>
         </Tabs>

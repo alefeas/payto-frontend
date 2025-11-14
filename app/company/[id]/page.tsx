@@ -322,11 +322,11 @@ export default function CompanyPage() {
       permission: 'invoices.view' as const,
       action: () => router.push(`/company/${company.id}/invoices`)
     }] : []),
-    ...(hasPermission(userRole, 'payments.create') ? [{
+    ...(hasPermission(userRole, 'payments.view') ? [{
       title: "Cuentas por Pagar",
       description: "Gestionar pagos a proveedores",
       icon: CreditCard,
-      permission: 'payments.create' as const,
+      permission: 'payments.view' as const,
       action: () => router.push(`/company/${company.id}/accounts-payable`)
     }] : []),
     ...(hasPermission(userRole, 'payments.view') ? [{

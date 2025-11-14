@@ -44,12 +44,12 @@ export function AuditLogsTable({ logs, isLoading }: AuditLogsTableProps) {
   }
 
   const filteredLogs = logs.filter(log => 
-    log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.entityType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.entityId?.toLowerCase().includes(searchTerm.toLowerCase())
+    (log.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (log.action?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (log.user?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (log.user?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (log.entityType?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (log.entityId?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   )
 
   if (isLoading) {

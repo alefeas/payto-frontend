@@ -16,6 +16,8 @@ import { invoiceService, Invoice } from "@/services/invoice.service"
 import { companyService } from "@/services/company.service"
 import { parseDateLocal } from "@/lib/utils"
 import { colors } from "@/styles"
+import { hasPermission } from "@/lib/permissions"
+import { CompanyRole } from "@/types"
 
 export default function ApproveInvoicesPage() {
   const { id } = useParams()
@@ -33,6 +35,7 @@ export default function ApproveInvoicesPage() {
   const [rejectionReason, setRejectionReason] = useState("")
   const [processing, setProcessing] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [company, setCompany] = useState<any>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -42,12 +45,25 @@ export default function ApproveInvoicesPage() {
     }
   }, [isAuthenticated, authLoading, id, router])
 
+  // Verificar permisos de acceso
+  useEffect(() => {
+    if (company) {
+      const userRole = company.role as CompanyRole
+      if (!hasPermission(userRole, 'invoices.approve')) {
+        toast.error('No tienes permisos para aprobar facturas')
+        router.push(`/company/${id}`)
+        return
+      }
+    }
+  }, [company, router, id])
+
   const loadData = async () => {
     try {
       setLoading(true)
-      const company = await companyService.getCompany(id as string)
-      setCompanyName(company.name)
-      const reqApprovals = company.requiredApprovals !== undefined ? company.requiredApprovals : (company.required_approvals !== undefined ? company.required_approvals : 0)
+      const companyData = await companyService.getCompany(id as string)
+      setCompany(companyData)
+      setCompanyName(companyData.name)
+      const reqApprovals = companyData.requiredApprovals !== undefined ? companyData.requiredApprovals : (companyData.required_approvals !== undefined ? companyData.required_approvals : 0)
       setRequiredApprovals(reqApprovals)
       
       if (user?.id) {

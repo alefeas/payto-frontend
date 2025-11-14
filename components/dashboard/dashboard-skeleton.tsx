@@ -4,12 +4,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 export function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 pb-8">
+      <div className="max-w-7xl mx-auto p-2 sm:p-4 md:p-6 pb-8">
         {/* Header con título y tabs */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="flex-1 min-w-0">
-            <Skeleton className="h-10 w-48 mb-2" />
-            <Skeleton className="h-5 w-96 max-w-full" />
+            <Skeleton className="h-10 w-full max-w-48 mb-2" />
+            <Skeleton className="h-5 w-full max-w-xs" />
           </div>
           
           {/* Tabs skeleton */}
@@ -23,10 +23,10 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Cards KPI - Grid en desktop, carousel en mobile */}
           {/* Desktop: Grid */}
-          <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-sm border border-gray-200">
                 <CardHeader className="pb-3">
@@ -76,9 +76,9 @@ export function DashboardSkeleton() {
           </div>
 
           {/* Grid de contenido */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:items-start min-h-0">
             {/* Columna izquierda - 2 columnas */}
-            <div className="flex flex-col gap-6 lg:col-span-2">
+            <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
               {/* Gráfico */}
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader>
@@ -121,7 +121,7 @@ export function DashboardSkeleton() {
             </div>
 
             {/* Columna derecha - 1 columna */}
-            <div className="flex flex-col gap-6 lg:col-span-1 min-h-0 min-w-0">
+            <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-1 min-h-0 min-w-0">
               {/* Facturas a Pagar */}
               <Card className="shadow-sm border border-gray-200 flex flex-col flex-1 min-w-0">
                 <CardHeader>

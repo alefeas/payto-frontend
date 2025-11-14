@@ -321,7 +321,7 @@ export default function InvoiceDetailPage() {
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 break-words">{invoice.number}</h1>
               <div className="flex items-center gap-2 flex-wrap">
-                {getStatusBadge(invoice.display_status || invoice.status)}
+                {getStatusBadge(companyStatus)}
                 <Badge className="bg-gray-100 text-gray-700 border-gray-200">
                   Tipo {invoice.type}
                 </Badge>
