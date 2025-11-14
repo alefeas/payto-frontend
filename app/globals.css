@@ -11,18 +11,18 @@
 
   body {
     font-family: var(--font-poppins-medium);
-    font-weight: 700;
-    -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.2);
-    -webkit-font-smoothing: subpixel-antialiased;
+    font-weight: 600;
+    -webkit-text-stroke: 0.3px rgba(0, 0, 0, 0.1);
+    -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    text-shadow: 0 0 0.5px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 0 0.3px rgba(0, 0, 0, 0.15);
   }
   
-  /* Engrosar texto para mejor legibilidad en todas las resoluciones */
+  /* Suavizar texto para mejor legibilidad sin sobrecargar */
   p, span, div, label, td, th, li {
-    -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.2);
-    text-shadow: 0 0 0.5px rgba(0, 0, 0, 0.3);
+    -webkit-text-stroke: 0.3px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.3px rgba(0, 0, 0, 0.15);
   }
 
   /* Títulos y elementos importantes con font-weight 400 */
@@ -52,14 +52,14 @@
     font-weight: 400 !important;
   }
 
-  /* Texto normal (p, span, div, etc.) con font-weight 800 para mejor legibilidad */
-  p:not(.font-normal):not(.font-semibold):not(.font-medium):not(.font-bold):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-semibold *):not(.font-medium *):not(.font-bold *),
-  span:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *):not(.font-semibold *):not(.font-medium *):not(.font-bold *),
-  div:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *),
+  /* Texto normal (p, span, div, etc.) con font-weight 600 para mejor legibilidad sin ser muy pesado */
+  p:not(.font-normal):not(.font-light):not(.font-semibold):not(.font-medium):not(.font-bold):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-semibold *):not(.font-medium *):not(.font-bold *):not(.font-light *):not(input):not([data-slot="input"] *),
+  span:not(.font-normal):not(.font-light):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *):not(.font-semibold *):not(.font-medium *):not(.font-bold *):not(.font-light *):not(input *):not([data-slot="input"] *):not([data-slot="select"] *),
+  div:not(.font-normal):not(.font-light):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-light *):not([data-slot="select"] *),
   td,
   th,
   li {
-    font-weight: 800 !important;
+    font-weight: 600 !important;
   }
   
   /* Los spans y p dentro de elementos con font-semibold, font-medium o font-bold heredan el peso del padre */
@@ -77,18 +77,79 @@
     font-weight: 400 !important;
   }
   
-  /* Calendar/Day-Picker con weight 400 */
+  /* Calendar/Day-Picker con Poppins Thin */
   .rdp,
-  .rdp * {
-    font-weight: 400 !important;
+  .rdp *,
+  .rdp .font-light {
+    font-family: var(--font-poppins-thin) !important;
+    font-weight: 600 !important;
   }
   
   .font-light {
-    font-weight: 300 !important;
+    font-family: var(--font-poppins-thin) !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Inputs y selects con fuente clara (excluyendo labels) */
+  input:not(label):not(label *),
+  input *:not(label):not(label *),
+  [data-slot="input"]:not(label):not(label *),
+  [data-slot="input"] *:not(label):not(label *),
+  [data-slot="select"]:not(label):not(label *),
+  [data-slot="select"] *:not(label):not(label *),
+  [data-slot="select"] span:not(label):not(label *),
+  [data-radix-select-trigger]:not(label):not(label *),
+  [data-radix-select-trigger] *:not(label):not(label *),
+  [data-radix-select-trigger] > span:not(label):not(label *),
+  [data-radix-select-content]:not(label):not(label *),
+  [data-radix-select-content] *:not(label):not(label *),
+  [data-radix-select-content] span:not(label):not(label *),
+  [data-radix-select-item]:not(label):not(label *),
+  [data-radix-select-item] *:not(label):not(label *),
+  [data-radix-select-value]:not(label):not(label *),
+  [data-radix-select-value] *:not(label):not(label *),
+  button[data-radix-select-trigger] span {
+    font-family: var(--font-poppins-thin) !important;
+    font-weight: 600 !important;
   }
 
-  button {
+  button:not([role="combobox"]):not([data-radix-select-trigger]) {
     font-weight: 400 !important;
+  }
+  
+  /* Buttons de select, calendar y opciones con Poppins Thin */
+  button[role="combobox"],
+  button[role="combobox"] *,
+  button[role="combobox"] span,
+  button[data-radix-select-trigger],
+  button[data-radix-select-trigger] *,
+  button[data-radix-select-trigger] span,
+  span[data-slot="select-value"],
+  [data-slot="select-value"],
+  [data-radix-select-item] span:last-child,
+  [role="option"] span:last-child,
+  button[data-radix-popover-trigger],
+  button[data-radix-popover-trigger] *,
+  button[data-radix-popover-trigger] span,
+  button[data-radix-popover-trigger] span.truncate,
+  button[data-radix-popover-trigger] span.truncate.min-w-0,
+  span.truncate.min-w-0,
+  [data-radix-popover-content] input,
+  [data-radix-popover-content] button:not([data-slot="button"]),
+  [data-radix-popover-content] button[name="day"],
+  [data-radix-popover-content] span:not(label *),
+  .rdp button,
+  .rdp button[name="day"],
+  .rdp-button,
+  .rdp-day_button,
+  .rdp-day_button *,
+  .rdp button[aria-selected="true"],
+  .rdp button[aria-selected="true"] *,
+  .rdp-day_selected,
+  .rdp-day_selected *,
+  .rdp .font-light {
+    font-family: var(--font-poppins-thin) !important;
+    font-weight: 600 !important;
   }
 
   /* Toasts con font-weight 400 */

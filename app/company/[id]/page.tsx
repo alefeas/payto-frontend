@@ -522,7 +522,7 @@ export default function CompanyPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 font-light">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -549,7 +549,7 @@ export default function CompanyPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 font-light">{item.description}</p>
                 </div>
               </div>
             ))}

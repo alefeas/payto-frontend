@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Building2, UserPlus, Plus, Info } from "lucide-react"
+import { Building2, UserPlus, Users, Plus, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type EntityType = 'registered' | 'saved' | 'new'
@@ -242,7 +242,7 @@ export function EntitySelector({
               </svg>
             )}
           </div>
-          <Building2 className={cn(
+          <Users className={cn(
             "h-4 w-4",
             entityType === 'saved' ? "text-blue-600" : "text-muted-foreground"
           )} />

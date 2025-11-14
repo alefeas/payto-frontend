@@ -367,18 +367,20 @@ export default function CreateInvoicePage() {
 
   const calculateTotals = useCallback(() => {
     const subtotal = items.reduce((sum, item) => {
-      const itemBase = item.quantity * item.unitPrice
-      const discount = (item.discountPercentage || 0) / 100
-      return sum + (itemBase * (1 - discount))
+      const quantity = Number(item.quantity) || 0
+      const unitPrice = Number(item.unitPrice) || 0
+      const discount = Number(item.discountPercentage) || 0
+      const itemSubtotal = quantity * unitPrice * (1 - discount / 100)
+      return sum + (isNaN(itemSubtotal) ? 0 : itemSubtotal)
     }, 0)
     const totalTaxes = items.reduce((sum, item) => {
-      const itemBase = item.quantity * item.unitPrice
-      const discount = (item.discountPercentage || 0) / 100
-      const itemSubtotal = itemBase * (1 - discount)
-      // Exento (-1) y No Gravado (-2) no pagan IVA
-      const taxRate = (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
-      const taxAmount = itemSubtotal * taxRate / 100
-      return sum + taxAmount
+      const quantity = Number(item.quantity) || 0
+      const unitPrice = Number(item.unitPrice) || 0
+      const discount = Number(item.discountPercentage) || 0
+      const itemSubtotal = quantity * unitPrice * (1 - discount / 100)
+      const taxRate = Number(item.taxRate) || 0
+      const itemTax = itemSubtotal * (taxRate / 100)
+      return sum + (isNaN(itemTax) ? 0 : itemTax)
     }, 0)
     
     const totalPerceptions = perceptions.reduce((sum, perception) => {
@@ -389,8 +391,9 @@ export default function CreateInvoicePage() {
       } else if (perception.baseType === 'vat') {
         base = totalTaxes // only IVA
       }
-      const perceptionAmount = base * (perception.rate || 0) / 100
-      return sum + perceptionAmount
+      const rate = Number(perception.rate) || 0
+      const amount = base * (rate / 100)
+      return sum + (isNaN(amount) ? 0 : amount)
     }, 0)
     
     setTotals({
@@ -476,12 +479,15 @@ export default function CreateInvoicePage() {
   }
 
   const calculateItemTotal = (item: typeof items[0]) => {
-    const base = item.quantity * item.unitPrice
-    const discount = (item.discountPercentage || 0) / 100
-    const subtotal = base * (1 - discount)
-    const taxRate = (item.taxRate && item.taxRate > 0) ? item.taxRate : 0
-    const tax = subtotal * taxRate / 100
-    return { subtotal, total: subtotal + tax }
+    const quantity = Number(item.quantity) || 0
+    const unitPrice = Number(item.unitPrice) || 0
+    const discount = Number(item.discountPercentage) || 0
+    const subtotal = quantity * unitPrice * (1 - discount / 100)
+    const taxRate = Number(item.taxRate) || 0
+    const tax = subtotal * (taxRate / 100)
+    const safeSubtotal = isNaN(subtotal) ? 0 : subtotal
+    const safeTax = isNaN(tax) ? 0 : tax
+    return { subtotal: safeSubtotal, total: safeSubtotal + safeTax }
   }
 
   const addPerception = () => {
@@ -566,23 +572,31 @@ export default function CreateInvoicePage() {
       return
     }
 
-    if (items.some(item => item.quantity <= 0)) {
-      toast.error('La cantidad de todos los ítems debe ser mayor a 0')
+    if (items.some(item => !item.quantity || item.quantity <= 0)) {
+      toast.error('Completá la cantidad en todos los ítems', {
+        description: 'La cantidad debe ser mayor a 0'
+      })
       return
     }
 
-    if (items.some(item => item.unitPrice <= 0)) {
-      toast.error('El precio unitario de todos los ítems debe ser mayor a 0')
+    if (items.some(item => item.unitPrice === undefined || item.unitPrice === null || !item.unitPrice || item.unitPrice <= 0)) {
+      toast.error('Completá el precio unitario en todos los ítems', {
+        description: 'El precio unitario es obligatorio y debe ser mayor a 0'
+      })
       return
     }
 
     if (perceptions.some(p => !p.name || !p.name.trim())) {
-      toast.error('Complete el nombre/descripción de todas las percepciones')
+      toast.error('Completá la descripción en todas las percepciones', {
+        description: 'La descripción es obligatoria'
+      })
       return
     }
 
-    if (perceptions.some(p => !p.rate || p.rate <= 0)) {
-      toast.error('Las percepciones deben tener una alícuota mayor a 0')
+    if (perceptions.some(p => p.rate === undefined || p.rate === null || p.rate <= 0)) {
+      toast.error('Completá la alícuota en todas las percepciones', {
+        description: 'La alícuota debe ser mayor a 0'
+      })
       return
     }
 
@@ -1223,10 +1237,25 @@ export default function CreateInvoicePage() {
                           min="0.01"
                           max="999999.99"
                           step="0.01"
-                          value={item.quantity ?? 1}
+                          placeholder="1.00"
+                          value={item.quantity ?? ''}
                           onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0
-                            updateItem(index, 'quantity', Math.min(Math.max(val, 0.01), 999999.99))
+                            const val = e.target.value
+                            if (val === '') {
+                              updateItem(index, 'quantity', '')
+                            } else {
+                              const numVal = parseFloat(val)
+                              updateItem(index, 'quantity', isNaN(numVal) ? '' : numVal)
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value)
+                            if (!isNaN(val) && val > 0) {
+                              updateItem(index, 'quantity', Math.min(Math.max(val, 0.01), 999999.99))
+                            } else if (e.target.value !== '') {
+                              toast.error('La cantidad debe ser mayor a 0')
+                              updateItem(index, 'quantity', 0)
+                            }
                           }}
                         />
                       </div>
@@ -1238,10 +1267,25 @@ export default function CreateInvoicePage() {
                           min="0"
                           max="999999999.99"
                           step="0.01"
-                          value={item.unitPrice ?? 0}
+                          placeholder="0.00"
+                          value={item.unitPrice ?? ''}
                           onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0
-                            updateItem(index, 'unitPrice', Math.min(Math.max(val, 0), 999999999.99))
+                            const val = e.target.value
+                            if (val === '') {
+                              updateItem(index, 'unitPrice', '')
+                            } else {
+                              const numVal = parseFloat(val)
+                              updateItem(index, 'unitPrice', isNaN(numVal) ? '' : numVal)
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value)
+                            if (!isNaN(val) && val >= 0) {
+                              updateItem(index, 'unitPrice', Math.min(Math.max(val, 0), 999999999.99))
+                            } else if (e.target.value !== '') {
+                              toast.error('El precio unitario debe ser un número válido')
+                              updateItem(index, 'unitPrice', 0)
+                            }
                           }}
                         />
                       </div>
@@ -1253,14 +1297,29 @@ export default function CreateInvoicePage() {
                           min="0"
                           max="100"
                           step="0.01"
-                          value={item.discountPercentage ?? 0}
+                          placeholder="0.00"
+                          value={item.discountPercentage ?? ''}
                           onChange={(e) => {
-                            const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
-                            updateItem(index, 'discountPercentage', value)
+                            const val = e.target.value
+                            if (val === '') {
+                              updateItem(index, 'discountPercentage', '')
+                            } else {
+                              const numVal = parseFloat(val)
+                              updateItem(index, 'discountPercentage', isNaN(numVal) ? '' : numVal)
+                            }
                           }}
                           onBlur={(e) => {
-                            const value = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100)
-                            updateItem(index, 'discountPercentage', value)
+                            const val = parseFloat(e.target.value)
+                            if (!isNaN(val) && val >= 0) {
+                              const finalVal = Math.min(Math.max(val, 0), 100)
+                              if (val > 100) {
+                                toast.error('La bonificación no puede ser mayor a 100%')
+                              }
+                              updateItem(index, 'discountPercentage', finalVal)
+                            } else if (e.target.value !== '') {
+                              toast.error('La bonificación debe ser un número válido')
+                              updateItem(index, 'discountPercentage', 0)
+                            }
                           }}
                         />
                       </div>
@@ -1415,7 +1474,6 @@ export default function CreateInvoicePage() {
                             value={perception.name ?? ''}
                             onChange={(e) => updatePerception(index, 'name', e.target.value.slice(0, 100))}
                             maxLength={100}
-                            required
                           />
                         </div>
                       </div>
@@ -1431,8 +1489,26 @@ export default function CreateInvoicePage() {
                             placeholder="Ej: 3.5"
                             value={perception.rate ?? ''}
                             onChange={(e) => {
-                              const val = parseFloat(e.target.value) || 0
-                              updatePerception(index, 'rate', Math.min(val, 100))
+                              const val = e.target.value
+                              if (val === '') {
+                                updatePerception(index, 'rate', '')
+                              } else {
+                                const numVal = parseFloat(val)
+                                updatePerception(index, 'rate', isNaN(numVal) ? '' : numVal)
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const val = parseFloat(e.target.value)
+                              if (!isNaN(val) && val >= 0) {
+                                const finalVal = Math.min(val, 100)
+                                if (val > 100) {
+                                  toast.error('La alícuota no puede ser mayor a 100%')
+                                }
+                                updatePerception(index, 'rate', finalVal)
+                              } else if (e.target.value !== '') {
+                                toast.error('La alícuota debe ser un número válido')
+                                updatePerception(index, 'rate', 0)
+                              }
                             }}
                           />
                         </div>
