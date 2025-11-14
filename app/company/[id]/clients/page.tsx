@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, MapPin, Building2, User, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
+import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, User, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
@@ -18,10 +16,9 @@ import { companyService } from "@/services/company.service"
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { ClientForm } from "@/components/clients/ClientForm"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
-import { AfipGuard } from "@/components/afip/afip-guard"
 import { PageHeader } from "@/components/layouts/PageHeader"
+import { EntitiesSkeleton } from "@/components/entities/EntitiesSkeleton"
             
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
@@ -31,10 +28,10 @@ const condicionIvaLabels: Record<string, string> = {
 }
 
 const condicionIvaColors: Record<string, string> = {
-  registered_taxpayer: "bg-blue-100 text-blue-800",
-  monotax: "bg-green-100 text-green-800",
-  exempt: "bg-purple-100 text-purple-800",
-  final_consumer: "bg-gray-100 text-gray-800"
+  registered_taxpayer: "bg-slate-100 text-slate-700 border-slate-200",
+  monotax: "bg-slate-100 text-slate-700 border-slate-200",
+  exempt: "bg-slate-100 text-slate-700 border-slate-200",
+  final_consumer: "bg-slate-100 text-slate-700 border-slate-200"
 }
 
 export default function ClientsPage() {
@@ -90,6 +87,7 @@ export default function ClientsPage() {
       router.push('/log-in')
     } else if (isAuthenticated) {
       loadClients()
+      loadArchivedClients()
     }
   }, [isAuthenticated, authLoading, router, companyId])
 
@@ -168,62 +166,7 @@ export default function ClientsPage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-32" />
-              <Skeleton className="h-10 w-36" />
-            </div>
-          </div>
-
-          {/* Search and Filter Skeleton */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <Skeleton className="h-10 w-48" />
-          </div>
-
-          {/* Clients List Skeleton */}
-          <div>
-            <div className="mb-4">
-              <Skeleton className="h-6 w-32 mb-1" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-3 px-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-12 w-12 rounded" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
-                      <div className="flex gap-2">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-16" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <EntitiesSkeleton />
   }
 
   if (!isAuthenticated) return null
@@ -236,15 +179,14 @@ export default function ClientsPage() {
           title="Mis Clientes"
           description="Gestiona tus clientes externos para facturación"
           backHref={`/company/${companyId}`}
-        >
+        />
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
-            variant={showArchived ? "outline" : "default"}
-            onClick={() => {
-              setShowArchived(!showArchived)
-              if (!showArchived && archivedClients.length === 0) {
-                loadArchivedClients()
-              }
-            }}
+            variant="outline"
+            onClick={() => setShowArchived(!showArchived)}
+            className="w-full sm:w-auto"
           >
             <Archive className="h-4 w-4 mr-2" />
             {showArchived ? "Ver Activos" : "Ver Archivados"}
@@ -252,7 +194,7 @@ export default function ClientsPage() {
           {!showArchived && canCreate && (
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Nuevo Cliente
                 </Button>
@@ -268,7 +210,7 @@ export default function ClientsPage() {
           </DialogContent>
             </Dialog>
           )}
-        </PageHeader>
+        </div>
 
         {/* Mensaje de certificado AFIP requerido */}
         {!isAfipVerified && (
@@ -292,7 +234,7 @@ export default function ClientsPage() {
         )}
 
         {/* Search and Filters */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -303,9 +245,9 @@ export default function ClientsPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Condición:</span>
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Condición:</span>
             <Select value={filterCondicion} onValueChange={setFilterCondicion}>
-              <SelectTrigger className="w-[200px] h-9">
+              <SelectTrigger className="w-full sm:w-[200px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -321,11 +263,11 @@ export default function ClientsPage() {
 
         {/* Clients List */}
         <div>
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold">
+          <div className="mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold">
               {showArchived ? `Clientes Archivados (${archivedClients.length})` : `Clientes (${filteredClients.length})`}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {showArchived 
                 ? "Clientes archivados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
                 : "Lista de clientes externos guardados para facturación rápida"}
@@ -342,45 +284,45 @@ export default function ClientsPage() {
               ) : (
                 <div className="space-y-2">
                   {filteredArchivedClients.map((client) => (
-                    <Card key={client.id} className="p-4 hover:shadow-md transition-shadow bg-muted/30">
-                        <div className="flex items-center justify-between gap-4">
+                    <Card key={client.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow bg-muted/30">
+                        <div className="flex flex-col gap-3">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-base truncate">{getClientDisplayName(client)}</h3>
-                              <Badge className={condicionIvaColors[client.taxCondition]}>
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+                              <h3 className="font-semibold text-sm sm:text-base truncate">{getClientDisplayName(client)}</h3>
+                              <Badge variant="outline" className={`${condicionIvaColors[client.taxCondition]} text-[10px] sm:text-xs`}>
                                 {condicionIvaLabels[client.taxCondition]}
                               </Badge>
-                              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                              <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] sm:text-xs">
                                 Archivado
                               </Badge>
                               {client.incompleteData && (
-                                <Badge variant="outline" className="text-red-600 border-red-600">
+                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] sm:text-xs">
                                   Datos Incompletos
                                 </Badge>
                               )}
                             </div>
                             
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                <FileText className="h-3 w-3" />
-                                {client.documentType}: {client.documentNumber}
+                                <FileText className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{client.documentType}: {client.documentNumber}</span>
                               </span>
                               {client.email && (
-                                <span className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {client.email}
+                                <span className="flex items-center gap-1 min-w-0">
+                                  <Mail className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{client.email}</span>
                                 </span>
                               )}
                               {client.phone && (
                                 <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
+                                  <Phone className="h-3 w-3 flex-shrink-0" />
                                   {client.phone}
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -388,6 +330,7 @@ export default function ClientsPage() {
                                 setSelectedClient(client)
                                 setIsEditDialogOpen(true)
                               }}
+                              className="w-full sm:w-auto"
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
@@ -398,6 +341,7 @@ export default function ClientsPage() {
                               onClick={() => handleRestore(client.id)}
                               disabled={client.incompleteData || restoringId === client.id}
                               title={client.incompleteData ? 'Debes completar los datos del cliente antes de restaurarlo' : 'Restaurar cliente'}
+                              className="w-full sm:w-auto"
                             >
                               {restoringId === client.id ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -420,6 +364,7 @@ export default function ClientsPage() {
                                   }
                                 }
                               }}
+                              className="w-full sm:w-auto"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Eliminar
@@ -449,31 +394,31 @@ export default function ClientsPage() {
             ) : (
               <div className="space-y-2">
                 {filteredClients.map((client) => (
-                  <Card key={client.id} className="p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between gap-4">
+                  <Card key={client.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                         {/* Client Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-base truncate">{getClientDisplayName(client)}</h3>
-                            <Badge className={condicionIvaColors[client.taxCondition]}>
+                        <div className="flex-1 min-w-0 w-full">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{getClientDisplayName(client)}</h3>
+                            <Badge variant="outline" className={`${condicionIvaColors[client.taxCondition]} text-[10px] sm:text-xs`}>
                               {condicionIvaLabels[client.taxCondition]}
                             </Badge>
                           </div>
                           
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {client.documentType}: {client.documentNumber}
+                              <FileText className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{client.documentType}: {client.documentNumber}</span>
                             </span>
                             {client.email && (
-                              <span className="flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {client.email}
+                              <span className="flex items-center gap-1 min-w-0">
+                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{client.email}</span>
                               </span>
                             )}
                             {client.phone && (
                               <span className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
+                                <Phone className="h-3 w-3 flex-shrink-0" />
                                 {client.phone}
                               </span>
                             )}
@@ -481,15 +426,7 @@ export default function ClientsPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => router.push(`/company/${companyId}/clients/${client.id}`)}
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Facturas
-                          </Button>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           {canUpdate && (
                             <Button 
                               variant="outline" 
@@ -498,6 +435,7 @@ export default function ClientsPage() {
                                 setSelectedClient(client)
                                 setIsEditDialogOpen(true)
                               }}
+                              className="flex-shrink-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -506,7 +444,7 @@ export default function ClientsPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              className="flex-shrink-0"
                               onClick={() => {
                                 setClientToDelete(client)
                                 setIsDeleteDialogOpen(true)

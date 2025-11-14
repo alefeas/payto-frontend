@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, Building2, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
+import { Search, Plus, Edit, FileText, Mail, Phone, Building2, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { supplierService, Supplier } from "@/services/supplier.service"
@@ -18,9 +16,9 @@ import { companyService } from "@/services/company.service"
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
-import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
-import { AfipGuard } from "@/components/afip/afip-guard"
+import { PageHeader } from "@/components/layouts/PageHeader"
+import { EntitiesSkeleton } from "@/components/entities/EntitiesSkeleton"
 
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
@@ -29,9 +27,9 @@ const condicionIvaLabels: Record<string, string> = {
 }
 
 const condicionIvaColors: Record<string, string> = {
-  registered_taxpayer: "bg-blue-100 text-blue-800",
-  monotax: "bg-green-100 text-green-800",
-  exempt: "bg-purple-100 text-purple-800"
+  registered_taxpayer: "bg-slate-100 text-slate-700 border-slate-200",
+  monotax: "bg-slate-100 text-slate-700 border-slate-200",
+  exempt: "bg-slate-100 text-slate-700 border-slate-200"
 }
 
 export default function SuppliersPage() {
@@ -87,6 +85,7 @@ export default function SuppliersPage() {
       router.push('/log-in')
     } else if (isAuthenticated) {
       loadSuppliers()
+      loadArchivedSuppliers()
     }
   }, [isAuthenticated, authLoading, router, companyId])
 
@@ -162,106 +161,47 @@ export default function SuppliersPage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-32" />
-              <Skeleton className="h-10 w-36" />
-            </div>
-          </div>
-
-          {/* Search and Filter Skeleton */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <Skeleton className="h-10 w-48" />
-          </div>
-
-          {/* Suppliers List Skeleton */}
-          <div>
-            <div className="mb-4">
-              <Skeleton className="h-6 w-32 mb-1" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-3 px-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-12 w-12 rounded" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
-                      <div className="flex gap-2">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-16" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <EntitiesSkeleton />
   }
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div className="flex-1">
-            <ResponsiveHeading level="h1">Mis Proveedores</ResponsiveHeading>
-            <ResponsiveText className="text-muted-foreground">Gestiona tus proveedores externos</ResponsiveText>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={showArchived ? "outline" : "default"}
-              onClick={() => {
-                setShowArchived(!showArchived)
-                if (!showArchived && archivedSuppliers.length === 0) {
-                  loadArchivedSuppliers()
-                }
-              }}
-            >
-              <Archive className="h-4 w-4 mr-2" />
-              {showArchived ? "Ver Activos" : "Ver Archivados"}
-            </Button>
-            {!showArchived && canCreate && (
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nuevo Proveedor
-                  </Button>
-                </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Crear Nuevo Proveedor</DialogTitle>
-                <DialogDescription>
-                  Agrega un proveedor externo para gestionar tus compras
-                </DialogDescription>
-              </DialogHeader>
-              <SupplierForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadSuppliers} />
-            </DialogContent>
-              </Dialog>
-            )}
-          </div>
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        <PageHeader 
+          title="Mis Proveedores"
+          description="Gestiona tus proveedores externos"
+          backHref={`/company/${companyId}`}
+        />
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowArchived(!showArchived)}
+            className="w-full sm:w-auto"
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            {showArchived ? "Ver Activos" : "Ver Archivados"}
+          </Button>
+          {!showArchived && canCreate && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Proveedor
+                </Button>
+              </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Crear Nuevo Proveedor</DialogTitle>
+              <DialogDescription>
+                Agrega un proveedor externo para gestionar tus compras
+              </DialogDescription>
+            </DialogHeader>
+            <SupplierForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadSuppliers} />
+          </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Mensaje de certificado AFIP requerido */}
@@ -285,7 +225,7 @@ export default function SuppliersPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -296,9 +236,9 @@ export default function SuppliersPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Condición:</span>
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Condición:</span>
             <Select value={filterCondicion} onValueChange={setFilterCondicion}>
-              <SelectTrigger className="w-[200px] h-9">
+              <SelectTrigger className="w-full sm:w-[200px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -312,11 +252,11 @@ export default function SuppliersPage() {
         </div>
 
         <div>
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold">
+          <div className="mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold">
               {showArchived ? `Proveedores Archivados (${archivedSuppliers.length})` : `Proveedores (${filteredSuppliers.length})`}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {showArchived 
                 ? "Proveedores archivados que pueden ser restaurados. Necesarios para el Libro IVA histórico."
                 : "Lista de proveedores externos registrados"}
@@ -339,33 +279,33 @@ export default function SuppliersPage() {
               ) : (
                 <div className="space-y-2">
                   {filteredArchivedSuppliers.map((supplier) => (
-                    <Card key={supplier.id} className="p-4 hover:shadow-md transition-shadow bg-muted/30">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-sm truncate">{getSupplierDisplayName(supplier)}</h3>
-                              <Badge className={condicionIvaColors[supplier.taxCondition]}>
+                    <Card key={supplier.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow bg-muted/30">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0 w-full">
+                            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+                              <h3 className="font-semibold text-sm sm:text-base truncate">{getSupplierDisplayName(supplier)}</h3>
+                              <Badge variant="outline" className={`${condicionIvaColors[supplier.taxCondition]} text-[10px] sm:text-xs`}>
                                 {condicionIvaLabels[supplier.taxCondition]}
                               </Badge>
-                              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                              <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] sm:text-xs">
                                 Archivado
                               </Badge>
                             </div>
                             
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                <FileText className="h-3 w-3" />
-                                {supplier.documentType}: {supplier.documentNumber}
+                                <FileText className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{supplier.documentType}: {supplier.documentNumber}</span>
                               </span>
                               {supplier.email && (
-                                <span className="flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {supplier.email}
+                                <span className="flex items-center gap-1 min-w-0">
+                                  <Mail className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{supplier.email}</span>
                                 </span>
                               )}
                               {supplier.phone && (
                                 <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
+                                  <Phone className="h-3 w-3 flex-shrink-0" />
                                   {supplier.phone}
                                 </span>
                               )}
@@ -377,6 +317,7 @@ export default function SuppliersPage() {
                             size="sm"
                             onClick={() => handleRestore(supplier.id.toString())}
                             disabled={restoringId === supplier.id}
+                            className="w-full sm:w-auto flex-shrink-0"
                           >
                             {restoringId === supplier.id ? (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -409,37 +350,37 @@ export default function SuppliersPage() {
             ) : (
               <div className="space-y-2">
                 {filteredSuppliers.map((supplier) => (
-                  <Card key={supplier.id} className="p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-base truncate">{getSupplierDisplayName(supplier)}</h3>
-                            <Badge className={condicionIvaColors[supplier.taxCondition]}>
+                  <Card key={supplier.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0 w-full">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{getSupplierDisplayName(supplier)}</h3>
+                            <Badge variant="outline" className={`${condicionIvaColors[supplier.taxCondition]} text-[10px] sm:text-xs`}>
                               {condicionIvaLabels[supplier.taxCondition]}
                             </Badge>
                           </div>
                           
-                          <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {supplier.documentType}: {supplier.documentNumber}
+                              <FileText className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{supplier.documentType}: {supplier.documentNumber}</span>
                             </span>
                             {supplier.email && (
-                              <span className="flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {supplier.email}
+                              <span className="flex items-center gap-1 min-w-0">
+                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{supplier.email}</span>
                               </span>
                             )}
                             {supplier.phone && (
                               <span className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
+                                <Phone className="h-3 w-3 flex-shrink-0" />
                                 {supplier.phone}
                               </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           {canUpdate && (
                             <Button 
                               variant="outline" 
@@ -448,6 +389,7 @@ export default function SuppliersPage() {
                                 setSelectedSupplier(supplier)
                                 setIsEditDialogOpen(true)
                               }}
+                              className="flex-shrink-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -456,7 +398,7 @@ export default function SuppliersPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              className="flex-shrink-0"
                               onClick={() => {
                                 setSupplierToDelete(supplier)
                                 setIsDeleteDialogOpen(true)
