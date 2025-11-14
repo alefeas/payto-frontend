@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { 
   FileText, 
-  Eye, 
+  Eye,
   CreditCard, 
   BarChart3, 
   Plus,
@@ -14,14 +14,11 @@ import {
   CheckSquare,
   Activity,
   Shield,
-  CheckCircle2,
-  XCircle,
   BookOpen
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { colors } from "@/styles"
 import { BackButton } from "@/components/ui/back-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { StatCard } from "@/components/company/stat-card"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { useAuth } from "@/contexts/auth-context"
@@ -35,6 +32,7 @@ import { hasPermission } from "@/lib/permissions"
 import { NotificationBell } from "@/components/notifications/notification-bell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
+import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -81,8 +79,9 @@ export default function CompanyPage() {
             setCertificate(null)
           }
         } else {
-          // For non-admin users, check verification status from company data
-          setIsAfipVerified(found.verification_status === 'verified')
+          // For non-admin users, assume verified (they can't see certificate status anyway)
+          // Only show banner if explicitly marked as not verified
+          setIsAfipVerified(found.verification_status !== 'unverified')
         }
         
         // Load invoice stats
@@ -493,50 +492,12 @@ export default function CompanyPage() {
           </div>
         )}
 
-        {/* Banner de Estado de Verificación AFIP - Visible para todos */}
-        {isAfipVerified ? (
-          <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
-            <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm" style={{ color: colors.accent }}>
-                ✓ Cuenta Verificada con AFIP
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Todas las funciones están habilitadas. Podés emitir facturas electrónicas oficiales y consultar datos fiscales automáticamente.
-              </p>
-            </div>
-            {hasPermission(userRole, 'company.view_settings') && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="flex-shrink-0"
-                style={{ borderColor: colors.accent, color: colors.accent }}
-                onClick={() => router.push(`/company/${company.id}/verify`)}
-              >
-                Ver Detalles
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
-            <Eye className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm" style={{ color: colors.accent }}>🔓 Modo Vista Previa Activo</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Podés explorar el sistema y ver cómo funciona cada sección, pero todas las acciones están bloqueadas hasta que verifiques tu cuenta con AFIP.
-              </p>
-              <p className="text-xs text-muted-foreground mt-2 font-medium">
-                La verificación con AFIP garantiza la seguridad y legalidad de todas las operaciones en el sistema.
-              </p>
-            </div>
-            <Button 
-              size="sm"
-              style={{ backgroundColor: colors.accent, color: '#fff' }}
-              onClick={() => router.push(`/company/${company.id}/verify`)}
-            >
-              Verificar Ahora
-            </Button>
-          </div>
+        {/* Banner de Certificado AFIP */}
+        {!isAfipVerified && (
+          <AfipCertificateBanner 
+            companyId={company.id}
+            message="Explorá el sistema y descubrí cómo funciona. Para emitir facturas electrónicas oficiales y desbloquear todas las funciones, configurá tu certificado AFIP."
+          />
         )}
 
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, Download, FileText, MoreHorizontal } from "lucide-react"
+import { Eye, Download, FileText, MoreHorizontal, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +39,8 @@ export function InvoiceCard({
   onDownloadTXT 
 }: InvoiceCardProps) {
   const router = useRouter()
+  const [downloadingPDF, setDownloadingPDF] = useState(false)
+  const [downloadingTXT, setDownloadingTXT] = useState(false)
 
   const clientName = invoice.receiver_name || invoice.client?.business_name || 
                     invoice.receiverCompany?.name ||
@@ -457,26 +459,38 @@ export function InvoiceCard({
             <Button
               size="sm"
               variant="ghost"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation()
-                onDownloadPDF(invoice.id)
+                setDownloadingPDF(true)
+                try {
+                  await onDownloadPDF(invoice.id)
+                } finally {
+                  setDownloadingPDF(false)
+                }
               }}
               title="Descargar PDF"
               className="h-8 w-8 p-0"
+              disabled={downloadingPDF}
             >
-              <Download className="h-4 w-4" />
+              {downloadingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation()
-                onDownloadTXT(invoice.id)
+                setDownloadingTXT(true)
+                try {
+                  await onDownloadTXT(invoice.id)
+                } finally {
+                  setDownloadingTXT(false)
+                }
               }}
               title="Descargar TXT AFIP"
               className="h-8 w-8 p-0"
+              disabled={downloadingTXT}
             >
-              <FileText className="h-4 w-4" />
+              {downloadingTXT ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
             </Button>
           </div>
         </div>
@@ -505,21 +519,33 @@ export function InvoiceCard({
                 Ver detalle
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation()
-                  onDownloadPDF(invoice.id)
+                  setDownloadingPDF(true)
+                  try {
+                    await onDownloadPDF(invoice.id)
+                  } finally {
+                    setDownloadingPDF(false)
+                  }
                 }}
+                disabled={downloadingPDF}
               >
-                <Download className="h-4 w-4 mr-2" />
+                {downloadingPDF ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
                 Descargar PDF
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation()
-                  onDownloadTXT(invoice.id)
+                  setDownloadingTXT(true)
+                  try {
+                    await onDownloadTXT(invoice.id)
+                  } finally {
+                    setDownloadingTXT(false)
+                  }
                 }}
+                disabled={downloadingTXT}
               >
-                <FileText className="h-4 w-4 mr-2" />
+                {downloadingTXT ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
                 Descargar TXT
               </DropdownMenuItem>
             </DropdownMenuContent>

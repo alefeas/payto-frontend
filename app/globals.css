@@ -11,7 +11,7 @@
 
   body {
     font-family: var(--font-poppins-medium);
-    font-weight: 600;
+    font-weight: 700;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -55,14 +55,14 @@
     font-weight: 400 !important;
   }
 
-  /* Texto normal (p, span, div, etc.) con font-weight 600 */
+  /* Texto normal (p, span, div, etc.) con font-weight 800 para mejor legibilidad */
   p:not(.font-normal):not(button *):not([role="button"] *):not([data-slot="button"] *),
   span:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *),
   div:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *),
   td,
   th,
   li {
-    font-weight: 600 !important;
+    font-weight: 800 !important;
   }
   
   /* Labels de formularios más delgados */
@@ -84,6 +84,30 @@
     font-weight: 400 !important;
   }
 
+  /* Toasts con font-weight 400 */
+  [data-sonner-toast],
+  [data-sonner-toast] *,
+  [data-sonner-toast] div,
+  [data-sonner-toast] span,
+  [data-sonner-toast] p,
+  [data-sonner-toast] [data-title],
+  [data-sonner-toast] [data-description],
+  [data-sonner-toast] [data-content],
+  [data-sonner-toast] .font-medium,
+  .sonner-toast,
+  .sonner-toast *,
+  .sonner-toast div,
+  .sonner-toast span,
+  .sonner-toast p,
+  .sonner-toast [data-title],
+  .sonner-toast [data-description],
+  .sonner-toast [data-content],
+  .sonner-toast .font-medium {
+    font-weight: 400 !important;
+    font-family: var(--font-poppins-medium) !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+  }
 
 }
 

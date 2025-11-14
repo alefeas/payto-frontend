@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipButton } from "@/components/afip/afip-guard"
+import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -304,42 +305,17 @@ export default function InvoicesPage() {
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div>
-            <ResponsiveHeading level="h1">Ver Comprobantes</ResponsiveHeading>
-            <ResponsiveText className="text-muted-foreground">Gestionar todos los comprobantes de la empresa</ResponsiveText>
-          </div>
-        </div>
-
-        {/* Mensaje de certificado AFIP requerido */}
-        {!isAfipVerified && !isLoadingCert && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
-              <p className="text-xs text-red-700 mt-1">
-                No puedes sincronizar comprobantes desde AFIP sin un certificado activo. Configura tu certificado para acceder a todas las funcionalidades.
-              </p>
-            </div>
-            <Button 
-              type="button"
-              size="sm" 
-              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
-              onClick={() => router.push(`/company/${companyId}/verify`)}
-            >
-              Configurar Ahora
-            </Button>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <BackButton href={`/company/${companyId}`} />
             <div>
-              <ResponsiveHeading level="h2" as="h2">Comprobantes</ResponsiveHeading>
+              <ResponsiveHeading level="h1">Ver Comprobantes</ResponsiveHeading>
+              <ResponsiveText className="text-muted-foreground">Gestionar todos los comprobantes de la empresa</ResponsiveText>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex flex-col sm:flex-row gap-2">
+          </div>
+          
+          {/* Botones de acción */}
+          <div className="flex flex-col sm:flex-row gap-2">
                 <AfipButton
                   companyId={companyId}
                   onClick={() => setShowSyncDialog(true)}
@@ -437,12 +413,19 @@ export default function InvoicesPage() {
                     </>
                   )}
                 </Button>
-              </div>
-            </div>
           </div>
+        </div>
 
-          <div>
-            <div className="space-y-4 mb-6">
+        {/* Mensaje de certificado AFIP requerido */}
+        {!isAfipVerified && !isLoadingCert && (
+          <AfipCertificateBanner 
+            companyId={companyId}
+            message="No puedes sincronizar comprobantes desde AFIP sin un certificado activo. Configura tu certificado para acceder a todas las funcionalidades."
+          />
+        )}
+
+        <div className="space-y-4">
+          <div className="space-y-4 mb-6">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -631,7 +614,6 @@ export default function InvoicesPage() {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
 

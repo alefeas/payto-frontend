@@ -122,6 +122,7 @@ const rolePermissions: Record<CompanyRole, Permission[]> = {
     'bank_accounts.create',
     'bank_accounts.update',
     'invoices.view',
+    'invoices.create',
     'invoices.update',
     'invoices.approve',
     'payments.view',

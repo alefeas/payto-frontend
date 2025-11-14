@@ -20,8 +20,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="top-right"
       toastOptions={{
         classNames: {
-          toast: "group toast group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-slate-50 group-[.toaster]:to-slate-100 dark:group-[.toaster]:from-slate-900 dark:group-[.toaster]:to-slate-950 group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-slate-200 dark:group-[.toaster]:border-slate-800 group-[.toaster]:shadow-xl group-[.toaster]:backdrop-blur-md",
-          description: "group-[.toast]:text-muted-foreground",
+          toast: "group toast font-medium-heading group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-slate-50 group-[.toaster]:to-slate-100 dark:group-[.toaster]:from-slate-900 dark:group-[.toaster]:to-slate-950 group-[.toaster]:text-gray-700 group-[.toaster]:border group-[.toaster]:border-slate-200 dark:group-[.toaster]:border-slate-800 group-[.toaster]:shadow-xl group-[.toaster]:backdrop-blur-md",
+          description: "group-[.toast]:text-muted-foreground font-medium-heading",
+          title: "font-medium-heading",
           actionButton: "group-[.toast]:bg-blue-600 group-[.toast]:text-white hover:group-[.toast]:bg-blue-700",
           cancelButton: "group-[.toast]:bg-slate-200 dark:group-[.toast]:bg-slate-800 group-[.toast]:text-slate-700 dark:group-[.toast]:text-slate-300",
           success: "group-[.toast]:border-blue-600/40 group-[.toast]:bg-gradient-to-br group-[.toast]:from-blue-100 group-[.toast]:to-blue-200 dark:group-[.toast]:from-blue-900/70 dark:group-[.toast]:to-blue-800/70 group-[.toast]:shadow-blue-500/20",

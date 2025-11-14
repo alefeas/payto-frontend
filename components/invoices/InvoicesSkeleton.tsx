@@ -101,24 +101,21 @@ export function InvoicesPageSkeleton() {
     <div className="min-h-screen bg-background p-3 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header Skeleton - responsive */}
-        <div className="flex items-center gap-4">
-          {/* BackButton responsive: solo flecha en móvil */}
-          <Skeleton className="h-10 w-10 sm:w-20 rounded" />
-          <div className="space-y-2">
-            <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
-            <Skeleton className="h-3 sm:h-4 w-64 sm:w-96" />
-          </div>
-        </div>
-        
-        {/* Action Buttons Skeleton - responsive */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <Skeleton className="h-6 sm:h-8 w-32 sm:w-48" />
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Skeleton className="h-10 w-full sm:w-24" /> {/* Sinc. AFIP */}
-              <Skeleton className="h-10 w-full sm:w-20" /> {/* TXT */}
-              <Skeleton className="h-10 w-full sm:w-20" /> {/* PDF */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* BackButton responsive: solo flecha en móvil */}
+            <Skeleton className="h-10 w-10 sm:w-20 rounded" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
+              <Skeleton className="h-3 sm:h-4 w-64 sm:w-96" />
             </div>
+          </div>
+          
+          {/* Action Buttons Skeleton - responsive */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Skeleton className="h-10 w-full sm:w-24" /> {/* Sinc. AFIP */}
+            <Skeleton className="h-10 w-full sm:w-20" /> {/* TXT */}
+            <Skeleton className="h-10 w-full sm:w-20" /> {/* PDF */}
           </div>
         </div>
         

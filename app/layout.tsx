@@ -13,7 +13,7 @@ const poppinsMedium = localFont({
 const poppinsThin = localFont({
   src: "../public/fonts/Poppins-Thin.ttf",
   variable: "--font-poppins-thin",
-  weight: "100",
+  weight: "400",
 });
 
 export const metadata: Metadata = {

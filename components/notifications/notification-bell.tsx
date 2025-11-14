@@ -111,7 +111,7 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
           )} />
           {unreadCount > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center px-1 bg-red-600 text-white text-xs font-extrabold border-0"
+              className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center px-1 bg-red-600 text-white text-xs font-medium-heading border-0"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
@@ -120,7 +120,7 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-96 bg-white border border-gray-200 shadow-lg rounded-lg">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="font-semibold text-lg text-foreground">Notificaciones</h3>
+          <h3 className="font-medium-heading text-lg text-foreground">Notificaciones</h3>
           {unreadCount > 0 && (
             <Button 
               variant="ghost" 
@@ -171,9 +171,9 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <h4 className="text-sm font-medium-heading text-gray-900 truncate">
                           {notification.title}
-                        </p>
+                        </h4>
                         {!notification.read && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                         )}

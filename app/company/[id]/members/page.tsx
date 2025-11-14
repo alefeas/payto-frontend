@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
+import { CountBadge } from "@/components/ui/count-badge"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { CompanyRole, CompanyMember } from "@/types"
@@ -404,8 +405,8 @@ export default function MembersPage() {
                 <div className="flex-1 min-w-0">
                   <h2 className="flex items-center gap-2 text-base sm:text-lg text-black">
                     <Users className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                    <span className="truncate">Lista de Miembros</span>
-                    <span className="text-xs sm:text-sm text-gray-500 shrink-0">({members.length})</span>
+                    <span className="truncate font-medium-heading">Lista de Miembros</span>
+                    <CountBadge count={members.length} />
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-500 font-light mt-0.5 truncate">
                     {canManageMembers ? "Gestiona roles y permisos" : "Visualiza los miembros"}
