@@ -6,28 +6,28 @@ import SlantedPanel from "@/components/ui/slanted-panel";
 
 const messages = [
   [
-    { text: "Making " },
-    { text: "big", bold: true },
-    { text: " things." },
-  ],
-  [
-    { text: "Pay to " },
-    { text: "whoever", bold: true },
+    { text: "Haciendo cosas " },
+    { text: "grandes", bold: true },
     { text: "." },
   ],
   [
-    { text: "Try it by " },
-    { text: "yourself", bold: true },
+    { text: "Pagá a " },
+    { text: "quien quieras", bold: true },
     { text: "." },
   ],
   [
-    { text: "Huge", bold: true },
-    { text: " things are coming." },
+    { text: "Probalo " },
+    { text: "por vos mismo", bold: true },
+    { text: "." },
   ],
   [
-    { text: "A " },
-    { text: "company", bold: true },
-    { text: " for your company." },
+    { text: "Grandes", bold: true },
+    { text: " cosas están por venir." },
+  ],
+  [
+    { text: "Una " },
+    { text: "empresa", bold: true },
+    { text: " para tu empresa." },
   ],
 ];
 
