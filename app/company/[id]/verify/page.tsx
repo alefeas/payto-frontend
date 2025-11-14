@@ -2,25 +2,26 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Upload, CheckCircle2, AlertCircle, FileText, Key, Shield, Info, Download, Trash2 } from "lucide-react"
+import { Upload, CheckCircle2, AlertCircle, Key, Shield, Info, Download, Trash2, ClipboardCheck, AlertTriangle, Loader2 } from "lucide-react"
+import { InfoMessage } from "@/components/ui/info-message"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
-import { afipVerificationService, type VerificationStatus } from "@/services/afip-verification.service"
+import { type VerificationStatus } from "@/services/afip-verification.service"
 import { afipCertificateService, AfipCertificate } from "@/services/afip-certificate.service"
 import { companyService } from "@/services/company.service"
-import { Skeleton} from "@/components/ui/skeleton"
 import { parseDateLocal } from "@/lib/utils"
 import { colors } from "@/styles"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 
 export default function VerifyCompanyPage() {
   const { id } = useParams()
@@ -84,6 +85,7 @@ export default function VerifyCompanyPage() {
         })
       } catch (error: any) {
         console.error('Error loading certificate:', error)
+        setCertificate(null)
         setVerificationStatus({
           verification_status: 'unverified',
           verified_at: null,
@@ -184,14 +186,19 @@ export default function VerifyCompanyPage() {
       setTesting(true)
       const result = await afipCertificateService.testConnection(id as string)
       if (result.success) {
-        toast.success(result.message, {
-          description: result.expires_in_days ? `Expira en ${result.expires_in_days} días` : undefined
+        toast.success('Conexión exitosa con AFIP', {
+          description: result.message + (result.expires_in_days ? ` - Expira en ${result.expires_in_days} días` : '')
         })
       } else {
-        toast.error(result.message)
+        toast.error('Error en la conexión', {
+          description: result.message
+        })
       }
-    } catch (error) {
-      toast.error('Error al probar conexión')
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.message || 'Error al probar conexión con AFIP'
+      toast.error('Error al probar conexión', {
+        description: errorMsg
+      })
     } finally {
       setTesting(false)
     }
@@ -219,34 +226,13 @@ export default function VerifyCompanyPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-48" />
-            </div>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-10 w-10 animate-spin mx-auto" style={{ color: colors.accent }} />
+          <div className="space-y-1">
+            <p className="text-base font-medium text-gray-900">Verificando certificado AFIP</p>
+            <p className="text-sm text-muted-foreground">Esto solo tomará un momento...</p>
           </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-24 w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-64" />
-              <Skeleton className="h-4 w-96 mt-2" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </CardContent>
-          </Card>
         </div>
       </div>
     )
@@ -258,14 +244,18 @@ export default function VerifyCompanyPage() {
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${id}`} />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">Verificar Perfil Fiscal</h1>
-            <p className="text-muted-foreground">{companyName}</p>
+        <div className="flex items-start gap-3 sm:gap-4">
+          <BackButton href={`/company/${id}`} className="mt-1" />
+          <div className="flex-1 min-w-0">
+            <ResponsiveHeading level="h1" className="line-clamp-2">
+              Verificar Perfil Fiscal
+            </ResponsiveHeading>
+            <ResponsiveText className="text-muted-foreground line-clamp-1 mt-1">
+              {companyName}
+            </ResponsiveText>
           </div>
           {isVerified && (
-            <Badge style={{ backgroundColor: colors.accent, color: '#fff' }}>
+            <Badge style={{ backgroundColor: colors.accent, color: '#fff' }} className="whitespace-nowrap flex-shrink-0 mt-1">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               Verificado
             </Badge>
@@ -275,45 +265,68 @@ export default function VerifyCompanyPage() {
         {/* Estado del Certificado */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: colors.accent }} />
               Estado del Certificado
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isVerified ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 mt-0.5" style={{ color: colors.accent }} />
-                  <div className="flex-1">
-                    <p className="font-medium">Certificado Activo</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Facturación electrónica habilitada y consultas AFIP disponibles
-                    </p>
+                <InfoMessage
+                  icon={CheckCircle2}
+                  iconColor={colors.accent}
+                  title="Certificado Activo"
+                  variant="info"
+                >
+                  <div className="space-y-2 text-xs sm:text-sm text-gray-900 mt-1">
+                    <p>Facturación electrónica habilitada y consultas AFIP disponibles</p>
                     {certificate?.validUntil && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Válido hasta: {parseDateLocal(certificate.validUntil)?.toLocaleDateString('es-AR')}
-                        {certificate.isExpiringSoon && " ⚠️ Próximo a vencer"}
+                      <p className="flex flex-wrap items-center gap-1.5">
+                        <span>Válido hasta: {parseDateLocal(certificate.validUntil)?.toLocaleDateString('es-AR')}</span>
+                        {certificate.isExpiringSoon && (
+                          <span className="flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3 text-amber-500" /> 
+                            <span>Próximo a vencer</span>
+                          </span>
+                        )}
                       </p>
                     )}
                     {certificate && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-xs font-medium">
-                          Ambiente: {certificate.environment === 'production' 
-                            ? '✅ Producción (Facturas reales)' 
-                            : '🧪 Homologación (Testing)'}
-                        </p>
-                      </div>
+                      <p className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
+                        <span>Ambiente:</span>
+                        {certificate.environment === 'production' ? (
+                          <span className="flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3 text-green-600" /> 
+                            <span>Producción (Facturas reales)</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <Shield className="h-3 w-3" style={{ color: colors.accent }} /> 
+                            <span>Homologación (Testing)</span>
+                          </span>
+                        )}
+                      </p>
                     )}
                   </div>
-                </div>
+                </InfoMessage>
 
-                <div className="flex gap-2">
-                  <Button onClick={handleTestConnection} disabled={testing} variant="outline">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    onClick={handleTestConnection} 
+                    disabled={testing} 
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
                     {testing ? 'Probando...' : 'Probar Conexión'}
                   </Button>
                   {userRole === 'owner' && (
-                    <Button onClick={() => setShowDeleteDialog(true)} variant="destructive">
+                    <Button 
+                      onClick={() => setShowDeleteDialog(true)} 
+                      variant="destructive"
+                      className="w-full sm:w-auto"
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar Certificado
                     </Button>
@@ -321,15 +334,13 @@ export default function VerifyCompanyPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 mt-0.5" style={{ color: colors.accent }} />
-                <div>
-                  <p className="font-medium">Sin Certificado AFIP</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    No podrás usar facturación electrónica ni consultar datos automáticos de clientes/proveedores
-                  </p>
-                </div>
-              </div>
+              <InfoMessage
+                icon={AlertCircle}
+                iconColor={colors.accent}
+                title="Sin Certificado AFIP"
+                description="No podrás usar facturación electrónica ni consultar datos automáticos de clientes/proveedores"
+                variant="info"
+              />
             )}
           </CardContent>
         </Card>
@@ -337,32 +348,36 @@ export default function VerifyCompanyPage() {
         {!isVerified && (userRole === 'owner' || userRole === 'administrator') && (
           <Card>
             <CardHeader>
-              <CardTitle>Configurar Certificado AFIP</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Configurar Certificado AFIP</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Elige el método que prefieras para configurar tu certificado
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="assisted">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="assisted">Asistida (Recomendado)</TabsTrigger>
-                  <TabsTrigger value="manual">Manual</TabsTrigger>
+                  <TabsTrigger value="assisted" className="text-xs sm:text-sm">
+                    <span className="hidden sm:inline">Asistida (Recomendado)</span>
+                    <span className="sm:hidden">Asistida</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="text-xs sm:text-sm">Manual</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="assisted" className="space-y-4 mt-4">
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Pasos del proceso asistido:</AlertTitle>
-                    <AlertDescription>
-                      <ol className="text-sm space-y-1 list-decimal list-inside mt-2">
-                        <li>Genera el CSR aquí</li>
-                        <li>Descarga el archivo CSR</li>
-                        <li>Ve a AFIP → Administrador de Relaciones → Certificados</li>
-                        <li>Sube el CSR y obtén el certificado (.crt)</li>
-                        <li>Pega el contenido del certificado aquí</li>
-                      </ol>
-                    </AlertDescription>
-                  </Alert>
+                  <InfoMessage
+                    icon={Info}
+                    iconColor={colors.accent}
+                    title="Pasos del proceso asistido:"
+                    variant="info"
+                  >
+                    <ol className="text-sm space-y-1 list-decimal list-inside mt-2 text-gray-900">
+                      <li>Genera el CSR aquí</li>
+                      <li>Descarga el archivo CSR</li>
+                      <li>Ve a AFIP → Administrador de Relaciones → Certificados</li>
+                      <li>Sube el CSR y obtén el certificado (.crt)</li>
+                      <li>Pega el contenido del certificado aquí</li>
+                    </ol>
+                  </InfoMessage>
 
                   {!generatedCSR ? (
                     <Button onClick={handleGenerateCSR} disabled={generating} className="w-full">
@@ -419,18 +434,19 @@ export default function VerifyCompanyPage() {
 
                         <div className="space-y-2">
                           <Label>Ambiente AFIP *</Label>
-                          <select 
-                            className="w-full p-2 border rounded-md"
-                            value={assistedEnvironment}
-                            onChange={(e) => setAssistedEnvironment(e.target.value as 'testing' | 'production')}
-                          >
-                            <option value="testing">🧪 Homologación (Testing) - Para pruebas</option>
-                            <option value="production">✅ Producción - Facturas reales</option>
-                          </select>
-                          <p className="text-xs text-muted-foreground">
+                          <Select value={assistedEnvironment} onValueChange={(value) => setAssistedEnvironment(value as 'testing' | 'production')}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="testing">Homologación (Testing) - Para pruebas</SelectItem>
+                              <SelectItem value="production">Producción - Facturas reales</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-gray-600 flex items-center gap-1.5">
                             {assistedEnvironment === 'testing' 
-                              ? '⚠️ Las facturas NO serán válidas legalmente' 
-                              : '✅ Las facturas serán válidas legalmente'}
+                              ? <><AlertTriangle className="h-3 w-3 inline text-amber-500" /> Las facturas NO serán válidas legalmente</> 
+                              : <><CheckCircle2 className="h-3 w-3 inline text-green-600" /> Las facturas serán válidas legalmente</>}
                           </p>
                         </div>
 
@@ -444,13 +460,13 @@ export default function VerifyCompanyPage() {
                 </TabsContent>
 
                 <TabsContent value="manual" className="space-y-4 mt-4">
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Método manual</AlertTitle>
-                    <AlertDescription>
-                      Si ya tienes el certificado (.crt) y la clave privada (.key), pégalos aquí directamente
-                    </AlertDescription>
-                  </Alert>
+                  <InfoMessage
+                    icon={Info}
+                    iconColor={colors.accent}
+                    title="Método manual"
+                    description="Si ya tienes el certificado (.crt) y la clave privada (.key), pégalos aquí directamente"
+                    variant="info"
+                  />
 
                   <div className="space-y-2">
                     <Label>Certificado (.crt) *</Label>
@@ -516,18 +532,19 @@ export default function VerifyCompanyPage() {
 
                   <div className="space-y-2">
                     <Label>Ambiente AFIP *</Label>
-                    <select 
-                      className="w-full p-2 border rounded-md"
-                      value={manualEnvironment}
-                      onChange={(e) => setManualEnvironment(e.target.value as 'testing' | 'production')}
-                    >
-                      <option value="testing">🧪 Homologación (Testing) - Para pruebas</option>
-                      <option value="production">✅ Producción - Facturas reales</option>
-                    </select>
-                    <p className="text-xs text-muted-foreground">
+                    <Select value={manualEnvironment} onValueChange={(value) => setManualEnvironment(value as 'testing' | 'production')}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="testing">Homologación (Testing) - Para pruebas</SelectItem>
+                        <SelectItem value="production">Producción - Facturas reales</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-600 flex items-center gap-1.5">
                       {manualEnvironment === 'testing' 
-                        ? '⚠️ Las facturas NO serán válidas legalmente' 
-                        : '✅ Las facturas serán válidas legalmente'}
+                        ? <><AlertTriangle className="h-3 w-3 inline text-amber-500" /> Las facturas NO serán válidas legalmente</> 
+                        : <><CheckCircle2 className="h-3 w-3 inline text-green-600" /> Las facturas serán válidas legalmente</>}
                     </p>
                   </div>
 
@@ -542,19 +559,19 @@ export default function VerifyCompanyPage() {
         )}
 
         {/* Autorizaciones AFIP */}
-        <Card className="border-gray-200 bg-white dark:bg-slate-950 dark:border-gray-800">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" style={{ color: colors.accent }} />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: colors.accent }} />
               Autorizaciones Requeridas en AFIP
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Tu certificado debe tener estas autorizaciones para que PayTo funcione correctamente
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200">
+              <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
                 <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: colors.accent }} />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">WSFE - Facturación Electrónica</p>
@@ -564,7 +581,7 @@ export default function VerifyCompanyPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200">
+              <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
                 <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: colors.accent }} />
                 <div className="flex-1">
                   <p className="font-semibold text-sm">WS SR PADRON A5 - Padrón de Contribuyentes</p>
@@ -575,8 +592,11 @@ export default function VerifyCompanyPage() {
               </div>
             </div>
 
-            <div className="border-t pt-4 space-y-3">
-              <p className="font-semibold text-sm">📋 Cómo autorizar los servicios:</p>
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              <p className="font-semibold text-sm flex items-center gap-2 text-gray-900">
+                <ClipboardCheck className="h-4 w-4" style={{ color: colors.accent }} />
+                Cómo autorizar los servicios:
+              </p>
               <ol className="text-xs space-y-2 list-decimal list-inside text-muted-foreground">
                 <li>Ingresá a <strong>AFIP con Clave Fiscal</strong></li>
                 <li>Buscá <strong>"Administrador de Relaciones de Clave Fiscal"</strong></li>
@@ -587,21 +607,22 @@ export default function VerifyCompanyPage() {
               </ol>
             </div>
 
-            <Alert className="bg-muted/30 border-gray-200 dark:bg-slate-950 dark:border-gray-800">
-              <AlertCircle className="h-4 w-4" style={{ color: colors.accent }} />
-              <AlertDescription className="text-xs">
-                <strong>Importante:</strong> Sin estas autorizaciones, el certificado no funcionará correctamente. El servicio de Padrón (WS SR PADRON A5) solo funciona en ambiente de producción, no en homologación.
-              </AlertDescription>
-            </Alert>
+            <InfoMessage
+              icon={AlertCircle}
+              iconColor={colors.accent}
+              title="Importante"
+              description="Sin estas autorizaciones, el certificado no funcionará correctamente. El servicio de Padrón (WS SR PADRON A5) solo funciona en ambiente de producción, no en homologación."
+              variant="info"
+            />
           </CardContent>
         </Card>
 
         {/* Información */}
         <Card>
           <CardHeader>
-            <CardTitle>¿Por qué necesito esto?</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">¿Por qué necesito esto?</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="space-y-3 text-xs sm:text-sm text-muted-foreground">
             <p>
               <strong>Sin certificado:</strong> No podrás emitir facturas electrónicas válidas ni consultar datos de AFIP automáticamente.
             </p>
@@ -614,13 +635,13 @@ export default function VerifyCompanyPage() {
           </CardContent>
         </Card>
 
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Importante</AlertTitle>
-          <AlertDescription>
-            Nunca compartas tu clave privada (.key) con nadie. PayTo la almacena de forma segura y encriptada solo para comunicarse con AFIP en tu nombre.
-          </AlertDescription>
-        </Alert>
+        <InfoMessage
+          icon={AlertCircle}
+          iconColor={colors.accent}
+          title="Importante"
+          description="Nunca compartas tu clave privada (.key) con nadie. PayTo la almacena de forma segura y encriptada solo para comunicarse con AFIP en tu nombre."
+          variant="info"
+        />
       </div>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
