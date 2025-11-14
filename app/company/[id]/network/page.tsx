@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Search, Plus, Users, Send, Check, X, Building2, Loader2, Clock } from "lucide-react"
+import { Search, Plus, Users, Send, X, Loader2, Clock, AlertTriangle, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -16,9 +15,12 @@ import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { networkService } from "@/services/network.service"
 import type { CompanyConnection, ConnectionRequest, NetworkStats } from "@/types/network"
-import { Skeleton } from "@/components/ui/skeleton"
-import { parseDateLocal } from "@/lib/utils"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
+import { NetworkSkeleton } from "@/components/network/NetworkSkeleton"
+import { ConnectionCard } from "@/components/network/ConnectionCard"
+import { ReceivedRequestCard } from "@/components/network/ReceivedRequestCard"
+import { SentRequestCard } from "@/components/network/SentRequestCard"
+import { InfoMessage } from "@/components/ui/info-message"
 
 export default function NetworkPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -200,118 +202,88 @@ export default function NetworkPage() {
   )
 
   if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <Skeleton className="h-10 w-40" />
-          </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-64 mt-2" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-12 w-12 rounded" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Skeleton className="h-8 w-20" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <NetworkSkeleton />
   }
   if (!isAuthenticated) return null
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <BackButton href={`/company/${companyId}`} />
-          <div className="flex-1">
-            <ResponsiveHeading level="h1">Red Empresarial</ResponsiveHeading>
-            <div className="flex items-center gap-3 mt-1">
-              <ResponsiveText size="sm" className="text-muted-foreground">Gestiona las conexiones con otras empresas</ResponsiveText>
-              {myCompanyId && (
-                <>
-                  <span className="text-sm text-muted-foreground">•</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Tu ID:</span>
-                    <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono font-bold">{myCompanyId}</code>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                      onClick={() => {
-                        navigator.clipboard.writeText(myCompanyId);
-                        toast.success('ID copiado al portapapeles');
-                      }}
-                    >
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </Button>
-                  </div>
-                </>
-              )}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <BackButton href={`/company/${companyId}`} />
+            <div className="flex-1 min-w-0">
+              <ResponsiveHeading level="h1">Red Empresarial</ResponsiveHeading>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-1">
+                <ResponsiveText size="sm" className="text-muted-foreground">Gestiona las conexiones con otras empresas</ResponsiveText>
+                {myCompanyId && (
+                  <>
+                    <span className="hidden sm:inline text-sm text-muted-foreground">•</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Tu ID:</span>
+                      <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono font-bold">{myCompanyId}</code>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText(myCompanyId);
+                          toast.success('ID copiado al portapapeles');
+                        }}
+                      >
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-          <Button onClick={() => setShowRequestModal(true)} className="bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] hover:opacity-90">
+          <Button onClick={() => setShowRequestModal(true)} className="bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] hover:opacity-90 w-full sm:w-64 lg:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Conectar Empresa
           </Button>
         </div>
 
         <Tabs defaultValue="connections" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="connections" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Empresas Conectadas {!isLoading && `(${stats.totalConnections})`}
-              </TabsTrigger>
-              <TabsTrigger value="requests" className="flex items-center gap-2">
-                <Send className="h-4 w-4" />
-                Solicitudes Recibidas {!isLoading && `(${stats.pendingReceived})`}
-              </TabsTrigger>
-              <TabsTrigger value="sent" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Solicitudes Enviadas {!isLoading && `(${stats.pendingSent})`}
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="w-full sm:w-auto flex gap-2">
+            <TabsTrigger value="connections" className="flex items-center gap-1 sm:gap-2 flex-1 sm:flex-initial [&[data-state=active]>span]:text-white">
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden lg:inline">Empresas Conectadas</span>
+              <span className="lg:hidden">Conectadas</span>
+              {!isLoading && <span className="font-medium-heading text-gray-700">({stats.totalConnections})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex items-center gap-1 sm:gap-2 flex-1 sm:flex-initial [&[data-state=active]>span]:text-white">
+              <Send className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden lg:inline">Solicitudes Recibidas</span>
+              <span className="lg:hidden">Recibidas</span>
+              {!isLoading && <span className="font-medium-heading text-gray-700">({stats.pendingReceived})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="sent" className="flex items-center gap-1 sm:gap-2 flex-1 sm:flex-initial [&[data-state=active]>span]:text-white">
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden lg:inline">Solicitudes Enviadas</span>
+              <span className="lg:hidden">Enviadas</span>
+              {!isLoading && <span className="font-medium-heading text-gray-700">({stats.pendingSent})</span>}
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="connections" className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
                     <CardTitle>Empresas Conectadas</CardTitle>
                     <CardDescription>Empresas con las que tienes relación comercial establecida</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-muted-foreground" />
+                  <div className="relative w-full lg:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Buscar por nombre o ID..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-64"
+                      className="pl-10 w-full"
                     />
                   </div>
                 </div>
@@ -322,59 +294,13 @@ export default function NetworkPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {filteredConnections.map((connection) => (
-                    <Card key={connection.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Building2 className="h-6 w-6 text-blue-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{connection.connectedCompanyName}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-sm text-muted-foreground">ID de Conexión:</p>
-                              <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{connection.connectedCompanyUniqueId}</code>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(connection.connectedCompanyUniqueId);
-                                  toast.success('ID copiado al portapapeles');
-                                }}
-                              >
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                              </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Conectado el {parseDateLocal(connection.connectedAt)?.toLocaleDateString('es-AR')}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-6">
-                          <div className="text-center">
-                            <p className="text-sm font-medium">{connection.totalInvoicesSent}</p>
-                            <p className="text-xs text-muted-foreground">Enviadas</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-medium">{connection.totalInvoicesReceived}</p>
-                            <p className="text-xs text-muted-foreground">Recibidas</p>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => handleDeleteConnection(connection)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ConnectionCard 
+                      key={connection.id}
+                      connection={connection}
+                      onDelete={handleDeleteConnection}
+                    />
                   ))}
                   
                   {filteredConnections.length === 0 && (
@@ -401,84 +327,16 @@ export default function NetworkPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {requests.map((request) => (
-                    <Card key={request.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-orange-100 rounded-lg">
-                            <Building2 className="h-6 w-6 text-orange-600" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{request.fromCompanyName}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-sm text-muted-foreground">ID de Conexión:</p>
-                              <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{request.fromCompanyUniqueId}</code>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(request.fromCompanyUniqueId);
-                                  toast.success('ID copiado al portapapeles');
-                                }}
-                              >
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                              </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Solicitado el {parseDateLocal(request.requestedAt)?.toLocaleDateString('es-AR')}
-                            </p>
-                            {request.message && (
-                              <p className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-700">
-                                &ldquo;{request.message}&rdquo;
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleAcceptRequest(request)}
-                            disabled={acceptingId === request.id || rejectingId === request.id}
-                          >
-                            {acceptingId === request.id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                Aceptando...
-                              </>
-                            ) : (
-                              <>
-                                <Check className="h-4 w-4 mr-1" />
-                                Aceptar
-                              </>
-                            )}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleRejectRequest(request)}
-                            disabled={acceptingId === request.id || rejectingId === request.id}
-                          >
-                            {rejectingId === request.id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                Rechazando...
-                              </>
-                            ) : (
-                              <>
-                                <X className="h-4 w-4 mr-1" />
-                                Rechazar
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ReceivedRequestCard
+                      key={request.id}
+                      request={request}
+                      onAccept={handleAcceptRequest}
+                      onReject={handleRejectRequest}
+                      isAccepting={acceptingId === request.id}
+                      isRejecting={rejectingId === request.id}
+                    />
                   ))}
                   
                   {requests.length === 0 && (
@@ -505,50 +363,12 @@ export default function NetworkPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {sentRequests.map((request) => (
-                    <Card key={request.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Building2 className="h-6 w-6 text-blue-600" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{request.toCompanyName}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-sm text-muted-foreground">ID de Conexión:</p>
-                              <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{request.fromCompanyUniqueId}</code>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(request.fromCompanyUniqueId);
-                                  toast.success('ID copiado al portapapeles');
-                                }}
-                              >
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                              </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Enviado el {parseDateLocal(request.requestedAt)?.toLocaleDateString('es-AR')}
-                            </p>
-                            {request.message && (
-                              <p className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-700 break-words">
-                                &ldquo;{request.message}&rdquo;
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pendiente
-                        </Badge>
-                      </div>
-                    </Card>
+                    <SentRequestCard
+                      key={request.id}
+                      request={request}
+                    />
                   ))}
                   
                   {sentRequests.length === 0 && (
@@ -568,10 +388,7 @@ export default function NetworkPage() {
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-red-600">
-                <X className="h-5 w-5" />
-                Eliminar Conexión
-              </DialogTitle>
+              <DialogTitle>Eliminar Conexión</DialogTitle>
               <DialogDescription className="break-words pt-2">
                 ¿Estás seguro de que deseas eliminar la conexión con{" "}
                 <span className="font-semibold text-foreground">{connectionToDelete?.connectedCompanyName}</span>?
@@ -579,38 +396,19 @@ export default function NetworkPage() {
             </DialogHeader>
             
             <div className="space-y-3 py-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-amber-800 mb-1">
-                      La empresa se convertirá en Cliente/Proveedor externo
-                    </h4>
-                    <p className="text-sm text-amber-700">
-                      Esta acción mantendrá el historial del Libro IVA, pero ya no podrás facturar directamente a esta empresa.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <InfoMessage
+                icon={AlertTriangle}
+                variant="warning"
+                title="La empresa se convertirá en Cliente/Proveedor externo"
+                description="Esta acción mantendrá el historial del Libro IVA, pero ya no podrás facturar directamente a esta empresa."
+              />
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-blue-700">
-                      Podrás editar los datos del cliente/proveedor y seguir viendo las facturas históricas.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <InfoMessage
+                icon={Info}
+                variant="info"
+                title="Información adicional"
+                description="Podrás editar los datos del cliente/proveedor y seguir viendo las facturas históricas."
+              />
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -651,28 +449,29 @@ export default function NetworkPage() {
         <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="break-words">Conectar con Nueva Empresa</DialogTitle>
-              <DialogDescription className="break-words">
+              <DialogTitle>Conectar con Nueva Empresa</DialogTitle>
+              <DialogDescription className="text-sm">
                 Envía una solicitud de conexión a otra empresa para establecer una relación comercial
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="companyId">ID de la Empresa *</Label>
+            
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="companyId" className="text-sm">ID de la Empresa *</Label>
                 <Input
                   id="companyId"
                   placeholder="TC8X9K2L"
                   value={newRequest.companyId}
                   onChange={(e) => setNewRequest({...newRequest, companyId: e.target.value})}
                   maxLength={10}
-                  className="break-all"
                 />
-                <p className="text-xs text-muted-foreground break-words">
+                <p className="text-xs text-muted-foreground">
                   Ingresa el ID único de la empresa (ej: TC8X9K2L)
                 </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="message">Mensaje (Opcional)</Label>
+              
+              <div className="space-y-1.5">
+                <Label htmlFor="message" className="text-sm">Mensaje (Opcional)</Label>
                 <Textarea
                   id="message"
                   placeholder="Mensaje personalizado para la solicitud..."
@@ -680,15 +479,25 @@ export default function NetworkPage() {
                   onChange={(e) => setNewRequest({...newRequest, message: e.target.value})}
                   rows={3}
                   maxLength={500}
-                  className="resize-none break-words"
+                  className="resize-none"
                 />
               </div>
             </div>
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setShowRequestModal(false)} className="w-full sm:w-auto" disabled={isSending}>
+            
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowRequestModal(false)} 
+                className="w-full sm:w-auto" 
+                disabled={isSending}
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleSendRequest} className="w-full sm:w-auto" disabled={isSending}>
+              <Button 
+                onClick={handleSendRequest} 
+                className="w-full sm:w-auto bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] hover:opacity-90" 
+                disabled={isSending}
+              >
                 {isSending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

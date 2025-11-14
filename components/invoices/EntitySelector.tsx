@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Building2, UserPlus, Plus } from "lucide-react"
+import { Building2, UserPlus, Plus, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type EntityType = 'registered' | 'saved' | 'new'
@@ -389,9 +389,10 @@ export function EntitySelector({
             <Plus className="h-4 w-4" />
             {t.createButton}
           </Button>
-          <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded-md">
-            💡 El {t.entity} se guardará automáticamente para futuras facturas
-          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white border border-gray-200 p-2.5 rounded-md">
+            <Info className="h-4 w-4 text-blue-600 flex-shrink-0" />
+            <span>El {t.entity} se guardará automáticamente para futuras facturas</span>
+          </div>
         </div>
       )}
 

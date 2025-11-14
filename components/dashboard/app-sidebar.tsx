@@ -401,7 +401,7 @@ export function AppSidebar() {
 
       <SidebarSeparator />
 
-      <SidebarContent className="overflow-y-auto">
+      <SidebarContent className="overflow-y-auto mt-1">
         {selectedCompanyId && (
           <>
             {/* Vista expandida con grupos */}

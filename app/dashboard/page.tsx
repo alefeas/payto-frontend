@@ -529,7 +529,7 @@ export default function DashboardPage() {
                   value={selectedTimeFilter} 
                   onValueChange={(value) => setSelectedTimeFilter(value as TimeFilter)}
                 >
-                  <TabsList className="flex-wrap justify-start lg:justify-end gap-2 [&]:max-[377px]:mb-2">
+                  <TabsList className="flex-wrap justify-start lg:justify-end gap-2">
                     <TabsTrigger value="7d">
                       7 días
                     </TabsTrigger>
