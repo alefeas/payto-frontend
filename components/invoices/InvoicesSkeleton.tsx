@@ -6,13 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 export function InvoiceCardSkeleton() {
   return (
     <Card className="border-gray-200 relative">
-      <CardContent className="px-4 py-2.5 pl-12 relative">
-        {/* Checkbox posicionado absolutamente */}
-        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-          <Skeleton className="h-4 w-4 rounded-full" />
-        </div>
-        
+      <CardContent className="px-4 py-2.5 relative">
         <div className="flex items-center gap-3">
+          {/* Checkbox */}
+          <div className="flex-shrink-0">
+            <Skeleton className="h-4 w-4 rounded" />
+          </div>
           
           {/* Información principal */}
           <div className="flex-1 min-w-0">
@@ -86,11 +85,11 @@ export function InvoiceCardSkeleton() {
             <Skeleton className="h-8 w-8 rounded" />
             <Skeleton className="h-8 w-8 rounded" />
           </div>
-        </div>
 
-        {/* Menú desplegable para pantallas pequeñas y medianas - posicionado absolutamente */}
-        <div className="lg:hidden absolute top-2 right-2">
-          <Skeleton className="h-8 w-8 rounded" />
+          {/* Menú desplegable para pantallas pequeñas y medianas */}
+          <div className="lg:hidden flex-shrink-0">
+            <Skeleton className="h-8 w-8 rounded" />
+          </div>
         </div>
       </CardContent>
     </Card>

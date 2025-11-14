@@ -43,12 +43,10 @@ export default function InvoicesPage() {
   const params = useParams()
   const companyId = params.id as string
 
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [allInvoices, setAllInvoices] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [initialLoad, setInitialLoad] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [total, setTotal] = useState(0)
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -87,75 +85,59 @@ export default function InvoicesPage() {
     setCurrentPage(1)
   }, [searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
 
-  // Cargar todos los clientes únicos al inicio
+  // Cargar todas las facturas y clientes solo una vez al inicio
   useEffect(() => {
-    const loadAllClients = async () => {
+    const loadAllData = async () => {
       if (!companyId) return
+      
+      setIsLoading(true)
       try {
-        const response = await invoiceService.getInvoices(companyId, 1, {})
+        // Cargar primera página para saber cuántas páginas hay
+        const firstResponse = await invoiceService.getInvoices(companyId, 1, {})
+        const totalPages = firstResponse.last_page || 1
+        
+        // Cargar todas las páginas en paralelo
+        const pagePromises = []
+        for (let page = 1; page <= totalPages; page++) {
+          pagePromises.push(invoiceService.getInvoices(companyId, page, {}))
+        }
+        
+        const allResponses = await Promise.all(pagePromises)
+        const allInvoicesData = allResponses.flatMap(response => response.data || [])
+        
+        setAllInvoices(allInvoicesData)
+        
+        // Extraer clientes únicos
         const clientsMap = new Map()
         let hasInvoicesWithoutClient = false
         
-        for (let page = 1; page <= response.last_page; page++) {
-          const pageResponse = await invoiceService.getInvoices(companyId, page, {})
-          pageResponse.data.forEach((inv: any) => {
-            const clientName = inv.receiver_name || inv.client?.business_name || 
-                              inv.receiverCompany?.name ||
-                              (inv.client?.first_name && inv.client?.last_name 
-                                ? `${inv.client.first_name} ${inv.client.last_name}` 
-                                : null)
-            
-            if (clientName && !clientsMap.has(clientName)) {
-              // Prioridad: receiver_company_id > client_id > nombre
-              const id = inv.receiver_company_id || inv.client_id || clientName
-              clientsMap.set(clientName, {
-                id: id,
-                name: clientName,
-                isCompany: !!inv.receiver_company_id
-              })
-            } else if (!clientName) {
-              hasInvoicesWithoutClient = true
-            }
-          })
-        }
+        allInvoicesData.forEach((inv: any) => {
+          const clientName = inv.receiver_name || inv.client?.business_name || 
+                            inv.receiverCompany?.name ||
+                            (inv.client?.first_name && inv.client?.last_name 
+                              ? `${inv.client.first_name} ${inv.client.last_name}` 
+                              : null)
+          
+          if (clientName && !clientsMap.has(clientName)) {
+            const id = inv.receiver_company_id || inv.client_id || clientName
+            clientsMap.set(clientName, {
+              id: id,
+              name: clientName,
+              isCompany: !!inv.receiver_company_id
+            })
+          } else if (!clientName) {
+            hasInvoicesWithoutClient = true
+          }
+        })
         
         const clients = Array.from(clientsMap.values())
         if (hasInvoicesWithoutClient) {
           clients.push({ id: 'sin_cliente', name: 'Sin cliente', isCompany: false })
         }
         setAllClients(clients)
-      } catch (error) {
-        console.error('Error loading clients:', error)
-      }
-    }
-
-    if (isAuthenticated && companyId) {
-      loadAllClients()
-    }
-  }, [isAuthenticated, companyId])
-
-  useEffect(() => {
-    const loadInvoices = async () => {
-      if (!companyId) return
-      
-      setIsLoading(true)
-      try {
-        const filters: any = {}
-        
-        if (searchTerm) filters.search = searchTerm
-        if (statusFilter && statusFilter !== 'all') filters.status = statusFilter
-        if (typeFilter && typeFilter !== 'all') filters.type = typeFilter
-        if (clientFilter && clientFilter !== 'all') filters.client = clientFilter
-        if (dateFromFilter) filters.date_from = dateFromFilter
-        if (dateToFilter) filters.date_to = dateToFilter
-        
-        const response = await invoiceService.getInvoices(companyId, currentPage, filters)
-        setInvoices(response.data || [])
-        setTotalPages(response.last_page || 1)
-        setTotal(response.total || 0)
       } catch (error: any) {
         console.error('Error loading invoices:', error)
-        setInvoices([])
+        setAllInvoices([])
         toast.error('Error al cargar comprobantes', {
           description: error.response?.data?.message || 'Intente nuevamente'
         })
@@ -166,9 +148,9 @@ export default function InvoicesPage() {
     }
 
     if (isAuthenticated && companyId) {
-      loadInvoices()
+      loadAllData()
     }
-  }, [isAuthenticated, companyId, currentPage, searchTerm, statusFilter, typeFilter, dateFromFilter, dateToFilter, clientFilter])
+  }, [isAuthenticated, companyId])
 
   const handleSelectInvoice = (invoiceId: string) => {
     setSelectedInvoices(prev => {
@@ -199,8 +181,73 @@ export default function InvoicesPage() {
   }
 
   const getFilteredInvoices = () => {
-    return invoices
+    let filtered = [...allInvoices]
+    
+    // Filtro de búsqueda por número
+    if (searchTerm) {
+      filtered = filtered.filter(inv => 
+        inv.number?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+    
+    // Filtro de estado
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(inv => inv.status === statusFilter)
+    }
+    
+    // Filtro de tipo
+    if (typeFilter && typeFilter !== 'all') {
+      filtered = filtered.filter(inv => inv.type === typeFilter)
+    }
+    
+    // Filtro de cliente
+    if (clientFilter && clientFilter !== 'all') {
+      filtered = filtered.filter(inv => {
+        const invClientId = inv.receiver_company_id || inv.client_id
+        const invClientName = inv.receiver_name || inv.client?.business_name || 
+                             inv.receiverCompany?.name ||
+                             (inv.client?.first_name && inv.client?.last_name 
+                               ? `${inv.client.first_name} ${inv.client.last_name}` 
+                               : null)
+        
+        if (clientFilter === 'sin_cliente') {
+          return !invClientName
+        }
+        
+        return invClientId === clientFilter || invClientName === clientFilter
+      })
+    }
+    
+    // Filtro de fecha desde
+    if (dateFromFilter) {
+      filtered = filtered.filter(inv => {
+        const invDate = new Date(inv.date)
+        const filterDate = new Date(dateFromFilter)
+        return invDate >= filterDate
+      })
+    }
+    
+    // Filtro de fecha hasta
+    if (dateToFilter) {
+      filtered = filtered.filter(inv => {
+        const invDate = new Date(inv.date)
+        const filterDate = new Date(dateToFilter)
+        return invDate <= filterDate
+      })
+    }
+    
+    return filtered
   }
+  
+  // Calcular paginación en el frontend
+  const filteredInvoices = getFilteredInvoices()
+  const itemsPerPage = 10
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage)
+  const paginatedInvoices = filteredInvoices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+  const total = filteredInvoices.length
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -214,7 +261,7 @@ export default function InvoicesPage() {
 
 
   const downloadPDF = async (invoiceId: string) => {
-    const invoice = invoices.find(inv => inv.id === invoiceId)
+    const invoice = allInvoices.find((inv: any) => inv.id === invoiceId)
     try {
       const blob = await invoiceService.downloadPDF(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -232,7 +279,7 @@ export default function InvoicesPage() {
   }
 
   const downloadTXT = async (invoiceId: string) => {
-    const invoice = invoices.find(inv => inv.id === invoiceId)
+    const invoice = allInvoices.find((inv: any) => inv.id === invoiceId)
     try {
       const blob = await invoiceService.downloadTXT(companyId, invoiceId)
       const url = window.URL.createObjectURL(blob)
@@ -248,10 +295,6 @@ export default function InvoicesPage() {
       toast.error('Error al descargar TXT')
     }
   }
-
-
-
-  const filteredInvoices = getFilteredInvoices()
 
   if (authLoading || initialLoad) {
     return <InvoicesPageSkeleton />
@@ -409,11 +452,6 @@ export default function InvoicesPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10"
                   />
-                  {isLoading && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    </div>
-                  )}
                 </div>
                 <Button
                   variant="outline"
@@ -547,12 +585,7 @@ export default function InvoicesPage() {
 
             {/* Lista de facturas */}
             <div className="space-y-3">
-              {isLoading && !initialLoad ? (
-                // Skeleton para búsquedas, filtros y paginación
-                Array.from({ length: 8 }).map((_, i) => (
-                  <InvoiceCardSkeleton key={i} />
-                ))
-              ) : filteredInvoices.map((invoice) => (
+              {paginatedInvoices.map((invoice) => (
                 <InvoiceCard
                   key={invoice.id}
                   invoice={invoice}
@@ -564,7 +597,7 @@ export default function InvoicesPage() {
                 />
               ))}
 
-              {!isLoading && filteredInvoices.length === 0 && (
+              {paginatedInvoices.length === 0 && !isLoading && (
                 <div className="text-center py-12 text-gray-500">
                   <FileText className="h-16 w-16 mx-auto mb-4 opacity-30" />
                   <p className="text-lg font-medium mb-2">No se encontraron comprobantes</p>
@@ -934,10 +967,20 @@ export default function InvoicesPage() {
                         const newInvoices = result.invoices?.filter((inv: any) => inv.saved).length || 0
                         
                         if (newInvoices > 0) {
-                          // Reload invoices in background
+                          // Reload all invoices in background
                           try {
-                            const response = await invoiceService.getInvoices(companyId, currentPage, {})
-                            setInvoices(response.data || [])
+                            const firstResponse = await invoiceService.getInvoices(companyId, 1, {})
+                            const totalPages = firstResponse.last_page || 1
+                            
+                            const pagePromises = []
+                            for (let page = 1; page <= totalPages; page++) {
+                              pagePromises.push(invoiceService.getInvoices(companyId, page, {}))
+                            }
+                            
+                            const allResponses = await Promise.all(pagePromises)
+                            const allInvoicesData = allResponses.flatMap(response => response.data || [])
+                            setAllInvoices(allInvoicesData)
+                            
                             const clientMsg = (result.auto_created_clients && result.auto_created_clients > 0) 
                               ? ` Se crearon ${result.auto_created_clients} cliente(s) archivado(s) con datos incompletos que debes completar en Clientes Archivados.`
                               : '';
