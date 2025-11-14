@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, AlertTriangle, Clock, Calendar as CalendarIcon, Download, Loader2 } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, AlertTriangle, Calendar as CalendarIcon, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,10 +17,13 @@ import { DateRange } from "react-day-picker"
 import { useAuth } from "@/contexts/auth-context"
 import { analyticsService, type AnalyticsSummary, type RevenueTrend, type TopClient, type PendingInvoices } from "@/services/analytics.service"
 import { toast } from "sonner"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnalyticsSkeleton } from "@/components/analytics/AnalyticsSkeleton"
 import { colors } from "@/styles"
+import { CardCarousel } from "@/components/ui/card-carousel"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
+import { CustomLegend } from "@/components/analytics/CustomLegend"
 
 export default function AnalyticsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -122,13 +125,15 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full xl:w-auto">
             <BackButton href={`/company/${companyId}`} />
-            <div>
-              <h1 className="text-3xl font-bold">Estadísticas y Análisis</h1>
-              <p className="text-muted-foreground">
+            <div className="flex-1 min-w-0">
+              <ResponsiveHeading level="h1" className="truncate">
+                Estadísticas y Análisis
+              </ResponsiveHeading>
+              <ResponsiveText className="text-muted-foreground truncate">
                 Período: {(() => {
                   if (period === 'custom' && dateRange?.from) {
                     return dateRange.to 
@@ -146,40 +151,42 @@ export default function AnalyticsPage() {
                     return `${now.getFullYear()}`
                   }
                 })()}
-              </p>
+              </ResponsiveText>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Select value={selectedCurrency} onValueChange={(v: any) => setSelectedCurrency(v)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas</SelectItem>
-                <SelectItem value="ARS">ARS $</SelectItem>
-                <SelectItem value="USD">USD $</SelectItem>
-                <SelectItem value="EUR">EUR €</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
-              <SelectTrigger className="w-[180px]">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Mes Actual</SelectItem>
-                <SelectItem value="quarter">Trimestre</SelectItem>
-                <SelectItem value="year">Año Completo</SelectItem>
-                <SelectItem value="custom">Personalizado</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
+            <div className="flex gap-2">
+              <Select value={selectedCurrency} onValueChange={(v: any) => setSelectedCurrency(v)}>
+                <SelectTrigger className="w-full sm:w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Todas</SelectItem>
+                  <SelectItem value="ARS">ARS $</SelectItem>
+                  <SelectItem value="USD">USD $</SelectItem>
+                  <SelectItem value="EUR">EUR €</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Mes Actual</SelectItem>
+                  <SelectItem value="quarter">Trimestre</SelectItem>
+                  <SelectItem value="year">Año Completo</SelectItem>
+                  <SelectItem value="custom">Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {period === 'custom' && (
               <div className="flex gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[140px] justify-start bg-white dark:bg-slate-950">
+                    <Button variant="outline" className="flex-1 sm:w-[140px] justify-start bg-white dark:bg-slate-950">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.from ? format(dateRange.from, "dd/MM/yyyy", { locale: es }) : "Desde"}
+                      <span className="truncate">{dateRange?.from ? format(dateRange.from, "dd/MM/yyyy", { locale: es }) : "Desde"}</span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
@@ -194,9 +201,9 @@ export default function AnalyticsPage() {
                 </Popover>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[140px] justify-start bg-white dark:bg-slate-950">
+                    <Button variant="outline" className="flex-1 sm:w-[140px] justify-start bg-white dark:bg-slate-950">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.to ? format(dateRange.to, "dd/MM/yyyy", { locale: es }) : "Hasta"}
+                      <span className="truncate">{dateRange?.to ? format(dateRange.to, "dd/MM/yyyy", { locale: es }) : "Hasta"}</span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
@@ -216,6 +223,7 @@ export default function AnalyticsPage() {
               variant="outline" 
               size="sm"
               disabled={exporting}
+              className="w-full sm:w-auto"
               onClick={async () => {
                 setExporting(true)
                 try {
@@ -258,14 +266,15 @@ export default function AnalyticsPage() {
               }}
             >
               <Download className="h-4 w-4 mr-2" />
-              {exporting ? 'Exportando...' : 'Exportar'}
+              <span className="hidden sm:inline">{exporting ? 'Exportando...' : 'Exportar'}</span>
+              <span className="sm:hidden">{exporting ? '...' : 'CSV'}</span>
             </Button>
           </div>
         </div>
 
         {/* KPIs Principales */}
         {isRefreshing && summary ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="border-gray-200">
                 <CardContent className="p-6">
@@ -279,7 +288,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <CardCarousel desktopCols={4} mobileBreakpoint="lg" minHeight="180px">
           <AnalyticsCard
             title={`Ventas ${period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}`}
             mainValue={selectedCurrency === 'ALL' && summary.sales_by_currency 
@@ -328,11 +337,11 @@ export default function AnalyticsPage() {
             icon={BarChart3}
             isPositive={currencyData.margin >= 0}
           />
-        </div>
+        </CardCarousel>
         )}
 
         {isRefreshing && summary ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             {[...Array(2)].map((_, i) => (
               <Card key={i} className="border-gray-200">
                 <CardHeader>
@@ -346,53 +355,74 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           {/* Gráfico de Tendencia */}
           <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle>Tendencia de Facturación</CardTitle>
-              <CardDescription>Últimos 6 meses {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Tendencia de Facturación</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Últimos 6 meses {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
                 {selectedCurrency === 'ALL' ? (
-                  <LineChart data={revenueTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value, name) => {
-                      const nameStr = String(name)
-                      const currency = nameStr.includes('ARS') ? '$' : nameStr.includes('USD') ? 'USD $' : nameStr.includes('EUR') ? 'EUR €' : '$'
-                      return `${currency} ${Number(value).toLocaleString('es-AR')}`
-                    }} />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    <Line type="monotone" dataKey="sales_ARS" stroke={colors.gradient.topLeft} name="Ventas ARS" strokeWidth={2} />
-                    <Line type="monotone" dataKey="sales_USD" stroke={colors.gradient.topRight} name="Ventas USD" strokeWidth={2} strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="sales_EUR" stroke={colors.gradient.bottomLeft} name="Ventas EUR" strokeWidth={2} strokeDasharray="3 3" />
-                    <Line type="monotone" dataKey="purchases_ARS" stroke={colors.gradient.bottomRight} name="Compras ARS" strokeWidth={2} />
-                    <Line type="monotone" dataKey="purchases_USD" stroke={colors.accent} name="Compras USD" strokeWidth={2} strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="purchases_EUR" stroke={colors.gradient.bottomRight} name="Compras EUR" strokeWidth={2} strokeDasharray="3 3" />
+                  <LineChart data={revenueTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      wrapperStyle={{ zIndex: 1000 }} 
+                      contentStyle={{ fontSize: 12 }}
+                      formatter={(value, name) => {
+                        const nameStr = String(name)
+                        const currency = nameStr.includes('ARS') ? '$' : nameStr.includes('USD') ? 'USD $' : nameStr.includes('EUR') ? 'EUR €' : '$'
+                        return `${currency} ${Number(value).toLocaleString('es-AR')}`
+                      }} 
+                    />
+                    <Line type="monotone" dataKey="sales_ARS" stroke={colors.gradient.topLeft} name="V-ARS" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="sales_USD" stroke={colors.gradient.topRight} name="V-USD" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="sales_EUR" stroke={colors.gradient.bottomLeft} name="V-EUR" strokeWidth={2} strokeDasharray="3 3" dot={false} />
+                    <Line type="monotone" dataKey="purchases_ARS" stroke={colors.gradient.bottomRight} name="C-ARS" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="purchases_USD" stroke={colors.accent} name="C-USD" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="purchases_EUR" stroke="#9333ea" name="C-EUR" strokeWidth={2} strokeDasharray="3 3" dot={false} />
                   </LineChart>
                 ) : (
-                  <LineChart data={revenueTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} />
-                    <Legend />
-                    <Line type="monotone" dataKey={`sales_${selectedCurrency}`} stroke={colors.gradient.topLeft} name="Ventas" strokeWidth={2} />
-                    <Line type="monotone" dataKey={`purchases_${selectedCurrency}`} stroke={colors.gradient.bottomRight} name="Compras" strokeWidth={2} />
+                  <LineChart data={revenueTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      wrapperStyle={{ zIndex: 1000 }} 
+                      contentStyle={{ fontSize: 12 }}
+                      formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} 
+                    />
+                    <Line type="monotone" dataKey={`sales_${selectedCurrency}`} stroke={colors.gradient.topLeft} name="Ventas" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey={`purchases_${selectedCurrency}`} stroke={colors.gradient.bottomRight} name="Compras" strokeWidth={2} dot={false} />
                   </LineChart>
                 )}
               </ResponsiveContainer>
+              {selectedCurrency === 'ALL' ? (
+                <CustomLegend payload={[
+                  { value: 'V-ARS', color: colors.gradient.topLeft },
+                  { value: 'V-USD', color: colors.gradient.topRight, payload: { strokeDasharray: '5 5' } },
+                  { value: 'V-EUR', color: colors.gradient.bottomLeft, payload: { strokeDasharray: '3 3' } },
+                  { value: 'C-ARS', color: colors.gradient.bottomRight },
+                  { value: 'C-USD', color: colors.accent, payload: { strokeDasharray: '5 5' } },
+                  { value: 'C-EUR', color: '#9333ea', payload: { strokeDasharray: '3 3' } }
+                ]} />
+              ) : (
+                <CustomLegend payload={[
+                  { value: 'Ventas', color: colors.gradient.topLeft },
+                  { value: 'Compras', color: colors.gradient.bottomRight }
+                ]} />
+              )}
             </CardContent>
           </Card>
 
           {/* Flujo de Caja */}
           <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle>Flujo de Caja Acumulado</CardTitle>
-              <CardDescription>Balance mes a mes {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Flujo de Caja Acumulado</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Balance mes a mes {selectedCurrency !== 'ALL' && `(${currencySymbols[selectedCurrency]})`}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
@@ -407,19 +437,22 @@ export default function AnalyticsPage() {
                       balance_USD: accUSD,
                       balance_EUR: accEUR
                     }
-                  })}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value, name) => {
-                      const nameStr = String(name)
-                      const currency = nameStr.includes('ARS') ? '$' : nameStr.includes('USD') ? 'USD $' : 'EUR €'
-                      return `${currency} ${Number(value).toLocaleString('es-AR')}`
-                    }} />
-                    <Legend />
-                    <Line type="monotone" dataKey="balance_ARS" stroke={colors.gradient.topLeft} name="Balance ARS" strokeWidth={2} />
-                    <Line type="monotone" dataKey="balance_USD" stroke={colors.gradient.topRight} name="Balance USD" strokeWidth={2} strokeDasharray="5 5" />
-                    <Line type="monotone" dataKey="balance_EUR" stroke={colors.gradient.bottomRight} name="Balance EUR" strokeWidth={2} strokeDasharray="3 3" />
+                  })} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      wrapperStyle={{ zIndex: 1000 }} 
+                      contentStyle={{ fontSize: 12 }}
+                      formatter={(value, name) => {
+                        const nameStr = String(name)
+                        const currency = nameStr.includes('ARS') ? '$' : nameStr.includes('USD') ? 'USD $' : 'EUR €'
+                        return `${currency} ${Number(value).toLocaleString('es-AR')}`
+                      }} 
+                    />
+                    <Line type="monotone" dataKey="balance_ARS" stroke={colors.gradient.topLeft} name="B-ARS" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="balance_USD" stroke={colors.gradient.topRight} name="B-USD" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="balance_EUR" stroke={colors.gradient.bottomRight} name="B-EUR" strokeWidth={2} strokeDasharray="3 3" dot={false} />
                   </LineChart>
                 ) : (
                   <LineChart data={revenueTrend.map((item, index, arr) => {
@@ -432,16 +465,30 @@ export default function AnalyticsPage() {
                       month: item.month,
                       balance: accumulated
                     }
-                  })}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip wrapperStyle={{ zIndex: 1000 }} formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} />
-                    <Legend />
-                    <Line type="monotone" dataKey="balance" stroke={colors.gradient.topLeft} name="Balance Acumulado" strokeWidth={2} />
+                  })} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      wrapperStyle={{ zIndex: 1000 }} 
+                      contentStyle={{ fontSize: 12 }}
+                      formatter={(value) => `${currencySymbols[selectedCurrency]} ${Number(value).toLocaleString('es-AR')}`} 
+                    />
+                    <Line type="monotone" dataKey="balance" stroke={colors.gradient.topLeft} name="Balance Acumulado" strokeWidth={2} dot={false} />
                   </LineChart>
                 )}
               </ResponsiveContainer>
+              {selectedCurrency === 'ALL' ? (
+                <CustomLegend payload={[
+                  { value: 'B-ARS', color: colors.gradient.topLeft },
+                  { value: 'B-USD', color: colors.gradient.topRight, payload: { strokeDasharray: '5 5' } },
+                  { value: 'B-EUR', color: colors.gradient.bottomRight, payload: { strokeDasharray: '3 3' } }
+                ]} />
+              ) : (
+                <CustomLegend payload={[
+                  { value: 'Balance Acumulado', color: colors.gradient.topLeft }
+                ]} />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -449,51 +496,51 @@ export default function AnalyticsPage() {
 
         {/* Alertas de Vencimientos */}
         <Card className="border-gray-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" style={{ color: colors.accent }} />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: colors.accent }} />
               Alertas de Vencimientos
             </CardTitle>
           </CardHeader>
           <CardContent>
             {pendingInvoices && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-800">Facturas a Cobrar</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm sm:text-base text-gray-800">Facturas a Cobrar</p>
                       <p className="text-xs text-muted-foreground">Pendientes de pago</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xl sm:text-2xl font-bold">
                         {pendingInvoices.to_collect}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-800">Facturas a Pagar</p>
+                <div className="p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm sm:text-base text-gray-800">Facturas a Pagar</p>
                       <p className="text-xs text-muted-foreground">Aprobadas sin pagar</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xl sm:text-2xl font-bold">
                         {pendingInvoices.to_pay}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-800">Pendientes de Aprobar</p>
+                <div className="p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm sm:text-base text-gray-800">Pendientes de Aprobar</p>
                       <p className="text-xs text-muted-foreground">Requieren revisión</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xl sm:text-2xl font-bold">
                         {pendingInvoices.pending_approvals}
                       </p>
                     </div>

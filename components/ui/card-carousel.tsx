@@ -9,25 +9,28 @@ interface CardCarouselProps {
   children: React.ReactNode[]
   className?: string
   desktopCols?: 2 | 3 | 4
-  mobileBreakpoint?: 'sm' | 'md' | 'lg'
+  mobileBreakpoint?: 'sm' | 'md' | 'lg' | 'xl'
+  minHeight?: string
 }
 
 export function CardCarousel({ 
   children, 
   className = "", 
   desktopCols = 3,
-  mobileBreakpoint = 'md'
+  mobileBreakpoint = 'md',
+  minHeight = '200px'
 }: CardCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
 
-  // Responsive breakpoints
+  // Responsive breakpoints - ajustados para activar carousel antes con 4 cards
   const breakpoints = {
     sm: 640,
     md: 768,
-    lg: 1024
+    lg: 1024,
+    xl: 1280
   }
 
   useEffect(() => {
@@ -82,29 +85,29 @@ export function CardCarousel({
     setTouchEnd(null)
   }
 
-  // Desktop grid classes
+  // Desktop grid classes con breakpoints mejorados
   const desktopGridClass = {
-    2: 'md:grid-cols-2',
-    3: 'md:grid-cols-3', 
-    4: 'md:grid-cols-4'
+    2: mobileBreakpoint === 'sm' ? 'sm:grid-cols-2' : mobileBreakpoint === 'md' ? 'md:grid-cols-2' : mobileBreakpoint === 'lg' ? 'lg:grid-cols-2' : 'xl:grid-cols-2',
+    3: mobileBreakpoint === 'sm' ? 'sm:grid-cols-3' : mobileBreakpoint === 'md' ? 'md:grid-cols-3' : mobileBreakpoint === 'lg' ? 'lg:grid-cols-3' : 'xl:grid-cols-3',
+    4: mobileBreakpoint === 'sm' ? 'sm:grid-cols-4' : mobileBreakpoint === 'md' ? 'md:grid-cols-4' : mobileBreakpoint === 'lg' ? 'lg:grid-cols-4' : 'xl:grid-cols-4'
   }[desktopCols]
 
   if (!isMobile) {
     // Desktop: Normal grid layout
     return (
-      <div className={cn(`grid grid-cols-1 ${desktopGridClass} gap-6`, className)}>
+      <div className={cn(`grid grid-cols-1 ${desktopGridClass} gap-3 sm:gap-4 lg:gap-6`, className)}>
         {children}
       </div>
     )
   }
 
-  // Mobile: Fade carousel (sin translateX)
+  // Mobile: Fade carousel con altura fija
   return (
     <div className={cn("relative w-full", className)}>
-      {/* Carousel Container - Usa posición relativa y opacidad */}
+      {/* Carousel Container - altura fija para todas las cards */}
       <div 
-        className="relative w-full"
-        style={{ minHeight: '200px' }}
+        className="relative w-full flex items-stretch"
+        style={{ minHeight }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -113,11 +116,14 @@ export function CardCarousel({
           <div
             key={index}
             className={cn(
-              "w-full transition-opacity duration-300 ease-in-out",
+              "w-full transition-opacity duration-300 ease-in-out flex",
               index === currentIndex ? "opacity-100 relative" : "opacity-0 absolute inset-0 pointer-events-none"
             )}
+            style={{ minHeight }}
           >
-            {child}
+            <div className="w-full" style={{ minHeight }}>
+              {child}
+            </div>
           </div>
         ))}
       </div>
