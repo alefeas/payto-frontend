@@ -42,6 +42,9 @@
   .font-semibold,
   .font-bold,
   .font-medium,
+  .font-semibold *,
+  .font-bold *,
+  .font-medium *,
   button,
   [role="button"],
   [data-slot="button"] {
@@ -50,13 +53,23 @@
   }
 
   /* Texto normal (p, span, div, etc.) con font-weight 800 para mejor legibilidad */
-  p:not(.font-normal):not(button *):not([role="button"] *):not([data-slot="button"] *),
-  span:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *),
+  p:not(.font-normal):not(.font-semibold):not(.font-medium):not(.font-bold):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-semibold *):not(.font-medium *):not(.font-bold *),
+  span:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *):not(.font-semibold *):not(.font-medium *):not(.font-bold *),
   div:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *),
   td,
   th,
   li {
     font-weight: 800 !important;
+  }
+  
+  /* Los spans y p dentro de elementos con font-semibold, font-medium o font-bold heredan el peso del padre */
+  .font-semibold > span,
+  .font-semibold > p,
+  .font-medium > span,
+  .font-medium > p,
+  .font-bold > span,
+  .font-bold > p {
+    font-weight: inherit !important;
   }
   
   /* Labels de formularios más delgados */
@@ -395,18 +408,31 @@
     z-index: 50 !important;
   }
   
-  /* Calendar selected day - global fix */
-  .rdp button[aria-selected="true"],
-  .rdp .rdp-day_selected {
-    background-color: hsl(var(--primary)) !important;
+  /* Calendar selected day - global fix with gradient */
+  .rdp-day_button[aria-selected="true"],
+  .rdp .rdp-day_selected,
+  .rdp button[aria-selected="true"] {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+    color: white !important;
+    border-radius: 0.5rem !important;
+  }
+  
+  .rdp-day_button[aria-selected="true"]:hover,
+  .rdp .rdp-day_selected:hover,
+  .rdp button[aria-selected="true"]:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
     color: white !important;
   }
   
-  .rdp button[aria-selected="true"]:hover,
-  .rdp .rdp-day_selected:hover {
-    background-color: hsl(var(--primary)) !important;
-    color: white !important;
-    opacity: 0.9;
+  /* Suavizar borde del popover del calendario */
+  [data-radix-popover-content]:has(.rdp) {
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  }
+  
+  /* Suavizar borde del contenedor del calendario */
+  .rdp {
+    border: none !important;
   }
 }  /*
  Hide scrollbar for Chrome, Safari and Opera */

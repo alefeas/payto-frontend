@@ -754,18 +754,18 @@ export default function InvoicesPage() {
                     <div className="space-y-2">
                       <Label className="text-sm">Fecha Desde *</Label>
                       <DatePicker
-                        date={syncForm.date_from ? new Date(syncForm.date_from) : undefined}
-                        onSelect={(date) => setSyncForm({...syncForm, date_from: date ? date.toISOString().split('T')[0] : ''})}
+                        date={syncForm.date_from ? parseDateLocal(syncForm.date_from) : undefined}
+                        onSelect={(date) => setSyncForm({...syncForm, date_from: date ? formatDateToLocal(date) : ''})}
                         placeholder="Seleccionar fecha"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm">Fecha Hasta *</Label>
                       <DatePicker
-                        date={syncForm.date_to ? new Date(syncForm.date_to) : undefined}
-                        onSelect={(date) => setSyncForm({...syncForm, date_to: date ? date.toISOString().split('T')[0] : ''})}
+                        date={syncForm.date_to ? parseDateLocal(syncForm.date_to) : undefined}
+                        onSelect={(date) => setSyncForm({...syncForm, date_to: date ? formatDateToLocal(date) : ''})}
                         placeholder="Seleccionar fecha"
-                        minDate={syncForm.date_from ? new Date(syncForm.date_from) : undefined}
+                        minDate={syncForm.date_from ? parseDateLocal(syncForm.date_from) : undefined}
                       />
                     </div>
                   </div>

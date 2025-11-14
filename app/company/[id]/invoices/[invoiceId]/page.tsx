@@ -473,11 +473,11 @@ export default function InvoiceDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Razón Social</p>
-                  <p className="font-medium text-sm">{clientName}</p>
+                  <span className="font-medium text-sm block">{clientName}</span>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{docLabel}</p>
-                  <p className="font-medium text-sm">{clientDoc}</p>
+                  <span className="font-medium text-sm block">{clientDoc}</span>
                 </div>
               </div>
 
@@ -488,11 +488,11 @@ export default function InvoiceDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Emisión</p>
-                  <p className="font-medium text-sm">{parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}</p>
+                  <span className="font-medium text-sm block">{parseDateLocal(invoice.issue_date)?.toLocaleDateString('es-AR') || 'N/A'}</span>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Vencimiento</p>
-                  <p className="font-medium text-sm">{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR') || 'N/A'}</p>
+                  <span className="font-medium text-sm block">{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR') || 'N/A'}</span>
                 </div>
                 {(isEditing && (editForm.concept === 'services' || editForm.concept === 'products_services')) || (!isEditing && invoice.service_date_from && invoice.service_date_to) ? (
                   <div>
@@ -513,9 +513,9 @@ export default function InvoiceDetailPage() {
                         />
                       </div>
                     ) : (
-                      <p className="font-medium text-xs">
+                      <span className="font-medium text-xs block">
                         {parseDateLocal(invoice.service_date_from)?.toLocaleDateString('es-AR') || 'N/A'} - {parseDateLocal(invoice.service_date_to)?.toLocaleDateString('es-AR') || 'N/A'}
-                      </p>
+                      </span>
                     )}
                   </div>
                 ) : null}
@@ -528,7 +528,7 @@ export default function InvoiceDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Punto de Venta</p>
-                  <p className="font-medium text-sm">{invoice.sales_point?.toString().padStart(4, '0')}</p>
+                  <span className="font-medium text-sm block">{invoice.sales_point?.toString().padStart(4, '0')}</span>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Concepto</p>
@@ -547,16 +547,16 @@ export default function InvoiceDetailPage() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <p className="font-medium text-sm">
+                    <span className="font-medium text-sm block">
                       {invoice.concept === 'products' && 'Productos'}
                       {invoice.concept === 'services' && 'Servicios'}
                       {invoice.concept === 'products_services' && 'Productos y Servicios'}
-                    </p>
+                    </span>
                   )}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Moneda</p>
-                  <p className="font-medium text-sm">{invoice.currency}{invoice.exchange_rate && invoice.exchange_rate !== '1.00' ? ` (${invoice.exchange_rate})` : ''}</p>
+                  <span className="font-medium text-sm block">{invoice.currency}{invoice.exchange_rate && invoice.exchange_rate !== '1.00' ? ` (${invoice.exchange_rate})` : ''}</span>
                 </div>
               </div>
 
@@ -569,11 +569,11 @@ export default function InvoiceDetailPage() {
                   <>
                     <div>
                       <p className="text-xs text-muted-foreground">Número</p>
-                      <p className="font-mono text-sm font-semibold text-foreground">{invoice.afip_cae}</p>
+                      <span className="font-mono text-sm font-semibold text-foreground block">{invoice.afip_cae}</span>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Vencimiento</p>
-                      <p className="font-medium text-sm">{parseDateLocal(invoice.afip_cae_due_date)?.toLocaleDateString('es-AR') || 'N/A'}</p>
+                      <span className="font-medium text-sm block">{parseDateLocal(invoice.afip_cae_due_date)?.toLocaleDateString('es-AR') || 'N/A'}</span>
                     </div>
                   </>
                 ) : (

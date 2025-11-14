@@ -293,33 +293,37 @@ export function InvoiceCard({
 
   // Función para formatear monto responsive (abreviado si es muy grande)
   const formatCurrencyResponsive = (amount: number, currency: string) => {
-    const fullAmount = formatCurrency(amount, currency)
+    // Asegurar que amount sea un número válido
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+    if (isNaN(numAmount)) return <div className="font-semibold text-base text-gray-900">N/A</div>
+    
+    const fullAmount = formatCurrency(numAmount, currency)
     
     // Si el monto es muy grande (más de 6 dígitos), abreviarlo en móvil
-    if (amount >= 1000000) {
-      const millions = (amount / 1000000).toFixed(1)
+    if (numAmount >= 1000000) {
+      const millions = (numAmount / 1000000).toFixed(1)
       const shortAmount = `${currency === 'USD' ? 'USD' : currency === 'EUR' ? 'EUR' : 'ARS'} ${millions}M`
       
       return (
         <>
-          <span className="hidden sm:inline">{fullAmount}</span>
-          <span className="sm:hidden" title={fullAmount}>{shortAmount}</span>
+          <div className="hidden sm:block font-semibold text-base text-gray-900">{fullAmount}</div>
+          <div className="sm:hidden font-semibold text-base text-gray-900" title={fullAmount}>{shortAmount}</div>
         </>
       )
-    } else if (amount >= 1000) {
-      const thousands = (amount / 1000).toFixed(0)
+    } else if (numAmount >= 1000) {
+      const thousands = (numAmount / 1000).toFixed(0)
       const shortAmount = `${currency === 'USD' ? 'USD' : currency === 'EUR' ? 'EUR' : 'ARS'} ${thousands}K`
       
       return (
         <>
-          <span className="hidden sm:inline">{fullAmount}</span>
-          <span className="sm:hidden" title={fullAmount}>{shortAmount}</span>
+          <div className="hidden sm:block font-semibold text-base text-gray-900">{fullAmount}</div>
+          <div className="sm:hidden font-semibold text-base text-gray-900" title={fullAmount}>{shortAmount}</div>
         </>
       )
     }
     
     // Si no es muy grande, mostrar completo en ambas resoluciones
-    return fullAmount
+    return <div className="font-semibold text-base text-gray-900">{fullAmount}</div>
   }
 
   const getSourceBadge = (invoice: any) => {
@@ -384,9 +388,7 @@ export function InvoiceCard({
               {/* Fecha y Total */}
               <div className="text-sm">
                 <div className="text-gray-600 mb-0.5">{formatDateResponsive(parseDateLocal(invoice.issue_date))}</div>
-                <div className="font-medium text-base text-gray-900">
-                  {formatCurrencyResponsive(parseFloat(invoice.total), invoice.currency)}
-                </div>
+                {formatCurrencyResponsive(parseFloat(invoice.total), invoice.currency)}
               </div>
               
               {/* Estados */}
@@ -435,9 +437,7 @@ export function InvoiceCard({
                 <div className="text-xs text-gray-600">
                   {formatDateResponsive(parseDateLocal(invoice.issue_date))}
                 </div>
-                <div className="font-medium text-lg text-gray-900">
-                  {formatCurrencyResponsive(parseFloat(invoice.total), invoice.currency)}
-                </div>
+                {formatCurrencyResponsive(parseFloat(invoice.total), invoice.currency)}
               </div>
             </div>
           </div>
