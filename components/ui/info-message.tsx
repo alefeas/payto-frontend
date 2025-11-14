@@ -13,10 +13,10 @@ interface InfoMessageProps {
 }
 
 const variantStyles = {
-  info: 'bg-blue-50/50 border-blue-100',
-  success: 'bg-green-50/50 border-green-100',
-  warning: 'bg-amber-50/50 border-amber-100',
-  error: 'bg-red-50/50 border-red-100',
+  info: 'bg-white border-gray-200',
+  success: 'bg-white border-gray-200',
+  warning: 'bg-white border-gray-200',
+  error: 'bg-white border-gray-200',
 }
 
 const iconColors = {
@@ -24,6 +24,13 @@ const iconColors = {
   success: '#16a34a', // green-600
   warning: '#f59e0b', // amber-500
   error: '#dc2626', // red-600
+}
+
+const titleColors = {
+  info: 'text-blue-700',
+  success: 'text-green-700',
+  warning: 'text-amber-700',
+  error: 'text-red-700',
 }
 
 export function InfoMessage({ 
@@ -43,11 +50,11 @@ export function InfoMessage({
       variantStyles[variant],
       className
     )}>
-      <Icon className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" style={{ color: finalIconColor }} />
+      <Icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: finalIconColor }} />
       <div className="flex-1 min-w-0">
-        {title && <p className="font-medium text-sm sm:text-base text-gray-900">{title}</p>}
+        {title && <p className="text-sm sm:text-base text-gray-900">{title}</p>}
         {description && (
-          <div className="text-xs sm:text-sm text-gray-900 mt-1">
+          <div className="text-xs sm:text-sm text-gray-600 mt-1">
             {description}
           </div>
         )}

@@ -18,6 +18,7 @@ import { networkService } from "@/services/network.service"
 import type { CompanyConnection, ConnectionRequest, NetworkStats } from "@/types/network"
 import { Skeleton } from "@/components/ui/skeleton"
 import { parseDateLocal } from "@/lib/utils"
+import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 
 export default function NetworkPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -245,15 +246,15 @@ export default function NetworkPage() {
         <div className="flex items-center gap-4">
           <BackButton href={`/company/${companyId}`} />
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">Red Empresarial</h1>
+            <ResponsiveHeading level="h1">Red Empresarial</ResponsiveHeading>
             <div className="flex items-center gap-3 mt-1">
-              <p className="text-sm text-muted-foreground">Gestiona las conexiones con otras empresas</p>
+              <ResponsiveText size="sm" className="text-muted-foreground">Gestiona las conexiones con otras empresas</ResponsiveText>
               {myCompanyId && (
                 <>
                   <span className="text-sm text-muted-foreground">•</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Tu ID:</span>
-                    <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono">{myCompanyId}</code>
+                    <code className="px-2 py-0.5 bg-gray-100 rounded text-sm font-mono font-bold">{myCompanyId}</code>
                     <Button
                       size="sm"
                       variant="ghost"

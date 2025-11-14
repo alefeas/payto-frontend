@@ -17,6 +17,7 @@ import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { SupplierForm } from "@/components/suppliers/SupplierForm"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
+import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 import { PageHeader } from "@/components/layouts/PageHeader"
 import { EntitiesSkeleton } from "@/components/entities/EntitiesSkeleton"
 
@@ -167,62 +168,51 @@ export default function SuppliersPage() {
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-        <PageHeader 
-          title="Mis Proveedores"
-          description="Gestiona tus proveedores externos"
-          backHref={`/company/${companyId}`}
-        />
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setShowArchived(!showArchived)}
-            className="w-full sm:w-auto"
-          >
-            <Archive className="h-4 w-4 mr-2" />
-            {showArchived ? "Ver Activos" : "Ver Archivados"}
-          </Button>
-          {!showArchived && canCreate && (
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Proveedor
-                </Button>
-              </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Proveedor</DialogTitle>
-              <DialogDescription>
-                Agrega un proveedor externo para gestionar tus compras
-              </DialogDescription>
-            </DialogHeader>
-            <SupplierForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadSuppliers} />
-          </DialogContent>
-            </Dialog>
-          )}
+        {/* Header with Action Buttons */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <PageHeader 
+            title="Mis Proveedores"
+            description="Gestiona tus proveedores externos"
+            backHref={`/company/${companyId}`}
+          />
+          
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowArchived(!showArchived)}
+              className="w-full sm:w-auto"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArchived ? "Ver Activos" : "Ver Archivados"}
+            </Button>
+            {!showArchived && canCreate && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuevo Proveedor
+                  </Button>
+                </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Crear Nuevo Proveedor</DialogTitle>
+                <DialogDescription>
+                  Agrega un proveedor externo para gestionar tus compras
+                </DialogDescription>
+              </DialogHeader>
+              <SupplierForm companyId={companyId} onClose={() => setIsCreateDialogOpen(false)} onSuccess={loadSuppliers} />
+            </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
 
         {/* Mensaje de certificado AFIP requerido */}
         {!isAfipVerified && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
-              <p className="text-xs text-red-700 mt-1">
-                No puedes buscar datos fiscales automáticamente en el padrón AFIP sin un certificado activo. Configura tu certificado para autocompletar datos de proveedores.
-              </p>
-            </div>
-            <Button 
-              type="button"
-              size="sm" 
-              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
-              onClick={() => router.push(`/company/${companyId}/verify`)}
-            >
-              Configurar Ahora
-            </Button>
-          </div>
+          <AfipCertificateBanner 
+            companyId={companyId}
+            message="No puedes buscar datos fiscales automáticamente en el padrón AFIP sin un certificado activo. Configura tu certificado para autocompletar datos de proveedores."
+          />
         )}
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

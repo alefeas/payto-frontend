@@ -305,8 +305,8 @@ export function AppSidebar() {
         </div>
 
         <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
+          <SidebarMenuItem className="pointer-events-auto">
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
@@ -329,10 +329,13 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-72 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-72 rounded-lg z-[150]"
                 align="start"
                 side="bottom"
                 sideOffset={4}
+                onInteractOutside={(e) => {
+                  e.preventDefault()
+                }}
               >
                 <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1.5">
                   Perfiles Fiscales
@@ -469,8 +472,8 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
+          <SidebarMenuItem className="pointer-events-auto">
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
@@ -490,10 +493,13 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg z-[150]"
                 side="bottom"
                 align="end"
                 sideOffset={4}
+                onInteractOutside={(e) => {
+                  e.preventDefault()
+                }}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">

@@ -402,10 +402,10 @@ export default function MembersPage() {
               {/* Header con título y búsqueda */}
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <h2 className="flex items-center gap-2 text-base sm:text-lg font-medium text-black">
+                  <h2 className="flex items-center gap-2 text-base sm:text-lg text-black">
                     <Users className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                     <span className="truncate">Lista de Miembros</span>
-                    <span className="text-xs sm:text-sm font-normal text-gray-500 shrink-0">({members.length})</span>
+                    <span className="text-xs sm:text-sm text-gray-500 shrink-0">({members.length})</span>
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-500 font-light mt-0.5 truncate">
                     {canManageMembers ? "Gestiona roles y permisos" : "Visualiza los miembros"}

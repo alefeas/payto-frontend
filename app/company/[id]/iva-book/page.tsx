@@ -21,6 +21,7 @@ import { companyService } from "@/services/company.service"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipGuard, AfipButton } from "@/components/afip/afip-guard"
+import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 
 // Normalizar condición IVA según AFIP (backend ya lo hace, pero por si acaso)
 const normalizeAfipTaxCondition = (condition: string | null | undefined): string => {
@@ -314,23 +315,10 @@ export default function IvaBookPage() {
 
         {/* Mensaje de certificado AFIP requerido */}
         {!isAfipVerified && !isLoadingCert && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
-              <p className="text-xs text-red-700 mt-1">
-                No puedes exportar archivos oficiales para AFIP sin un certificado activo. Configura tu certificado para generar reportes válidos.
-              </p>
-            </div>
-            <Button 
-              type="button"
-              size="sm" 
-              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
-              onClick={() => router.push(`/company/${companyId}/verify`)}
-            >
-              Configurar Ahora
-            </Button>
-          </div>
+          <AfipCertificateBanner 
+            companyId={companyId}
+            message="No puedes exportar archivos oficiales para AFIP sin un certificado activo. Configura tu certificado para generar reportes válidos."
+          />
         )}
 
         <Tabs defaultValue="sales" className="space-y-6">

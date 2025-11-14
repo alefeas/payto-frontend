@@ -26,6 +26,7 @@ import { voucherService } from "@/services/voucher.service"
 import type { Client } from "@/services/client.service"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipButton } from "@/components/afip/afip-guard"
+import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 
 interface CompanyData {
   id: string
@@ -754,23 +755,7 @@ export default function CreateInvoicePage() {
         </div>
 
         {cert && !cert.isActive && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
-              <p className="text-xs text-red-700 mt-1">
-                No puedes emitir facturas electrónicas ni sincronizar puntos de venta sin un certificado AFIP activo. Configura tu certificado para comenzar a facturar.
-              </p>
-            </div>
-            <Button 
-              type="button"
-              size="sm" 
-              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
-              onClick={() => router.push(`/company/${companyId}/verify`)}
-            >
-              Configurar Ahora
-            </Button>
-          </div>
+          <AfipCertificateBanner companyId={companyId} />
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -870,7 +855,7 @@ export default function CreateInvoicePage() {
                         </SelectContent>
                       </Select>
                       {salesPoints.length === 0 && !isLoadingSalesPoints && (
-                        <p className="text-xs text-amber-600">
+                        <p className="text-xs text-blue-600">
                           No hay puntos de venta. Sincronizá desde AFIP o agregá uno manualmente.
                         </p>
                       )}
@@ -1052,14 +1037,14 @@ export default function CreateInvoicePage() {
                     </Label>
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-xs text-blue-700">
-                      ✓ Asociá esta nota a una factura que emitiste para mejor trazabilidad
+                    <p className="text-xs text-gray-900">
+                      Asociá esta nota a una factura que emitiste para mejor trazabilidad
                     </p>
-                    <p className="text-xs text-blue-700">
-                      ✓ El punto de venta y concepto se heredarán automáticamente (requerido por AFIP)
+                    <p className="text-xs text-gray-900">
+                      El punto de venta y concepto se heredarán automáticamente (requerido por AFIP)
                     </p>
-                    <p className="text-xs text-amber-700 font-medium">
-                      ⚠ Para facturas recibidas de proveedores, ellos deben emitir la NC/ND
+                    <p className="text-xs text-gray-900">
+                      Para facturas recibidas de proveedores, ellos deben emitir la NC/ND
                     </p>
                   </div>
                 </div>

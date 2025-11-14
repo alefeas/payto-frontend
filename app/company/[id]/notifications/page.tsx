@@ -219,7 +219,7 @@ export default function NotificationsPage() {
                       </div>
                       <div className="flex-1 min-w-0 pr-4">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className={`text-sm font-medium ${
+                          <h4 className={`text-sm font-normal ${
                             notification.read ? 'text-gray-700' : 'text-gray-900'
                           }`}>
                             {notification.title}

@@ -25,6 +25,7 @@ import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-he
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipButton } from "@/components/afip/afip-guard"
+import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 
 const PROVINCIAS = [
   "Buenos Aires",
@@ -507,23 +508,10 @@ export default function SettingsPage() {
 
         {/* Mensaje de certificado AFIP requerido */}
         {!isAfipVerified && !isLoadingCert && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <Shield className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-red-900 text-sm">Certificado AFIP requerido</p>
-              <p className="text-xs text-red-700 mt-1">
-                No puedes sincronizar datos fiscales ni puntos de venta con AFIP sin un certificado activo. Configura tu certificado para acceder a todas las funcionalidades.
-              </p>
-            </div>
-            <Button 
-              type="button"
-              size="sm" 
-              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
-              onClick={() => router.push(`/company/${companyId}/verify`)}
-            >
-              Configurar Ahora
-            </Button>
-          </div>
+          <AfipCertificateBanner 
+            companyId={companyId}
+            message="No puedes sincronizar datos fiscales ni puntos de venta con AFIP sin un certificado activo. Configura tu certificado para acceder a todas las funcionalidades."
+          />
         )}
 
         <Tabs defaultValue="general" className="space-y-6">

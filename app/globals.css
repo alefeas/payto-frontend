@@ -10,25 +10,79 @@
   }
 
   body {
-    font-family: var(--font-poppins-thin);
+    font-family: var(--font-poppins-medium);
     font-weight: 600;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  
+  /* Engrosar texto en móvil para mejor legibilidad */
+  @media (max-width: 768px) {
+    body {
+      -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.2);
+      -webkit-font-smoothing: subpixel-antialiased;
+      text-shadow: 0 0 0.5px rgba(0, 0, 0, 0.3);
+    }
+    
+    p, span, div, label, td, th, li {
+      -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.2);
+      text-shadow: 0 0 0.5px rgba(0, 0, 0, 0.3);
+    }
   }
 
-  *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(.font-medium-heading) {
-    font-weight: 600 !important;
-  }
-
+  /* Títulos y elementos importantes con font-weight 400 */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6,
-  .font-medium-heading {
+  h1 *,
+  h2 *,
+  h3 *,
+  h4 *,
+  h5 *,
+  h6 *,
+  .font-medium-heading,
+  .font-semibold,
+  .font-bold,
+  .font-medium,
+  button,
+  [role="button"],
+  [data-slot="button"] {
     font-family: var(--font-poppins-medium);
+    font-weight: 400 !important;
   }
 
+  /* Texto normal (p, span, div, etc.) con font-weight 600 */
+  p:not(.font-normal):not(button *):not([role="button"] *):not([data-slot="button"] *),
+  span:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *),
+  div:not(.font-normal):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *),
+  td,
+  th,
+  li {
+    font-weight: 600 !important;
+  }
+  
+  /* Labels de formularios más delgados */
+  label:not(button *):not([role="button"] *):not([data-slot="button"] *) {
+    font-weight: 400 !important;
+  }
+  
+  /* Calendar/Day-Picker con weight 400 */
+  .rdp,
+  .rdp * {
+    font-weight: 400 !important;
+  }
+  
+  .font-light {
+    font-weight: 300 !important;
+  }
 
+  button {
+    font-weight: 400 !important;
+  }
 
 
 }
