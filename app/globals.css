@@ -419,8 +419,7 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
-/
-* Scrollbar personalizada */
+/* Scrollbar personalizada */
 .scrollbar-thin {
   scrollbar-width: thin;
 }

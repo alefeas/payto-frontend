@@ -170,9 +170,13 @@ export default function InvoicesPage() {
 
   const handleSelectAll = () => {
     const filteredInvoices = getFilteredInvoices()
-    if (selectedInvoices.length === filteredInvoices.length) {
+    const currentlySelected = filteredInvoices.filter(inv => selectedInvoices.includes(inv.id))
+    
+    if (currentlySelected.length > 0) {
+      // Si hay alguna seleccionada, deseleccionar todas
       setSelectedInvoices([])
     } else {
+      // Seleccionar hasta 50
       const toSelect = filteredInvoices.slice(0, 50).map(inv => inv.id)
       if (filteredInvoices.length > 50) {
         toast.warning('Solo se seleccionaron los primeros 50 comprobantes')
@@ -258,8 +262,6 @@ export default function InvoicesPage() {
     setDateToFilter("")
     setClientFilter("all")
   }
-
-
 
   const downloadPDF = async (invoiceId: string) => {
     const invoice = allInvoices.find((inv: any) => inv.id === invoiceId)
@@ -544,7 +546,7 @@ export default function InvoicesPage() {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Checkbox
-                    checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
+                    checked={selectedInvoices.length > 0 && filteredInvoices.some(inv => selectedInvoices.includes(inv.id))}
                     onCheckedChange={handleSelectAll}
                     className="flex-shrink-0"
                   />
@@ -643,40 +645,38 @@ export default function InvoicesPage() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setSyncMode('single')}
-                  className={`p-4 border-2 rounded-lg text-left transition-all ${
+                  className={`p-3 sm:p-4 border rounded-lg text-left transition-all ${
                     syncMode === 'single' 
-                      ? 'bg-muted/30' 
-                      : 'border-border/40 hover:border-border'
+                      ? 'bg-muted/30 border-primary' 
+                      : 'border-border hover:border-primary/50'
                   }`}
-                  style={syncMode === 'single' ? { borderColor: colors.accent } : undefined}
                 >
-                  <div className="font-medium mb-1">Un comprobante específico</div>
-                  <div className="text-sm text-muted-foreground">Consultar por número de comprobante</div>
+                  <div className="font-medium mb-1 text-sm sm:text-base">Un comprobante específico</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Consultar por número de comprobante</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSyncMode('date_range')}
-                  className={`p-4 border-2 rounded-lg text-left transition-all ${
+                  className={`p-3 sm:p-4 border rounded-lg text-left transition-all ${
                     syncMode === 'date_range' 
-                      ? 'bg-muted/30' 
-                      : 'border-border/40 hover:border-border'
+                      ? 'bg-muted/30 border-primary' 
+                      : 'border-border hover:border-primary/50'
                   }`}
-                  style={syncMode === 'date_range' ? { borderColor: colors.accent } : undefined}
                 >
-                  <div className="font-medium mb-1">Rango de fechas</div>
-                  <div className="text-sm text-muted-foreground">Traer todos los comprobantes de un período</div>
+                  <div className="font-medium mb-1 text-sm sm:text-base">Rango de fechas</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Traer todos los comprobantes de un período</div>
                 </button>
               </div>
 
               {syncMode === 'single' ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div className="space-y-2">
-                      <Label>Punto de Venta *</Label>
+                      <Label className="text-sm">Punto de Venta *</Label>
                       <Input
                         type="number"
                         placeholder="1"
@@ -693,7 +693,7 @@ export default function InvoicesPage() {
                       <p className="text-xs text-muted-foreground">Se formateará como {syncForm.sales_point.toString().padStart(4, '0')}</p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Tipo *</Label>
+                      <Label className="text-sm">Tipo *</Label>
                       <Select value={syncForm.invoice_type} onValueChange={(value) => setSyncForm({...syncForm, invoice_type: value})}>
                         <SelectTrigger>
                           <SelectValue />
@@ -715,7 +715,7 @@ export default function InvoicesPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Número *</Label>
+                      <Label className="text-sm">Número *</Label>
                       <Input
                         type="number"
                         placeholder="1"
@@ -734,9 +734,9 @@ export default function InvoicesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-sm text-gray-800 space-y-2">
-                    <p className="font-medium">Qué hace la sincronización:</p>
-                    <ul className="list-disc list-inside space-y-1 text-xs">
+                  <div className="bg-muted/30 border border-border p-3 sm:p-4 rounded-lg text-sm space-y-2">
+                    <p className="font-medium text-sm sm:text-base">Qué hace la sincronización:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-muted-foreground">
                       <li>Consulta el comprobante específico en AFIP</li>
                       <li>Busca el cliente por CUIT en tu sistema (empresas conectadas primero, luego clientes externos)</li>
                       <li>Si no existe, crea un cliente archivado con datos incompletos que deberás completar</li>
@@ -750,9 +750,9 @@ export default function InvoicesPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-2">
-                      <Label>Fecha Desde *</Label>
+                      <Label className="text-sm">Fecha Desde *</Label>
                       <DatePicker
                         date={syncForm.date_from ? new Date(syncForm.date_from) : undefined}
                         onSelect={(date) => setSyncForm({...syncForm, date_from: date ? date.toISOString().split('T')[0] : ''})}
@@ -760,7 +760,7 @@ export default function InvoicesPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Fecha Hasta *</Label>
+                      <Label className="text-sm">Fecha Hasta *</Label>
                       <DatePicker
                         date={syncForm.date_to ? new Date(syncForm.date_to) : undefined}
                         onSelect={(date) => setSyncForm({...syncForm, date_to: date ? date.toISOString().split('T')[0] : ''})}
@@ -769,15 +769,15 @@ export default function InvoicesPage() {
                       />
                     </div>
                   </div>
-                  <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
+                  <Alert className="border-amber-200 bg-amber-50/50">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-sm">
                       <strong>Límite:</strong> El rango máximo permitido es de 90 días (3 meses).
                     </AlertDescription>
                   </Alert>
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-sm text-gray-800 space-y-2">
-                    <p className="font-medium">Qué hace la sincronización masiva:</p>
-                    <ul className="list-disc list-inside space-y-1 text-xs">
+                  <div className="bg-muted/30 border border-border p-3 sm:p-4 rounded-lg text-sm space-y-2">
+                    <p className="font-medium text-sm sm:text-base">Qué hace la sincronización masiva:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-muted-foreground">
                       <li>Consulta todos los puntos de venta autorizados en AFIP</li>
                       <li>Busca Facturas, Notas de Crédito y Notas de Débito (A, B, C, M)</li>
                       <li>Solo importa comprobantes dentro del rango de fechas</li>
@@ -796,29 +796,29 @@ export default function InvoicesPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Total Encontradas</p>
-                  <p className="text-3xl font-bold text-foreground">{syncResults.imported_count}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <Card className="p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total Encontradas</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">{syncResults.imported_count}</p>
                 </Card>
-                <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Nuevos Importados</p>
-                  <p className="text-3xl font-bold text-foreground">
+                <Card className="p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Nuevos Importados</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">
                     {syncResults.invoices?.filter((inv: any) => inv.saved).length || 0}
                   </p>
                 </Card>
-                <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Ya Existían</p>
-                  <p className="text-3xl font-bold text-foreground">
+                <Card className="p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Ya Existían</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">
                     {syncResults.invoices?.filter((inv: any) => !inv.saved).length || 0}
                   </p>
                 </Card>
               </div>
               
-              {syncResults.auto_created_clients && syncResults.auto_created_clients > 0 && (
-                <div className="bg-muted/30 border border-muted p-3 rounded-lg mb-4">
+              {syncResults.auto_created_clients > 0 && (
+                <div className="bg-amber-50/50 border border-amber-200 p-3 rounded-lg">
                   <p className="text-sm font-medium text-foreground">
-                    ⚠️ Se crearon {syncResults.auto_created_clients} clientes archivados
+                    Se crearon {syncResults.auto_created_clients} clientes archivados
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Estos clientes requieren revisión en la sección de Clientes para completar sus datos.
@@ -972,7 +972,7 @@ export default function InvoicesPage() {
                             toast.success(`${newInvoices} comprobante${newInvoices > 1 ? 's' : ''} encontrado${newInvoices > 1 ? 's' : ''}`)  
                           }
                         } else {
-                          toast.success(`ℹ️ ${result.imported_count} comprobante${result.imported_count > 1 ? 's' : ''} encontrado${result.imported_count > 1 ? 's' : ''} en AFIP`, {
+                          toast.success(`${result.imported_count} comprobante${result.imported_count > 1 ? 's' : ''} encontrado${result.imported_count > 1 ? 's' : ''} en AFIP`, {
                             description: 'Ya existía' + (result.imported_count > 1 ? 'n' : '') + ' en tu sistema'
                           })
                         }

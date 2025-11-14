@@ -326,6 +326,11 @@ export default function CreateInvoicePage() {
             setPerceptions(prev => [...prev, perception])
           }, index * 100) // 100ms delay between each perception
         })
+        
+        // Show toast only on initial load
+        setTimeout(() => {
+          toast.info(`Se aplicaron ${perceptionsToAdd.length} percepción(es) automática(s)`)
+        }, perceptionsToAdd.length * 100 + 100)
       }
       
       setIsInitialized(true)
@@ -333,7 +338,7 @@ export default function CreateInvoicePage() {
   }, [currentCompany, isInitialized])
 
   // Helper function to apply auto-perceptions when appropriate
-  const applyAutoPerceptions = useCallback(() => {
+  const applyAutoPerceptions = useCallback((showToast: boolean = false) => {
     if (currentCompany?.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
       const perceptionsToAdd = currentCompany.autoPerceptions.map((p: any) => ({
         type: p.type,
@@ -353,7 +358,10 @@ export default function CreateInvoicePage() {
         }, index * 100) // 100ms delay between each perception
       })
       
-      toast.info(`Se aplicaron ${perceptionsToAdd.length} percepción(es) automática(s)`)
+      // Only show toast if explicitly requested (e.g., on initial load)
+      if (showToast) {
+        toast.info(`Se aplicaron ${perceptionsToAdd.length} percepción(es) automática(s)`)
+      }
     }
   }, [currentCompany])
 
@@ -1145,22 +1153,18 @@ export default function CreateInvoicePage() {
                       }
                       
                       // Handle perceptions based on client type:
+                      // Only clear perceptions when selecting a Final Consumer
                       if (isFinalConsumer) {
-                        // Clear perceptions for CF
                         setPerceptions([])
                         toast.info('Las percepciones no aplican para Consumidores Finales')
                       } else if (previousTaxCondition === 'final_consumer' && data.entity_data) {
-                        // Changing from CF to non-CF: clear and don't auto-apply (user must add manually)
-                        setPerceptions([])
-                        toast.info('Percepciones limpiadas. Agregá manualmente las que correspondan.')
-                      } else if (!data.entity_data) {
-                        // Clearing client selection: restore auto-perceptions if configured
+                        // Changing from CF to non-CF: restore auto-perceptions if configured
                         if (currentCompany?.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
-                          applyAutoPerceptions()
-                        } else {
-                          setPerceptions([])
+                          applyAutoPerceptions(false)
                         }
                       }
+                      // For all other cases (changing between registered/saved/new, or selecting non-CF clients),
+                      // keep existing perceptions unchanged
                     }}
                   />
                 )}
