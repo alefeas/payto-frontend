@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Search, Plus, Edit, Trash2, FileText, Mail, Phone, User, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
+import { Search, Plus, Edit, FileText, Mail, Phone, User, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,6 @@ import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 import { PageHeader } from "@/components/layouts/PageHeader"
 import { EntitiesSkeleton } from "@/components/entities/EntitiesSkeleton"
-import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
             
 const condicionIvaLabels: Record<string, string> = {
   registered_taxpayer: "Responsable Inscripto",
@@ -275,8 +274,8 @@ export default function ClientsPage() {
                 <div className="space-y-2">
                   {filteredArchivedClients.map((client) => (
                     <Card key={client.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow bg-muted/30">
-                        <div className="flex flex-col gap-3">
-                          <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0 w-full sm:w-auto">
                             <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
                               <h3 className="font-semibold text-sm sm:text-base truncate">{getClientDisplayName(client)}</h3>
                               <Badge variant="outline" className={`${condicionIvaColors[client.taxCondition]} text-[10px] sm:text-xs`}>
@@ -312,7 +311,7 @@ export default function ClientsPage() {
                             </div>
                           </div>
 
-                          <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
@@ -326,7 +325,7 @@ export default function ClientsPage() {
                               Editar
                             </Button>
                             <Button
-                              variant="default"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleRestore(client.id)}
                               disabled={client.incompleteData || restoringId === client.id}
@@ -339,25 +338,6 @@ export default function ClientsPage() {
                                 <RotateCcw className="h-4 w-4 mr-2" />
                               )}
                               {restoringId === client.id ? 'Restaurando...' : 'Restaurar'}
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={async () => {
-                                if (confirm(`¿Eliminar permanentemente a ${getClientDisplayName(client)}? Esta acción NO se puede deshacer.`)) {
-                                  try {
-                                    await clientService.forceDeleteClient(companyId, client.id, true)
-                                    toast.success('Cliente eliminado permanentemente')
-                                    loadArchivedClients()
-                                  } catch (error: any) {
-                                    toast.error(error.response?.data?.message || 'Error al eliminar')
-                                  }
-                                }
-                              }}
-                              className="w-full sm:w-auto"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Eliminar
                             </Button>
                           </div>
                         </div>
@@ -468,7 +448,10 @@ export default function ClientsPage() {
                 setIsEditDialogOpen(false)
                 setSelectedClient(null)
               }}
-              onSuccess={loadClients}
+              onSuccess={() => {
+                loadClients()
+                loadArchivedClients()
+              }}
             />
           </DialogContent>
         </Dialog>
@@ -505,8 +488,12 @@ export default function ClientsPage() {
                     try {
                       setArchivingId(clientToDelete.id)
                       await clientService.deleteClient(companyId, clientToDelete.id)
-                      setClients(clients.filter(c => c.id !== clientToDelete.id))
                       toast.success('Cliente archivado')
+                      // Recargar ambas listas para reflejar el cambio
+                      await Promise.all([
+                        loadClients(),
+                        loadArchivedClients()
+                      ])
                     } catch (error: any) {
                       toast.error(error.response?.data?.message || 'Error al archivar cliente')
                     } finally {

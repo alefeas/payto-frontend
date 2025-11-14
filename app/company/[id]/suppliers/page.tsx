@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Search, Plus, Edit, FileText, Mail, Phone, Building2, AlertTriangle, Loader2, Archive, RotateCcw, Shield } from "lucide-react"
+import { Search, Plus, Edit, FileText, Mail, Phone, Building2, AlertTriangle, Loader2, Archive, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -302,20 +302,34 @@ export default function SuppliersPage() {
                             </div>
                           </div>
 
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleRestore(supplier.id.toString())}
-                            disabled={restoringId === supplier.id}
-                            className="w-full sm:w-auto flex-shrink-0"
-                          >
-                            {restoringId === supplier.id ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                            )}
-                            {restoringId === supplier.id ? 'Restaurando...' : 'Restaurar'}
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSupplier(supplier)
+                                setIsEditDialogOpen(true)
+                              }}
+                              className="w-full sm:w-auto"
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRestore(supplier.id.toString())}
+                              disabled={restoringId === supplier.id}
+                              className="w-full sm:w-auto"
+                            >
+                              {restoringId === supplier.id ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                              )}
+                              {restoringId === supplier.id ? 'Restaurando...' : 'Restaurar'}
+                            </Button>
+                          </div>
                         </div>
                     </Card>
                   ))}
@@ -421,7 +435,10 @@ export default function SuppliersPage() {
                 setIsEditDialogOpen(false)
                 setSelectedSupplier(null)
               }}
-              onSuccess={loadSuppliers}
+              onSuccess={() => {
+                loadSuppliers()
+                loadArchivedSuppliers()
+              }}
             />
           </DialogContent>
         </Dialog>
@@ -457,8 +474,12 @@ export default function SuppliersPage() {
                     try {
                       setArchivingId(supplierToDelete.id)
                       await supplierService.deleteSupplier(companyId, supplierToDelete.id)
-                      setSuppliers(suppliers.filter(s => s.id !== supplierToDelete.id))
                       toast.success('Proveedor archivado')
+                      // Recargar ambas listas para reflejar el cambio
+                      await Promise.all([
+                        loadSuppliers(),
+                        loadArchivedSuppliers()
+                      ])
                     } catch (error: any) {
                       toast.error(error.response?.data?.message || 'Error al archivar proveedor')
                     } finally {
