@@ -125,9 +125,9 @@ export default function AccountsReceivablePage() {
         const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
         if (isCreditNote || isDebitNote) return false
         if (inv.status === 'cancelled') return false
-        const companyStatus = inv.company_statuses?.[companyId]
-        if (companyStatus === 'paid' || companyStatus === 'collected') return false
-        if (inv.payment_status === 'collected' || inv.payment_status === 'paid') return false
+        // Usar display_status que viene calculado del backend
+        const status = inv.display_status || inv.status
+        if (status === 'collected') return false
         return true
       })
       setAllInvoices(filtered)

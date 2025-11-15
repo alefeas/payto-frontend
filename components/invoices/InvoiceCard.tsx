@@ -64,16 +64,12 @@ export function InvoiceCard({
     
     const isIssuer = String(invoice.issuer_company_id) === String(companyId)
     const isReceiver = String(invoice.receiver_company_id) === String(companyId)
-    const isRejected = invoice.display_status === 'rejected' || invoice.status === 'rejected'
-    const companyStatus = invoice.company_statuses?.[companyId]
-    const status = invoice.display_status || invoice.status
     
-    const isPaidOrCollected = invoice.payment_status === 'collected' || 
-                              invoice.payment_status === 'paid' || 
-                              companyStatus === 'collected' || 
-                              companyStatus === 'paid' || 
-                              status === 'collected' || 
-                              status === 'paid'
+    // Usar display_status que viene calculado del backend
+    const status = invoice.display_status || invoice.status
+    const isRejected = status === 'rejected'
+    
+    const isPaidOrCollected = status === 'collected' || status === 'paid'
     
     const isOverdue = dueDate < today && !isPaidOrCollected && status !== 'cancelled' && !isRejected
     
@@ -150,16 +146,12 @@ export function InvoiceCard({
     
     const isIssuer = String(invoice.issuer_company_id) === String(companyId)
     const isReceiver = String(invoice.receiver_company_id) === String(companyId)
-    const isRejected = invoice.display_status === 'rejected' || invoice.status === 'rejected'
-    const companyStatus = invoice.company_statuses?.[companyId]
-    const status = invoice.display_status || invoice.status
     
-    const isPaidOrCollected = invoice.payment_status === 'collected' || 
-                              invoice.payment_status === 'paid' || 
-                              companyStatus === 'collected' || 
-                              companyStatus === 'paid' || 
-                              status === 'collected' || 
-                              status === 'paid'
+    // Usar display_status que viene calculado del backend
+    const status = invoice.display_status || invoice.status
+    const isRejected = status === 'rejected'
+    
+    const isPaidOrCollected = status === 'collected' || status === 'paid'
     
     const isOverdue = dueDate < today && !isPaidOrCollected && status !== 'cancelled' && !isRejected
     

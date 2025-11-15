@@ -378,8 +378,10 @@ export default function CreateInvoicePage() {
       const unitPrice = Number(item.unitPrice) || 0
       const discount = Number(item.discountPercentage) || 0
       const itemSubtotal = quantity * unitPrice * (1 - discount / 100)
+      // Exento (-1) y No Gravado (-2) tienen IVA = 0
       const taxRate = Number(item.taxRate) || 0
-      const itemTax = itemSubtotal * (taxRate / 100)
+      const actualTaxRate = taxRate > 0 ? taxRate : 0
+      const itemTax = itemSubtotal * (actualTaxRate / 100)
       return sum + (isNaN(itemTax) ? 0 : itemTax)
     }, 0)
     
@@ -483,8 +485,10 @@ export default function CreateInvoicePage() {
     const unitPrice = Number(item.unitPrice) || 0
     const discount = Number(item.discountPercentage) || 0
     const subtotal = quantity * unitPrice * (1 - discount / 100)
+    // Exento (-1) y No Gravado (-2) tienen IVA = 0
     const taxRate = Number(item.taxRate) || 0
-    const tax = subtotal * (taxRate / 100)
+    const actualTaxRate = taxRate > 0 ? taxRate : 0
+    const tax = subtotal * (actualTaxRate / 100)
     const safeSubtotal = isNaN(subtotal) ? 0 : subtotal
     const safeTax = isNaN(tax) ? 0 : tax
     return { subtotal: safeSubtotal, total: safeSubtotal + safeTax }

@@ -334,10 +334,9 @@ export default function AccountsPayablePage() {
   const filteredInvoices = useMemo(() => {
     return allInvoices.filter(inv => {
       if (inv.status === 'cancelled') return false
-      const companyStatus = inv.company_statuses?.[companyId]
-      if (companyStatus === 'paid') return false
-      // Excluir facturas completamente pagadas
-      if (inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
+      // Usar display_status que viene calculado del backend
+      const status = inv.display_status || inv.status
+      if (status === 'paid') return false
       if (filters.currency !== 'all' && inv.currency !== filters.currency) return false
       if (filters.from_date || filters.to_date) {
         const issueDate = new Date(inv.issue_date)

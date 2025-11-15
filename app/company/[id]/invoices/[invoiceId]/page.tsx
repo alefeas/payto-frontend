@@ -263,8 +263,8 @@ export default function InvoiceDetailPage() {
   // Determinar si la empresa actual es emisor o receptor
   const isIssuer = invoice.issuer_company_id === companyId
   
-  // Obtener el estado para esta empresa específica
-  const companyStatus = invoice.company_statuses?.[companyId] || invoice.status
+  // Usar display_status que viene calculado del backend
+  const companyStatus = invoice.display_status || invoice.status
   const isPaid = companyStatus === 'paid' || companyStatus === 'collected'
   
   // Calcular total de retenciones
