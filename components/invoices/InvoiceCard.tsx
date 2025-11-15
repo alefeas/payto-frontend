@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { parseDateLocal } from "@/lib/utils"
 import { colors } from "@/styles"
+import { getInvoiceStatusBadge, getOverdueBadge } from "@/lib/invoice-status"
 
 const formatCurrency = (amount: number, currency: string) => {
   const formatted = amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })

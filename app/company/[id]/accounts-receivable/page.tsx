@@ -560,7 +560,7 @@ export default function AccountsReceivablePage() {
                 {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {(() => {
                   const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
                   const currency = invoices[0]?.currency || 'ARS'
-                  return formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.pending_amount ?? inv.balance_pending ?? inv.total), 0), currency)
+                  return formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.total), 0), currency)
                 })()}
               </DialogDescription>
             </DialogHeader>
@@ -578,7 +578,7 @@ export default function AccountsReceivablePage() {
                           <p className="font-medium">{invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}</p>
                           <p className="text-xs text-muted-foreground">{invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}</p>
                         </div>
-                        <p className="font-semibold">{formatCurrency(invoice.pending_amount ?? invoice.balance_pending ?? invoice.total, invoice.currency)}</p>
+                        <p className="font-semibold">{formatCurrency(invoice.available_balance ?? invoice.balance_pending ?? invoice.total, invoice.currency)}</p>
                       </div>
                       {hasNotes && (
                         <div className="text-xs space-y-0.5 pl-2 border-l-2 border-gray-300">
