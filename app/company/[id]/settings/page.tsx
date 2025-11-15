@@ -76,6 +76,7 @@ export default function SettingsPage() {
   const [initialFormData, setInitialFormData] = useState<typeof formData | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showRegenerateModal, setShowRegenerateModal] = useState(false)
+  const [regeneratingInvite, setRegeneratingInvite] = useState(false)
   const [showAddBankDialog, setShowAddBankDialog] = useState(false)
   const [showEditBankDialog, setShowEditBankDialog] = useState(false)
   const [showDeleteBankDialog, setShowDeleteBankDialog] = useState(false)
@@ -247,6 +248,7 @@ export default function SettingsPage() {
 
   const regenerateInviteCode = async () => {
     try {
+      setRegeneratingInvite(true)
       const result = await companyService.regenerateInviteCode(companyId)
       if (company) {
         setCompany({...company, inviteCode: result.inviteCode})
@@ -255,6 +257,8 @@ export default function SettingsPage() {
       setShowRegenerateModal(false)
     } catch (error) {
       toast.error('Error al regenerar código')
+    } finally {
+      setRegeneratingInvite(false)
     }
   }
 
@@ -757,7 +761,7 @@ export default function SettingsPage() {
                             </>
                           )}
                         </AfipButton>
-                        <Button size="sm" onClick={() => setShowAddSalesPointDialog(true)}>
+                        <Button size="sm" variant="outline" onClick={() => setShowAddSalesPointDialog(true)}>
                           <Plus className="h-4 w-4 mr-2" />
                           Agregar
                         </Button>
@@ -1299,7 +1303,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
+                <div className="space-y-2">
                   <Label>Código de Invitación</Label>
                   <div className="flex items-center gap-2">
                     <Input value={company?.inviteCode || ''} readOnly />
@@ -1310,7 +1314,7 @@ export default function SettingsPage() {
                       </Button>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground">
                     Los nuevos miembros necesitan este código para unirse
                   </p>
                 </div>
@@ -1321,7 +1325,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       Eliminar el perfil fiscal manteniendo los datos contables para preservar la integridad del sistema
                     </p>
-                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => {
+                    <Button size="sm" variant="destructive" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => {
                       setShowDeleteModal(true)
                       checkInvoices()
                     }}>
@@ -1347,7 +1351,7 @@ export default function SettingsPage() {
                     <CardDescription>Gestiona las cuentas para recibir pagos</CardDescription>
                   </div>
                   {canManageBankAccounts && (
-                    <Button onClick={() => setShowAddBankDialog(true)}>
+                    <Button size="sm" variant="outline" onClick={() => setShowAddBankDialog(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Agregar Cuenta
                     </Button>
@@ -1516,24 +1520,26 @@ export default function SettingsPage() {
         </Dialog>
 
         {/* Regenerate Invite Code Modal */}
-        <Dialog open={showRegenerateModal} onOpenChange={setShowRegenerateModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Regenerar Código de Invitación</DialogTitle>
-              <DialogDescription>
-                ¿Estás seguro de que quieres generar un nuevo código? El código actual dejará de funcionar.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRegenerateModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={regenerateInviteCode}>
-                Regenerar Código
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {showRegenerateModal && (
+          <Dialog open={showRegenerateModal} onOpenChange={setShowRegenerateModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Regenerar Código de Invitación</DialogTitle>
+                <DialogDescription>
+                  ¿Estás seguro de que quieres generar un nuevo código? El código actual dejará de funcionar.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowRegenerateModal(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={regenerateInviteCode} disabled={regeneratingInvite}>
+                  {regeneratingInvite ? 'Regenerando...' : 'Regenerar Código'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* Add Sales Point Dialog */}
         <Dialog open={showAddSalesPointDialog} onOpenChange={setShowAddSalesPointDialog}>
@@ -1674,24 +1680,25 @@ export default function SettingsPage() {
         </Dialog>
 
         {/* Delete Company Modal */}
+        {showDeleteModal && (
         <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>🗑️ Eliminar Perfil Fiscal</DialogTitle>
+              <DialogTitle>Eliminar Perfil Fiscal</DialogTitle>
               <DialogDescription>
-                ⚠️ Esta acción es irreversible y eliminará permanentemente este perfil fiscal del sistema.
+                Esta acción es irreversible y eliminará permanentemente este perfil fiscal del sistema.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground mb-2">📋 ¿Qué se eliminará?</p>
+                <p className="font-medium text-foreground mb-2">¿Qué se eliminará?</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>🏢 Configuración completa del perfil fiscal</li>
-                  <li>👥 Todos los miembros y sus permisos</li>
-                  <li>📊 Estadísticas, reportes y análisis</li>
-                  <li>🔐 Certificados AFIP y configuraciones de facturación</li>
-                  <li>🏦 Cuentas bancarias y métodos de pago</li>
-                  <li>⚙️ Todas las preferencias y personalizaciones</li>
+                  <li>Configuración completa del perfil fiscal</li>
+                  <li>Todos los miembros y sus permisos</li>
+                  <li>Estadísticas, reportes y análisis</li>
+                  <li>Certificados AFIP y configuraciones de facturación</li>
+                  <li>Cuentas bancarias y métodos de pago</li>
+                  <li>Todas las preferencias y personalizaciones</li>
                 </ul>
                 {hasInvoices !== null && (
                   <div className={`mt-4 p-4 border rounded-lg ${
@@ -1704,7 +1711,7 @@ export default function SettingsPage() {
                         ? 'text-amber-900 dark:text-amber-100'
                         : 'text-green-900 dark:text-green-100'
                     }`}>
-                      {hasInvoices ? '🛡️ Protección de Datos Contables' : '✅ Sin Datos Contables'}
+                      {hasInvoices ? 'Protección de Datos Contables' : 'Sin Datos Contables'}
                     </p>
                     <p className={`text-xs mt-1 ${
                       hasInvoices 
@@ -1722,8 +1729,8 @@ export default function SettingsPage() {
               </div>
               
               <div className="border-t border-gray-200 pt-4">
-                <Label htmlFor="deleteCode" className="flex items-center gap-2">
-                  🔐 Código de Seguridad
+                <Label htmlFor="deleteCode">
+                  Código de Seguridad
                 </Label>
                 <Input
                   id="deleteCode"
@@ -1734,7 +1741,7 @@ export default function SettingsPage() {
                   className="mt-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  💡 Este código se configuró al crear la empresa como medida de seguridad
+                  Este código se configuró al crear la empresa como medida de seguridad
                 </p>
               </div>
             </div>
@@ -1744,18 +1751,19 @@ export default function SettingsPage() {
                 setDeleteCode("")
                 setHasInvoices(null)
               }}>
-                🚫 Cancelar
+                Cancelar
               </Button>
               <Button 
                 variant="destructive" 
                 onClick={deleteCompany}
                 disabled={!deleteCode.trim()}
               >
-                🗑️ Confirmar Eliminación
+                Confirmar Eliminación
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
     </div>
   )
