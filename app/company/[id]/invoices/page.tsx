@@ -322,7 +322,6 @@ export default function InvoicesPage() {
                   companyId={companyId}
                   onClick={() => setShowSyncDialog(true)}
                   variant="outline"
-                  size="sm"
                   className="w-full sm:w-auto"
                   errorMessage="Certificado AFIP requerido para sincronizar comprobantes desde AFIP"
                   loadingText="Verificando AFIP..."
@@ -357,7 +356,6 @@ export default function InvoicesPage() {
                     }
                   }}
                   disabled={selectedInvoices.length === 0 || downloadingTXT}
-                  size="sm"
                   className="w-full sm:w-auto"
                 >
                   {downloadingTXT ? (
@@ -399,7 +397,6 @@ export default function InvoicesPage() {
                     }
                   }}
                   disabled={selectedInvoices.length === 0 || downloadingPDF}
-                  size="sm"
                   variant="outline"
                   className="w-full sm:w-auto"
                 >

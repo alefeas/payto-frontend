@@ -8,7 +8,7 @@ export function NetworkSkeleton() {
         {/* Header Skeleton */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
+            <Skeleton className="h-12 w-12 rounded" />
             <div className="flex-1 min-w-0 space-y-2">
               <Skeleton className="h-8 w-48 sm:w-64" />
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -18,7 +18,7 @@ export function NetworkSkeleton() {
               </div>
             </div>
           </div>
-          <Skeleton className="h-10 w-full sm:w-64 lg:w-auto lg:min-w-[160px]" />
+          <Skeleton className="h-12 w-full sm:w-64 lg:w-auto lg:min-w-[160px]" />
         </div>
 
         {/* Tabs Skeleton */}
@@ -37,7 +37,7 @@ export function NetworkSkeleton() {
                   <Skeleton className="h-6 w-48" />
                   <Skeleton className="h-4 w-64" />
                 </div>
-                <Skeleton className="h-10 w-full lg:w-64" />
+                <Skeleton className="h-12 w-full lg:w-64" />
               </div>
             </CardHeader>
             <CardContent className="space-y-3">

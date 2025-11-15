@@ -7,7 +7,7 @@ export function EntitiesSkeleton() {
         {/* Header with Action Buttons Skeleton */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded flex-shrink-0" />
+            <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
             <div className="flex-1 space-y-2 min-w-0">
               <Skeleton className="h-7 sm:h-8 w-48 max-w-full" />
               <Skeleton className="h-4 w-64 max-w-full" />
@@ -15,15 +15,15 @@ export function EntitiesSkeleton() {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:flex-shrink-0">
-            <Skeleton className="h-10 w-full sm:w-36" />
-            <Skeleton className="h-10 w-full sm:w-40" />
+            <Skeleton className="h-12 w-full sm:w-36" />
+            <Skeleton className="h-12 w-full sm:w-40" />
           </div>
         </div>
 
         {/* Search and Filter Skeleton */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="flex-1 relative">
-            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
           <div className="flex items-center gap-2">
             <Skeleton className="h-4 w-20 hidden sm:block" />
