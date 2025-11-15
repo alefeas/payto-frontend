@@ -23,7 +23,7 @@ export default function Navbar() {
         </a>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-8">
           <a
             href="/pricing"
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -45,7 +45,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-4">
           <a
             href="/log-in"
             className="text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"
@@ -59,12 +59,12 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild className="md:hidden">
+          <SheetTrigger asChild className="lg:hidden">
             <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <Menu className="h-6 w-6 text-foreground" />
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[60vw] sm:w-[350px] bg-white/80 backdrop-blur-xl border-l border-[#eeeeee] p-6">
+          <SheetContent side="right" className="w-full min-[400px]:w-[350px] bg-white border-l border-[#eeeeee] p-6">
             <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
             <SheetDescription className="sr-only">
               Navegación principal de PayTo con enlaces a Precios, Características y Contacto

@@ -323,7 +323,7 @@ export default function IvaBookPage() {
 
         <Tabs defaultValue="sales" className="space-y-6">
           <div className="flex items-center justify-between">
-            <TabsList className="inline-flex h-9 rounded-md border border-gray-200 bg-muted/30 px-1">
+            <TabsList className="inline-flex h-9 rounded-md bg-muted/30 px-1">
               <TabsTrigger value="sales" className="text-sm">Ventas</TabsTrigger>
               <TabsTrigger value="purchases" className="text-sm">Compras</TabsTrigger>
             </TabsList>

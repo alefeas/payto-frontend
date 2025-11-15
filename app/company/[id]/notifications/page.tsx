@@ -6,7 +6,8 @@ import { notificationService, Notification } from '@/services/notification.servi
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BackButton } from '@/components/ui/back-button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { NotificationsSkeleton } from '@/components/notifications/NotificationsSkeleton';
 import { Bell, CheckCheck, Clock, Inbox } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -52,49 +53,7 @@ export default function NotificationsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-7 sm:h-9 w-48 sm:w-64" />
-              <Skeleton className="h-4 sm:h-5 w-64 sm:w-96" />
-            </div>
-          </div>
-          <Card className="border-gray-200">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-48" />
-                  <Skeleton className="h-4 w-64" />
-                </div>
-                <div className="flex gap-2">
-                  <Skeleton className="h-9 w-full sm:w-20" />
-                  <Skeleton className="h-9 w-full sm:w-28" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-3 rounded-lg border border-gray-200">
-                    <div className="flex items-start gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
-                      <div className="flex-1 space-y-2 min-w-0">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <NotificationsSkeleton />;
   }
 
   const handleMarkAllAsRead = async () => {
@@ -144,8 +103,7 @@ export default function NotificationsPage() {
             <Button
               onClick={handleMarkAllAsRead}
               variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto h-12"
             >
               <CheckCheck className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Marcar todas como leídas</span>
@@ -156,7 +114,7 @@ export default function NotificationsPage() {
 
         <Card className="border-gray-200">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5" />
@@ -166,88 +124,83 @@ export default function NotificationsPage() {
                   Mantente informado sobre eventos importantes de tu empresa
                 </CardDescription>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Button
-                  variant={filter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilter('all')}
-                  className="w-full sm:w-auto"
-                >
-                  Todas
-                </Button>
-                <Button
-                  variant={filter === 'unread' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilter('unread')}
-                  className="w-full sm:w-auto"
-                >
-                  No leídas {unreadCount > 0 && `(${unreadCount})`}
-                </Button>
-              </div>
+              <Tabs value={filter} onValueChange={(value) => setFilter(value as 'all' | 'unread')}>
+                <TabsList>
+                  <TabsTrigger value="all">Todas</TabsTrigger>
+                  <TabsTrigger value="unread">
+                    No leídas {unreadCount > 0 && `(${unreadCount})`}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
-              {filteredNotifications.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <Inbox className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium mb-1">
-                    {filter === 'unread' ? 'No hay notificaciones sin leer' : 'No hay notificaciones'}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {filter === 'unread' 
-                      ? 'Todas tus notificaciones están al día'
-                      : 'Cuando recibas notificaciones, aparecerán aquí'
-                    }
-                  </p>
-                </div>
-              ) : (
-                filteredNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm relative ${
-                      notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
-                    }`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    {!notification.read && (
-                      <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
-                    )}
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 min-w-0 pr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className={`text-sm font-medium-heading ${
+            <Tabs value={filter} onValueChange={(value) => setFilter(value as 'all' | 'unread')}>
+              <TabsList className="hidden">
+                <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger value="unread">No leídas</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value={filter} className="space-y-3 max-h-[calc(100vh-350px)] overflow-y-auto">
+                {filteredNotifications.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Inbox className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium mb-1">
+                      {filter === 'unread' ? 'No hay notificaciones sin leer' : 'No hay notificaciones'}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {filter === 'unread' 
+                        ? 'Todas tus notificaciones están al día'
+                        : 'Cuando recibas notificaciones, aparecerán aquí'
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  filteredNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-3 sm:p-4 rounded-lg border transition-all cursor-pointer hover:shadow-sm relative ${
+                        notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
+                      }`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      {!notification.read && (
+                        <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                        <div className="flex-1 min-w-0 pr-3">
+                          <h4 className={`text-sm font-medium-heading mb-1 ${
                             notification.read ? 'text-gray-700' : 'text-gray-900'
                           }`}>
                             {notification.title}
                           </h4>
-                        </div>
-                        <p className={`text-xs mb-2 ${
-                          notification.read ? 'text-gray-500' : 'text-gray-700'
-                        }`}>
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs text-gray-500">
-                            {notification.companyName}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-400">
-                            <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(notification.createdAt), { 
-                              addSuffix: true, 
-                              locale: es 
-                            })}
+                          <p className={`text-xs mb-2 ${
+                            notification.read ? 'text-gray-500' : 'text-gray-700'
+                          }`}>
+                            {notification.message}
+                          </p>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                            <span className="text-xs text-gray-500 truncate">
+                              {notification.companyName}
+                            </span>
+                            <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                              <Clock className="h-3 w-3" />
+                              {formatDistanceToNow(new Date(notification.createdAt), { 
+                                addSuffix: true, 
+                                locale: es 
+                              })}
+                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

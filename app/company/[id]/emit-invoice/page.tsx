@@ -979,7 +979,7 @@ export default function CreateInvoicePage() {
                     }
                   }}
                   disabled={formData.currency === 'ARS' || (isNoteType && associateInvoice && !!selectedInvoice)}
-                  className="h-10"
+                  className="h-12"
                 />
               </div>
 

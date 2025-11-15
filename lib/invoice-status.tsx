@@ -2,17 +2,22 @@ import { Badge } from "@/components/ui/badge"
 
 /**
  * Get status badge for an invoice
- * For NC/ND, shows the status of the related invoice
+ * For NC/ND associated to an invoice, shows the status of the related invoice
+ * For NC/ND NOT associated, shows their own status
  * Only shows allowed statuses
  */
 export function getInvoiceStatusBadge(invoice: any, isReceiver: boolean = false) {
-  // For NC/ND, use related invoice status if available
+  // For NC/ND associated to an invoice, use related invoice status
   let status = invoice.display_status || invoice.status
   
   const isNCND = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE', 'NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(invoice.type)
-  if (isNCND && invoice.relatedInvoice) {
+  const hasRelatedInvoice = invoice.related_invoice_id && invoice.relatedInvoice
+  
+  if (isNCND && hasRelatedInvoice) {
+    // NC/ND asociada: mostrar estado de la factura relacionada
     status = invoice.relatedInvoice.display_status || invoice.relatedInvoice.status
   }
+  // Si no tiene factura relacionada, usa su propio estado (ya asignado arriba)
 
   // Check if cancelled first
   if (status === 'cancelled' || invoice.payment_status === 'cancelled') {
