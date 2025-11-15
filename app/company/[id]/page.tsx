@@ -396,21 +396,17 @@ export default function CompanyPage() {
             <div className="flex-1 min-w-0">
               <ResponsiveHeading level="h1" className="truncate">{company.name}</ResponsiveHeading>
               <ResponsiveText className="text-muted-foreground truncate">
-                Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}
+                Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')} • ID: <span className="font-mono font-semibold">{company.uniqueId}</span>
               </ResponsiveText>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                ID de Conexión: <span className="font-mono font-semibold">{company.uniqueId}</span>
-              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <NotificationBell companyId={company.id} />
             {hasPermission(userRole, 'members.view') && (
               <Button 
-                variant="outline" 
-                size="sm"
+                variant="outline"
                 onClick={() => router.push(`/company/${company.id}/members`)}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto h-12"
               >
                 <Users className="h-4 w-4 mr-2" />
                 <span className="sm:inline">Miembros</span>
@@ -419,20 +415,18 @@ export default function CompanyPage() {
             {hasPermission(userRole, 'company.view_settings') && (
               <>
                 <Button 
-                  variant="outline" 
-                  size="sm"
+                  variant="outline"
                   onClick={() => router.push(`/company/${company.id}/verify`)}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 w-full sm:w-auto"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 w-full sm:w-auto h-12"
                 >
                   <Shield className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Verificar AFIP</span>
                   <span className="sm:hidden">AFIP</span>
                 </Button>
                 <Button 
-                  variant="outline" 
-                  size="sm"
+                  variant="outline"
                   onClick={() => router.push(`/company/${company.id}/settings`)}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto h-12"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Configurar</span>
@@ -483,8 +477,7 @@ export default function CompanyPage() {
               </p>
             </div>
             <Button 
-              size="sm" 
-              className="bg-amber-600 hover:bg-amber-700 text-white flex-shrink-0"
+              className="bg-amber-600 hover:bg-amber-700 text-white flex-shrink-0 h-12"
               onClick={() => router.push(`/company/${company.id}/settings`)}
             >
               Ir a Configuración

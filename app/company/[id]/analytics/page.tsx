@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
             <BackButton href={`/company/${companyId}`} />
             <div className="flex-1 min-w-0">
               <ResponsiveHeading level="h1" className="truncate">
-                Estadísticas y Análisis
+                Estadísticas
               </ResponsiveHeading>
               <ResponsiveText className="text-muted-foreground truncate">
                 Período: {(() => {
@@ -154,10 +154,10 @@ export default function AnalyticsPage() {
               </ResponsiveText>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
-            <div className="flex gap-2">
+          <div className="w-full xl:w-auto">
+            <div className="grid grid-cols-2 xl:flex gap-2">
               <Select value={selectedCurrency} onValueChange={(v: any) => setSelectedCurrency(v)}>
-                <SelectTrigger className="w-full sm:w-[120px]">
+                <SelectTrigger className="w-full xl:w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,9 +168,11 @@ export default function AnalyticsPage() {
                 </SelectContent>
               </Select>
               <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  <SelectValue />
+                <SelectTrigger className="w-full xl:w-[180px]">
+                  <div className="flex items-center">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="month">Mes Actual</SelectItem>
@@ -179,96 +181,94 @@ export default function AnalyticsPage() {
                   <SelectItem value="custom">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
+              {period === 'custom' && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full xl:w-[140px] justify-start bg-white dark:bg-slate-950 h-12">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <span className="truncate font-light">{dateRange?.from ? format(dateRange.from, "dd/MM/yyyy", { locale: es }) : "Desde"}</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange?.from}
+                        onSelect={(date) => setDateRange(prev => ({ from: date, to: prev?.to }))}
+                        locale={es}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full xl:w-[140px] justify-start bg-white dark:bg-slate-950 h-12">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <span className="truncate font-light">{dateRange?.to ? format(dateRange.to, "dd/MM/yyyy", { locale: es }) : "Hasta"}</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange?.to}
+                        onSelect={(date) => setDateRange(prev => ({ from: prev?.from, to: date }))}
+                        disabled={(date) => dateRange?.from ? date < dateRange.from : false}
+                        locale={es}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              )}
+              <Button 
+                variant="outline"
+                disabled={exporting}
+                className="col-span-2 xl:col-span-1 justify-center xl:justify-start !font-light h-12"
+                onClick={async () => {
+                  setExporting(true)
+                  try {
+                    await new Promise(resolve => setTimeout(resolve, 1500))
+                    
+                    let csv = 'REPORTE DE ANALYTICS\n\n'
+                    csv += `Periodo,${period === 'month' ? 'Mes Actual' : period === 'quarter' ? 'Trimestre' : 'Año Completo'}\n\n`
+                    
+                    csv += 'RESUMEN FINANCIERO\n'
+                    csv += 'Concepto,Monto,Cantidad\n'
+                    csv += `Ventas,${summary.sales.total},${summary.sales.count}\n`
+                    csv += `Compras,${summary.purchases.total},${summary.purchases.count}\n`
+                    csv += `Balance,${summary.balance},-\n\n`
+                    
+                    csv += 'TENDENCIA MENSUAL\n'
+                    csv += 'Mes,Ventas,Compras\n'
+                    revenueTrend.forEach(item => {
+                      csv += `${item.month},${item.sales},${item.purchases}\n`
+                    })
+                    
+                    csv += '\nTOP CLIENTES\n'
+                    csv += 'Cliente,Monto Total,Cantidad Facturas\n'
+                    topClients.forEach(client => {
+                      csv += `${client.client_name},${client.total_amount},${client.invoice_count}\n`
+                    })
+                    
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `analytics-${period}-${new Date().toISOString().split('T')[0]}.csv`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                    toast.success('Reporte exportado en formato CSV')
+                  } catch (error) {
+                    toast.error('Error al exportar datos')
+                  } finally {
+                    setExporting(false)
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {exporting ? 'Exportando...' : 'Exportar CSV'}
+              </Button>
             </div>
-            {period === 'custom' && (
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="flex-1 sm:w-[140px] justify-start bg-white dark:bg-slate-950">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      <span className="truncate">{dateRange?.from ? format(dateRange.from, "dd/MM/yyyy", { locale: es }) : "Desde"}</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange?.from}
-                      onSelect={(date) => setDateRange(prev => ({ from: date, to: prev?.to }))}
-                      locale={es}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="flex-1 sm:w-[140px] justify-start bg-white dark:bg-slate-950">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      <span className="truncate">{dateRange?.to ? format(dateRange.to, "dd/MM/yyyy", { locale: es }) : "Hasta"}</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-950 border-gray-200 dark:border-gray-700" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange?.to}
-                      onSelect={(date) => setDateRange(prev => ({ from: prev?.from, to: date }))}
-                      disabled={(date) => dateRange?.from ? date < dateRange.from : false}
-                      locale={es}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-            <Button 
-              variant="outline" 
-              size="sm"
-              disabled={exporting}
-              className="w-full sm:w-auto"
-              onClick={async () => {
-                setExporting(true)
-                try {
-                  await new Promise(resolve => setTimeout(resolve, 1500))
-                  
-                  let csv = 'REPORTE DE ANALYTICS\n\n'
-                  csv += `Periodo,${period === 'month' ? 'Mes Actual' : period === 'quarter' ? 'Trimestre' : 'Año Completo'}\n\n`
-                  
-                  csv += 'RESUMEN FINANCIERO\n'
-                  csv += 'Concepto,Monto,Cantidad\n'
-                  csv += `Ventas,${summary.sales.total},${summary.sales.count}\n`
-                  csv += `Compras,${summary.purchases.total},${summary.purchases.count}\n`
-                  csv += `Balance,${summary.balance},-\n\n`
-                  
-                  csv += 'TENDENCIA MENSUAL\n'
-                  csv += 'Mes,Ventas,Compras\n'
-                  revenueTrend.forEach(item => {
-                    csv += `${item.month},${item.sales},${item.purchases}\n`
-                  })
-                  
-                  csv += '\nTOP CLIENTES\n'
-                  csv += 'Cliente,Monto Total,Cantidad Facturas\n'
-                  topClients.forEach(client => {
-                    csv += `${client.client_name},${client.total_amount},${client.invoice_count}\n`
-                  })
-                  
-                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `analytics-${period}-${new Date().toISOString().split('T')[0]}.csv`
-                  a.click()
-                  URL.revokeObjectURL(url)
-                  toast.success('Reporte exportado en formato CSV')
-                } catch (error) {
-                  toast.error('Error al exportar datos')
-                } finally {
-                  setExporting(false)
-                }
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">{exporting ? 'Exportando...' : 'Exportar'}</span>
-              <span className="sm:hidden">{exporting ? '...' : 'CSV'}</span>
-            </Button>
           </div>
         </div>
 

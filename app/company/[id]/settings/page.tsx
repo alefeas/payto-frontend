@@ -493,7 +493,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-4">
             <BackButton href={`/company/${companyId}`} />
             <div>
-              <ResponsiveHeading level="h1">Configuración de Perfil Fiscal</ResponsiveHeading>
+              <ResponsiveHeading level="h1">Configuración</ResponsiveHeading>
               <ResponsiveText className="text-muted-foreground">Gestionar configuración y preferencias</ResponsiveText>
             </div>
           </div>
@@ -664,8 +664,7 @@ export default function SettingsPage() {
                                   const conditionLabel = {
                                     'registered_taxpayer': 'Responsable Inscripto',
                                     'monotax': 'Monotributo',
-                                    'exempt': 'Exento',
-                                    'final_consumer': 'Consumidor Final'
+                                    'exempt': 'Exento'
                                   }[response.tax_condition] || response.tax_condition
                                   
                                   toast.success(response.message, {

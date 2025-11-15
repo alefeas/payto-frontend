@@ -10,18 +10,18 @@ export function AnalyticsSkeleton() {
         {/* Header Skeleton */}
         <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full xl:w-auto">
-            <Skeleton className="h-10 w-10 rounded flex-shrink-0" />
+            <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <Skeleton className="h-7 sm:h-8 w-48 sm:w-64 max-w-full mb-1" />
               <Skeleton className="h-3 sm:h-4 w-64 sm:w-96 max-w-full" />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
-            <div className="flex gap-2">
-              <Skeleton className="h-10 flex-1 sm:flex-none sm:w-[120px]" />
-              <Skeleton className="h-10 flex-1 sm:flex-none sm:w-[180px]" />
+          <div className="w-full xl:w-auto">
+            <div className="grid grid-cols-2 xl:flex gap-2">
+              <Skeleton className="h-12 w-full xl:w-[120px]" />
+              <Skeleton className="h-12 w-full xl:w-[180px]" />
+              <Skeleton className="h-12 col-span-2 xl:col-span-1 xl:w-[140px]" />
             </div>
-            <Skeleton className="h-10 w-full sm:w-auto sm:w-24" />
           </div>
         </div>
 
