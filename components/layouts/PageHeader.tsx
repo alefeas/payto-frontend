@@ -26,11 +26,11 @@ export function PageHeader({
       <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
         {backHref && <BackButton href={backHref} />}
         <div className="flex-1 min-w-0">
-          <ResponsiveHeading level={titleLevel} className="truncate">
+          <ResponsiveHeading level={titleLevel} className="break-words">
             {title}
           </ResponsiveHeading>
           {description && (
-            <ResponsiveText className="text-muted-foreground truncate">
+            <ResponsiveText className="text-muted-foreground break-words">
               {description}
             </ResponsiveText>
           )}

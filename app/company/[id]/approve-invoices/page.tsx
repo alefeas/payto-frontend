@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { CheckCircle, XCircle, Clock, FileText, User, Eye } from "lucide-react"
+import { CheckCircle, XCircle, FileText, User, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BackButton } from "@/components/ui/back-button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeader } from "@/components/layouts/PageHeader"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ApproveInvoicesSkeleton } from "@/components/invoices/ApproveInvoicesSkeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { invoiceService, Invoice } from "@/services/invoice.service"
@@ -103,6 +103,11 @@ export default function ApproveInvoicesPage() {
         }
         
         return false
+      }).sort((a, b) => {
+        // Ordenar por fecha de vencimiento (más próximas primero)
+        const dateA = new Date(a.due_date).getTime()
+        const dateB = new Date(b.due_date).getTime()
+        return dateA - dateB
       })
       setInvoices(pendingInvoices)
     } catch (error: any) {
@@ -186,72 +191,17 @@ export default function ApproveInvoicesPage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-          </div>
-
-          {/* Info Card Skeleton */}
-          <Card className="border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-5 w-5" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Content Skeleton */}
-          <Card className="border-gray-200">
-            <CardHeader>
-              <Skeleton className="h-6 w-64" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-8 w-20" />
-                        <Skeleton className="h-8 w-20" />
-                        <Skeleton className="h-8 w-20" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <ApproveInvoicesSkeleton />
   }
   if (!isAuthenticated) return null
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-            <BackButton href={`/company/${id}`} />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold">Aprobar Facturas</h1>
-              <p className="text-sm sm:text-base text-muted-foreground truncate">{companyName}</p>
-            </div>
-          </div>
-        </div>
+        <PageHeader 
+          title="Aprobar Facturas"
+          description="Aprueba o rechaza facturas de proveedores"
+        />
 
         <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
           <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
@@ -283,48 +233,57 @@ export default function ApproveInvoicesPage() {
             ) : (
               <div className="space-y-3">
                 {invoices.map((invoice) => (
-                  <div key={invoice.id} className="border border-gray-200 rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                  <div key={invoice.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-accent/50 transition-colors">
+                    {/* Top row: Invoice info with view button fixed at top-right */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <FileText className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                            <p className="font-semibold truncate">
-                              Factura {invoice.type} {String(invoice.sales_point).padStart(4, '0')}-{String(invoice.voucher_number).padStart(8, '0')}
-                            </p>
-                            <Badge variant={invoice.approvals_received >= invoice.approvals_required ? "default" : "secondary"}>
-                              {invoice.approvals_received}/{invoice.approvals_required}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="font-medium truncate text-sm sm:text-base">
+                            Factura {invoice.type} {String(invoice.sales_point).padStart(4, '0')}-{String(invoice.voucher_number).padStart(8, '0')}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
                             {invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || invoice.client?.business_name}
                           </p>
                         </div>
-                        
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm text-muted-foreground">Total</p>
-                          <p className="font-bold text-lg">${invoice.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</p>
-                        </div>
-                        
-                        <div className="text-right flex-shrink-0 hidden md:block">
-                          <p className="text-sm text-muted-foreground">Vencimiento</p>
-                          <p className="text-sm font-medium">{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}</p>
-                        </div>
                       </div>
                       
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => viewInvoiceDetails(invoice.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                      {/* View button - always top right */}
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => viewInvoiceDetails(invoice.id)}
+                        className="flex-shrink-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Bottom row: Total, Vencimiento, Badge, and Action buttons */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="flex items-center gap-4 sm:gap-6 md:gap-8 flex-1">
+                        <div className="text-left">
+                          <p className="text-xs font-light text-muted-foreground">Total</p>
+                          <p className="font-medium text-sm sm:text-base">${invoice.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        
+                        <div className="text-left">
+                          <p className="text-xs font-light text-muted-foreground">Vencimiento</p>
+                          <p className="font-medium text-xs sm:text-sm">{parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}</p>
+                        </div>
+                        
+                        <Badge variant={invoice.approvals_received >= invoice.approvals_required ? "default" : "secondary"} className="w-fit flex-shrink-0">
+                          {invoice.approvals_received}/{invoice.approvals_required}
+                        </Badge>
+                      </div>
+                      
+                      {/* Action buttons - right side on md, below on smaller screens */}
+                      <div className="flex gap-2 flex-shrink-0 md:ml-auto">
                         {invoice.approvals?.some(a => a.user?.id === currentUserId) ? (
-                          <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md">
+                          <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md text-sm">
                             <CheckCircle className="h-4 w-4" style={{ color: colors.accent }} />
-                            <span className="text-sm font-medium" style={{ color: colors.accent }}>Ya aprobaste</span>
+                            <span className="font-medium" style={{ color: colors.accent }}>Ya aprobaste</span>
                           </div>
                         ) : (
                           <>
@@ -385,8 +344,8 @@ export default function ApproveInvoicesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Notas (opcional)</label>
+            <div className="space-y-3">
+              <label className="text-sm font-medium mb-2 block">Notas (opcional)</label>
               <Textarea
                 placeholder="Agregar comentarios sobre la aprobación..."
                 value={approvalNotes}
@@ -416,8 +375,8 @@ export default function ApproveInvoicesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Motivo del rechazo *</label>
+            <div className="space-y-3">
+              <label className="text-sm font-medium mb-2 block">Motivo del rechazo *</label>
               <Textarea
                 placeholder="Explica por qué rechazas esta factura..."
                 value={rejectionReason}
