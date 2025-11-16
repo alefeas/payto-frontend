@@ -29,6 +29,11 @@ export default function ContactForm() {
       toast.error("El email es obligatorio");
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Por favor ingresa un email válido");
+      return;
+    }
     if (!message.trim()) {
       toast.error("El mensaje es obligatorio");
       return;
@@ -86,7 +91,6 @@ export default function ContactForm() {
               placeholder="Tu nombre"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
               autoComplete="name"
               className="h-12"
             />
@@ -96,11 +100,10 @@ export default function ContactForm() {
             <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
-              type="email"
+              type="text"
               placeholder="tu@ejemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               autoComplete="email"
               className="h-12"
             />
@@ -113,7 +116,6 @@ export default function ContactForm() {
               placeholder="Cuéntanos más sobre tu consulta..."
               value={message}
               onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
-              required
               disabled={loading}
               maxLength={1000}
               className="min-h-[120px] resize-none"

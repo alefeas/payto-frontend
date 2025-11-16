@@ -100,11 +100,10 @@ export default function LoginForm() {
             <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
-              type="email"
+              type="text"
               placeholder="tu@ejemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
               autoComplete="email"
               className="h-12"
               disabled={isLoading}
@@ -128,7 +127,6 @@ export default function LoginForm() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
                 autoComplete="current-password"
                 className="h-12 pr-10"
                 disabled={isLoading}

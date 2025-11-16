@@ -239,7 +239,7 @@ export default function SignupForm() {
                 <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   placeholder="tu@ejemplo.com"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -312,6 +312,7 @@ export default function SignupForm() {
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     className="h-12 pr-10"
                     disabled={isLoading}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
