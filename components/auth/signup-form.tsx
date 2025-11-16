@@ -251,10 +251,10 @@ export default function SignupForm() {
                 <Label htmlFor="phone">Teléfono</Label>
                 <Input
                   id="phone"
-                  placeholder="11 1234-5678"
+                  placeholder="+54 11 6628-2804"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})}
-                  maxLength={15}
+                  maxLength={20}
                   className="h-12"
                   disabled={isLoading}
                 />

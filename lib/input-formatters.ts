@@ -18,11 +18,22 @@ export const formatCBU = (value: string): string => {
 }
 
 export const formatPhone = (value: string): string => {
-  const numbers = value.replace(/\D/g, '').slice(0, 15)
-  if (numbers.length <= 2) return numbers
-  if (numbers.length <= 4) return `${numbers.slice(0, 2)} ${numbers.slice(2)}`
-  if (numbers.length <= 8) return `${numbers.slice(0, 2)} ${numbers.slice(2, 4)} ${numbers.slice(4)}`
-  return `${numbers.slice(0, 2)} ${numbers.slice(2, 4)} ${numbers.slice(4, 8)}-${numbers.slice(8)}`
+  // Remove all non-digits
+  let numbers = value.replace(/\D/g, '')
+  
+  // Remove leading 54 if present (country code)
+  if (numbers.startsWith('54')) {
+    numbers = numbers.slice(2)
+  }
+  
+  // Limit to 10 digits
+  numbers = numbers.slice(0, 10)
+  
+  // Format: +54 11 XXXX-XXXX (standard Argentine format)
+  if (numbers.length === 0) return ''
+  if (numbers.length <= 2) return `+54 ${numbers}`
+  if (numbers.length <= 6) return `+54 ${numbers.slice(0, 2)} ${numbers.slice(2)}`
+  return `+54 ${numbers.slice(0, 2)} ${numbers.slice(2, 6)}-${numbers.slice(6)}`
 }
 
 export const validateCUIT = (value: string): boolean => {

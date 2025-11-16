@@ -8,17 +8,56 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FormFooterLink } from "@/components/ui/form-footer-link";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import apiClient from "@/lib/api-client";
 
 export default function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Contact form submission:", { name, email, subject, message });
-    // Handle form submission here
+    
+    if (!name.trim()) {
+      toast.error("El nombre es obligatorio");
+      return;
+    }
+    if (!email.trim()) {
+      toast.error("El email es obligatorio");
+      return;
+    }
+    if (!message.trim()) {
+      toast.error("El mensaje es obligatorio");
+      return;
+    }
+    if (message.trim().length < 10) {
+      toast.error("El mensaje debe tener al menos 10 caracteres");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiClient.post("/contact", {
+        name: name.trim(),
+        email: email.trim(),
+        message: message.trim(),
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setName("");
+        setEmail("");
+        setMessage("");
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Error al enviar el mensaje";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,32 +107,39 @@ export default function ContactForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject">Asunto</Label>
-            <Input
-              id="subject"
-              type="text"
-              placeholder="¿Cómo podemos ayudarte?"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-              className="h-12"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="message">Mensaje</Label>
             <Textarea
               id="message"
               placeholder="Cuéntanos más sobre tu consulta..."
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
               required
+              disabled={loading}
+              maxLength={1000}
               className="min-h-[120px] resize-none"
             />
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-gray-500">Mínimo 10 caracteres</p>
+              <p className={`text-xs font-medium ${message.length >= 1000 ? 'text-blue-600' : 'text-gray-500'}`}>
+                {message.length} / 1000
+              </p>
+            </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-base" size="lg">
-            Enviar Mensaje
+          <Button 
+            type="submit" 
+            className="w-full h-12 text-base" 
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              "Enviar Mensaje"
+            )}
           </Button>
         </form>
 

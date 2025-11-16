@@ -561,7 +561,11 @@ export default function SettingsPage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Teléfono</Label>
-                        <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})} />
+                        <Input 
+                          placeholder="+54 11 6628-2804"
+                          value={formData.phone} 
+                          onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})} 
+                        />
                       </div>
                     </div>
                   </div>
