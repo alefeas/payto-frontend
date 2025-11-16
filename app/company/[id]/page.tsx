@@ -7,7 +7,7 @@ import {
   Eye,
   CreditCard, 
   BarChart3, 
-  Plus,
+  Upload,
   Users,
   Settings,
   AlertTriangle,
@@ -33,6 +33,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
 import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
+import { ActionItem } from "@/components/company/action-item"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -160,13 +161,16 @@ export default function CompanyPage() {
             
             const status = inv.display_status || inv.status
             const companyStatus = inv.company_statuses?.[companyId]
+            const paymentStatus = inv.payment_status
             
             // Excluir anuladas
-            if (status === 'cancelled' || inv.payment_status === 'cancelled') return false
+            if (status === 'cancelled' || paymentStatus === 'cancelled') return false
             // Excluir pagadas completamente
-            if (companyStatus === 'paid' || status === 'paid' || inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
+            if (companyStatus === 'paid' || paymentStatus === 'paid') return false
             // Excluir rechazadas
             if (status === 'rejected') return false
+            // Solo incluir si el estado es válido (approved, pending_approval, etc.) pero no pagado
+            if (status === 'draft' || status === 'pending_sync') return false
             
             return true
           }).length
@@ -186,17 +190,20 @@ export default function CompanyPage() {
             
             const status = inv.display_status || inv.status
             const companyStatus = inv.company_statuses?.[companyId]
+            const paymentStatus = inv.payment_status
             const isIssuer = String(inv.issuer_company_id) === String(companyId)
             
             // Excluir anuladas
-            if (status === 'cancelled' || inv.payment_status === 'cancelled') return false
+            if (status === 'cancelled' || paymentStatus === 'cancelled') return false
             // Excluir rechazadas
             if (status === 'rejected') return false
+            // Excluir draft o pending_sync
+            if (status === 'draft' || status === 'pending_sync') return false
             // Excluir pagadas/cobradas
             if (isIssuer) {
-              if (companyStatus === 'collected' || status === 'collected' || inv.payment_status === 'collected' || inv.payment_status === 'paid') return false
+              if (companyStatus === 'collected' || paymentStatus === 'collected' || paymentStatus === 'paid') return false
             } else {
-              if (companyStatus === 'paid' || status === 'paid' || inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
+              if (companyStatus === 'paid' || paymentStatus === 'paid') return false
             }
             
             return true
@@ -297,6 +304,7 @@ export default function CompanyPage() {
     icon: any
     permission?: string
     action: () => void
+    color?: string
   }
 
   const allMenuItems: MenuItem[] = [
@@ -310,7 +318,7 @@ export default function CompanyPage() {
     ...(hasPermission(userRole, 'invoices.create') ? [{
       title: "Cargar Comprobante Manual",
       description: "Registrar comprobantes históricos",
-      icon: Plus,
+      icon: Upload,
       permission: 'invoices.create' as const,
       action: () => router.push(`/company/${company.id}/load-invoice`)
     }] : []),
@@ -505,19 +513,13 @@ export default function CompanyPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {menuItems.map((item: MenuItem, index) => (
-              <div
+              <ActionItem
                 key={index}
-                className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
+                title={item.title}
+                description={item.description}
+                icon={item.icon}
                 onClick={item.action}
-              >
-                <div className="p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
-                  <item.icon className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2 font-light">{item.description}</p>
-                </div>
-              </div>
+              />
             ))}
           </div>
         </div>
@@ -532,19 +534,13 @@ export default function CompanyPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {additionalItems.map((item, index) => (
-              <div
+              <ActionItem
                 key={index}
-                className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group"
+                title={item.title}
+                description={item.description}
+                icon={item.icon}
                 onClick={item.action}
-              >
-                <div className="p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] group-hover:scale-110 transition-transform flex-shrink-0">
-                  <item.icon className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2 font-light">{item.description}</p>
-                </div>
-              </div>
+              />
             ))}
           </div>
         </div>

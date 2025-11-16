@@ -241,7 +241,7 @@ export default function NetworkPage() {
               </div>
             </div>
           </div>
-          <Button onClick={() => setShowRequestModal(true)} className="bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] hover:opacity-90 w-full sm:w-64 lg:w-auto">
+          <Button onClick={() => setShowRequestModal(true)} className="w-full sm:w-64 lg:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Conectar Empresa
           </Button>
@@ -495,7 +495,7 @@ export default function NetworkPage() {
               </Button>
               <Button 
                 onClick={handleSendRequest} 
-                className="w-full sm:w-auto bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] hover:opacity-90" 
+                className="w-full sm:w-auto" 
                 disabled={isSending}
               >
                 {isSending ? (

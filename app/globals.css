@@ -7,6 +7,14 @@
   :root {
     --font-poppins-medium: "Poppins Medium";
     --font-poppins-thin: "Poppins Thin";
+    --color-primary: #ffffff;
+    --color-secondary: #000000;
+    --color-accent: #002bff;
+    --color-gray: #eeeeee;
+    --gradient-top-left: #002bff;
+    --gradient-top-right: #0078ff;
+    --gradient-bottom-right: #0000d4;
+    --gradient-bottom-left: #0078ff;
   }
 
   body {
@@ -55,7 +63,7 @@
   /* Texto normal (p, span, div, etc.) con font-weight 600 para mejor legibilidad sin ser muy pesado */
   p:not(.font-normal):not(.font-light):not(.font-semibold):not(.font-medium):not(.font-bold):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-semibold *):not(.font-medium *):not(.font-bold *):not(.font-light *):not(input):not([data-slot="input"] *),
   span:not(.font-normal):not(.font-light):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.rdp *):not(.font-semibold *):not(.font-medium *):not(.font-bold *):not(.font-light *):not(input *):not([data-slot="input"] *):not([data-slot="select"] *),
-  div:not(.font-normal):not(.font-light):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-light *):not([data-slot="select"] *),
+  div:not(.font-normal):not(.font-light):not(.font-medium-heading):not(.font-semibold):not(.font-bold):not(.font-medium):not(button *):not([role="button"] *):not([data-slot="button"] *):not(.font-light *):not([data-slot="select"] *):not([data-slot="card"]):not([data-slot="card-header"]):not([data-slot="card-content"]):not([data-slot="card-footer"]):not([data-slot="card-action"]):not([data-slot="card"] *),
   td,
   th,
   li {
@@ -527,4 +535,47 @@
 
 .scrollbar-track-transparent::-webkit-scrollbar-track {
   background-color: transparent;
+}
+
+/* Map sidebar border colors to accent color from palette */
+.before\:bg-blue-600::before {
+  background-color: var(--color-accent) !important;
+}
+
+.dark\:before\:bg-blue-400::before {
+  background-color: var(--color-accent) !important;
+}
+
+/* Action items animation - two lines meeting from sides */
+.action-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-item::before,
+.action-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background-color: var(--color-accent);
+  transition: width 0.3s ease-out;
+}
+
+.action-item::before {
+  left: 50%;
+  width: 0;
+}
+
+.action-item::after {
+  right: 50%;
+  width: 0;
+}
+
+.action-item:hover::before {
+  width: 50%;
+}
+
+.action-item:hover::after {
+  width: 50%;
 }

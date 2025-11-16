@@ -16,3 +16,17 @@ export const colors = {
 } as const;
 
 export type ColorKey = keyof typeof colors;
+
+// CSS variables for use in Tailwind
+export const colorsCss = `
+  :root {
+    --color-primary: ${colors.primary};
+    --color-secondary: ${colors.secondary};
+    --color-accent: ${colors.accent};
+    --color-gray: ${colors.gray};
+    --gradient-top-left: ${colors.gradient.topLeft};
+    --gradient-top-right: ${colors.gradient.topRight};
+    --gradient-bottom-right: ${colors.gradient.bottomRight};
+    --gradient-bottom-left: ${colors.gradient.bottomLeft};
+  }
+`;

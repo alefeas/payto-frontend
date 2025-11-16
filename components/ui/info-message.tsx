@@ -20,7 +20,7 @@ const variantStyles = {
 }
 
 const iconColors = {
-  info: '#3b82f6', // blue-500
+  info: 'var(--color-accent)', // accent blue
   success: '#16a34a', // green-600
   warning: '#f59e0b', // amber-500
   error: '#dc2626', // red-600

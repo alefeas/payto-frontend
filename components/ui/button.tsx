@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-br from-[#002bff] via-[#0078ff] to-[#0000d4] text-white hover:opacity-90",
+        default: "bg-gradient-to-br from-[var(--gradient-top-left)] via-[var(--gradient-top-right)] to-[var(--gradient-bottom-right)] text-white hover:opacity-90",
         destructive:
           "bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md focus-visible:ring-red-500/20 dark:focus-visible:ring-red-500/40 transition-all",
         outline:
-          "border border-[#eeeeee] bg-background shadow-xs hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:bg-input/30 dark:border-input dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:hover:border-blue-800 transition-colors",
+          "border bg-background shadow-xs hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:bg-input/30 dark:border-input dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:hover:border-blue-800 transition-colors border-[var(--color-gray)]",
         secondary:
-          "bg-gradient-to-br from-white to-[#eeeeee] text-secondary-foreground border border-[#eeeeee] hover:opacity-90",
+          "bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-gray)] text-secondary-foreground border border-[var(--color-gray)] hover:opacity-90",
         ghost:
           "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-400 transition-colors",
         link: "text-primary underline-offset-4 hover:underline",

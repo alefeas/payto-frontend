@@ -11,7 +11,7 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[95%] max-w-6xl">
-      <div className="bg-white/60 backdrop-blur-md border border-[#eeeeee] rounded-2xl px-6 py-4 flex items-center justify-between">
+      <div className="bg-white/60 backdrop-blur-md border rounded-2xl px-6 py-4 flex items-center justify-between border-[var(--color-gray)]">
         <a href="/" className="flex items-center gap-2 h-8">
           <Image
             src="/brand/payto.png"
@@ -64,7 +64,7 @@ export default function Navbar() {
               <Menu className="h-6 w-6 text-foreground" />
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-full min-[400px]:w-[350px] bg-white border-l border-[#eeeeee] p-6">
+          <SheetContent side="right" className="w-full min-[400px]:w-[350px] bg-white border-l p-6 border-l-[var(--color-gray)]">
             <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
             <SheetDescription className="sr-only">
               Navegación principal de PayTo con enlaces a Precios, Características y Contacto

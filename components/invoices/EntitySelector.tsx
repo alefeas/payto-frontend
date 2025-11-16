@@ -234,7 +234,7 @@ export function EntitySelector({
         >
           <div className={cn(
             "h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
-            entityType === 'saved' ? "bg-gradient-to-br from-[#002bff] to-[#0078ff] border-[#002bff]" : "border-gray-300 bg-white"
+            entityType === 'saved' ? "bg-gradient-to-br from-[var(--gradient-top-left)] to-[var(--gradient-top-right)] border-[var(--color-accent)]" : "border-gray-300 bg-white"
           )}>
             {entityType === 'saved' && (
               <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -265,7 +265,7 @@ export function EntitySelector({
         >
           <div className={cn(
             "h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
-            entityType === 'new' ? "bg-gradient-to-br from-[#002bff] to-[#0078ff] border-[#002bff]" : "border-gray-300 bg-white"
+            entityType === 'new' ? "bg-gradient-to-br from-[var(--gradient-top-left)] to-[var(--gradient-top-right)] border-[var(--color-accent)]" : "border-gray-300 bg-white"
           )}>
             {entityType === 'new' && (
               <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
