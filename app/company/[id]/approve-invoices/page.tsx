@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { InfoMessage } from "@/components/ui/info-message"
 import { ApproveInvoicesSkeleton } from "@/components/invoices/ApproveInvoicesSkeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
@@ -201,18 +202,21 @@ export default function ApproveInvoicesPage() {
         <PageHeader 
           title="Aprobar Facturas"
           description="Aprueba o rechaza facturas de proveedores"
+          backHref={`/company/${id}`}
         />
 
-        <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-gray-200">
-          <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: colors.accent }} />
-          <p className="text-sm" style={{ color: colors.accent }}>
-            {requiredApprovals === 0 ? (
+        <InfoMessage
+          icon={CheckCircle}
+          iconColor={colors.accent}
+          variant="success"
+          description={
+            requiredApprovals === 0 ? (
               <span>Las facturas se <strong>aprueban automáticamente</strong> (sin control). Cambia esto en Configuración.</span>
             ) : (
               <span>Se requieren <strong>{requiredApprovals}</strong> {requiredApprovals === 1 ? 'aprobación' : 'aprobaciones'} para pagar facturas (configurable en Configuración).</span>
-            )}
-          </p>
-        </div>
+            )
+          }
+        />
 
         <Card>
           <CardHeader>

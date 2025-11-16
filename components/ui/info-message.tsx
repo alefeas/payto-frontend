@@ -43,10 +43,12 @@ export function InfoMessage({
   variant = 'info'
 }: InfoMessageProps) {
   const finalIconColor = iconColor || iconColors[variant]
+  const hasTitle = title || children
   
   return (
     <div className={cn(
-      "flex items-start gap-3 p-3 sm:p-4 rounded-lg border",
+      "flex gap-3 p-3 sm:p-4 rounded-lg border",
+      hasTitle ? "items-start" : "items-center",
       variantStyles[variant],
       className
     )}>
