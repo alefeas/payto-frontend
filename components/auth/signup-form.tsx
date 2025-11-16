@@ -209,7 +209,7 @@ export default function SignupForm() {
           {/* Step 1: Información Personal */}
           {step === 1 && (
             <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Nombre *</Label>
                 <Input
@@ -234,7 +234,7 @@ export default function SignupForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
@@ -261,7 +261,7 @@ export default function SignupForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Fecha de Nacimiento</Label>
                 <DatePicker
@@ -352,7 +352,7 @@ export default function SignupForm() {
           {/* Step 3: Dirección */}
           {step === 3 && (
             <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="country">País</Label>
                 <Input
@@ -388,7 +388,7 @@ export default function SignupForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="street">Calle</Label>
                 <Input
@@ -424,7 +424,7 @@ export default function SignupForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="floor">Piso</Label>
                 <Input

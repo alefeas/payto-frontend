@@ -197,7 +197,7 @@ export default function VerifyAccountForm() {
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label className="text-center block">Código de verificación</Label>
-            <div className="flex gap-2 justify-center">
+            <div className="flex gap-1 sm:gap-2 justify-center">
               {code.map((digit, index) => (
                 <Input
                   key={index}
@@ -211,7 +211,7 @@ export default function VerifyAccountForm() {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  className="w-12 h-14 text-center text-xl font-medium"
+                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-medium"
                   disabled={isLoading}
                 />
               ))}
@@ -242,25 +242,25 @@ export default function VerifyAccountForm() {
           </Button>
         </form>
 
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
           <p className="text-sm text-gray-600">
-            ¿No recibiste el código?{" "}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleResendCode}
-              disabled={resendTimer > 0 || isResending}
-              className="w-full"
-            >
-              {isResending ? (
-                'Reenviando...'
-              ) : resendTimer > 0 ? (
-                `Reenviar en ${resendTimer}s`
-              ) : (
-                'Reenviar código'
-              )}
-            </Button>
+            ¿No recibiste el código?
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResendCode}
+            disabled={resendTimer > 0 || isResending}
+            className="w-full"
+          >
+            {isResending ? (
+              'Reenviando...'
+            ) : resendTimer > 0 ? (
+              `Reenviar en ${resendTimer}s`
+            ) : (
+              'Reenviar código'
+            )}
+          </Button>
         </div>
       </div>
     </div>
