@@ -17,7 +17,12 @@ function Calendar({
 }: CalendarProps) {
   const [month, setMonth] = React.useState<Date>(props.month || new Date())
 
-  const months = [
+  const monthsShort = [
+    "Ene.", "Feb.", "Mar.", "Abr.", "May.", "Jun.",
+    "Jul.", "Ago.", "Sep.", "Oct.", "Nov.", "Dic."
+  ]
+  
+  const monthsFull = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
   ]
@@ -48,7 +53,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("[&.rdp]:border-0", className)}
       month={month}
       onMonthChange={setMonth}
       components={{
@@ -56,10 +61,10 @@ function Calendar({
           <div className="flex justify-center items-center gap-2 mb-4">
             <Select value={displayMonth.getMonth().toString()} onValueChange={handleMonthChange}>
               <SelectTrigger className="h-8 w-[110px]">
-                <SelectValue />
+                <SelectValue placeholder={monthsShort[displayMonth.getMonth()]} />
               </SelectTrigger>
               <SelectContent>
-                {months.map((m, i) => (
+                {monthsFull.map((m, i) => (
                   <SelectItem key={i} value={i.toString()}>
                     {m}
                   </SelectItem>
@@ -82,7 +87,7 @@ function Calendar({
         ),
       }}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 border border-[var(--color-gray)] rounded-lg p-3",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium hidden",
@@ -97,19 +102,19 @@ function Calendar({
         ),
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
-        head_cell: "text-muted-foreground rounded-md w-9 font-light text-[0.8rem]",
+        head_cell: "text-gray-900 rounded-md w-9 font-light text-[0.8rem]",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-blue-50 [&:has([aria-selected])]:bg-blue-50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-light aria-selected:opacity-100"
+          "h-9 w-9 p-0 font-light aria-selected:opacity-100 text-gray-900"
         ),
         day_range_end: "day-range-end",
-        day_selected: "bg-gradient-to-br from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 focus:from-blue-700 focus:to-blue-600",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+        day_selected: "bg-gradient-to-br from-[var(--gradient-top-left)] to-[var(--gradient-top-right)] text-white hover:opacity-90 focus:opacity-90",
+        day_today: "bg-blue-50 text-[var(--color-accent)]",
+        day_outside: "day-outside text-gray-300 opacity-50 aria-selected:bg-blue-50 aria-selected:text-gray-300 aria-selected:opacity-30",
+        day_disabled: "text-gray-300 opacity-50",
+        day_range_middle: "aria-selected:bg-blue-50 aria-selected:text-[var(--color-accent)]",
         day_hidden: "invisible",
         ...classNames,
       }}

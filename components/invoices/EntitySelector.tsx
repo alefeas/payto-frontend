@@ -166,8 +166,8 @@ export function EntitySelector({
             className={cn(
               "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
               entityType === 'registered' 
-                ? "border-blue-500 bg-blue-50/50" 
-                : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                ? "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" 
+                : "border-[var(--color-gray)] hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
             )}
             onClick={() => handleEntityTypeChange('registered')}
           >
@@ -197,8 +197,8 @@ export function EntitySelector({
             className={cn(
               "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
               entityType === 'registered' 
-                ? "border-blue-500 bg-blue-50/50" 
-                : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                ? "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" 
+                : "border-[var(--color-gray)] hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
             )}
             onClick={() => handleEntityTypeChange('registered')}
           >
@@ -227,8 +227,8 @@ export function EntitySelector({
           className={cn(
             "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
             entityType === 'saved' 
-              ? "border-blue-500 bg-blue-50/50" 
-              : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+              ? "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" 
+              : "border-[var(--color-gray)] hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
           )}
           onClick={() => handleEntityTypeChange('saved')}
         >
@@ -258,8 +258,8 @@ export function EntitySelector({
           className={cn(
             "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all",
             entityType === 'new' 
-              ? "border-blue-500 bg-blue-50/50" 
-              : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+              ? "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" 
+              : "border-[var(--color-gray)] hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
           )}
           onClick={() => handleEntityTypeChange('new')}
         >

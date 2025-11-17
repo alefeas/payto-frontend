@@ -3,7 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html {
+  scroll-behavior: smooth !important;
+}
+
 @layer base {
+
   :root {
     --font-poppins-medium: "Poppins Medium";
     --font-poppins-thin: "Poppins Thin";
@@ -477,6 +482,11 @@
     z-index: 50 !important;
   }
   
+  /* Remove border from popper content wrapper (calendar) */
+  [data-radix-popper-content-wrapper] {
+    border: none !important;
+  }
+  
   /* Calendar selected day - global fix with gradient */
   .rdp-day_button[aria-selected="true"],
   .rdp .rdp-day_selected,
@@ -501,6 +511,50 @@
   
   /* Suavizar borde del contenedor del calendario */
   .rdp {
+    border: none !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+  }
+  
+  .rdp-months {
+    border: none !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+  }
+  
+  .rdp-month {
+    border: none !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+  }
+  
+  /* Override inline styles from react-day-picker */
+  .rdp[style*="border"] {
+    border: none !important;
+  }
+  
+  /* Days outside month - make them lighter */
+  .rdp-day_outside,
+  .rdp-day_outside button {
+    opacity: 0.5 !important;
+    color: rgb(209 213 219) !important;
+  }
+  
+  /* Disabled days - make them lighter */
+  .rdp-day_disabled,
+  .rdp-day_disabled button {
+    opacity: 0.5 !important;
+    color: rgb(209 213 219) !important;
+  }
+  
+  /* Day of week headers - make them lighter like disabled days */
+  .rdp-head_cell {
+    opacity: 0.5 !important;
+    color: rgb(209 213 219) !important;
+    font-weight: 600 !important;
+  }
+  
+  [style*="border: 1px solid rgb(0, 0, 0)"] {
     border: none !important;
   }
 }  /*
@@ -579,3 +633,7 @@
 .action-item:hover::after {
   width: 50%;
 }
+
+
+
+

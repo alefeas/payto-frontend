@@ -1,5 +1,6 @@
 "use client"
 
+import { memo, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,7 +30,7 @@ interface InvoicePerceptionsSectionProps {
   disabledMessage?: string
 }
 
-export function InvoicePerceptionsSection({
+function InvoicePerceptionsSectionComponent({
   perceptions,
   currency,
   subtotal,
@@ -42,7 +43,7 @@ export function InvoicePerceptionsSection({
   disabledMessage
 }: InvoicePerceptionsSectionProps) {
   
-  const calculatePerceptionAmount = (perception: Perception) => {
+  const calculatePerceptionAmount = useMemo(() => (perception: Perception) => {
     const baseType = perception.baseType ?? perception.base_type ?? 'net'
     let base = subtotal
     if (baseType === 'total') {
@@ -51,7 +52,7 @@ export function InvoicePerceptionsSection({
       base = totalTaxes
     }
     return base * (perception.rate || 0) / 100
-  }
+  }, [subtotal, totalTaxes])
 
   return (
     <Card>
@@ -222,3 +223,5 @@ export function InvoicePerceptionsSection({
     </Card>
   )
 }
+
+export const InvoicePerceptionsSection = memo(InvoicePerceptionsSectionComponent)

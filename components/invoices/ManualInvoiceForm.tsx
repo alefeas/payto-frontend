@@ -32,16 +32,16 @@ interface ManualInvoiceFormProps {
 
 interface InvoiceItem {
   description: string
-  quantity: number
-  unit_price: number
-  discount_percentage: number
+  quantity?: number | string
+  unit_price?: number | string
+  discount_percentage?: number | string
   tax_rate: number
 }
 
 interface Perception {
   type: string
   name: string
-  rate: number
+  rate?: number | string
   jurisdiction?: string
   base_type: string
 }
@@ -50,7 +50,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
   const [mode, setMode] = useState<"issued" | "received">("received")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [items, setItems] = useState<InvoiceItem[]>([
-    { description: "", quantity: 1, unit_price: 0, discount_percentage: 0, tax_rate: 21 }
+    { description: "", quantity: undefined as any, unit_price: undefined as any, discount_percentage: undefined as any, tax_rate: 21 }
   ])
   const [perceptions, setPerceptions] = useState<Perception[]>([])
   const [clients, setClients] = useState<any[]>([])
@@ -211,7 +211,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
   }
 
   const addItem = () => {
-    setItems([...items, { description: "", quantity: 1, unit_price: 0, discount_percentage: 0, tax_rate: 21 }])
+    setItems([...items, { description: "", quantity: undefined as any, unit_price: undefined as any, discount_percentage: undefined as any, tax_rate: 21 }])
   }
 
   const removeItem = (index: number) => {
@@ -227,7 +227,7 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
   }
 
   const addPerception = () => {
-    setPerceptions([...perceptions, { type: "vat_perception", name: "", rate: 0, base_type: "net" }])
+    setPerceptions([...perceptions, { type: "vat_perception", name: "", rate: undefined as any, base_type: "net" }])
   }
 
   const removePerception = (index: number) => {
@@ -245,23 +245,32 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
     let totalTaxes = 0
 
     items.forEach(item => {
-      const itemBase = item.quantity * item.unit_price
-      const discount = itemBase * (item.discount_percentage / 100)
-      const itemSubtotal = itemBase - discount
-      // Exento (-1) y No Gravado (-2) tienen IVA = 0
-      const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
-      const itemTax = itemSubtotal * (taxRate / 100)
+      const qty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
+      const price = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price
+      const discount = typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : (item.discount_percentage ?? 0)
       
-      subtotal += itemSubtotal
-      totalTaxes += itemTax
+      if (qty !== undefined && !isNaN(qty) && price !== undefined && !isNaN(price) && !isNaN(discount)) {
+        const itemBase = qty * price
+        const discountAmount = itemBase * (discount / 100)
+        const itemSubtotal = itemBase - discountAmount
+        // Exento (-1) y No Gravado (-2) tienen IVA = 0
+        const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
+        const itemTax = itemSubtotal * (taxRate / 100)
+        
+        subtotal += itemSubtotal
+        totalTaxes += itemTax
+      }
     })
 
     let totalPerceptions = 0
     perceptions.forEach(perception => {
-      const base = perception.base_type === "net" ? subtotal : 
-                   perception.base_type === "vat" ? totalTaxes : 
-                   subtotal + totalTaxes
-      totalPerceptions += base * (perception.rate / 100)
+      const rate = typeof perception.rate === 'string' ? parseFloat(perception.rate) : perception.rate
+      if (rate !== undefined && !isNaN(rate)) {
+        const base = perception.base_type === "net" ? subtotal : 
+                     perception.base_type === "vat" ? totalTaxes : 
+                     subtotal + totalTaxes
+        totalPerceptions += base * (rate / 100)
+      }
     })
 
     return {
@@ -316,12 +325,19 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
       }
     }
 
-    if (items.some(item => !item.description || item.quantity <= 0 || item.unit_price <= 0)) {
+    if (items.some(item => {
+      const qty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity ?? 0)
+      const price = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : (item.unit_price ?? 0)
+      return !item.description || isNaN(qty) || qty <= 0 || isNaN(price) || price <= 0
+    })) {
       toast.error("Verifique que todos los ítems tengan descripción, cantidad mayor a 0 y precio mayor a 0")
       return
     }
 
-    if (perceptions.some(p => !p.rate || p.rate <= 0)) {
+    if (perceptions.some(p => {
+      const rate = typeof p.rate === 'string' ? parseFloat(p.rate) : (p.rate ?? 0)
+      return isNaN(rate) || rate <= 0
+    })) {
       toast.error("Las percepciones deben tener una alícuota mayor a 0")
       return
     }
@@ -379,19 +395,27 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
         cae_due_date: caeExpiration || undefined,
         notes: notes || undefined,
         related_invoice_id: associateInvoice && relatedInvoiceId ? relatedInvoiceId : undefined,
-        items: items.map(item => ({
-          description: item.description,
-          quantity: parseFloat(item.quantity.toString()),
-          unit_price: parseFloat(item.unit_price.toString()),
-          discount_percentage: parseFloat(item.discount_percentage.toString()),
-          tax_rate: parseFloat(item.tax_rate.toString())
-        })),
-        perceptions: perceptions.length > 0 ? perceptions.map(p => ({
-          type: p.type,
-          name: p.name,
-          rate: parseFloat(p.rate.toString()),
-          base_type: p.base_type
-        })) : undefined
+        items: items.map(item => {
+          const qty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity ?? 0)
+          const price = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : (item.unit_price ?? 0)
+          const discount = typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : (item.discount_percentage ?? 0)
+          return {
+            description: item.description,
+            quantity: qty,
+            unit_price: price,
+            discount_percentage: discount,
+            tax_rate: parseFloat(item.tax_rate.toString())
+          }
+        }),
+        perceptions: perceptions.length > 0 ? perceptions.map(p => {
+          const rate = typeof p.rate === 'string' ? parseFloat(p.rate) : (p.rate ?? 0)
+          return {
+            type: p.type,
+            name: p.name,
+            rate: rate,
+            base_type: p.base_type
+          }
+        }) : undefined
       }
 
       const fileInput = document.getElementById('attachment') as HTMLInputElement
@@ -890,8 +914,11 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
         </CardHeader>
         <CardContent className="space-y-4">
           {items.map((item, index) => {
-            const itemBase = item.quantity * item.unit_price
-            const discount = itemBase * (item.discount_percentage / 100)
+            const qty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity ?? 0)
+            const price = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : (item.unit_price ?? 0)
+            const discountPct = typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : (item.discount_percentage ?? 0)
+            const itemBase = qty * price
+            const discount = itemBase * (discountPct / 100)
             const itemSubtotal = itemBase - discount
             // Exento (-1) y No Gravado (-2) tienen IVA = 0
             const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
@@ -931,10 +958,25 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                       min="0.01"
                       max="999999.99"
                       step="0.01"
-                      value={item.quantity}
+                      placeholder="1.00"
+                      value={item.quantity ?? ''}
                       onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0
-                        updateItem(index, "quantity", Math.min(Math.max(val, 0.01), 999999.99))
+                        const val = e.target.value
+                        if (val === '') {
+                          updateItem(index, "quantity", '')
+                        } else {
+                          const numVal = parseFloat(val)
+                          updateItem(index, "quantity", isNaN(numVal) ? '' : numVal)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val) && val > 0) {
+                          updateItem(index, "quantity", Math.min(Math.max(val, 0.01), 999999.99))
+                        } else if (e.target.value !== '') {
+                          toast.error('La cantidad debe ser mayor a 0')
+                          updateItem(index, "quantity", '')
+                        }
                       }}
                     />
                   </div>
@@ -946,10 +988,25 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                       min="0"
                       max="999999999.99"
                       step="0.01"
-                      value={item.unit_price}
+                      placeholder="0.00"
+                      value={item.unit_price ?? ''}
                       onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0
-                        updateItem(index, "unit_price", Math.min(Math.max(val, 0), 999999999.99))
+                        const val = e.target.value
+                        if (val === '') {
+                          updateItem(index, "unit_price", '')
+                        } else {
+                          const numVal = parseFloat(val)
+                          updateItem(index, "unit_price", isNaN(numVal) ? '' : numVal)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val) && val >= 0) {
+                          updateItem(index, "unit_price", Math.min(Math.max(val, 0), 999999999.99))
+                        } else if (e.target.value !== '') {
+                          toast.error('El precio unitario debe ser un número válido')
+                          updateItem(index, "unit_price", '')
+                        }
                       }}
                     />
                   </div>
@@ -961,8 +1018,30 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                       min="0"
                       max="100"
                       step="0.01"
-                      value={item.discount_percentage}
-                      onChange={(e) => updateItem(index, "discount_percentage", Math.min(Math.max(parseFloat(e.target.value) || 0, 0), 100))}
+                      placeholder="0.00"
+                      value={item.discount_percentage ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val === '') {
+                          updateItem(index, "discount_percentage", '')
+                        } else {
+                          const numVal = parseFloat(val)
+                          updateItem(index, "discount_percentage", isNaN(numVal) ? '' : numVal)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val) && val >= 0) {
+                          const finalVal = Math.min(Math.max(val, 0), 100)
+                          if (val > 100) {
+                            toast.error('La bonificación no puede ser mayor a 100%')
+                          }
+                          updateItem(index, "discount_percentage", finalVal)
+                        } else if (e.target.value !== '') {
+                          toast.error('La bonificación debe ser un número válido')
+                          updateItem(index, "discount_percentage", '')
+                        }
+                      }}
                     />
                   </div>
                   
@@ -1042,13 +1121,19 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
           ) : (
             perceptions.map((perception, index) => {
               const subtotal = items.reduce((sum, item) => {
-                const itemBase = item.quantity * item.unit_price
-                const discount = itemBase * (item.discount_percentage / 100)
+                const qty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity ?? 0)
+                const price = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : (item.unit_price ?? 0)
+                const discountPct = typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : (item.discount_percentage ?? 0)
+                const itemBase = qty * price
+                const discount = itemBase * (discountPct / 100)
                 return sum + (itemBase - discount)
               }, 0)
               const totalTaxes = items.reduce((sum, item) => {
-                const itemBase = item.quantity * item.unit_price
-                const discount = itemBase * (item.discount_percentage / 100)
+                const qty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity ?? 0)
+                const price = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : (item.unit_price ?? 0)
+                const discountPct = typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : (item.discount_percentage ?? 0)
+                const itemBase = qty * price
+                const discount = itemBase * (discountPct / 100)
                 const itemSubtotal = itemBase - discount
                 // Exento (-1) y No Gravado (-2) tienen IVA = 0
                 const taxRate = (item.tax_rate && item.tax_rate > 0) ? item.tax_rate : 0
@@ -1060,7 +1145,8 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
               } else if (perception.base_type === 'vat') {
                 base = totalTaxes
               }
-              const perceptionAmount = base * (perception.rate || 0) / 100
+              const rate = typeof perception.rate === 'string' ? parseFloat(perception.rate) : (perception.rate ?? 0)
+              const perceptionAmount = base * (rate / 100)
               
               return (
               <div key={index} className="space-y-3 p-4 border border-gray-200 rounded-lg relative">
@@ -1139,11 +1225,29 @@ export function ManualInvoiceForm({ companyId, onReady, onSuccess, onCancel }: M
                         min="0"
                         max="100"
                         step="0.01"
-                        placeholder="Ej: 3.5"
-                        value={perception.rate}
+                        placeholder="3.5"
+                        value={perception.rate ?? ''}
                         onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0
-                          updatePerception(index, "rate", Math.min(val, 100))
+                          const val = e.target.value
+                          if (val === '') {
+                            updatePerception(index, "rate", '')
+                          } else {
+                            const numVal = parseFloat(val)
+                            updatePerception(index, "rate", isNaN(numVal) ? '' : numVal)
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value)
+                          if (!isNaN(val) && val > 0) {
+                            const finalVal = Math.min(val, 100)
+                            if (val > 100) {
+                              toast.error('La alícuota no puede ser mayor a 100%')
+                            }
+                            updatePerception(index, "rate", finalVal)
+                          } else if (e.target.value !== '') {
+                            toast.error('La alícuota debe ser un número válido mayor a 0')
+                            updatePerception(index, "rate", '')
+                          }
                         }}
                       />
                     </div>

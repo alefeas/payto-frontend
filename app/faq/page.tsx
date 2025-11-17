@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/landing/footer";
+import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 
 interface FAQItem {
@@ -127,12 +129,9 @@ export default function FAQPage() {
               <p className="text-muted-foreground mb-6">
                 Nuestro equipo está listo para ayudarte con cualquier pregunta
               </p>
-              <a
-                href="/contact"
-                className="inline-block px-8 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
-              >
-                Contáctanos
-              </a>
+              <Link href="/contact">
+                <Button>Contáctanos</Button>
+              </Link>
             </div>
           </div>
         </section>

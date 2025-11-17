@@ -1,5 +1,6 @@
 "use client"
 
+import { memo, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,7 +30,7 @@ interface InvoiceItemsSectionProps {
   defaultVat?: number
 }
 
-export function InvoiceItemsSection({
+function InvoiceItemsSectionComponent({
   items,
   currency,
   onAddItem,
@@ -40,7 +41,7 @@ export function InvoiceItemsSection({
   defaultVat = 21
 }: InvoiceItemsSectionProps) {
   
-  const calculateItemTotal = (item: InvoiceItem) => {
+  const calculateItemTotal = useMemo(() => (item: InvoiceItem) => {
     const unitPrice = item.unit_price ?? item.unitPrice ?? 0
     const quantity = item.quantity ?? 1
     const discountPercentage = item.discount_percentage ?? item.discountPercentage ?? 0
@@ -52,14 +53,20 @@ export function InvoiceItemsSection({
     const actualTaxRate = (taxRate && taxRate > 0) ? taxRate : 0
     const tax = subtotal * actualTaxRate / 100
     return { subtotal, total: subtotal + tax }
-  }
+  }, [defaultVat])
 
-  const getItemValue = (item: InvoiceItem, field: string) => {
-    if (field === 'unitPrice') return item.unit_price ?? item.unitPrice ?? 0
-    if (field === 'discountPercentage') return item.discount_percentage ?? item.discountPercentage ?? 0
+  const getItemValue = useMemo(() => (item: InvoiceItem, field: string) => {
+    if (field === 'unitPrice') {
+      const val = item.unit_price ?? item.unitPrice
+      return val !== undefined && val !== null ? val : undefined
+    }
+    if (field === 'discountPercentage') {
+      const val = item.discount_percentage ?? item.discountPercentage
+      return val !== undefined && val !== null ? val : undefined
+    }
     if (field === 'taxRate') return item.tax_rate ?? item.taxRate ?? defaultVat
     return (item as any)[field]
-  }
+  }, [defaultVat])
 
   return (
     <Card>
@@ -112,7 +119,8 @@ export function InvoiceItemsSection({
                       min="0.01"
                       max="999999.99"
                       step="0.01"
-                      value={item.quantity ?? 1}
+                      placeholder="Cantidad"
+                      value={item.quantity !== undefined && item.quantity !== null ? item.quantity : ''}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value) || 0
                         onUpdateItem(index, 'quantity', Math.min(Math.max(val, 0.01), 999999.99))
@@ -127,7 +135,8 @@ export function InvoiceItemsSection({
                       min="0"
                       max="999999999.99"
                       step="0.01"
-                      value={getItemValue(item, 'unitPrice')}
+                      placeholder="Precio"
+                      value={getItemValue(item, 'unitPrice') !== undefined ? getItemValue(item, 'unitPrice') : ''}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value) || 0
                         const field = 'unit_price' in item ? 'unit_price' : 'unitPrice'
@@ -143,7 +152,8 @@ export function InvoiceItemsSection({
                       min="0"
                       max="100"
                       step="0.01"
-                      value={getItemValue(item, 'discountPercentage')}
+                      placeholder="Bonificación"
+                      value={getItemValue(item, 'discountPercentage') !== undefined ? getItemValue(item, 'discountPercentage') : ''}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value) || 0
                         const field = 'discount_percentage' in item ? 'discount_percentage' : 'discountPercentage'
@@ -200,3 +210,5 @@ export function InvoiceItemsSection({
     </Card>
   )
 }
+
+export const InvoiceItemsSection = memo(InvoiceItemsSectionComponent)

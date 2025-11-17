@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -8,38 +9,46 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Logo and Description */}
             <div>
-              <div className="h-8 flex items-start mb-4">
-                <Image
-                  src="/brand/payto.png"
-                  alt="Payto Logo"
-                  width={120}
-                  height={32}
-                  className="h-full w-auto object-contain"
-                />
-              </div>
+              <Link href="/">
+                <div className="h-8 flex items-start mb-4 cursor-pointer hover:opacity-80 transition-opacity">
+                  <Image
+                    src="/brand/payto.png"
+                    alt="Payto Logo"
+                    width={120}
+                    height={32}
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
+              </Link>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Plataforma especializada en facturación electrónica con ARCA y pago a proveedores.
               </p>
             </div>
 
-            {/* Características */}
+            {/* Navegación */}
             <div>
               <div className="h-8 flex items-start mb-4">
-                <h3 className="font-medium text-sm text-foreground">Características</h3>
+                <h3 className="font-medium text-sm text-foreground">Navegación</h3>
               </div>
               <nav className="flex flex-col space-y-3">
-                <a
+                <Link
+                  href="/"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  Inicio
+                </Link>
+                <Link
                   href="/features"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  Facturación
-                </a>
-                <a
-                  href="/features"
+                  Características
+                </Link>
+                <Link
+                  href="/pricing"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  Red PayTo
-                </a>
+                  Precios
+                </Link>
               </nav>
             </div>
 
@@ -60,12 +69,6 @@ export default function Footer() {
                   className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   Contacto
-                </a>
-                <a
-                  href="/contact"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  0800-444-2222
                 </a>
               </nav>
             </div>

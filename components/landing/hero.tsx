@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import AnimatedHeroContent from "./animated-hero-content";
+import Link from "next/link";
 
 const heroContents = [
   {
@@ -23,7 +24,7 @@ export default function Hero() {
 
       <div className="flex items-center gap-4 pt-1">
         <Button size="lg" className="cursor-pointer" asChild>
-          <a href="/sign-up">Comenzar ahora</a>
+          <Link href="/sign-up">Comenzar ahora</Link>
         </Button>
       </div>
     </div>

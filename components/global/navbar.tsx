@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -12,7 +13,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[95%] max-w-6xl">
       <div className="bg-white/60 backdrop-blur-md border rounded-2xl px-6 py-4 flex items-center justify-between border-[var(--color-gray)]">
-        <a href="/" className="flex items-center gap-2 h-8">
+        <Link href="/" className="flex items-center gap-2 h-8">
           <Image
             src="/brand/payto.png"
             alt="Payto Logo"
@@ -20,41 +21,41 @@ export default function Navbar() {
             height={120}
             className="h-full w-auto object-contain"
           />
-        </a>
+        </Link>
 
         {/* Desktop Menu */}
         <div className="hidden lg:flex items-center gap-8">
-          <a
+          <Link
             href="/pricing"
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             Precios
-          </a>
-          <a
+          </Link>
+          <Link
             href="/features"
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             Características
-          </a>
-          <a
+          </Link>
+          <Link
             href="/contact"
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             Contacto
-          </a>
+          </Link>
         </div>
 
         {/* Desktop Auth Buttons */}
         <div className="hidden lg:flex items-center gap-4">
-          <a
+          <Link
             href="/log-in"
             className="text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"
           >
             Iniciar sesión
-          </a>
-          <a href="/sign-up">
+          </Link>
+          <Link href="/sign-up">
             <Button size="lg">Registrarse</Button>
-          </a>
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -83,41 +84,41 @@ export default function Navbar() {
 
               {/* Navigation Links */}
               <nav className="flex flex-col gap-4">
-                <a
+                <Link
                   href="/pricing"
                   className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => setOpen(false)}
                 >
                   Precios
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/features"
                   className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => setOpen(false)}
                 >
                   Características
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/contact"
                   className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => setOpen(false)}
                 >
                   Contacto
-                </a>
+                </Link>
               </nav>
 
               {/* Auth Buttons */}
               <div className="flex flex-col gap-3 mt-auto pt-6 border-t border-gray-200">
-                <a href="/log-in" onClick={() => setOpen(false)}>
+                <Link href="/log-in" onClick={() => setOpen(false)}>
                   <Button variant="outline" className="w-full" size="lg">
                     Iniciar sesión
                   </Button>
-                </a>
-                <a href="/sign-up" onClick={() => setOpen(false)}>
+                </Link>
+                <Link href="/sign-up" onClick={() => setOpen(false)}>
                   <Button className="w-full" size="lg">
                     Registrarse
                   </Button>
-                </a>
+                </Link>
               </div>
             </div>
           </SheetContent>
