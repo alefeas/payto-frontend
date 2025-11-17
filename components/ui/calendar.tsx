@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -28,7 +27,8 @@ function Calendar({
   ]
 
   const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 20 }, (_, i) => currentYear - 10 + i)
+  const maxYear = 2050
+  const years = Array.from({ length: maxYear - 1920 + 1 }, (_, i) => 1920 + i).reverse()
 
   const handleMonthChange = (monthIndex: string) => {
     const newMonth = new Date(month)

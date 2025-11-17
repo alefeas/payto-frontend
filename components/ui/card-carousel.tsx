@@ -130,26 +130,26 @@ export function CardCarousel({
 
       {/* Navigation Controls */}
       {totalCards > 1 && (
-        <div className="flex items-center justify-center mt-4">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center mt-3 sm:mt-4">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Previous Arrow */}
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 rounded-full bg-white shadow-sm border-gray-200 hover:bg-gray-50 flex-shrink-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white shadow-sm border-gray-200 hover:bg-gray-50 flex-shrink-0"
               onClick={goToPrev}
               disabled={currentIndex === 0}
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              <ChevronLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Button>
 
             {/* Dots Indicator */}
-            <div className="flex space-x-1.5">
+            <div className="flex space-x-1">
               {Array.from({ length: totalCards }).map((_, index) => (
                 <button
                   key={index}
                   className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-colors duration-200",
+                    "w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-colors duration-200",
                     index === currentIndex 
                       ? "bg-blue-600" 
                       : "bg-gray-300 hover:bg-gray-400"
@@ -164,11 +164,11 @@ export function CardCarousel({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 rounded-full bg-white shadow-sm border-gray-200 hover:bg-gray-50 flex-shrink-0"
+              className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white shadow-sm border-gray-200 hover:bg-gray-50 flex-shrink-0"
               onClick={goToNext}
               disabled={currentIndex === maxIndex}
             >
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Button>
           </div>
         </div>

@@ -8,7 +8,6 @@ import {
   Building2,
   FileText,
   Upload,
-  CheckCircle,
   TrendingUp,
   Users,
   Network,
@@ -27,7 +26,6 @@ import {
   Check,
   ChevronRight,
   Search,
-  CheckSquare,
   BarChart3,
   ClipboardCheck,
   Truck,
@@ -44,11 +42,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarSeparator,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -341,7 +335,7 @@ export function AppSidebar() {
                   Perfiles Fiscales
                 </DropdownMenuLabel>
                 {companies.length > 3 && (
-                  <div className="px-2 pb-2">
+                  <div className="px-2 pb-2" onClick={(e) => e.stopPropagation()}>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
                       <Input
@@ -351,6 +345,7 @@ export function AppSidebar() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-9 h-9 bg-white"
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
                       />
                     </div>
                   </div>
@@ -372,7 +367,7 @@ export function AppSidebar() {
                         }}
                         className="gap-2 p-2 cursor-pointer transition-colors hover:bg-accent"
                       >
-                        <div className="flex size-6 items-center justify-center rounded-sm border">
+                        <div className="flex size-6 items-center justify-center rounded-md border border-gray-200">
                           <Building2 className="size-4 shrink-0" />
                         </div>
                         <div className="flex-1 min-w-0">

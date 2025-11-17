@@ -21,6 +21,7 @@ import { BackButton } from "@/components/ui/back-button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { StatCard } from "@/components/company/stat-card"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
+import { CardCarousel } from "@/components/ui/card-carousel"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { afipCertificateService } from "@/services/afip-certificate.service"
@@ -30,10 +31,9 @@ import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import { hasPermission } from "@/lib/permissions"
 import { NotificationBell } from "@/components/notifications/notification-bell"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DashboardCardsSkeleton } from "@/components/accounts/InvoiceListSkeleton"
 import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 import { ActionItem } from "@/components/company/action-item"
+import { CompanySkeleton } from "@/components/company/CompanySkeleton"
 
 export default function CompanyPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -227,61 +227,7 @@ export default function CompanyPage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-8 w-48 sm:w-64" />
-              <Skeleton className="h-4 w-64 sm:w-96 hidden sm:block" />
-            </div>
-          </div>
-          
-          {/* Company Info Card Skeleton */}
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-6 w-48" />
-                  <Skeleton className="h-4 w-64" />
-                  <div className="flex gap-4">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-                <Skeleton className="h-8 w-full sm:w-24" />
-              </div>
-            </CardHeader>
-          </Card>
-          
-          {/* Menu Grid Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-8 w-8 rounded" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-5 w-32" />
-                      <Skeleton className="h-3 w-full" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-10 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Stats Cards Skeleton */}
-          <DashboardCardsSkeleton />
-        </div>
-      </div>
-    )
+    return <CompanySkeleton />
   }
   
   if (!isAuthenticated) return null
@@ -397,56 +343,61 @@ export default function CompanyPage() {
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Header with Action Buttons */}
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <BackButton href="/dashboard" />
             <div className="flex-1 min-w-0">
-              <ResponsiveHeading level="h1" className="truncate">{company.name}</ResponsiveHeading>
-              <ResponsiveText className="text-muted-foreground truncate">
-                Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')} • ID: <span className="font-mono font-semibold">{company.uniqueId}</span>
+              <ResponsiveHeading level="h1">{company.name}</ResponsiveHeading>
+              <ResponsiveText className="text-muted-foreground">
+                Tu rol: {translateRole(company.role || 'operator')} • {translateTaxCondition(company.taxCondition || 'not_specified')}
               </ResponsiveText>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            <NotificationBell companyId={company.id} />
-            {hasPermission(userRole, 'members.view') && (
-              <Button 
-                variant="outline"
-                onClick={() => router.push(`/company/${company.id}/members`)}
-                className="w-full sm:w-auto h-12"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                <span className="sm:inline">Miembros</span>
-              </Button>
+          <div className="flex flex-wrap gap-2 w-full md:w-auto items-center justify-end">
+            {(hasPermission(userRole, 'members.view') || hasPermission(userRole, 'company.view_settings')) && (
+              <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+                <NotificationBell companyId={company.id} />
+                {hasPermission(userRole, 'members.view') && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => router.push(`/company/${company.id}/members`)}
+                    className="flex-1 md:flex-none md:w-auto h-12"
+                  >
+                    <Users className="h-4 w-4 xl:mr-2" />
+                    <span className="hidden xl:inline">Miembros</span>
+                  </Button>
+                )}
+                {hasPermission(userRole, 'company.view_settings') && (
+                  <>
+                    <Button 
+                      variant="outline"
+                      onClick={() => router.push(`/company/${company.id}/verify`)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50 flex-1 md:flex-none md:w-auto h-12"
+                    >
+                      <Shield className="h-4 w-4 xl:mr-2" />
+                      <span className="hidden xl:inline">AFIP</span>
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => router.push(`/company/${company.id}/settings`)}
+                      className="flex-1 md:flex-none md:w-auto h-12"
+                    >
+                      <Settings className="h-4 w-4 xl:mr-2" />
+                      <span className="hidden xl:inline">Configurar</span>
+                    </Button>
+                  </>
+                )}
+              </div>
             )}
-            {hasPermission(userRole, 'company.view_settings') && (
-              <>
-                <Button 
-                  variant="outline"
-                  onClick={() => router.push(`/company/${company.id}/verify`)}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 w-full sm:w-auto h-12"
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Verificar AFIP</span>
-                  <span className="sm:hidden">AFIP</span>
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => router.push(`/company/${company.id}/settings`)}
-                  className="w-full sm:w-auto h-12"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Configurar</span>
-                  <span className="sm:hidden">Config</span>
-                </Button>
-              </>
+            {!(hasPermission(userRole, 'members.view') || hasPermission(userRole, 'company.view_settings')) && (
+              <NotificationBell companyId={company.id} />
             )}
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Stats Cards with Carousel */}
+        <CardCarousel desktopCols={4} mobileBreakpoint="lg" minHeight="160px">
           <StatCard 
             title="Por Cobrar"
             value={stats.receivable}
@@ -471,7 +422,7 @@ export default function CompanyPage() {
             description="Requieren aprobación"
             icon={CheckSquare}
           />
-        </div>
+        </CardCarousel>
 
         {/* Recordatorio para sincronizar condición IVA - Solo si tiene certificado pero aún no sincronizó */}
         {isAfipVerified && certificate?.environment === 'production' && (!company.taxCondition || !['registered_taxpayer', 'monotax', 'exempt', 'final_consumer'].includes(company.taxCondition)) && hasPermission(userRole, 'company.update') && (
@@ -500,8 +451,6 @@ export default function CompanyPage() {
             message="Explorá el sistema y descubrí cómo funciona. Para emitir facturas electrónicas oficiales y desbloquear todas las funciones, configurá tu certificado AFIP."
           />
         )}
-
-
 
         {/* Main Menu */}
         <div className="space-y-4">

@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Building2, UserPlus, Users, Plus, Info } from "lucide-react"
+import { Building2, UserPlus, Users, Plus, Info, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 type EntityType = 'registered' | 'saved' | 'new'
@@ -56,6 +57,10 @@ export function EntitySelector({
   const [selectedEntity, setSelectedEntity] = useState(selectedEntityId || '')
   const [selectedCompany, setSelectedCompany] = useState('')
   const [isNewEntityDialogOpen, setIsNewEntityDialogOpen] = useState(false)
+  const [companySearchTerm, setCompanySearchTerm] = useState('')
+  const [entitySearchTerm, setEntitySearchTerm] = useState('')
+  const [isCompanySelectOpen, setIsCompanySelectOpen] = useState(false)
+  const [isEntitySelectOpen, setIsEntitySelectOpen] = useState(false)
   const hasCalledCreatedRef = useRef(false)
   
   useEffect(() => {
@@ -298,26 +303,67 @@ export function EntitySelector({
               </div>
             </div>
           ) : (
-            <Select value={selectedCompany} onValueChange={handleCompanySelect}>
+            <Select value={selectedCompany} onValueChange={handleCompanySelect} open={isCompanySelectOpen} onOpenChange={setIsCompanySelectOpen}>
               <SelectTrigger>
                 <SelectValue placeholder={`Buscar empresa en tu red...`} />
               </SelectTrigger>
               <SelectContent>
-                {connectedCompanies.map(company => (
-                  <SelectItem key={company.id} value={company.id}>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span className="font-medium">{company.name}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        CUIT: {company.cuit || 'N/A'} • {company.taxCondition === 'registered_taxpayer' ? 'RI' : 
-                         company.taxCondition === 'monotax' ? 'Monotributo' : 
-                         company.taxCondition === 'exempt' ? 'Exento' : 'CF'}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
+                <div className="px-2 py-2 sticky top-0 bg-white border-b border-gray-100" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar empresa..."
+                      value={companySearchTerm}
+                      onChange={(e) => setCompanySearchTerm(e.target.value)}
+                      className="pl-9 h-8 text-sm"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+                {(() => {
+                  const filtered = connectedCompanies.filter(company =>
+                    company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                    company.cuit.toLowerCase().includes(companySearchTerm.toLowerCase())
+                  )
+                  
+                  const hasResults = filtered.length > 0
+                  
+                  return (
+                    <>
+                      {!hasResults && companySearchTerm && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                          No se encontraron empresas
+                        </div>
+                      )}
+                      {connectedCompanies.map(company => {
+                        const matches = company.name.toLowerCase().includes(companySearchTerm.toLowerCase()) ||
+                                       company.cuit.toLowerCase().includes(companySearchTerm.toLowerCase())
+                        
+                        return (
+                          <SelectItem 
+                            key={company.id} 
+                            value={company.id}
+                            className={!matches && companySearchTerm ? 'hidden' : ''}
+                          >
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                <span className="font-medium">{company.name}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                CUIT: {company.cuit || 'N/A'} • {company.taxCondition === 'registered_taxpayer' ? 'RI' : 
+                                 company.taxCondition === 'monotax' ? 'Monotributo' : 
+                                 company.taxCondition === 'exempt' ? 'Exento' : 'CF'}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </>
+                  )
+                })()}
               </SelectContent>
             </Select>
           )}
@@ -338,39 +384,81 @@ export function EntitySelector({
               </div>
             </div>
           ) : (
-            <Select value={selectedEntity} onValueChange={handleEntitySelect}>
+            <Select value={selectedEntity} onValueChange={handleEntitySelect} open={isEntitySelectOpen} onOpenChange={setIsEntitySelectOpen}>
               <SelectTrigger>
                 <SelectValue placeholder={`Buscar ${t.entity} guardado...`} />
               </SelectTrigger>
               <SelectContent>
-                {savedEntities.map(entity => {
-                  const displayName = entity.businessName || `${entity.firstName} ${entity.lastName}` || entity.documentNumber
-                  const taxConditionLabel = {
-                    'registered_taxpayer': 'RI',
-                    'monotax': 'Monotributo',
-                    'exempt': 'Exento',
-                    'final_consumer': 'CF'
-                  }[entity.taxCondition || ''] || entity.taxCondition
+                <div className="px-2 py-2 sticky top-0 bg-white border-b border-gray-100" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+                    <Input
+                      type="text"
+                      placeholder={`Buscar ${t.entity}...`}
+                      value={entitySearchTerm}
+                      onChange={(e) => setEntitySearchTerm(e.target.value)}
+                      className="pl-9 h-8 text-sm"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+                {(() => {
+                  const filtered = savedEntities.filter(entity => {
+                    const displayName = entity.businessName || `${entity.firstName} ${entity.lastName}` || entity.documentNumber
+                    return displayName.toLowerCase().includes(entitySearchTerm.toLowerCase()) ||
+                           entity.documentNumber.toLowerCase().includes(entitySearchTerm.toLowerCase()) ||
+                           entity.email?.toLowerCase().includes(entitySearchTerm.toLowerCase())
+                  })
                   
-                  const docTypeDisplay = entity.taxCondition === 'final_consumer' && entity.documentType === 'CUIT' 
-                    ? 'DNI' 
-                    : entity.documentType
+                  const hasResults = filtered.length > 0
                   
                   return (
-                    <SelectItem key={entity.id} value={entity.id.toString()}>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{displayName}</span>
-                          <span className="text-xs text-muted-foreground">({docTypeDisplay} {entity.documentNumber})</span>
+                    <>
+                      {!hasResults && entitySearchTerm && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                          No se encontraron {t.entity}s
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{taxConditionLabel}</span>
-                          {entity.email && <span>• {entity.email}</span>}
-                        </div>
-                      </div>
-                    </SelectItem>
+                      )}
+                      {savedEntities.map(entity => {
+                        const displayName = entity.businessName || `${entity.firstName} ${entity.lastName}` || entity.documentNumber
+                        const matches = displayName.toLowerCase().includes(entitySearchTerm.toLowerCase()) ||
+                                       entity.documentNumber.toLowerCase().includes(entitySearchTerm.toLowerCase()) ||
+                                       entity.email?.toLowerCase().includes(entitySearchTerm.toLowerCase())
+                        
+                        const taxConditionLabel = {
+                          'registered_taxpayer': 'RI',
+                          'monotax': 'Monotributo',
+                          'exempt': 'Exento',
+                          'final_consumer': 'CF'
+                        }[entity.taxCondition || ''] || entity.taxCondition
+                        
+                        const docTypeDisplay = entity.taxCondition === 'final_consumer' && entity.documentType === 'CUIT' 
+                          ? 'DNI' 
+                          : entity.documentType
+                        
+                        return (
+                          <SelectItem 
+                            key={entity.id} 
+                            value={entity.id.toString()}
+                            className={!matches && entitySearchTerm ? 'hidden' : ''}
+                          >
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{displayName}</span>
+                                <span className="text-xs text-muted-foreground">({docTypeDisplay} {entity.documentNumber})</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{taxConditionLabel}</span>
+                                {entity.email && <span>• {entity.email}</span>}
+                              </div>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </>
                   )
-                })}
+                })()}
               </SelectContent>
             </Select>
           )}
