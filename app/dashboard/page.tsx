@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { 
   TrendingUp,
   TrendingDown,
@@ -9,11 +10,13 @@ import {
   ChevronRight,
   CheckCircle2,
   Circle,
-  Clock
+  Clock,
+  Loader2
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveHeading, ResponsiveText } from "@/components/ui/responsive-heading"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { CardCarousel } from "@/components/ui/card-carousel"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -68,6 +71,8 @@ export default function DashboardPage() {
   const [currentPageToPay, setCurrentPageToPay] = useState(0)
   const [currentPageToCollect, setCurrentPageToCollect] = useState(0)
   const [currentPageTasks, setCurrentPageTasks] = useState(0)
+  const [selectedDashboardTasks, setSelectedDashboardTasks] = useState<Set<string>>(new Set())
+  const [isCompletingDashboardTasks, setIsCompletingDashboardTasks] = useState(false)
   
 
   
@@ -113,6 +118,7 @@ export default function DashboardPage() {
           console.error(`Error loading invoices for company ${company.id}:`, error)
         }
       }
+      
       setInvoices(allInvoices)
     } catch (error) {
       toast.error('Error al cargar datos')
@@ -121,15 +127,46 @@ export default function DashboardPage() {
     }
   }
 
-  const handleToggleTask = async (taskId: string) => {
-    try {
-      const task = tasks.find(t => t.id === taskId)
+  const handleToggleTaskSelection = (taskId: string) => {
+    const newSelected = new Set(selectedDashboardTasks)
+    const task = tasks.find(t => t.id === taskId)
+    
+    if (newSelected.has(taskId)) {
+      newSelected.delete(taskId)
+    } else {
       if (task) {
-        await taskService.updateTask(taskId, { is_completed: !task.is_completed })
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, is_completed: !t.is_completed } : t))
+        const firstSelectedTask = selectedDashboardTasks.size > 0 ? tasks.find(t => t.id === Array.from(selectedDashboardTasks)[0]) : null
+        if (firstSelectedTask && firstSelectedTask.is_completed !== task.is_completed) {
+          toast.error('No puedes mezclar tareas completadas y pendientes')
+          return
+        }
       }
+      newSelected.add(taskId)
+    }
+    setSelectedDashboardTasks(newSelected)
+  }
+
+  const handleCompleteSelectedDashboardTasks = async () => {
+    if (selectedDashboardTasks.size === 0) return
+    
+    try {
+      setIsCompletingDashboardTasks(true)
+      const firstTask = tasks.find(t => t.id === Array.from(selectedDashboardTasks)[0])
+      const newCompletedState = !firstTask?.is_completed
+      
+      await Promise.all(
+        Array.from(selectedDashboardTasks).map(taskId => {
+          return taskService.updateTask(taskId, { is_completed: newCompletedState })
+        })
+      )
+      setSelectedDashboardTasks(new Set())
+      loadData()
+      const action = newCompletedState ? 'completada(s)' : 'descompletada(s)'
+      toast.success(`${selectedDashboardTasks.size} tarea(s) ${action}`)
     } catch (error) {
-      toast.error('Error al actualizar tarea')
+      toast.error('Error al actualizar tareas')
+    } finally {
+      setIsCompletingDashboardTasks(false)
     }
   }
 
@@ -703,8 +740,8 @@ export default function DashboardPage() {
                   </Card>
 
                   <Card className="shadow-sm border border-gray-200 min-w-0">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div className="min-w-0">
+                    <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="min-w-0 flex-1">
                         <ResponsiveHeading level="h3" as="h2" className="text-gray-900">
                           Tareas Pendientes
                         </ResponsiveHeading>
@@ -712,9 +749,41 @@ export default function DashboardPage() {
                           {pendingTasks.length} tareas por completar
                         </CardDescription>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => router.push('/tasks')}>
-                        Ver tareas
-                      </Button>
+                      <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+                        {selectedDashboardTasks.size > 0 && (
+                          <Button 
+                            variant="outline"
+                            onClick={handleCompleteSelectedDashboardTasks}
+                            disabled={isCompletingDashboardTasks}
+                            size="sm"
+                            className="flex-1 sm:flex-none"
+                          >
+                            {isCompletingDashboardTasks ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <span className="hidden sm:inline">
+                                  {tasks.find(t => t.id === Array.from(selectedDashboardTasks)[0])?.is_completed ? 'Desmarcando...' : 'Completando...'}
+                                </span>
+                                <span className="sm:hidden">
+                                  {tasks.find(t => t.id === Array.from(selectedDashboardTasks)[0])?.is_completed ? 'Desm...' : 'Comp...'}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="hidden sm:inline">
+                                  {tasks.find(t => t.id === Array.from(selectedDashboardTasks)[0])?.is_completed ? 'Desmarcar' : 'Completar'} ({selectedDashboardTasks.size})
+                                </span>
+                                <span className="sm:hidden">
+                                  {tasks.find(t => t.id === Array.from(selectedDashboardTasks)[0])?.is_completed ? 'Desm.' : 'Comp.'} ({selectedDashboardTasks.size})
+                                </span>
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => router.push('/tasks')} className="flex-1 sm:flex-none">
+                          Ver tareas
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent className="min-w-0">
                       <div className="space-y-2">
@@ -724,16 +793,13 @@ export default function DashboardPage() {
                           paginatedTasks.map((task) => (
                             <div 
                               key={task.id} 
-                              className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => handleToggleTask(task.id)}
+                              className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                              onClick={() => handleToggleTaskSelection(task.id)}
                             >
-                              <div className="flex-shrink-0 mt-0.5">
-                                {task.is_completed ? (
-                                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                                ) : (
-                                  <Circle className="h-5 w-5 text-gray-400" />
-                                )}
-                              </div>
+                              <Checkbox
+                                checked={selectedDashboardTasks.has(task.id)}
+                                onCheckedChange={() => handleToggleTaskSelection(task.id)}
+                              />
                               <div className="flex-1 min-w-0">
                                 <p className={`font-medium-heading text-sm truncate ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                                   {task.title}
@@ -821,43 +887,54 @@ export default function DashboardPage() {
                             const currency = invoice.currency || 'ARS'
                             const currencySymbol = currency === 'USD' ? 'US$' : currency === 'EUR' ? '€' : '$'
                             return (
-                            <div key={invoice.id} className="py-3 border-b border-gray-100 last:border-0">
-                              <div className="space-y-1.5">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium-heading text-gray-900 text-sm truncate">
-                                      {invoice.issuer_name || invoice.supplier?.business_name || (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) || invoice.issuerCompany?.business_name || invoice.issuerCompany?.name || 'Proveedor'}
-                                    </p>
-                                    <p className="text-sm text-gray-500 font-light truncate">
-                                      {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                                    </p>
-                                    <p className="text-sm text-gray-400 font-light">
-                                      Vence: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    {hasAdjustments ? (
-                                      <div className="space-y-1">
-                                        <p className="text-xs text-gray-500 font-light">Original: {currencySymbol}{originalTotal.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        {totalNC > 0 && (
-                                          <p className="text-xs text-green-600 font-light">NC: -{currencySymbol}{totalNC.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        )}
-                                        {totalND > 0 && (
-                                          <p className="text-xs text-orange-600 font-light">ND: +{currencySymbol}{totalND.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        )}
-                                        <div className="pt-1 border-t border-gray-200">
-                                          <p className="font-medium-heading text-gray-900 text-sm">A pagar: {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <p className="font-medium-heading text-gray-900 text-sm">
-                                        {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                            <Link key={invoice.id} href={`/company/${invoice.receiver_company_id}/invoices/${invoice.id}`}>
+                              <div className="py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer rounded px-2 -mx-2">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium-heading text-gray-900 text-sm truncate">
+                                        {invoice.supplier?.business_name || 
+                                         invoice.client?.business_name ||
+                                         invoice.issuer_name || 
+                                         (invoice.supplier?.first_name && invoice.supplier?.last_name ? `${invoice.supplier.first_name} ${invoice.supplier.last_name}` : null) ||
+                                         (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) ||
+                                         invoice.issuerCompany?.business_name || 
+                                         invoice.issuerCompany?.name ||
+                                         invoice.issuer?.business_name ||
+                                         invoice.issuer?.name ||
+                                         'Proveedor'}
                                       </p>
-                                    )}
+                                      <p className="text-sm text-gray-500 font-light truncate">
+                                        {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
+                                      </p>
+                                      <p className="text-sm text-gray-400 font-light">
+                                        Vence: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      {hasAdjustments ? (
+                                        <div className="space-y-1">
+                                          <p className="text-xs text-gray-500 font-light">Original: {currencySymbol}{originalTotal.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          {totalNC > 0 && (
+                                            <p className="text-xs text-green-600 font-light">NC: -{currencySymbol}{totalNC.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          )}
+                                          {totalND > 0 && (
+                                            <p className="text-xs text-orange-600 font-light">ND: +{currencySymbol}{totalND.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          )}
+                                          <div className="pt-1 border-t border-gray-200">
+                                            <p className="font-medium-heading text-gray-900 text-sm">A pagar: {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="font-medium-heading text-gray-900 text-sm">
+                                          {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </Link>
                           )})
                         )}
                       </div>
@@ -896,43 +973,52 @@ export default function DashboardPage() {
                             const currency = invoice.currency || 'ARS'
                             const currencySymbol = currency === 'USD' ? 'US$' : currency === 'EUR' ? '€' : '$'
                             return (
-                            <div key={invoice.id} className="py-3 border-b border-gray-100 last:border-0">
-                              <div className="space-y-1.5">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium-heading text-gray-900 text-sm truncate">
-                                      {invoice.receiver_name || invoice.client?.business_name || (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || invoice.receiverCompany?.name || invoice.receiverCompany?.business_name || 'Cliente'}
-                                    </p>
-                                    <p className="text-sm text-gray-500 font-light truncate">
-                                      {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
-                                    </p>
-                                    <p className="text-sm text-gray-400 font-light">
-                                      Vence: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    {hasAdjustments ? (
-                                      <div className="space-y-1">
-                                        <p className="text-xs text-gray-500 font-light">Original: {currencySymbol}{originalTotal.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        {totalNC > 0 && (
-                                          <p className="text-xs text-green-600 font-light">NC: -{currencySymbol}{totalNC.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        )}
-                                        {totalND > 0 && (
-                                          <p className="text-xs text-orange-600 font-light">ND: +{currencySymbol}{totalND.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        )}
-                                        <div className="pt-1 border-t border-gray-200">
-                                          <p className="font-medium-heading text-gray-900 text-sm">A cobrar: {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <p className="font-medium-heading text-gray-900 text-sm">
-                                        {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                            <Link key={invoice.id} href={`/company/${invoice.issuer_company_id}/invoices/${invoice.id}`}>
+                              <div className="py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer rounded px-2 -mx-2">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium-heading text-gray-900 text-sm truncate">
+                                        {invoice.receiver_name || 
+                                         invoice.client?.business_name || 
+                                         (invoice.client?.first_name && invoice.client?.last_name ? `${invoice.client.first_name} ${invoice.client.last_name}` : null) || 
+                                         invoice.receiverCompany?.name || 
+                                         invoice.receiverCompany?.business_name ||
+                                         invoice.receiver?.business_name ||
+                                         invoice.receiver?.name ||
+                                         'Cliente'}
                                       </p>
-                                    )}
+                                      <p className="text-sm text-gray-500 font-light truncate">
+                                        {invoice.type} {String(invoice.sales_point || 0).padStart(4, '0')}-{String(invoice.voucher_number || 0).padStart(8, '0')}
+                                      </p>
+                                      <p className="text-sm text-gray-400 font-light">
+                                        Vence: {parseDateLocal(invoice.due_date)?.toLocaleDateString('es-AR')}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      {hasAdjustments ? (
+                                        <div className="space-y-1">
+                                          <p className="text-xs text-gray-500 font-light">Original: {currencySymbol}{originalTotal.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          {totalNC > 0 && (
+                                            <p className="text-xs text-green-600 font-light">NC: -{currencySymbol}{totalNC.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          )}
+                                          {totalND > 0 && (
+                                            <p className="text-xs text-orange-600 font-light">ND: +{currencySymbol}{totalND.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          )}
+                                          <div className="pt-1 border-t border-gray-200">
+                                            <p className="font-medium-heading text-gray-900 text-sm">A cobrar: {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}</p>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="font-medium-heading text-gray-900 text-sm">
+                                          {currencySymbol}{balance.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </Link>
                           )})
                         )}
                       </div>
