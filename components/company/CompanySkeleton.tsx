@@ -10,8 +10,8 @@ export function CompanySkeleton() {
         {/* Header with Action Buttons */}
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* Back Button */}
-            <Skeleton className="h-10 w-10 rounded" />
+            {/* BackButton - responsive width (icon only on mobile, icon + "Volver" on sm+) */}
+            <Skeleton className="h-12 w-12 sm:w-24 rounded-md flex-shrink-0" />
             
             {/* Title and Subtitle */}
             <div className="flex-1 min-w-0 space-y-2">
@@ -22,17 +22,17 @@ export function CompanySkeleton() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2 w-full md:w-auto items-center justify-end">
-            {/* Notification Bell */}
-            <Skeleton className="h-12 w-12 rounded" />
+            {/* Notification Bell - h-12 w-12 icon */}
+            <Skeleton className="h-12 w-12 rounded-md flex-shrink-0" />
             
-            {/* Members Button - Icon only on mobile, icon + text on xl */}
-            <Skeleton className="h-12 flex-1 md:flex-none md:w-12 lg:w-12 xl:w-32 rounded" />
+            {/* Members Button - h-12, icon only on mobile, icon + text on xl */}
+            <Skeleton className="h-12 flex-1 sm:flex-none sm:w-12 lg:w-12 xl:w-32 rounded-md" />
             
-            {/* AFIP Button - Icon only on mobile, icon + text on xl */}
-            <Skeleton className="h-12 flex-1 md:flex-none md:w-12 lg:w-12 xl:w-24 rounded" />
+            {/* AFIP Button - h-12, icon only on mobile, icon + text on xl */}
+            <Skeleton className="h-12 flex-1 sm:flex-none sm:w-12 lg:w-12 xl:w-24 rounded-md" />
             
-            {/* Settings Button - Icon only on mobile, icon + text on xl */}
-            <Skeleton className="h-12 flex-1 md:flex-none md:w-12 lg:w-12 xl:w-32 rounded" />
+            {/* Settings Button - h-12, icon only on mobile, icon + text on xl */}
+            <Skeleton className="h-12 flex-1 sm:flex-none sm:w-12 lg:w-12 xl:w-32 rounded-md" />
           </div>
         </div>
 

@@ -5,18 +5,18 @@ export function EntitiesSkeleton() {
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header with Action Buttons Skeleton */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
+        <div className="header-responsive">
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <Skeleton className="h-12 w-12 sm:w-24 rounded-md flex-shrink-0" />
             <div className="flex-1 space-y-2 min-w-0">
               <Skeleton className="h-7 sm:h-8 w-48 max-w-full" />
               <Skeleton className="h-4 w-64 max-w-full" />
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:flex-shrink-0">
-            <Skeleton className="h-12 w-full sm:w-36" />
-            <Skeleton className="h-12 w-full sm:w-40" />
+          <div className="buttons-responsive">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
         </div>
 
@@ -27,7 +27,7 @@ export function EntitiesSkeleton() {
           </div>
           <div className="flex items-center gap-2">
             <Skeleton className="h-4 w-20 hidden sm:block" />
-            <Skeleton className="h-9 w-full sm:w-[200px]" />
+            <Skeleton className="h-12 w-full sm:w-[200px]" />
           </div>
         </div>
 
@@ -54,8 +54,8 @@ export function EntitiesSkeleton() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Skeleton className="h-9 w-9 rounded flex-shrink-0" />
-                  <Skeleton className="h-9 w-9 rounded flex-shrink-0" />
+                  <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
+                  <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
                 </div>
               </div>
             </div>

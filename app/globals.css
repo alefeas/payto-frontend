@@ -637,3 +637,28 @@ html {
 
 
 
+
+
+@layer components {
+  .header-responsive {
+    @apply flex flex-row items-center gap-4;
+  }
+  
+  @media (max-width: 900px) {
+    .header-responsive {
+      @apply flex-col items-stretch gap-3;
+    }
+  }
+  
+  .buttons-responsive {
+    @apply flex flex-row gap-2 sm:gap-3 flex-shrink-0 ml-auto;
+  }
+  
+  @media (max-width: 900px) {
+    .buttons-responsive {
+      @apply flex-col w-full gap-2 sm:gap-3 ml-0;
+    }
+  }
+  
+
+}

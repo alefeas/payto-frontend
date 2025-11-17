@@ -8,7 +8,7 @@ export function AccountsReceivableSkeleton() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded" />
+            <Skeleton className="h-12 w-12 sm:w-32 rounded-md flex-shrink-0" />
             <div className="space-y-2">
               <Skeleton className="h-9 w-56" />
               <Skeleton className="h-5 w-80" />

@@ -176,14 +176,14 @@ export default function ClientsPage() {
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header with Action Buttons */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="header-responsive">
           <PageHeader 
             title="Mis Clientes"
             description="Gestiona tus clientes externos"
             backHref={`/company/${companyId}`}
           />
           
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:flex-shrink-0">
+          <div className="buttons-responsive">
             <Button
               variant="outline"
               onClick={() => setShowArchived(!showArchived)}
@@ -230,13 +230,13 @@ export default function ClientsPage() {
               placeholder="Buscar por nombre, documento o email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-9"
+              className="pl-10 h-12"
             />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground whitespace-nowrap hidden sm:inline">Condición:</span>
             <Select value={filterCondicion} onValueChange={setFilterCondicion}>
-              <SelectTrigger className="w-full sm:w-[200px] h-9">
+              <SelectTrigger className="w-full sm:w-[200px] h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

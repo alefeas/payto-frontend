@@ -103,8 +103,8 @@ export function InvoicesPageSkeleton() {
         {/* Header Skeleton - responsive */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* BackButton responsive: solo flecha en móvil */}
-            <Skeleton className="h-12 w-12 sm:w-20 rounded" />
+            {/* BackButton - responsive width (icon only on mobile, icon + "Volver" on sm+) */}
+            <Skeleton className="h-12 w-12 sm:w-24 rounded-md flex-shrink-0" />
             <div className="space-y-2">
               <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
               <Skeleton className="h-3 sm:h-4 w-64 sm:w-96" />

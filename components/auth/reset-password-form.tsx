@@ -68,7 +68,7 @@ export default function ResetPasswordForm() {
       if (!hasShownSuccess) {
         setHasShownSuccess(true);
         toast.success("Contraseña restablecida correctamente");
-        setTimeout(() => router.push("/log-in?reset=success"), 500);
+        setTimeout(() => router.push("/iniciar-sesion?reset=success"), 500);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Error al restablecer la contraseña");
@@ -120,7 +120,7 @@ export default function ResetPasswordForm() {
             </p>
           </div>
 
-          <Link href="/forgot-password" className="block">
+          <Link href="/recuperar-contrasena" className="block">
             <Button className="w-full h-12 text-base">
               Solicitar nuevo enlace
             </Button>

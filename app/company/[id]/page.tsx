@@ -346,7 +346,7 @@ export default function CompanyPage() {
         {/* Header with Action Buttons */}
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <BackButton href="/dashboard" />
+            <BackButton href="/dashboard" size="md" />
             <div className="flex-1 min-w-0">
               <ResponsiveHeading level="h1">{company.name}</ResponsiveHeading>
               <ResponsiveText className="text-muted-foreground">

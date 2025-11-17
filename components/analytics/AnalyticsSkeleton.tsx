@@ -10,7 +10,7 @@ export function AnalyticsSkeleton() {
         {/* Header Skeleton */}
         <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full xl:w-auto">
-            <Skeleton className="h-12 w-12 rounded flex-shrink-0" />
+            <Skeleton className="h-12 w-12 sm:w-24 rounded-md flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <Skeleton className="h-7 sm:h-8 w-48 sm:w-64 max-w-full mb-1" />
               <Skeleton className="h-3 sm:h-4 w-64 sm:w-96 max-w-full" />

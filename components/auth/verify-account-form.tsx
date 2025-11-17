@@ -19,7 +19,7 @@ export default function VerifyAccountForm() {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendTimer, setResendTimer] = useState(60);
+  const [resendTimer, setResendTimer] = useState(0);
   const [expirationTimer, setExpirationTimer] = useState(600);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -31,8 +31,15 @@ export default function VerifyAccountForm() {
       setEmail(emailParam);
       sessionStorage.setItem('pendingEmail', emailParam);
       sessionStorage.setItem('codeTimestamp', Date.now().toString());
+      setExpirationTimer(600);
     } else if (savedEmail) {
       setEmail(savedEmail);
+      const timestamp = sessionStorage.getItem('codeTimestamp');
+      if (timestamp) {
+        const elapsed = Math.floor((Date.now() - parseInt(timestamp)) / 1000);
+        const remaining = Math.max(0, 600 - elapsed);
+        setExpirationTimer(remaining);
+      }
     } else {
       toast.error('No hay un registro pendiente');
       router.push('/sign-up');
@@ -48,6 +55,7 @@ export default function VerifyAccountForm() {
     const interval = setInterval(() => {
       setResendTimer(prev => {
         if (prev <= 1) {
+          clearInterval(interval);
           return 0;
         }
         return prev - 1;
@@ -58,14 +66,7 @@ export default function VerifyAccountForm() {
   }, [resendTimer]);
 
   useEffect(() => {
-    if (!email) return;
-
-    const timestamp = sessionStorage.getItem('codeTimestamp');
-    if (timestamp) {
-      const elapsed = Math.floor((Date.now() - parseInt(timestamp)) / 1000);
-      const remaining = Math.max(0, 600 - elapsed);
-      setExpirationTimer(remaining);
-    }
+    if (expirationTimer === 0) return;
 
     const interval = setInterval(() => {
       setExpirationTimer(prev => {
@@ -78,7 +79,7 @@ export default function VerifyAccountForm() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [email]);
+  }, [expirationTimer]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -154,17 +155,13 @@ export default function VerifyAccountForm() {
       toast.success('Nuevo código enviado');
       setCode(["", "", "", "", "", ""]);
       setExpirationTimer(600);
+      setResendTimer(60);
       sessionStorage.setItem('codeTimestamp', Date.now().toString());
-      startResendTimer();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al reenviar código');
     } finally {
       setIsResending(false);
     }
-  };
-
-  const startResendTimer = () => {
-    setResendTimer(60);
   };
 
   if (!email) {

@@ -8,7 +8,7 @@ export function NotificationsSkeleton() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <Skeleton className="h-12 w-12 rounded" />
+            <Skeleton className="h-12 w-12 sm:w-24 rounded-md flex-shrink-0" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-8 sm:h-9 w-48 sm:w-64" />
               <Skeleton className="h-4 sm:h-5 w-64 sm:w-96" />

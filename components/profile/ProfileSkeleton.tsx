@@ -8,7 +8,7 @@ export function ProfileSkeleton() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded" />
+          <Skeleton className="h-12 w-12 sm:w-32 rounded-md flex-shrink-0" />
           <div className="space-y-2">
             <Skeleton className="h-8 w-32" />
             <Skeleton className="h-4 w-64" />
@@ -75,8 +75,8 @@ export function ProfileSkeleton() {
 
               {/* Actions */}
               <div className="flex gap-4 pt-4">
-                <Skeleton className="h-10 w-36" />
-                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-12 w-36 rounded-md" />
+                <Skeleton className="h-12 w-24 rounded-md" />
               </div>
             </CardContent>
           </Card>
