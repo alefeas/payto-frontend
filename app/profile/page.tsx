@@ -21,6 +21,7 @@ import { companyService, Company } from "@/services/company.service"
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton"
 import { translateRole } from "@/lib/role-utils"
 import { translateTaxCondition } from "@/lib/tax-condition-utils"
+import { colors } from "@/styles/colors"
 import type { CompanyRole } from "@/types"
 
 // Mapeo de género backend -> frontend
@@ -194,7 +195,7 @@ export default function ProfilePage() {
           <Card>
             <CardHeader className="text-center">
               <Avatar className="h-24 w-24 mx-auto mb-4">
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="text-2xl text-foreground" style={{ backgroundColor: `${colors.gray}40` }}>
                   {formData.firstName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>

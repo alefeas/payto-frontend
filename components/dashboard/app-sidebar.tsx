@@ -63,6 +63,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
+import { colors } from "@/styles/colors"
 
 // Custom SidebarTrigger que funciona en desktop y móvil
 function CustomSidebarTrigger({ className, ...props }: React.ComponentProps<"button">) {
@@ -472,11 +473,11 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:!bg-accent/50 transition-all duration-200 relative before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-full before:w-1 before:bg-blue-600 dark:before:bg-blue-400 before:rounded-r-full before:scale-x-0 hover:before:scale-x-100 before:transition-transform before:duration-300 before:origin-left"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:!bg-accent/50 transition-all duration-200"
                   tooltip={user?.name || "Menú de usuario"}
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-primary/10 text-primary">
+                    <AvatarFallback className="rounded-lg text-foreground" style={{ backgroundColor: `${colors.gray}40` }}>
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>

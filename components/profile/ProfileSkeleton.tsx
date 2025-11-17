@@ -8,7 +8,7 @@ export function ProfileSkeleton() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Skeleton className="h-12 w-12 sm:w-32 rounded-md flex-shrink-0" />
+          <Skeleton className="h-12 w-12 sm:h-12 sm:w-[102px] rounded-md flex-shrink-0" />
           <div className="space-y-2">
             <Skeleton className="h-8 w-32" />
             <Skeleton className="h-4 w-64" />
@@ -50,7 +50,7 @@ export function ProfileSkeleton() {
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <div key={i} className="space-y-2">
                       <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-12 w-full" />
                     </div>
                   ))}
                 </div>
@@ -65,7 +65,7 @@ export function ProfileSkeleton() {
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <div key={i} className="space-y-2">
                       <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-12 w-full" />
                     </div>
                   ))}
                 </div>

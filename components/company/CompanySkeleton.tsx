@@ -97,7 +97,7 @@ export function CompanySkeleton() {
           {/* Menu Grid - 1 col mobile, 2 col tablet, 3 col desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {[...Array(9)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 sm:p-5 rounded-lg border border-gray-200 bg-white cursor-pointer shadow-xs">
+              <div key={i} className="flex items-center gap-3 p-4 sm:p-5 rounded-lg border border-gray-200 bg-white shadow-xs pointer-events-none">
                 <div className="flex-1 min-w-0">
                   <Skeleton className="h-5 w-32 mb-1.5" />
                   <Skeleton className="h-3 w-40" />
@@ -119,7 +119,7 @@ export function CompanySkeleton() {
           {/* Additional Items Grid - 1 col mobile, 2 col tablet, 3 col desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 sm:p-5 rounded-lg border border-gray-200 bg-white cursor-pointer shadow-xs">
+              <div key={i} className="flex items-center gap-3 p-4 sm:p-5 rounded-lg border border-gray-200 bg-white shadow-xs pointer-events-none">
                 <div className="flex-1 min-w-0">
                   <Skeleton className="h-5 w-32 mb-1.5" />
                   <Skeleton className="h-3 w-40" />
