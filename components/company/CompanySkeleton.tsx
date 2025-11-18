@@ -53,7 +53,7 @@ export function CompanySkeleton() {
             </CardContent>
           </Card>
           {/* Carousel controls skeleton */}
-          <div className="flex items-center justify-center mt-3 sm:mt-4">
+          <div className="flex items-center justify-center mt-4">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full" />
               <div className="flex space-x-1">

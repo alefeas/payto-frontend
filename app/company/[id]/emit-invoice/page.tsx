@@ -308,7 +308,7 @@ export default function CreateInvoicePage() {
 
   useEffect(() => {
     if (currentCompany && !isInitialized) {
-      setItems([{ description: '', quantity: undefined, unitPrice: undefined, discountPercentage: undefined, taxRate: currentCompany.defaultVat || 21 }])
+      setItems([{ description: '', quantity: 0, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany.defaultVat || 21 }])
       
       // Load auto-perceptions if company is perception agent (will be cleared if CF is selected)
       if (currentCompany.isPerceptionAgent && currentCompany.autoPerceptions && currentCompany.autoPerceptions.length > 0) {
@@ -457,7 +457,7 @@ export default function CreateInvoicePage() {
   }, [formData.voucherType, formData.salesPoint, formData.concept, companyId])
 
   const addItem = () => {
-    setItems([...items, { description: '', quantity: undefined, unitPrice: undefined, discountPercentage: undefined, taxRate: currentCompany?.defaultVat || 21 }])
+    setItems([...items, { description: '', quantity: 0, unitPrice: 0, discountPercentage: 0, taxRate: currentCompany?.defaultVat || 21 }])
   }
 
   const removeItem = (index: number) => {
@@ -498,7 +498,7 @@ export default function CreateInvoicePage() {
     setPerceptions([...perceptions, { 
       type: 'gross_income_buenosaires', 
       name: '', 
-      rate: undefined,
+      rate: 0,
       jurisdiction: 'Buenos Aires',
       baseType: 'net'
     }])

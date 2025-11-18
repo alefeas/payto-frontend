@@ -2,33 +2,28 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { BookOpen, Download, TrendingUp, TrendingDown, AlertTriangle, Shield } from "lucide-react"
+import { Download, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
 import { colors, fontSizes } from "@/styles"
 import { Button } from "@/components/ui/button"
-import { BackButton } from "@/components/ui/back-button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { CardCarousel } from "@/components/ui/card-carousel"
+import { PageHeader } from "@/components/layouts/PageHeader"
+import { IvaBookSkeleton } from "@/components/iva-book/IvaBookSkeleton"
 import { useAuth } from "@/contexts/auth-context"
 import { hasPermission } from "@/lib/permissions"
 import { CompanyRole } from "@/types"
 import { toast } from "sonner"
 import apiClient from "@/lib/api-client"
 import { companyService } from "@/services/company.service"
-import { translateTaxCondition } from "@/lib/tax-condition-utils"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
-import { AfipGuard, AfipButton } from "@/components/afip/afip-guard"
+import { AfipButton } from "@/components/afip/afip-guard"
 import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
 
-// Normalizar condición IVA según AFIP (backend ya lo hace, pero por si acaso)
-const normalizeAfipTaxCondition = (condition: string | null | undefined): string => {
-  if (!condition) return 'Responsable No Inscripto'
-  // El backend ya normaliza, solo mostramos
-  return condition
-}
+
 
 export default function IvaBookPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
@@ -122,74 +117,40 @@ export default function IvaBookPage() {
 
   const formatCurrency = (value: number, currency: string = 'ARS') => {
     const symbols: Record<string, string> = { 'ARS': '$', 'USD': 'USD $', 'EUR': 'EUR €' }
-    return `${symbols[currency] || '$'} ${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    // Para valores muy grandes, reducir decimales
+    const decimals = Math.abs(value) > 999999 ? 0 : 2
+    return `${symbols[currency] || '$'} ${value.toLocaleString('es-AR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
+  }
+
+  const getColumnWidth = (value: number) => {
+    // Ajustar ancho dinámicamente según el tamaño del número
+    const absValue = Math.abs(value)
+    if (absValue > 999999999) return 'w-24' // 96px para valores muy grandes
+    if (absValue > 999999) return 'w-20' // 80px para millones
+    return 'w-16' // 64px por defecto
+  }
+
+  const abbreviateIvaCondition = (condition: string) => {
+    if (!condition) return 'Resp. No Insc.'
+    if (condition.includes('Responsable Inscripto')) return 'Resp. Insc.'
+    if (condition.includes('Responsable No Inscripto')) return 'Resp. No Insc.'
+    if (condition.includes('Exento')) return 'Exento'
+    if (condition.includes('Monotributista')) return 'Monotrib.'
+    return condition
+  }
+
+  const getDocumentLabel = (cuit: string) => {
+    if (!cuit) return 'ID'
+    // CUIT tiene formato XX-XXXXXXXX-X (11 dígitos con guiones)
+    // DNI es solo números (7-8 dígitos)
+    const cleanCuit = cuit.replace(/\D/g, '')
+    if (cleanCuit.length === 11) return 'CUIT'
+    if (cleanCuit.length <= 8) return 'DNI'
+    return 'ID'
   }
 
   if (authLoading || loading || !company) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-[1600px] mx-auto space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-10 w-10" />
-              <div>
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-96" />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Skeleton className="h-10 w-[140px]" />
-              <Skeleton className="h-10 w-[100px]" />
-            </div>
-          </div>
-
-          {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardHeader className="pb-3">
-                  <Skeleton className="h-4 w-32" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-3 w-28 mt-2" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Tabs Content Skeleton */}
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-64" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Table Header */}
-                <div className="flex gap-4">
-                  <Skeleton className="h-10 w-32" />
-                  <Skeleton className="h-10 w-32" />
-                  <Skeleton className="h-10 w-32" />
-                  <Skeleton className="h-10 w-32" />
-                  <Skeleton className="h-10 w-32" />
-                </div>
-                {/* Table Rows */}
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex gap-4 py-3 border-b border-gray-200">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <IvaBookSkeleton />
   }
 
   if (!isAuthenticated) return null
@@ -197,20 +158,15 @@ export default function IvaBookPage() {
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <BackButton href={`/company/${companyId}`} />
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-3">
-                <BookOpen className="h-8 w-8 text-primary" />
-                Libro IVA
-              </h1>
-              <p className="text-muted-foreground mt-1">Registro de operaciones con IVA - {company?.name}</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
+        <PageHeader
+          title="Libro IVA"
+          description={`Registro de operaciones con IVA`}
+          backHref={`/company/${companyId}`}
+          titleLevel="h1"
+        >
+          <div className="flex gap-3 w-full sm:w-auto">
             <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="flex-1 sm:w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -220,7 +176,7 @@ export default function IvaBookPage() {
               </SelectContent>
             </Select>
             <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-              <SelectTrigger className="w-[100px]">
+              <SelectTrigger className="flex-1 sm:w-[100px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -230,87 +186,87 @@ export default function IvaBookPage() {
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </PageHeader>
 
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+          <CardCarousel desktopCols={3} mobileBreakpoint="lg">
+            <Card className="shadow-sm border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Débito Fiscal</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs sm:text-sm font-medium">Débito Fiscal</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               </CardHeader>
               <CardContent>
                 {summary.debito_fiscal_by_currency ? (
                   <>
-                    <div className={fontSizes.h1.desktop}>
+                    <div className="text-lg sm:text-2xl font-bold truncate">
                       $ {summary.debito_fiscal_by_currency.ARS?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                     </div>
-                    <div className="flex gap-3 text-sm text-gray-600">
-                      <span>US$ {summary.debito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
-                      <span>€ {summary.debito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                    <div className="flex gap-2 text-xs sm:text-sm text-gray-600 mt-1 overflow-x-auto">
+                      <span className="flex-shrink-0">US$ {summary.debito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                      <span className="flex-shrink-0">€ {summary.debito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
                     </div>
                   </>
                 ) : (
-                  <div className={fontSizes.h1.desktop}>{formatCurrency(summary.debito_fiscal)}</div>
+                  <div className="text-lg sm:text-2xl font-bold truncate">{formatCurrency(summary.debito_fiscal)}</div>
                 )}
-                <p className="text-sm text-gray-600 mt-2">IVA de facturas emitidas</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-2">IVA de facturas emitidas</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-sm border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Crédito Fiscal</CardTitle>
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs sm:text-sm font-medium">Crédito Fiscal</CardTitle>
+                <TrendingDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               </CardHeader>
               <CardContent>
                 {summary.credito_fiscal_by_currency ? (
                   <>
-                    <div className={fontSizes.h1.desktop}>
+                    <div className="text-lg sm:text-2xl font-bold truncate">
                       $ {summary.credito_fiscal_by_currency.ARS?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                     </div>
-                    <div className="flex gap-3 text-sm text-gray-600">
-                      <span>US$ {summary.credito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
-                      <span>€ {summary.credito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                    <div className="flex gap-2 text-xs sm:text-sm text-gray-600 mt-1 overflow-x-auto">
+                      <span className="flex-shrink-0">US$ {summary.credito_fiscal_by_currency.USD?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
+                      <span className="flex-shrink-0">€ {summary.credito_fiscal_by_currency.EUR?.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</span>
                     </div>
                   </>
                 ) : (
-                  <div className={fontSizes.h1.desktop}>{formatCurrency(summary.credito_fiscal)}</div>
+                  <div className="text-lg sm:text-2xl font-bold truncate">{formatCurrency(summary.credito_fiscal)}</div>
                 )}
-                <p className="text-sm text-gray-600 mt-2">IVA de facturas recibidas</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-2">IVA de facturas recibidas</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-sm border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Saldo IVA</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Saldo IVA</CardTitle>
                 {summary.saldo >= 0 ? (
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                  <TrendingDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 )}
               </CardHeader>
               <CardContent>
                 {summary.saldo_by_currency ? (
                   <>
-                    <div className={fontSizes.h1.desktop}>
+                    <div className="text-lg sm:text-2xl font-bold truncate">
                       {(summary.saldo_by_currency.ARS ?? 0) < 0 ? '-' : ''}$ {Math.abs(summary.saldo_by_currency.ARS || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <div className="flex gap-3 text-sm text-gray-600">
-                      <span>US$ {(summary.saldo_by_currency.USD ?? 0) < 0 ? '-' : ''}{Math.abs(summary.saldo_by_currency.USD || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span>€ {(summary.saldo_by_currency.EUR ?? 0) < 0 ? '-' : ''}{Math.abs(summary.saldo_by_currency.EUR || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div className="flex gap-2 text-xs sm:text-sm text-gray-600 mt-1 overflow-x-auto">
+                      <span className="flex-shrink-0">US$ {(summary.saldo_by_currency.USD ?? 0) < 0 ? '-' : ''}{Math.abs(summary.saldo_by_currency.USD || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="flex-shrink-0">€ {(summary.saldo_by_currency.EUR ?? 0) < 0 ? '-' : ''}{Math.abs(summary.saldo_by_currency.EUR || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </>
                 ) : (
-                  <div className={fontSizes.h1.desktop}>
+                  <div className="text-lg sm:text-2xl font-bold truncate">
                     {summary.saldo < 0 ? '-' : ''}$ {Math.abs(summary.saldo).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 )}
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-xs sm:text-sm text-gray-600 mt-2">
                   {summary.saldo >= 0 ? 'A pagar a AFIP' : 'A favor del contribuyente'}
                 </p>
               </CardContent>
             </Card>
-          </div>
+          </CardCarousel>
         )}
 
         {/* Mensaje de certificado AFIP requerido */}
@@ -327,16 +283,19 @@ export default function IvaBookPage() {
               <TabsTrigger value="sales" className="text-sm">Ventas</TabsTrigger>
               <TabsTrigger value="purchases" className="text-sm">Compras</TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
               <span>Periodo:</span>
               <span className="font-medium">{selectedMonth}/{selectedYear}</span>
+            </div>
+            <div className="sm:hidden text-xs text-muted-foreground font-medium">
+              {selectedMonth}/{selectedYear}
             </div>
           </div>
 
           <TabsContent value="sales" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <CardTitle>Libro IVA Ventas</CardTitle>
                     <CardDescription>
@@ -415,63 +374,145 @@ export default function IvaBookPage() {
                     No hay facturas emitidas en este período
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Comprobante</TableHead>
-                          <TableHead>Cliente</TableHead>
-                          <TableHead>CUIT/DNI</TableHead>
-                          <TableHead>Condición IVA</TableHead>
-                          <TableHead>Mon.</TableHead>
-                          <TableHead className="text-right">Neto</TableHead>
-                          <TableHead className="text-right">27%</TableHead>
-                          <TableHead className="text-right">21%</TableHead>
-                          <TableHead className="text-right">10.5%</TableHead>
-                          <TableHead className="text-right">5%</TableHead>
-                          <TableHead className="text-right">2.5%</TableHead>
-                          <TableHead className="text-right">Exento</TableHead>
-                          <TableHead className="text-right">Percepc.</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {salesBook?.records?.map((record: any, idx: number) => (
-                          <TableRow key={idx} className="border-b border-gray-200 odd:bg-muted/20 hover:bg-muted/30">
-                            <TableCell className="font-medium">{record.fecha}</TableCell>
-                            <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
-                            <TableCell className="max-w-[150px] truncate">{record.cliente}</TableCell>
-                            <TableCell>{record.cuit}</TableCell>
-                            <TableCell className="text-xs">{record.condicion_iva || 'Responsable No Inscripto'}</TableCell>
-                            <TableCell className="text-xs font-medium">{record.currency || 'ARS'}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.neto_gravado, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_27, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_21, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_105, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_5, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_25, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.exento, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.percepciones, record.currency)}</TableCell>
-                            <TableCell className="text-right font-semibold">{formatCurrency(record.total, record.currency)}</TableCell>
-                          </TableRow>
-                        ))}
-                        {salesBook?.totals && (
-                          <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={6}>TOTALES (ARS)</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.neto_gravado)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_27)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_21)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_105)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_5)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.iva_25)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.exento)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.percepciones)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(salesBook.totals.total)}</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                  <div className="space-y-2">
+                    {salesBook?.records?.map((record: any, idx: number) => (
+                      <Card key={idx} className="border-gray-200 shadow-sm">
+                        <CardContent className="p-3 xl:p-2">
+                          {/* Desktop: Horizontal layout */}
+                          <div className="hidden xl:flex items-center gap-4 text-xs overflow-x-auto px-3 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
+                            <div className="flex-shrink-0 min-w-fit space-y-1">
+                              <p className="font-semibold">{record.tipo} {record.punto_venta}-{record.numero}</p>
+                              <p className="text-muted-foreground">{record.fecha}</p>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-muted-foreground text-xs">Cliente</p>
+                              <p>{record.cliente}</p>
+                            </div>
+                            <div className="flex-shrink-0 min-w-fit text-center">
+                              <p className="text-muted-foreground text-xs">{getDocumentLabel(record.cuit)}</p>
+                              <p className="font-semibold text-xs">{record.cuit}</p>
+                            </div>
+                            <div className="flex-shrink-0 min-w-fit text-center">
+                              <p className="text-muted-foreground text-xs">IVA</p>
+                              <p className="font-semibold text-xs">{abbreviateIvaCondition(record.condicion_iva)}</p>
+                            </div>
+                            <div className="flex gap-3 flex-shrink-0">
+                              <div className={`${getColumnWidth(record.neto_gravado)} text-center`}>
+                                <p className="text-muted-foreground text-xs">Neto</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.neto_gravado, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_27)} text-center`}>
+                                <p className="text-muted-foreground text-xs">27%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_27, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_21)} text-center`}>
+                                <p className="text-muted-foreground text-xs">21%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_21, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_105)} text-center`}>
+                                <p className="text-muted-foreground text-xs">10.5%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_105, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_5)} text-center`}>
+                                <p className="text-muted-foreground text-xs">5%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_5, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_25)} text-center`}>
+                                <p className="text-muted-foreground text-xs">2.5%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_25, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.exento)} text-center`}>
+                                <p className="text-muted-foreground text-xs">Exento</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.exento, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.percepciones)} text-center`}>
+                                <p className="text-muted-foreground text-xs">Perc.</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.percepciones, record.currency)}</p>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 text-center min-w-fit">
+                              <p className="text-muted-foreground text-xs">{record.currency || 'ARS'}</p>
+                              <p className="font-bold text-sm">{formatCurrency(record.total, record.currency)}</p>
+                            </div>
+                          </div>
+
+                          {/* Mobile: Vertical layout */}
+                          <div className="xl:hidden space-y-3">
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold">{record.fecha} • {record.tipo} {record.punto_venta}-{record.numero}</p>
+                                <p className="text-xs text-muted-foreground truncate">{record.cliente}</p>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-xs text-muted-foreground">{record.currency || 'ARS'}</p>
+                                <p className="text-xs font-bold">{formatCurrency(record.total, record.currency)}</p>
+                              </div>
+                            </div>
+                            <div className="text-xs space-y-2 border-t border-gray-100 pt-2">
+                              <p><span className="text-muted-foreground">CUIT:</span> {record.cuit}</p>
+                              <p><span className="text-muted-foreground">IVA:</span> {record.condicion_iva || 'Responsable No Inscripto'}</p>
+                              <div className="overflow-x-auto pt-1">
+                                <div className="flex gap-3 min-w-min">
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">Neto</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.neto_gravado, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">27%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_27, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">21%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_21, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">10.5%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_105, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">5%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_5, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">2.5%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_25, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">Exento</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.exento, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">Percepc.</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.percepciones, record.currency)}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {salesBook?.totals && (
+                      <Card className="bg-muted/50 border-gray-200 shadow-sm">
+                        <CardContent className="p-3">
+                          <p className="font-bold text-xs mb-2">TOTALES (ARS)</p>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <p className="text-muted-foreground">Neto</p>
+                              <p className="font-semibold">{formatCurrency(salesBook.totals.neto_gravado)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">IVA 21%</p>
+                              <p className="font-semibold">{formatCurrency(salesBook.totals.iva_21)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Total</p>
+                              <p className="font-bold">{formatCurrency(salesBook.totals.total)}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -481,7 +522,7 @@ export default function IvaBookPage() {
           <TabsContent value="purchases" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <CardTitle>Libro IVA Compras</CardTitle>
                     <CardDescription>
@@ -560,63 +601,145 @@ export default function IvaBookPage() {
                     No hay facturas recibidas en este período
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Comprobante</TableHead>
-                          <TableHead>Proveedor</TableHead>
-                          <TableHead>CUIT/DNI</TableHead>
-                          <TableHead>Condición IVA</TableHead>
-                          <TableHead>Mon.</TableHead>
-                          <TableHead className="text-right">Neto</TableHead>
-                          <TableHead className="text-right">27%</TableHead>
-                          <TableHead className="text-right">21%</TableHead>
-                          <TableHead className="text-right">10.5%</TableHead>
-                          <TableHead className="text-right">5%</TableHead>
-                          <TableHead className="text-right">2.5%</TableHead>
-                          <TableHead className="text-right">Exento</TableHead>
-                          <TableHead className="text-right">Retenc.</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {purchasesBook?.records?.map((record: any, idx: number) => (
-                          <TableRow key={idx} className="border-b border-gray-200 odd:bg-muted/20 hover:bg-muted/30">
-                            <TableCell className="font-medium">{record.fecha}</TableCell>
-                            <TableCell>{record.tipo} {record.punto_venta}-{record.numero}</TableCell>
-                            <TableCell className="max-w-[150px] truncate">{record.proveedor}</TableCell>
-                            <TableCell>{record.cuit}</TableCell>
-                            <TableCell className="text-xs">{record.condicion_iva || 'Responsable No Inscripto'}</TableCell>
-                            <TableCell className="text-xs font-medium">{record.currency || 'ARS'}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.neto_gravado, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_27, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_21, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_105, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_5, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.iva_25, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.exento, record.currency)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.retenciones, record.currency)}</TableCell>
-                            <TableCell className="text-right font-semibold">{formatCurrency(record.total, record.currency)}</TableCell>
-                          </TableRow>
-                        ))}
-                        {purchasesBook?.totals && (
-                          <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={6}>TOTALES (ARS)</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.neto_gravado)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_27)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_21)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_105)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_5)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.iva_25)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.exento)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.retenciones)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(purchasesBook.totals.total)}</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                  <div className="space-y-2">
+                    {purchasesBook?.records?.map((record: any, idx: number) => (
+                      <Card key={idx} className="border-gray-200 shadow-sm">
+                        <CardContent className="p-3 xl:p-2">
+                          {/* Desktop: Horizontal layout */}
+                          <div className="hidden xl:flex items-center gap-4 text-xs overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400">
+                            <div className="flex-shrink-0 min-w-fit space-y-1">
+                              <p className="font-semibold">{record.tipo} {record.punto_venta}-{record.numero}</p>
+                              <p className="text-muted-foreground">{record.fecha}</p>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-muted-foreground text-xs">Proveedor</p>
+                              <p>{record.proveedor}</p>
+                            </div>
+                            <div className="flex-shrink-0 min-w-fit text-center">
+                              <p className="text-muted-foreground text-xs">{getDocumentLabel(record.cuit)}</p>
+                              <p className="font-semibold text-xs">{record.cuit}</p>
+                            </div>
+                            <div className="flex-shrink-0 min-w-fit text-center">
+                              <p className="text-muted-foreground text-xs">IVA</p>
+                              <p className="font-semibold text-xs">{abbreviateIvaCondition(record.condicion_iva)}</p>
+                            </div>
+                            <div className="flex gap-3 flex-shrink-0">
+                              <div className={`${getColumnWidth(record.neto_gravado)} text-center`}>
+                                <p className="text-muted-foreground text-xs">Neto</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.neto_gravado, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_27)} text-center`}>
+                                <p className="text-muted-foreground text-xs">27%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_27, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_21)} text-center`}>
+                                <p className="text-muted-foreground text-xs">21%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_21, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_105)} text-center`}>
+                                <p className="text-muted-foreground text-xs">10.5%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_105, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_5)} text-center`}>
+                                <p className="text-muted-foreground text-xs">5%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_5, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.iva_25)} text-center`}>
+                                <p className="text-muted-foreground text-xs">2.5%</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.iva_25, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.exento)} text-center`}>
+                                <p className="text-muted-foreground text-xs">Exento</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.exento, record.currency)}</p>
+                              </div>
+                              <div className={`${getColumnWidth(record.retenciones)} text-center`}>
+                                <p className="text-muted-foreground text-xs">Ret.</p>
+                                <p className="font-semibold text-xs">{formatCurrency(record.retenciones, record.currency)}</p>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 text-center min-w-fit">
+                              <p className="text-muted-foreground text-xs">{record.currency || 'ARS'}</p>
+                              <p className="font-bold text-sm">{formatCurrency(record.total, record.currency)}</p>
+                            </div>
+                          </div>
+
+                          {/* Mobile: Vertical layout */}
+                          <div className="xl:hidden space-y-3">
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold">{record.fecha} • {record.tipo} {record.punto_venta}-{record.numero}</p>
+                                <p className="text-xs text-muted-foreground truncate">{record.proveedor}</p>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-xs text-muted-foreground">{record.currency || 'ARS'}</p>
+                                <p className="text-xs font-bold">{formatCurrency(record.total, record.currency)}</p>
+                              </div>
+                            </div>
+                            <div className="text-xs space-y-2 border-t border-gray-100 pt-2">
+                              <p><span className="text-muted-foreground">CUIT:</span> {record.cuit}</p>
+                              <p><span className="text-muted-foreground">IVA:</span> {record.condicion_iva || 'Responsable No Inscripto'}</p>
+                              <div className="overflow-x-auto pt-1">
+                                <div className="flex gap-3 min-w-min">
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">Neto</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.neto_gravado, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">27%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_27, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">21%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_21, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">10.5%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_105, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">5%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_5, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">2.5%</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.iva_25, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">Exento</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.exento, record.currency)}</p>
+                                  </div>
+                                  <div className="flex-shrink-0 text-center">
+                                    <p className="text-muted-foreground text-xs">Retenc.</p>
+                                    <p className="font-semibold text-xs">{formatCurrency(record.retenciones, record.currency)}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {purchasesBook?.totals && (
+                      <Card className="bg-muted/50 border-gray-200 shadow-sm">
+                        <CardContent className="p-3">
+                          <p className="font-bold text-xs mb-2">TOTALES (ARS)</p>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <p className="text-muted-foreground">Neto</p>
+                              <p className="font-semibold">{formatCurrency(purchasesBook.totals.neto_gravado)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">IVA 21%</p>
+                              <p className="font-semibold">{formatCurrency(purchasesBook.totals.iva_21)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Total</p>
+                              <p className="font-bold">{formatCurrency(purchasesBook.totals.total)}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
               </CardContent>

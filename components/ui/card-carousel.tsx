@@ -10,15 +10,13 @@ interface CardCarouselProps {
   className?: string
   desktopCols?: 2 | 3 | 4
   mobileBreakpoint?: 'sm' | 'md' | 'lg' | 'xl'
-  minHeight?: string
 }
 
 export function CardCarousel({ 
   children, 
   className = "", 
   desktopCols = 3,
-  mobileBreakpoint = 'md',
-  minHeight = '200px'
+  mobileBreakpoint = 'md'
 }: CardCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
@@ -101,13 +99,12 @@ export function CardCarousel({
     )
   }
 
-  // Mobile: Fade carousel con altura fija
+  // Mobile: Fade carousel
   return (
     <div className={cn("relative w-full", className)}>
-      {/* Carousel Container - altura fija para todas las cards */}
+      {/* Carousel Container */}
       <div 
         className="relative w-full flex items-stretch"
-        style={{ minHeight }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -119,9 +116,8 @@ export function CardCarousel({
               "w-full transition-opacity duration-300 ease-in-out flex",
               index === currentIndex ? "opacity-100 relative" : "opacity-0 absolute inset-0 pointer-events-none"
             )}
-            style={{ minHeight }}
           >
-            <div className="w-full" style={{ minHeight }}>
+            <div className="w-full">
               {child}
             </div>
           </div>
@@ -130,8 +126,8 @@ export function CardCarousel({
 
       {/* Navigation Controls */}
       {totalCards > 1 && (
-        <div className="flex items-center justify-center mt-3 sm:mt-4">
-          <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className="flex items-center justify-center mt-4">
+          <div className="flex items-center space-x-1 sm:space-x-1.5">
             {/* Previous Arrow */}
             <Button
               variant="outline"

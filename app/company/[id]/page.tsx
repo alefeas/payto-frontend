@@ -397,7 +397,7 @@ export default function CompanyPage() {
         </div>
 
         {/* Stats Cards with Carousel */}
-        <CardCarousel desktopCols={4} mobileBreakpoint="lg" minHeight="160px">
+        <CardCarousel desktopCols={4} mobileBreakpoint="lg">
           <StatCard 
             title="Por Cobrar"
             value={stats.receivable}

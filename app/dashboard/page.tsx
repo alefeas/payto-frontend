@@ -561,12 +561,12 @@ export default function DashboardPage() {
               </div>
               
               {/* Filtros - responsive: arriba a la derecha en desktop, abajo en mobile */}
-              <div className="flex-shrink-0 lg:mt-0">
+              <div className="w-full lg:w-auto lg:flex-shrink-0 lg:mt-0">
                 <Tabs 
                   value={selectedTimeFilter} 
                   onValueChange={(value) => setSelectedTimeFilter(value as TimeFilter)}
                 >
-                  <TabsList className="flex-wrap justify-start lg:justify-end gap-2">
+                  <TabsList className="w-full lg:w-auto justify-start lg:justify-end gap-2">
                     <TabsTrigger value="7d">
                       7 días
                     </TabsTrigger>

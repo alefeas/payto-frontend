@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { clientService, Client } from "@/services/client.service"
 import { supplierService, Supplier } from "@/services/supplier.service"
@@ -322,7 +323,8 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         )}
       />
 
-      <div className="border-t pt-4 mt-4">
+      <Separator className="my-4 bg-gray-200" />
+      <div className="mt-4">
         <h3 className="font-semibold text-sm text-muted-foreground mb-3">Identificación</h3>
         
         {taxCondition !== 'final_consumer' && (
@@ -425,7 +427,8 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
         </>
       )}
 
-      <div className="border-t pt-4 mt-4">
+      <Separator className="my-4 bg-gray-200" />
+      <div className="mt-4">
         <h3 className="font-semibold text-sm text-muted-foreground mb-3">Información de Contacto</h3>
         
         <div className="grid grid-cols-2 gap-4">
@@ -470,8 +473,10 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
       </div>
 
       {showBankFields && (
-        <div className="border-t pt-4 mt-4">
-          <h3 className="font-semibold mb-3 text-sm text-muted-foreground">Datos Bancarios (Opcional)</h3>
+        <>
+          <Separator className="my-4 bg-gray-200" />
+          <div className="mt-4">
+            <h3 className="font-semibold mb-3 text-sm text-muted-foreground">Datos Bancarios (Opcional)</h3>
           
           <div className="space-y-4">
             <FormField control={form.control} name="bankCbu" render={({ field }) => (
@@ -519,7 +524,8 @@ export function EntityForm({ type, entity, companyId, onClose, onSuccess, showBa
               )} />
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       <div className="flex justify-end gap-2 pt-4">

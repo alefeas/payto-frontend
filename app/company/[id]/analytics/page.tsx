@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-        <CardCarousel desktopCols={4} mobileBreakpoint="lg" minHeight="180px">
+        <CardCarousel desktopCols={4} mobileBreakpoint="lg">
           <AnalyticsCard
             title={`Ventas ${period === 'month' ? 'del Mes' : period === 'quarter' ? 'del Trimestre' : 'del Año'}`}
             mainValue={selectedCurrency === 'ALL' && summary.sales_by_currency 
