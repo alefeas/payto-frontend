@@ -225,8 +225,8 @@ export function AppSidebar() {
     {
       label: "Configuración",
       items: [
-        // Certificado AFIP - Solo Accountant+ (necesitan configurar AFIP)
-        ...(selectedCompany && hasPermission(userRole, 'invoices.create') ? [
+        // Certificado AFIP - Solo Owner, Administrator, Accountant (pueden emitir facturas)
+        ...(selectedCompany && (userRole === 'owner' || userRole === 'administrator' || userRole === 'accountant') ? [
           { title: "Certificado AFIP", icon: Shield, url: `/company/${selectedCompanyId}/verify` }
         ] : []),
         // Miembros - Solo si tiene permiso

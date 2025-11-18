@@ -19,6 +19,8 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
+  const [markingAsRead, setMarkingAsRead] = useState<string | null>(null);
+  const [markingAllAsRead, setMarkingAllAsRead] = useState(false);
 
   const fetchNotifications = async () => {
     try {
@@ -38,8 +40,18 @@ export default function NotificationsPage() {
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
-      await notificationService.markAsRead(notification.id);
+      // Optimistic update: marcar como leída inmediatamente
+      setMarkingAsRead(notification.id);
       setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
+      
+      // Marcar como leída en el servidor
+      const success = await notificationService.markAsRead(notification.id);
+      if (!success) {
+        // Si falla, revertir
+        setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: false } : n));
+      }
+      
+      setMarkingAsRead(null);
     }
 
     const { entityType, entityId } = notification.data;
@@ -57,11 +69,24 @@ export default function NotificationsPage() {
   }
 
   const handleMarkAllAsRead = async () => {
+    setMarkingAllAsRead(true);
+    // Optimistic update: marcar todas como leídas inmediatamente
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    
     try {
-      await notificationService.markAllAsRead(companyId);
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      const success = await notificationService.markAllAsRead(companyId);
+      if (!success) {
+        // Si falla, recargar
+        fetchNotifications();
+      }
     } catch (error) {
       console.error('Error marking all as read:', error);
+      fetchNotifications();
+    } finally {
+      // Pequeño delay para que se vea el estado de carga
+      setTimeout(() => {
+        setMarkingAllAsRead(false);
+      }, 300);
     }
   };
 
@@ -102,12 +127,13 @@ export default function NotificationsPage() {
           {notifications.length > 0 && (
             <Button
               onClick={handleMarkAllAsRead}
+              disabled={markingAllAsRead}
               variant="outline"
-              className="w-full sm:w-auto h-12"
+              className="w-full sm:w-auto h-12 disabled:opacity-60"
             >
               <CheckCheck className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Marcar todas como leídas</span>
-              <span className="sm:hidden">Marcar leídas</span>
+              <span className="hidden sm:inline">{markingAllAsRead ? 'Marcando...' : 'Marcar todas como leídas'}</span>
+              <span className="sm:hidden">{markingAllAsRead ? 'Marcando...' : 'Marcar leídas'}</span>
             </Button>
           )}
         </div>
@@ -156,48 +182,54 @@ export default function NotificationsPage() {
                     </p>
                   </div>
                 ) : (
-                  filteredNotifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 sm:p-4 rounded-lg border transition-all cursor-pointer hover:shadow-sm relative ${
-                        notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      {!notification.read && (
-                        <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full"></div>
-                      )}
-                      <div className="flex items-start gap-2 sm:gap-3">
-                        <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)}`}>
-                          {getNotificationIcon(notification.type)}
-                        </div>
-                        <div className="flex-1 min-w-0 pr-3">
-                          <h4 className={`text-sm font-medium-heading mb-1 ${
-                            notification.read ? 'text-gray-700' : 'text-gray-900'
-                          }`}>
-                            {notification.title}
-                          </h4>
-                          <p className={`text-xs mb-2 ${
-                            notification.read ? 'text-gray-500' : 'text-gray-700'
-                          }`}>
-                            {notification.message}
-                          </p>
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                            <span className="text-xs text-gray-500 truncate">
-                              {notification.companyName}
-                            </span>
-                            <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-                              <Clock className="h-3 w-3" />
-                              {formatDistanceToNow(new Date(notification.createdAt), { 
-                                addSuffix: true, 
-                                locale: es 
-                              })}
-                            </span>
+                  filteredNotifications.map((notification) => {
+                    const isMarking = markingAsRead === notification.id;
+                    return (
+                      <div
+                        key={notification.id}
+                        className={`p-3 sm:p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-sm relative ${
+                          notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
+                        } ${isMarking ? 'opacity-60' : ''}`}
+                        onClick={() => !isMarking && handleNotificationClick(notification)}
+                      >
+                        {!notification.read && !isMarking && (
+                          <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                        {isMarking && (
+                          <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        )}
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div className={`p-1.5 sm:p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)} ${isMarking ? 'animate-pulse' : ''}`}>
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0 pr-3">
+                            <h4 className={`text-sm font-medium-heading mb-1 ${
+                              notification.read ? 'text-gray-700' : 'text-gray-900'
+                            }`}>
+                              {notification.title}
+                            </h4>
+                            <p className={`text-xs mb-2 ${
+                              notification.read ? 'text-gray-500' : 'text-gray-700'
+                            }`}>
+                              {notification.message}
+                            </p>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                              <span className="text-xs text-gray-500 truncate">
+                                {notification.companyName}
+                              </span>
+                              <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                                <Clock className="h-3 w-3" />
+                                {formatDistanceToNow(new Date(notification.createdAt), { 
+                                  addSuffix: true, 
+                                  locale: es 
+                                })}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </TabsContent>
             </Tabs>

@@ -197,11 +197,13 @@ export default function AccountsPayablePage() {
     }
     
     setSubmitting(true)
+    
     try {
+      const invoicesToPay = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+      
       // Pago múltiple: registrar pago para cada factura seleccionada
       if (selectedInvoices.length > 1) {
-        const selectedInvoiceData = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
-        for (const invoice of selectedInvoiceData) {
+        for (const invoice of invoicesToPay) {
           const invoiceBalance = parseFloat(invoice.balance_pending ?? invoice.available_balance ?? invoice.total)
           const retentionsWithAmounts = retentions.map(ret => {
             const base = ret.baseType === 'total' ? invoiceBalance : invoiceBalance
@@ -218,10 +220,9 @@ export default function AccountsPayablePage() {
             retentions: retentionsWithAmounts,
           })
         }
-        toast.success(`${selectedInvoices.length} pagos registrados exitosamente`)
       } else {
         // Pago individual
-        const invoice = allInvoices.find(inv => inv.id === selectedInvoices[0])
+        const invoice = invoicesToPay[0]
         const invoiceBalance = parseFloat(invoice?.balance_pending ?? invoice?.available_balance ?? invoice?.total ?? paymentForm.amount)
         const retentionsWithAmounts = retentions.map(ret => {
           const base = ret.baseType === 'total' ? invoiceBalance : invoiceBalance
@@ -233,22 +234,24 @@ export default function AccountsPayablePage() {
           amount: invoiceBalance,
           retentions: retentionsWithAmounts,
         })
-        toast.success('Pago registrado exitosamente')
       }
       
-      setShowPaymentDialog(false)
-      setSelectedInvoices([])
-      
-      // Recargar datos sin recargar página
-      setRefreshing(true)
+      // Recargar datos
       await loadInvoices()
       const paymentsData = await accountsPayableService.getPayments(companyId)
       setPayments(paymentsData.data || [])
-      setRefreshing(false)
+      
+      // Toast de éxito
+      toast.success(`${invoicesToPay.length} pago${invoicesToPay.length !== 1 ? 's' : ''} registrado${invoicesToPay.length !== 1 ? 's' : ''} exitosamente`)
+      
+      // Cerrar modal y limpiar
+      setShowPaymentDialog(false)
+      setSelectedInvoices([])
+      setRetentions([])
+      setSubmitting(false)
     } catch (error: any) {
       console.error('Payment error:', error)
       toast.error(error.response?.data?.message || error.response?.data?.error || 'Error al registrar pago')
-    } finally {
       setSubmitting(false)
     }
   }
@@ -701,12 +704,29 @@ export default function AccountsPayablePage() {
           }
         }}>
           <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Registrar Pago de Factura{selectedInvoices.length > 1 ? 's' : ''}</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] pr-4">
-            
-            {loadingRetentions ? (
+            {submitting ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="relative w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-semibold">Registrando Pago...</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedInvoices.length === 1 
+                      ? 'Procesando pago de factura' 
+                      : `Procesando ${selectedInvoices.length} pagos`}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Registrar Pago de Factura{selectedInvoices.length > 1 ? 's' : ''}</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                
+                {loadingRetentions ? (
               <div className="space-y-4 py-6">
                 <div className="bg-gray-100 p-4 rounded-lg space-y-2">
                   <div className="h-4 w-48 bg-gray-300 rounded animate-pulse"></div>
@@ -1188,12 +1208,14 @@ export default function AccountsPayablePage() {
             </Tabs>
             )
             }
-            </ScrollArea>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPaymentDialog(false)} disabled={submitting || loadingRetentions}>Cancelar</Button>
-              <Button onClick={handleSubmitPayment} disabled={submitting || loadingRetentions}>{submitting ? 'Registrando...' : 'Registrar Pago'}</Button>
-            </DialogFooter>
+                </ScrollArea>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowPaymentDialog(false)} disabled={submitting || loadingRetentions}>Cancelar</Button>
+                  <Button onClick={handleSubmitPayment} disabled={submitting || loadingRetentions}>Registrar Pago</Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
 

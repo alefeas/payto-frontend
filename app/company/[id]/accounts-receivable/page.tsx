@@ -182,19 +182,58 @@ export default function AccountsReceivablePage() {
     }
     
     setSubmitting(true)
+    
     try {
-      for (const invoiceId of selectedInvoices) {
-        const invoice = allInvoices.find(inv => inv.id === invoiceId)
-        if (!invoice) continue
-        
-        // Normalizar método de cobro
-        let method = collectionForm.collection_method
-        if (method === 'debit_card' || method === 'credit_card') {
-          method = 'card'
+      const invoicesToCollect = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+      
+      // Cobro múltiple: registrar cobro para cada factura seleccionada
+      if (selectedInvoices.length > 1) {
+        for (const invoice of invoicesToCollect) {
+          const invoiceAmount = parseFloat(invoice.balance_pending ?? invoice.available_balance ?? invoice.total)
+          const withholdingsData: any = {}
+          
+          withholdings.forEach(wh => {
+            const base = wh.baseType === 'total' ? invoiceAmount : invoiceAmount
+            const amount = base * wh.rate / 100
+            
+            if (wh.type === 'iibb' || wh.type.startsWith('gross_income_')) {
+              withholdingsData.withholding_iibb = amount
+              withholdingsData.withholding_iibb_notes = wh.description
+            } else if (wh.type === 'iva' || wh.type === 'vat_retention') {
+              withholdingsData.withholding_iva = amount
+              withholdingsData.withholding_iva_notes = wh.description
+            } else if (wh.type === 'ganancias' || wh.type === 'income_tax_retention') {
+              withholdingsData.withholding_ganancias = amount
+              withholdingsData.withholding_ganancias_notes = wh.description
+            } else if (wh.type === 'suss' || wh.type === 'suss_retention') {
+              withholdingsData.withholding_suss = amount
+              withholdingsData.withholding_suss_notes = wh.description
+            } else if (wh.type === 'other') {
+              withholdingsData.withholding_other = amount
+              withholdingsData.withholding_other_notes = wh.description
+            }
+          })
+          
+          let method = collectionForm.collection_method
+          if (method === 'debit_card' || method === 'credit_card') {
+            method = 'card'
+          }
+          
+          await collectionService.createCollection(companyId, {
+            invoice_id: invoice.id,
+            amount: invoiceAmount,
+            collection_date: collectionForm.collection_date,
+            collection_method: method as 'transfer' | 'check' | 'cash' | 'card',
+            reference_number: collectionForm.reference_number || undefined,
+            notes: collectionForm.notes || undefined,
+            ...withholdingsData,
+            status: 'confirmed'
+          })
         }
-        
-        // Calcular montos de retenciones usando balance_pending (incluye ND/NC)
-        const invoiceAmount = parseFloat(invoice.balance_pending ?? invoice.available_balance ?? invoice.total)
+      } else {
+        // Cobro individual
+        const invoice = invoicesToCollect[0]
+        const invoiceAmount = parseFloat(invoice?.balance_pending ?? invoice?.available_balance ?? invoice?.total ?? 0)
         const withholdingsData: any = {}
         
         withholdings.forEach(wh => {
@@ -219,8 +258,13 @@ export default function AccountsReceivablePage() {
           }
         })
         
+        let method = collectionForm.collection_method
+        if (method === 'debit_card' || method === 'credit_card') {
+          method = 'card'
+        }
+        
         await collectionService.createCollection(companyId, {
-          invoice_id: invoiceId,
+          invoice_id: invoice.id,
           amount: invoiceAmount,
           collection_date: collectionForm.collection_date,
           collection_method: method as 'transfer' | 'check' | 'cash' | 'card',
@@ -231,19 +275,22 @@ export default function AccountsReceivablePage() {
         })
       }
       
-      toast.success(`${selectedInvoices.length} cobro(s) registrado(s) exitosamente`)
-      setShowCollectionDialog(false)
-      setSelectedInvoices([])
-      setWithholdings([])
-      
-      // Recargar datos con loader
+      // Recargar datos
       await loadInvoices()
       const collectionsData = await collectionService.getCollections(companyId)
       setCollections(collectionsData.filter((c: any) => c.status === 'confirmed') || [])
+      
+      // Toast de éxito
+      toast.success(`${invoicesToCollect.length} cobro${invoicesToCollect.length !== 1 ? 's' : ''} registrado${invoicesToCollect.length !== 1 ? 's' : ''} exitosamente`)
+      
+      // Cerrar modal y limpiar
+      setShowCollectionDialog(false)
+      setSelectedInvoices([])
+      setWithholdings([])
+      setSubmitting(false)
     } catch (error: any) {
       console.error('Collection error:', error)
       toast.error(error.response?.data?.message || 'Error al registrar cobro')
-    } finally {
       setSubmitting(false)
     }
   }
@@ -554,18 +601,35 @@ export default function AccountsReceivablePage() {
     
     <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
           <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Registrar Cobro</DialogTitle>
-              <DialogDescription>
-                {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {(() => {
-                  const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
-                  const currency = invoices[0]?.currency || 'ARS'
-                  return formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.total), 0), currency)
-                })()}
-              </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-4 py-2">
+            {submitting ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="relative w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-semibold">Registrando Cobro...</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedInvoices.length === 1 
+                      ? 'Procesando cobro de factura' 
+                      : `Procesando ${selectedInvoices.length} cobros`}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Registrar Cobro</DialogTitle>
+                  <DialogDescription>
+                    {selectedInvoices.length} factura{selectedInvoices.length !== 1 ? 's' : ''} por {(() => {
+                      const invoices = allInvoices.filter(inv => selectedInvoices.includes(inv.id))
+                      const currency = invoices[0]?.currency || 'ARS'
+                      return formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.available_balance ?? inv.balance_pending ?? inv.total), 0), currency)
+                    })()}
+                  </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                <div className="space-y-4 py-2">
               <div className="border border-gray-200 rounded-lg p-4 bg-muted/30">
                 <h4 className="font-medium mb-3 text-sm text-muted-foreground">Facturas seleccionadas</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -860,11 +924,13 @@ export default function AccountsReceivablePage() {
                 </div>
               )}
             </div>
-            </ScrollArea>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCollectionDialog(false)} disabled={submitting}>Cancelar</Button>
-              <Button onClick={handleSubmitCollection} disabled={submitting}>{submitting ? 'Registrando...' : 'Registrar Cobro'}</Button>
-            </DialogFooter>
+                </ScrollArea>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowCollectionDialog(false)} disabled={submitting}>Cancelar</Button>
+                  <Button onClick={handleSubmitCollection} disabled={submitting}>Registrar Cobro</Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
     </Dialog>
     </>

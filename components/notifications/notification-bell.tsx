@@ -23,6 +23,8 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [markingAsRead, setMarkingAsRead] = useState<string | null>(null);
+  const [markingAllAsRead, setMarkingAllAsRead] = useState(false);
   const router = useRouter();
 
   const fetchNotifications = async () => {
@@ -53,11 +55,24 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
   }, [companyId]);
 
   const handleNotificationClick = async (notification: Notification) => {
+    // Optimistic update: marcar como leída inmediatamente en la UI
+    setMarkingAsRead(notification.id);
+    setNotifications(prev => prev.map(n => 
+      n.id === notification.id ? { ...n, read: true } : n
+    ));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    
+    // Marcar como leída en el servidor
     const success = await notificationService.markAsRead(notification.id);
-    if (success) {
-      // Refresh notifications after marking as read
-      fetchNotifications();
+    if (!success) {
+      // Si falla, revertir el cambio
+      setNotifications(prev => prev.map(n => 
+        n.id === notification.id ? { ...n, read: notification.read } : n
+      ));
+      setUnreadCount(prev => prev + 1);
     }
+    
+    setMarkingAsRead(null);
     
     // Navigate based on entity type or notification type
     const { entityType, entityId } = notification.data;
@@ -89,10 +104,18 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
   };
 
   const handleMarkAllAsRead = async () => {
+    setMarkingAllAsRead(true);
+    // Optimistic update: marcar todas como leídas inmediatamente
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+    
     const success = await notificationService.markAllAsRead(companyId);
-    if (success) {
+    if (!success) {
+      // Si falla, recargar
       fetchNotifications();
     }
+    
+    setMarkingAllAsRead(false);
   };
 
   return (
@@ -126,9 +149,10 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
               variant="ghost" 
               size="sm" 
               onClick={handleMarkAllAsRead}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              disabled={markingAllAsRead}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
             >
-              Marcar todas como leídas
+              {markingAllAsRead ? 'Marcando...' : 'Marcar todas como leídas'}
             </Button>
           )}
         </div>
@@ -157,16 +181,18 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
                 return message;
               };
               
+              const isMarking = markingAsRead === notification.id;
+              
               return (
                 <div
                   key={notification.id}
-                  className={`p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors last:border-b-0 ${
+                  className={`p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-all duration-200 last:border-b-0 ${
                     !notification.read ? 'bg-blue-50/50' : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
+                  } ${isMarking ? 'opacity-60' : ''}`}
+                  onClick={() => !isMarking && handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                    <div className={`p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)} ${isMarking ? 'animate-pulse' : ''}`}>
                       <Bell className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -174,8 +200,11 @@ export function NotificationBell({ companyId }: NotificationBellProps) {
                         <h4 className="text-sm font-medium-heading text-gray-900 truncate">
                           {notification.title}
                         </h4>
-                        {!notification.read && (
+                        {!notification.read && !isMarking && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                        )}
+                        {isMarking && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 animate-pulse"></div>
                         )}
                       </div>
                       <p className="text-xs text-gray-600 line-clamp-2">
