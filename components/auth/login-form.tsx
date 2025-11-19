@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,9 +21,11 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const hasShownResetToast = useRef(false);
 
   useEffect(() => {
-    if (searchParams.get('reset') === 'success') {
+    if (searchParams.get('reset') === 'success' && !hasShownResetToast.current) {
+      hasShownResetToast.current = true;
       toast.success('Contraseña restablecida correctamente. Podés iniciar sesión.');
     }
   }, [searchParams]);

@@ -25,7 +25,8 @@ import { colors, getResponsiveFontSize } from "@/styles"
 import { useAuth } from "@/contexts/auth-context"
 import { companyService, Company } from "@/services/company.service"
 import { taskService, type Task } from "@/services/task.service"
-import { invoiceService } from "@/services/invoice.service"
+import { accountsPayableService } from "@/services/accounts-payable.service"
+import { accountsReceivableService } from "@/services/accounts-receivable.service"
 import { toast } from "sonner"
 import { parseDateLocal } from "@/lib/utils"
 import {
@@ -99,27 +100,50 @@ export default function DashboardPage() {
       setTasks(tasksData)
       
       // Load invoices from all companies
-      const allInvoices: any[] = []
+      // Keep payable and receivable invoices separate
+      const payableInvoices: any[] = []
+      const receivableInvoices: any[] = []
+      
       for (const company of companiesData) {
         try {
+          // Load payable invoices (to pay) - receiver_company_id = company.id
           let page = 1
           let hasMore = true
           while (hasMore) {
-            const response = await invoiceService.getInvoices(company.id, page)
+            const response = await accountsPayableService.getInvoices(company.id, { page })
             const pageData = response.data || []
             if (Array.isArray(pageData) && pageData.length > 0) {
-              allInvoices.push(...pageData.map((inv: any) => ({ ...inv, companyId: company.id })))
+              payableInvoices.push(...pageData.map((inv: any) => ({ ...inv, companyId: company.id, receiver_company_id: company.id, type: 'payable' })))
               page++
             } else {
               hasMore = false
             }
           }
         } catch (error) {
-          console.error(`Error loading invoices for company ${company.id}:`, error)
+          console.error(`Error loading payable invoices for company ${company.id}:`, error)
+        }
+
+        try {
+          // Load receivable invoices (to collect) - issuer_company_id = company.id
+          let page = 1
+          let hasMore = true
+          while (hasMore) {
+            const response = await accountsReceivableService.getInvoices(company.id, { page })
+            const pageData = response.data || []
+            if (Array.isArray(pageData) && pageData.length > 0) {
+              receivableInvoices.push(...pageData.map((inv: any) => ({ ...inv, companyId: company.id, issuer_company_id: company.id, type: 'receivable' })))
+              page++
+            } else {
+              hasMore = false
+            }
+          }
+        } catch (error) {
+          console.error(`Error loading receivable invoices for company ${company.id}:`, error)
         }
       }
       
-      setInvoices(allInvoices)
+      // Combine both arrays
+      setInvoices([...payableInvoices, ...receivableInvoices])
     } catch (error) {
       toast.error('Error al cargar datos')
     } finally {
@@ -391,52 +415,33 @@ export default function DashboardPage() {
   }, [invoices, companies, selectedTimeFilter])
 
   // All invoices to pay (for pagination calculation)
+  // Filter only payable invoices (type === 'payable')
+  // El backend ya filtra por payment_status !== 'paid', no filtrar por pending_amount aquí
   const allInvoicesToPay = useMemo(() => {
-    const filtered = invoices.filter(inv => {
-      const isReceiver = companies.some(c => c.id === inv.receiver_company_id)
-      if (!isReceiver) return false
-      const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
-      const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
-      if (isCreditNote || isDebitNote) return false
-      const status = inv.display_status || inv.status
-      if (status === 'cancelled' || status === 'rejected' || status === 'pending_approval') return false
-      const companyStatus = inv.company_statuses?.[inv.companyId]
-      if (companyStatus === 'paid' || companyStatus === 'pending_approval') return false
-      if (inv.payment_status === 'paid' || inv.payment_status === 'collected') return false
-      const company = companies.find(c => c.id === inv.receiver_company_id)
-      const requiredApprovals = company?.required_approvals ?? 0
-      if (requiredApprovals > 0 && (inv.approvals_received ?? 0) < requiredApprovals) return false
-      const pendingAmount = parseFloat(inv.pending_amount ?? 0)
-      if (pendingAmount <= 0) return false
-      return true
-    })
-    return filtered.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-  }, [invoices, companies])
+    return invoices
+      .filter(inv => {
+        if (inv.type !== 'payable') return false
+        if (inv.payment_status === 'paid') return false
+        return true
+      })
+      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+  }, [invoices])
 
   const invoicesToPay = useMemo(() => {
     return allInvoicesToPay.slice(currentPageToPay * itemsPerPage, (currentPageToPay + 1) * itemsPerPage)
   }, [allInvoicesToPay, currentPageToPay])
 
+  // Facturas a cobrar - filtrar solo receivable invoices
+  // El backend ya filtra por collection_status !== 'collected', no filtrar por pending_amount aquí
   const allInvoicesToCollect = useMemo(() => {
     return invoices
       .filter(inv => {
-        const isIssuer = companies.some(c => c.id === inv.issuer_company_id)
-        if (!isIssuer) return false
-        if (inv.supplier_id) return false
-        const isCreditNote = ['NCA', 'NCB', 'NCC', 'NCM', 'NCE'].includes(inv.type)
-        const isDebitNote = ['NDA', 'NDB', 'NDC', 'NDM', 'NDE'].includes(inv.type)
-        if (isCreditNote || isDebitNote) return false
-        const status = inv.display_status || inv.status
-        if (status === 'cancelled' || status === 'rejected') return false
-        const companyStatus = inv.company_statuses?.[inv.companyId]
-        if (companyStatus === 'collected' || companyStatus === 'paid' || status === 'collected') return false
-        if (inv.payment_status === 'collected' || inv.payment_status === 'paid') return false
-        const pendingAmount = parseFloat(inv.pending_amount ?? 0)
-        if (pendingAmount <= 0) return false
+        if (inv.type !== 'receivable') return false
+        if (inv.collection_status === 'collected') return false
         return true
       })
       .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-  }, [invoices, companies])
+  }, [invoices])
 
   const invoicesToCollect = useMemo(() => {
     return allInvoicesToCollect.slice(currentPageToCollect * itemsPerPage, (currentPageToCollect + 1) * itemsPerPage)
