@@ -57,11 +57,11 @@ function Calendar({
       month={month}
       onMonthChange={setMonth}
       components={{
-        Caption: ({ displayMonth }) => (
+        Head: () => (
           <div className="flex justify-center items-center gap-2 mb-4">
-            <Select value={displayMonth.getMonth().toString()} onValueChange={handleMonthChange}>
+            <Select value={month.getMonth().toString()} onValueChange={handleMonthChange}>
               <SelectTrigger className="h-8 w-[110px]">
-                <SelectValue placeholder={monthsShort[displayMonth.getMonth()]} />
+                <SelectValue placeholder={monthsShort[month.getMonth()]} />
               </SelectTrigger>
               <SelectContent>
                 {monthsFull.map((m, i) => (
@@ -71,7 +71,7 @@ function Calendar({
                 ))}
               </SelectContent>
             </Select>
-            <Select value={displayMonth.getFullYear().toString()} onValueChange={handleYearChange}>
+            <Select value={month.getFullYear().toString()} onValueChange={handleYearChange}>
               <SelectTrigger className="h-8 w-[90px]">
                 <SelectValue />
               </SelectTrigger>

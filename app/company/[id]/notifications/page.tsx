@@ -83,10 +83,7 @@ export default function NotificationsPage() {
       console.error('Error marking all as read:', error);
       fetchNotifications();
     } finally {
-      // Pequeño delay para que se vea el estado de carga
-      setTimeout(() => {
-        setMarkingAllAsRead(false);
-      }, 300);
+      setMarkingAllAsRead(false);
     }
   };
 
