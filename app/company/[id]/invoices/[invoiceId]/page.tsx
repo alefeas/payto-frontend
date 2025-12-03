@@ -522,7 +522,7 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2">
                   <Hash className="h-4 w-4" style={{ color: colors.accent }} />
                   <h3 className="font-semibold text-sm text-gray-800">Datos AFIP</h3>
                 </div>
@@ -561,7 +561,7 @@ export default function InvoiceDetailPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2">
                   <Shield className="h-4 w-4" style={{ color: colors.accent }} />
                   <h3 className="font-semibold text-sm text-gray-800">CAE</h3>
                 </div>
