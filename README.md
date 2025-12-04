@@ -27,6 +27,7 @@ PayTo Frontend is a full-featured financial management dashboard that provides:
 - **Tailwind CSS 4** - Utility-first CSS framework
 
 ### UI Components & Libraries
+- **shadcn/ui** - High-quality, accessible React components built on Radix UI and Tailwind CSS
 - **Radix UI** - Unstyled, accessible component primitives
 - **Lucide React** - Beautiful icon library
 - **Recharts** - Composable charting library
@@ -85,7 +86,6 @@ PayTo Frontend is a full-featured financial management dashboard that provides:
 
 ### User Experience
 - **Responsive Design**: Mobile-first approach
-- **Dark Mode**: Theme switching support
 - **Accessibility**: WCAG compliant components
 - **Loading States**: Skeleton screens for better UX
 - **Error Handling**: User-friendly error messages
@@ -269,7 +269,6 @@ The application uses:
 - **Tailwind CSS** - Utility-first CSS framework
 - **CSS Variables** - Theme customization
 - **Responsive Design** - Mobile-first approach
-- **Dark Mode** - Theme switching support
 
 ## 📱 Responsive Breakpoints
 
