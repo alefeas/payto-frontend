@@ -392,7 +392,7 @@ export default function InvoiceDetailPage() {
               </>
             ) : (
               <>
-                <Button onClick={downloadPDF} disabled={isDownloadingPDF} className="shadow-sm" size="sm">
+                <Button onClick={downloadPDF} disabled={isDownloadingPDF} className="shadow-sm h-12" size="default">
                   {isDownloadingPDF ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -407,7 +407,7 @@ export default function InvoiceDetailPage() {
                   )}
                 </Button>
                 {invoice.attachment_path && (
-                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm" size="sm">
+                  <Button onClick={downloadAttachment} disabled={isDownloadingAttachment} variant="outline" className="shadow-sm h-12" size="default">
                     {isDownloadingAttachment ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -422,7 +422,7 @@ export default function InvoiceDetailPage() {
                     )}
                   </Button>
                 )}
-                <Button onClick={downloadTXT} disabled={isDownloadingTXT} variant="outline" className="shadow-sm" size="sm">
+                <Button onClick={downloadTXT} disabled={isDownloadingTXT} variant="outline" className="shadow-sm h-12" size="default">
                   {isDownloadingTXT ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

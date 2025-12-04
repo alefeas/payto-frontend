@@ -2,8 +2,8 @@
 
 A modern, responsive web application for comprehensive financial management built with Next.js 15, React 19, and TypeScript. Designed for Argentine businesses to manage invoices, payments, collections, and financial analytics with AFIP integration.
 
-![PayTo Dashboard](../docs/images/dashboard.png)
-*Comprehensive financial dashboard with real-time KPIs*
+![PayTo Landing Page](./public/screenshots/hero.png)
+*Landing page - Welcome to PayTo financial management platform*
 
 ## 🎯 Overview
 
@@ -41,9 +41,6 @@ PayTo Frontend is a full-featured financial management dashboard that provides:
 
 ## 📋 Features
 
-![PayTo Network Management](../docs/images/network.png)
-*Network management and invoice tracking interface*
-
 ### Dashboard
 - Real-time financial KPIs (Receivable, Payable, VAT Balance)
 - Period-based analytics (24h, 7d, 28d, 3m, 12m, all-time)
@@ -65,14 +62,6 @@ PayTo Frontend is a full-featured financial management dashboard that provides:
 - **Multi-Currency**: Support for ARS, USD, EUR
 - **Retention Management**: Automatic retention calculations
 - **Payment History**: Complete payment audit trail
-
-### Financial Analytics
-- **Accounts Receivable**: Track invoices to collect
-- **Accounts Payable**: Monitor invoices to pay
-- **VAT Management**: Real-time VAT balance calculations
-- **Overdue Tracking**: Identify overdue invoices
-- **Financial Reports**: Period-based financial summaries
-- **Charts & Graphs**: Visual representation of financial data
 
 ### Multi-Company Management
 - **Company Switching**: Seamless switching between companies
@@ -101,6 +90,28 @@ PayTo Frontend is a full-featured financial management dashboard that provides:
 - **Loading States**: Skeleton screens for better UX
 - **Error Handling**: User-friendly error messages
 - **Toast Notifications**: Real-time feedback
+
+### Financial Analytics
+- **Accounts Receivable**: Track invoices to collect
+- **Accounts Payable**: Monitor invoices to pay
+- **VAT Management**: Real-time VAT balance calculations
+- **Overdue Tracking**: Identify overdue invoices
+- **Financial Reports**: Period-based financial summaries
+- **Charts & Graphs**: Visual representation of financial data
+
+## 📸 Screenshots
+
+![PayTo Login](./public/screenshots/screenshot-1.png)
+*Secure authentication - Login to your PayTo account*
+
+![PayTo Dashboard](./public/screenshots/screenshot-2.png)
+*Main dashboard - Real-time financial overview and KPIs*
+
+![PayTo Invoices](./public/screenshots/screenshot-3.png)
+*Invoice list - View and manage all company invoices*
+
+![PayTo Invoice Details](./public/screenshots/screenshot-4.png)
+*Invoice details - Complete invoice information and tracking*
 
 ## 🚀 Getting Started
 
