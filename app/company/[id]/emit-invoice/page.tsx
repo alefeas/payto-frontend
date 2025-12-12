@@ -27,6 +27,7 @@ import type { Client } from "@/services/client.service"
 import { useAfipCertificate } from "@/hooks/use-afip-certificate"
 import { AfipButton } from "@/components/afip/afip-guard"
 import { AfipCertificateBanner } from "@/components/afip/afip-certificate-banner"
+import { EmitInvoiceSkeleton } from "@/components/invoices/EmitInvoiceSkeleton"
 
 interface CompanyData {
   id: string
@@ -233,13 +234,7 @@ export default function CreateInvoicePage() {
           }
         }
         
-        // Load saved clients (async, non-blocking)
-        import('@/services/client.service')
-          .then(({ clientService }) => clientService.getClients(companyId))
-          .then(clients => setSavedClients(clients))
-          .catch(error => console.error('Error loading clients:', error))
-        
-        // Load sales points and certificate in parallel before showing page
+        // Load sales points, certificate and clients in parallel before showing page
         setIsLoadingSalesPoints(true)
         const salesPointsPromise = apiClient.get(`/companies/${companyId}/sales-points`)
           .then(spResponse => {
@@ -274,9 +269,18 @@ export default function CreateInvoicePage() {
               setCert({ isActive: false })
             }
           })
+
+        // Load saved clients (now blocking)
+        const clientsPromise = import('@/services/client.service')
+          .then(({ clientService }) => clientService.getClients(companyId))
+          .then(clients => setSavedClients(clients))
+          .catch(error => {
+            console.error('Error loading clients:', error)
+            setSavedClients([])
+          })
         
-        // Wait for both critical data before showing page
-        await Promise.all([salesPointsPromise, certPromise])
+        // Wait for all critical data before showing page
+        await Promise.all([salesPointsPromise, certPromise, clientsPromise])
         setCertLoaded(true)
         setIsLoadingData(false)
         
@@ -320,17 +324,11 @@ export default function CreateInvoicePage() {
           jurisdiction: p.jurisdiction
         }))
         
-        // Add perceptions one by one with delay for smooth animation
-        perceptionsToAdd.forEach((perception, index) => {
-          setTimeout(() => {
-            setPerceptions(prev => [...prev, perception])
-          }, index * 100) // 100ms delay between each perception
-        })
+        // Add all perceptions at once
+        setPerceptions(perceptionsToAdd)
         
-        // Show toast only on initial load
-        setTimeout(() => {
-          toast.info(`Se aplicaron ${perceptionsToAdd.length} percepción(es) automática(s)`)
-        }, perceptionsToAdd.length * 100 + 100)
+        // Show toast on initial load
+        toast.info(`Se aplicaron ${perceptionsToAdd.length} percepción(es) automática(s)`)
       }
       
       setIsInitialized(true)
@@ -351,12 +349,8 @@ export default function CreateInvoicePage() {
       // Clear existing perceptions first
       setPerceptions([])
       
-      // Add perceptions one by one with delay for smooth animation
-      perceptionsToAdd.forEach((perception, index) => {
-        setTimeout(() => {
-          setPerceptions(prev => [...prev, perception])
-        }, index * 100) // 100ms delay between each perception
-      })
+      // Add all perceptions at once
+      setPerceptions(perceptionsToAdd)
       
       // Only show toast if explicitly requested (e.g., on initial load)
       if (showToast) {
@@ -750,21 +744,7 @@ export default function CreateInvoicePage() {
 
   // Show loading skeleton while initial data loads
   if (isLoadingData) {
-    return (
-      <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
-        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-muted rounded animate-pulse" />
-            <div className="space-y-2 flex-1">
-              <div className="h-7 sm:h-8 w-48 sm:w-64 bg-muted rounded animate-pulse" />
-              <div className="h-4 w-32 sm:w-48 bg-muted rounded animate-pulse" />
-            </div>
-          </div>
-          <div className="h-32 bg-muted rounded animate-pulse" />
-          <div className="h-96 bg-muted rounded animate-pulse" />
-        </div>
-      </div>
-    )
+    return <EmitInvoiceSkeleton />
   }
 
   return (
@@ -920,9 +900,9 @@ export default function CreateInvoicePage() {
                 <div className="space-y-2">
                   <Label>Número de Comprobante</Label>
                   {isLoadingNumber ? (
-                    <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
+                    <div className="flex items-center h-12 w-full px-3 border border-gray-200 rounded-md bg-muted">
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      <span className="text-sm text-muted-foreground">Consultando AFIP...</span>
+                      <span className="text-sm text-gray-500">Consultando AFIP...</span>
                     </div>
                   ) : (
                     <Input
